@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato de Servicios y Afiliación</title>
+    <style>
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.6;
+            text-align: justify;
+            margin: 3cm 3cm;
+           
+        
+        }
+        h1, h2 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 14pt;
+        }
+        h2 {
+            font-size: 12pt;
+        }
+        p, ul, ol {
+            margin-bottom: 15px;
+        }
+        .signature-block {
+        text-align: center;
+        margin-bottom: 30px; /* Update 3: Update .signature-block style */
+        flex: 1;
+        }
+        .signature-line {
+        width: 150px;
+        height: 2px;
+        background-color: black;
+        margin: 10px auto;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .checkbox {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid black;
+            margin-right: 5px;
+        }
+
+        .espacio-importante { 
+            margin-bottom: 6cm; /* Cambié el margen inferior para aumentar el espacio */
+        }
+
+        .espacio-importante1 { 
+            margin-bottom: 1.5cm; /* Cambié el margen inferior para aumentar el espacio */
+        }
+
+        table {
+            width: 100%;
+            border: none;
+            margin-top: 2cm;
+        }
+        td {
+            text-align: center;
+            padding: 10px;
+            width: 52%; /* Asegura que las celdas no se estiren demasiado */
+        }
+        
+        .linea {
+            border-top: 1px solid black;
+            height: 0;
+            
+        }
+    </style>
+</head>
+<body>
+    <h1>CONTRATO DE SERVICIOS Y AFILIACION</h1>
+    
+    <p>Entre la AREQUIPA GO E.I.R.L., identificada con Registro Único de Contribuyente RUC N° 20612112763 con domicilio fiscal en Urb. Adepa Mz L Lt 15 Distrito de José Luis Bustamante y Rivero Provincia y Departamento de Arequipa, debidamente representado por su Titular Gerente Sra. Sánchez Diaz Diana Lorena identificada con DNI N° 72693626, representante jurídico de la empresa establecidos en el estatuto legal de la misma empresa, quien en adelante se denominara LA EMPRESA, y EL AFILIADO el Sr(a) <span id="nombre_afiliado"></span> mayor de edad identificado con DNI N° <span id="dni_afiliado"></span>, domiciliado en <span id="domicilio_afiliado"></span> quien para los efectos del presente contrato de PRESTACION DE SERVICIOS Y AFILIACION, de acuerdo a la ley N° 27181 ley de transporte de tránsito terrestre, en cual se regirá por las siguientes clausulas:</p>
+
+    <h2>PRIMERA: LAS PARTES</h2>
+    <p><strong>LA EMPRESA.</strong> Es una empresa dedicada a la prestación de servicios de transporte privado al público en general, mediante la solicitud de vehículos a través de aplicativo que lo soliciten.</p>
+    <p><strong>EL AFILIADO.</strong> Es una persona natural, cuyo oficio es CONDUCTOR, presta sus servicios de transporte particular, para lo cual cuenta con vehículo <span id="condicion_vehiculo"></span> con placa de rodaje N°<span id="placa_vehiculo"></span> Marca: <span id="marca_vehiculo"></span>, Modelo y Color: <span id="modelo_vehiculo"></span> - <span id="color_vehiculo"></span>, año de fabricación: <span id="anio_fabricacion"></span> - debidamente documentado de acuerdo a ley del transporte público.</p>
+
+    <h2>SEGUNDA: OBJETO DEL CONTRATO</h2>
+    <p>Por el presente contrato; LA EMPRESA acepta la afiliación del vehículo con placa de rodaje N° <span id="placa_vehiculo2"></span>, siendo una unidad perteneciente a LA EMPRESA.</p>
+    <p>EL AFILIADO acepta establecer una relación contractual privada con LA EMPRESA, con la finalidad que dicho vehículo, preste el servicio de traslado de forma independiente a los usuarios que contacten por medio de la aplicación de la EMPRESA. EL AFILIADO reconoce que el cupo donde se le habilitara su vehículo, pertenece a LA EMPRESA, conforme a los derechos que corresponde por ser titular del permiso de operación</p>
+    <ul>
+        <li>LA EMPRESA pondrá a disposición el aplicativo para establecer comunicación con EL AFILIADO que sean necesarios para prestación del servicio. EL AFILIADO es quien trabajará con su propio dispositivo móvil.</li>
+        <li>El aplicativo estará habilitado por LA EMPRESA, la aplicación móvil permitirá a cada conductor conocer en tiempo real las solicitudes de los usuarios.</li>
+    </ul>
+
+    <h2>TERCERA: OBLIGACIONES DEL AFILIADO</h2>
+    <ol>
+        <li>Obrar con seriedad y diligencia en el servicio prestado.</li>
+        <li>Cumplir con los estatutos, reglas y reglamento interno de la empresa.</li>
+        <li>Atender las solicitudes y recomendaciones que haga la EMPRESA o sus delegados, con la mayor prontitud.</li>
+    </ol>
+
+    <h2>CUARTA: JORNADA Y HORARIO DE TRABAJO</h2>
+    <p>El AFILIADO se compromete en la medida de lo posible y bajo circunstancias normales cumplir una jornada laboral mínima de 48 horas semanales, en el horario que EL AFILIADO estime adecuado.</p>
+
+    <h2>QUINTA: OBLIGACIONES DE LA EMPRESA</h2>
+    <p>Entregar toda la información que solicite el CONDUCTOR para poder desarrollar con eficiencia el servicio.</p>
+
+    <h2>SEXTA: FORMA DE PAGO</h2>
+    <p>EL AFILIADO pagara a la EMPRESA por concepto de afiliación el monto de S/<span id="monto_pago"></span></p>
+    <p><span class="checkbox"></span> PAGO AL CONTADO</p>
+    <p><span class="checkbox"></span> PAGO FINANCIADO</p>
+
+    <div id="info-inicial"></div>
+    <!-- Aquí se insertarán las cuotas -->
+    <div id="cronograma-cuotas"></div>
+    
+    <p>En caso de pago financiado EL AFILIADO declara conocer y asume la responsabilidad del pago establecido en las fechas pactadas, en caso EL AFILIADO incumpla con el acuerdo perderá el derecho de inscripción, sin ningún tipo de reclamo posterior.</p>
+    <p>LA EMPRESA no realizará la devolución de ningún pago realizado por concepto de afiliación.</p>
+
+    <h2>SEPTIMO:</h2>
+    <p>EL CONDUCTOR, deberá notificar de inmediato a LA EMPRESA de toda situación irregular o no irregular que se presente durante el ejercicio de sus actividades y servicios, así como cualquier circunstancia de fuerza mayor que le imposibilite cumplir con las obligaciones previstas en el presente contrato.</p>
+
+    <h2>OCTAVO:</h2>
+    <p>EL AFILIADO, una vez que venda o transfiera su vehículo sin aviso previo a LA EMPRESA queda automáticamente desvinculado de esta.</p>
+
+    <h2>NOVENO:</h2>
+    <p>EL AFILIADO asume la responsabilidad total de los gastos económicos que se produzca en un accidente y/o incidente.</p>
+
+    <h2>DECIMO: TERMINO DE CONTRATO.</h2>
+    <p>LA EMPRESA dará por terminado el contrato al AFILIADO, si este último no cumple con el estatuto y reglamento interno de la EMPRESA.</p>
+
+
+    <table>
+        <tr>
+            <td>
+                <div class="linea"></div> <!-- Línea de firma del conductor -->
+                <p>____________________________</p>
+                <p>EMPRESA DE TRANSPORTES<br>AREQUIPA GO E.I.R.L.</p>
+            </td>
+            <td>
+                <p style="color: white;">.</p>
+                <div class="linea"></div> <!-- Línea de firma de la empresa -->
+                <p>____________________________</p>
+                <p>CONDUCTOR<br><span id="nombre_conductor"></span><br>DNI: <span id="dni_conductor"></span></p>
+                <p>. </p><!--Espacio vacío-->
+            </td>
+        </tr>
+    </table>
+    
+    
+
+    <div style="page-break-after: always;"></div>
+
+    <h1>AUTORIZACIÓN DE USO DE IMAGEN FOTOGRÁFICA, AUDIO Y/O VIDEO</h1>
+
+    <p>Por el presente, AUTORIZO EXPRESAMENTE a AREQUIPA GO E.I.R.L.. con RUC N° 20612112763, en adelante LA EMPRESA, a reproducir mis datos personales gráficos y sonoros, utilizando las imágenes, audios y videos de los que soy parte y que se registraron en las fotos y/o videos de reproducción en actividades de las que he sido parte para LA EMPRESA; a la exhibición y difusión a nivel nacional e internacional y en perpetuidad, en cualquier formato, tradicional o electrónico, de las imágenes que se muestran ya sea en video, fotografía o cualquier otro formato que LA EMPRESA considere pertinente, autorizando que mi imagen, fotográfica, audio y/o video sean utilizados durante el tiempo que se estime adecuado y para los fines que sean requeridos.</p>
+
+    <p>Reconozco que cedo voluntariamente el derecho de publicación, exhibición, comunicación pública, difusión y distribución a terceros de las grabaciones, fotografías y/o videos realizados a mi persona. Expreso también que tengo conocimiento de que estos datos pueden editarse, copiarse, exhibirse, publicarse o distribuirse y renuncio a cualquier derecho, regalías u otra compensación resultante del uso de ellos.</p>
+
+    <p>De igual manera, es mi deseo establecer que de acuerdo con lo señalado en el artículo 15° del Código Civil Peruano y a lo regulado mediante la Ley N° 29733 – Ley de Protección de Datos Personales y su Reglamento, aprobado mediante Decreto Supremo N° 003-2013-JUS, LA EMPRESA cuenta con mi autorización. He leído cuidadosamente lo descrito, lo comprendo íntegramente y por tal motivo presto mi conformidad marcando la autorización del uso fotográfico de imagen y/o video.</p>
+
+    <!-- Sección agregada: Cláusula de descuento automático por morosidad -->
+    <h2>IMPORTANTE:</h2>
+    <h3>CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</h3>
+    <p>Si cancelan después de la fecha pactada se le cobrará una mora diaria de s/ 10.00 soles.</p>
+    <p>En caso de que <strong>EL CONDUCTOR</strong> incurra en morosidad respecto a las obligaciones económicas adquiridas con <strong>LA EMPRESA AREQUIPA GO</strong>, <strong>EL CONDUCTOR</strong> autoriza expresamente a la empresa a realizar un descuento automático de la cantidad adeudada de su bono semanal, con el fin de saldar el monto correspondiente.</p>
+    <p>Dicho descuento se efectuará sin necesidad de notificación adicional, y será aplicado a la mayor brevedad posible para regularizar la deuda.</p>
+    <p><strong>EL CONDUCTOR</strong> reconoce que esta autorización se otorga como parte de las condiciones contractuales y que, en caso de no contar con fondos suficientes, la empresa podrá tomar las medidas legales necesarias para recuperar la deuda.</p>
+    <!-- Fin de la sección agregada -->
+
+    <p class="espacio2" style="margin-bottom: 2.4cm;"></p>
+    <div class="signature-block">
+        <div class="signature-line"></div>
+        <p>CONDUCTOR<br><span id="nombre_conductor2"></span><br>DNI: <span id="dni_conductor2"></span></p>
+    </div>
+
+    
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma de Pagos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20mm;
+        }
+        h1, h2 {
+            font-size: 14px;
+            text-align: center;
+            color: #333;
+        }
+        p {
+            margin: 5px 0;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 12px; 
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px; 
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .footer {
+            text-align: left;
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        p {
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cronograma de Pagos</h1>
+
+    <div class="section">
+        <h2>Datos del Cliente</h2>
+        <p>Nombre del cliente: <span id="nombre_cliente">[Nombre del cliente]</span></p>
+        <p>Tipo de documento de identidad: <span id="tipo_documento">[Tipo de documento de identidad]</span></p>
+        <p>Número de identidad: <span id="numero_identidad">[Número de identidad]</span></p>
+    </div>
+
+    <div class="section">
+        <h2>Datos del Financiamiento</h2>
+        <p>Fecha de inicio del financiamiento: <span id="fecha_inicio">[Fecha de inicio del financiamiento]</span></p>
+        <p>Monto del financiamiento: <span id="monto_financiamiento">[Monto del financiamiento]</span></p>
+        <p>Tasa de interés: <span id="tasa_interes">[Tasa de interés]</span></p>
+    </div>
+
+    <div class="section" id="semanal">
+        <h2>Cronograma de Pagos Semanal</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nº de cuota</th>
+                    <th>Cuota</th>
+                    <th>Fecha de vencimiento</th>
+                </tr>
+            </thead>
+            <tbody id="tabla_semanal">
+                
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section" id="mensual">
+        <h2>Cronograma de Pagos Mensual</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mes</th>
+                    <th>Cuota</th>
+                    <th>Fecha de vencimiento</th>
+                </tr>
+            </thead>
+            <tbody id="tabla_mensual">
+                <!-- Filas dinámicas -->
+                
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p id="nombre_empresa">[NOMBRE DE LA EMPRESA]</p>
+        <p id="direccion_empresa">[Dirección de la empresa]</p>
+    </div>
+</body>
+</html>

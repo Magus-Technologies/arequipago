@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato de Entrega de Cambio de Aceites</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2.5cm 3cm;
+            line-height: 1.5;
+            font-size: 12pt;
+            text-align: justify;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            margin-bottom: 1cm;
+        }
+        table {
+            width: 100%;
+            border: none;
+            margin-top: 2cm;
+        }
+        td {
+            text-align: center;
+            padding: 10px;
+            width: 52%; /* Asegura que las celdas no se estiren demasiado */
+        }
+        
+        .linea {
+            border-top: 1px solid black;
+            height: 0;
+            
+        }
+
+        .espacio-importante { 
+            margin-bottom: 3cm; /* Cambié el margen inferior para aumentar el espacio */
+        }
+
+        .nueva-pagina { 
+            page-break-before: always; /* 🆕 Esta propiedad hace que "IMPORTANTE" inicie en una nueva página */
+        }
+       
+    </style>
+</head>
+<body>
+    <h1>CONTRATO DE ENTREGA DE CAMBIO DE ACEITES</h1>
+    <p>
+        Siendo las <span id="hora"></span> hrs. del día <span id="dia"></span>, mes <span id="mes"></span>; Año <span id="anio"></span>, 
+        la empresa Arequipa Go hace entrega al <span id="persona"></span> <span id="nombre_conductor"></span>, identificado con DNI <span id="dni"></span> <span id="licencia_bloque"></span><span id="frase_afiliacion"></span>.
+    </p>
+    <p>
+        Se hace entrega al <span id="persona"></span> la cantidad de <span id="cantidad"></span> <span id="unidad_medida"></span> CAMBIO DE ACEITE (Estado nuevo), con las siguientes características:
+    </p>
+    <ul>
+        <li><strong>Marca:</strong> <span id="marca"></span></li>
+        <li><strong>Precio Total:</strong> S/ <span id="precio_total"></span></li>
+    </ul>
+    <p>
+        El cual será pagado en:
+    </p>
+    <p>
+        <strong>N°</strong> <span id="num_cuotas"></span> CUOTAS:
+    </p>
+    <p>
+        Cuota inicial de S/ <span id="cuota_inicial"></span> soles, comprometiéndose a pagar en <span id="cuotas_semanales"></span> cuotas <span id="frecuency"></span> 
+        de S/ <span id="monto_cuota"></span> soles.
+    </p>
+    <p>Los pagos serán realizados <span id="frecuencia"></span>, empezando:</p>
+    <ul id="lista_cuotas"></ul>
+    <p>
+        El receptor declara conocer y asume la responsabilidad del pago establecido en las fechas pactadas.
+    </p>
+    <p>
+        El <span id="persona"></span> es el único responsable y tendrá que hacer la cancelación total de lo adquirido.
+    </p>
+    
+    <p class="espacio-importante"></p>
+    
+    <div class="nueva-pagina"></div>
+        <!-- Sección agregada: Cláusula de descuento automático por morosidad -->
+        <h1>IMPORTANTE:</h1>
+        <h1>CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</h1>
+        <p>Si cancelan después de la fecha pactada se le cobrará una mora diaria de s/ 10.00 soles.</p>
+        <span id="clausula_conductor"></span>
+        <!-- Fin de la sección agregada -->
+        
+        <p class="espacio-importante"></p>
+
+        <table>
+            <tr>
+                <td>
+                    <div class="linea"></div> <!-- Línea de firma del conductor -->
+                    <p>____________________________</p>
+                    <p><span id="nombre_conductor"></span></p> <!-- Nombre del conductor -->
+                    <p>DNI: <span id="dni"></span></p>
+                </td>
+                <td>
+                    <div class="linea"></div> <!-- Línea de firma de la empresa -->
+                    <p>____________________________</p>
+                    <p>La Empresa</p> <!-- Nombre de la empresa -->
+                    <p>. </p><!--Espacio vacío-->
+                </td>
+            </tr>
+        </table>
+    </div> 
+</body>
+</html>

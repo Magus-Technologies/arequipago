@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota de Venta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 80%;
+            max-width: 615px;
+            margin: auto;
+            margin-top: 14px;
+            border: 2px solid black;
+            padding: 16px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 1px;
+            position: relative;
+        }
+      
+        .title {
+            text-align: center;
+            margin-top: 12px;
+        }
+        .section {
+            margin-top: 10px;
+        }
+        .cuota-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ccc;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .resumen {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .logo {
+            width: 536px; /* Cambié el tamaño a más del doble del anterior (de 150px a 320px) */ 
+            margin-bottom: 4px; /* Espacio debajo del logo */
+        }
+    </style>
+</head>
+<body>
+    <div>
+     
+        <div class="header">
+            <img src="{LOGO}" alt="Logo Empresa" class="logo">
+            <h3>AREQUIPA GO E.I.R.L.</h3>
+            <p>RUC: 20612112763</p>
+            <p>Urb. Adepa Mz L Lt 15 Distrito de José Luis Bustamante y Rivero Provincia y Departamento de Arequipa</p>
+            <p></p>
+        </div>
+        <div class="section">
+            <h4 class="title">Boleta de pago</h4>
+            <p>Fecha: <span id="fecha"></span></p>
+            <p>Conductor: <span id="nombre_conductor"></span></p>
+            <p><span id="documento"></span>: <span id="nro_documento"></span></p>
+            <p><strong>Concepto:</strong> Pago por Inscripción</p>
+            <hr>
+            <h5>Detalle del Pago</h5>
+            <p>Método de Pago: <span id="metodo_pago"></span></p>
+            <div id="detalle_cuotas"></div>
+            <hr>
+            <p><strong>Efectivo recibido:</strong> S/. <span id="monto_pagado"></span></p>
+            <p><strong>Total a Pagar:</strong> S/. <span id="total_pagar"></span></p>
+            <p><strong>Vuelto:</strong> S/. <span id="vuelto"></span></p>
+            <hr>
+            
+            <p class="resumen">Total: S/. <span id="total_ingresado"></span></p>
+            <p><strong>Asesor de Cobro: </strong><span id="asesor"></span></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+[27-Feb-2022 14:07:53 UTC] PHP Warning:  file_get_contents(F:\programacion\phpProjects\facturacion3\sunat\src/../resources/cert.pem): failed to open stream: No such file or directory in F:\programacion\phpProjects\facturacion3\sunat\src\Util.php on line 98
+[27-Feb-2022 14:07:53 UTC] PHP Fatal error:  Uncaught Exception: No se pudo cargar el certificado in F:\programacion\phpProjects\facturacion3\sunat\src\Util.php:100
+Stack trace:
+#0 F:\programacion\phpProjects\facturacion3\sunat\examples\factura.php(77): Util->getSee('https://e-beta....')
+#1 {main}
+  thrown in F:\programacion\phpProjects\facturacion3\sunat\src\Util.php on line 100
+[17-Sep-2022 15:54:34 UTC] PHP Fatal error:  Uncaught RuntimeException: Failed to write cache file "D:\programacion\phpProjects\facturacion3\sunat\src/../cache/69/6947868e68a915f6ea7c8f8c4b443ea53c86875f187b186c53f314210480ee96.php". in D:\programacion\phpProjects\facturacion3\sunat\vendor\twig\twig\src\Cache\FilesystemCache.php:76
+Stack trace:
+#0 D:\programacion\phpProjects\facturacion3\sunat\vendor\twig\twig\src\Environment.php(349): Twig\Cache\FilesystemCache->write('D:\\programacion...', '<?php\n\nuse Twig...')
+#1 D:\programacion\phpProjects\facturacion3\sunat\vendor\twig\twig\src\Environment.php(309): Twig\Environment->loadTemplate('__TwigTemplate_...', 'voided.xml.twig')
+#2 D:\programacion\phpProjects\facturacion3\sunat\vendor\twig\twig\src\Environment.php(277): Twig\Environment->load('voided.xml.twig')
+#3 D:\programacion\phpProjects\facturacion3\sunat\vendor\greenter\xml\src\Xml\Builder\TwigBuilder.php(51): Twig\Environment->render('voided.xml.twig', Array)
+#4 D:\programacion\phpProjects\facturacion3\sunat\vendor\greenter\xml\src\Xml\Builder\Void in D:\programacion\phpProjects\facturacion3\sunat\vendor\twig\twig\src\Cache\FilesystemCache.php on line 76
