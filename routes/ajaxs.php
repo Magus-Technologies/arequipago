@@ -5,7 +5,7 @@ $currentUri = $_SERVER['REQUEST_URI'];
 
 // Verifica si la URL contiene "/arequipago/"
 if (strpos($currentUri, '/arequipago/') === 0) {
-    // Obtiene el método de la solicitud
+    // Obtiene el mÃ©todo de la solicitud
     $method = $_SERVER['REQUEST_METHOD'];
     
     // Elimina el prefijo '/arequipago' manteniendo el resto de la ruta
@@ -16,7 +16,7 @@ if (strpos($currentUri, '/arequipago/') === 0) {
     
     // Para solicitudes POST
     if ($method === 'POST') {
-        // Configura los headers para mantener el método POST
+        // Configura los headers para mantener el mÃ©todo POST
         header('HTTP/1.1 307 Temporary Redirect');
         header('Location: ' . $newUrl);
     } else {
@@ -25,15 +25,15 @@ if (strpos($currentUri, '/arequipago/') === 0) {
         header('Location: ' . $newUrl);
     }
     
-    // Asegura que la redirección se ejecute
+    // Asegura que la redirecciÃ³n se ejecute
     exit();
 }
 
-// Si no hay redirección, continúa con el procesamiento normal
+// Si no hay redirecciÃ³n, continÃºa con el procesamiento normal
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Maneja las solicitudes GET aquí
+    // Maneja las solicitudes GET aquÃ­
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Maneja las solicitudes POST aquí
+    // Maneja las solicitudes POST aquÃ­
 }
 
 
@@ -54,24 +54,24 @@ Route::post('/conductor/eliminar/{id}','ListarConductoresController@eliminarCond
 Route::post('/conductor-buscar', 'ListarConductoresController@buscarConductores');
 Route::post('/listarConductoresPorFecha', 'ListarConductoresController@listarConductoresPorFecha');
 
-// Rutas b�sicas de cupones
-Route::post('/ajs/cupones/crear', 'CuponController@crearCupon'); // Para crear un nuevo cup�n
+// Rutas básicas de cupones
+Route::post('/ajs/cupones/crear', 'CuponController@crearCupon'); // Para crear un nuevo cupón
 Route::get('/ajs/cupones/listar', 'CuponController@listarCupones'); // Para listar todos los cupones
 Route::get('/ajs/cupones/listar-con-conductores', 'CuponController@listarCuponesConConductores'); // Para listar todos los cupones y los conductores asociados
 Route::post('/ajs/cupones/buscar/usuarios', 'CuponController@buscarUsuarios');
 Route::post('/ajs/cupones/usuarios', 'CuponController@obtenerUsuariosCupon');
-// Mantener compatibilidad hacia atr�s
+// Mantener compatibilidad hacia atrás
 Route::post('/ajs/cupones/buscar/conductores', 'CuponController@buscarConductores'); // Para buscar conductores
-Route::post('/ajs/cupones/conductores', 'CuponController@obtenerConductoresCupon'); // Para obtener los conductores asociados a un cup�n
-// Rutas de verificaci�n
+Route::post('/ajs/cupones/conductores', 'CuponController@obtenerConductoresCupon'); // Para obtener los conductores asociados a un cupón
+// Rutas de verificación
 Route::post('/ajs/cupones/verificar/conductores', 'CuponController@verificarConductoresConCupones'); // cupones de un conductor en especifico
 Route::get('/ajs/cupones/verificar/conductor/:id_conductor', 'CuponController@verificarCuponConductor'); // verifica si ese conductor tiene cupones
-// Rutas de estad�sticas y uso
-Route::get('/ajs/cupones/estadisticas', 'CuponController@obtenerEstadisticasUso'); // Para obtener estad�sticas de uso de todos los cupones
-Route::get('/ajs/cupones/estadisticas/:id', 'CuponController@obtenerEstadisticasUso'); // Para obtener estad�sticas de uso de un cup�n espec�fico
-Route::post('/ajs/cupones/registrar-uso', 'CuponController@registrarUsoCupon'); // Para registrar el uso de un cup�n
-// Ruta para verificar uso espec�fico
-Route::get('/ajs/cupones/verificar/uso/:tipo/:id_usuario/:id_cupon', 'CuponController@verificarUsoCupon'); // Para verificar si un usuario (conductor/cliente) ya us� un cup�n espec�fico
+// Rutas de estadísticas y uso
+Route::get('/ajs/cupones/estadisticas', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de todos los cupones
+Route::get('/ajs/cupones/estadisticas/:id', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de un cupón específico
+Route::post('/ajs/cupones/registrar-uso', 'CuponController@registrarUsoCupon'); // Para registrar el uso de un cupón
+// Ruta para verificar uso específico
+Route::get('/ajs/cupones/verificar/uso/:tipo/:id_usuario/:id_cupon', 'CuponController@verificarUsoCupon'); // Para verificar si un usuario (conductor/cliente) ya usó un cupón específico
 // Route::post('/ajs/cupones/verificar/uso', 'CuponController@verificarUsoCupon');
 Route::post('/ajs/cupones/usar-codigo/:tipo/:id_usuario/:id_cupon', 'CuponController@usarCuponPorCodigo'); // registrar cupon con el codigo por params
 // Route::post('/ajs/cupones/usar-codigo/:id_conductor/:id_cupon', 'CuponController@usarCuponPorCodigo'); // registrar cupon con el codigo por params
@@ -148,3 +148,5 @@ Route::post('/ajs/actualizarFinanciamiento', 'FinanciamientoController@actualiza
 // Agrega esta ruta junto con las otras rutas AJAX
 //$router->post('/ajs/buscar/doc/infoGuia', 'GuiaRemisionController@buscarDocInfo');
 Route::post('/ajs/buscar/doc/infoGuia', 'GuiaRemisionController@buscarDocInfo');
+
+Route::get('/ajs/resumen-crediticio/:tipo/:id', 'PuntajeCrediticioController@obtenerResumenCrediticio');
