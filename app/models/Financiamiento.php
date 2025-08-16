@@ -1270,5 +1270,17 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
             return false;
         }
     }
+
+    public function contarCreditosActivos($tipo, $id)
+    {
+        $campo = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
+        $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso')";
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $fila = $result->fetch_assoc();
+        return (int)$fila['total'];
+    }
     
 }

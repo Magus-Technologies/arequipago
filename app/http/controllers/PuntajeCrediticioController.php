@@ -1,5 +1,7 @@
 <?php
 require_once "app/models/PuntajeCrediticioModel.php";
+require_once "app/models/Financiamiento.php";
+require_once "app/models/Cupon.php";
 // Agregar las librerías necesarias al inicio del método
 require_once 'utils/lib/vendor/autoload.php';
 require_once 'utils/lib/mpdf/vendor/autoload.php';
@@ -922,5 +924,49 @@ class PuntajeCrediticioController extends Controller
     'message' => $e->getMessage()
     ]);
     }
+    }
+
+    public function obtenerResumenCrediticio($tipo, $id)
+    {
+        try {
+            header('Content-Type: application/json');
+
+            // Validar parámetros de entrada
+            if (empty($tipo) || !in_array($tipo, ['cliente', 'conductor']) || empty($id) || !is_numeric($id)) {
+                throw new Exception("Parámetros inválidos: se requiere 'tipo' (cliente o conductor) y un 'id' numérico.");
+            }
+
+            // 1. Créditos Activos
+            $financiamientoModel = new Financiamiento();
+            $creditosActivos = $financiamientoModel->contarCreditosActivos($tipo, $id);
+
+            // 2. Puntaje Crediticio
+            $puntajeData = $this->puntajeModel->calcularPuntajeIndividual($tipo, $id);
+            $puntaje = $puntajeData['puntaje'];
+
+            // 3. Cupones Disponibles
+            $cuponModel = new Cupon();
+            if ($tipo === 'cliente') {
+                $cupones = $cuponModel->verificarClienteTieneCupon($id);
+            } else {
+                $cupones = $cuponModel->verificarConductorTieneCupon($id);
+            }
+            $cuponesDisponibles = count($cupones);
+
+            $respuesta = [
+                'creditosActivos' => $creditosActivos,
+                'puntaje' => $puntaje,
+                'cuponesDisponibles' => $cuponesDisponibles
+            ];
+
+            echo json_encode($respuesta);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'error' => true,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 }
