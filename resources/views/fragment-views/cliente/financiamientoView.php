@@ -1310,6 +1310,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 // Cerca de línea 1000, después de: var vistaActual = 'default';
 var camposMontoHabilitadosUnaVez = false; // Nueva variable para controlar si ya se habilitaron los campos de monto
         
+window.rolUsuarioActual = '<?php echo $_SESSION['id_rol'] ?? '1'; ?>';
 // Modificaciones al JavaScript principal para el ordenamiento
 
 let registrandoFinanciamiento = false; // [Agregado] Bandera para evitar doble clic
@@ -1957,6 +1958,25 @@ function configurarOrdenamiento() {
                     primeraFechaVencimiento.setDate(30);
                 }
             }
+
+            // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después
+            if (planGlobal && planGlobal.idplan_financiamiento) {
+                const idPlan = parseInt(planGlobal.idplan_financiamiento);
+                
+                if ([14, 15, 16].includes(idPlan)) {
+                    console.log('🔧 Plan especial detectado en calcularFinanciamiento, ID:', idPlan);
+                    
+                    // Calcular fecha EXACTAMENTE una semana después de hoy (sin ajustar al lunes)
+                    const fechaHoy = new Date();
+                    const fechaEspecial = new Date(fechaHoy);
+                    fechaEspecial.setDate(fechaEspecial.getDate() + 7); // Solo sumar 7 días
+                    
+                    primeraFechaVencimiento = new Date(fechaEspecial);
+                    console.log('🔧 Fecha hoy:', fechaHoy.toLocaleDateString());
+                    console.log('🔧 Primera fecha ajustada (7 días después):', primeraFechaVencimiento.toLocaleDateString());
+                }
+            }
+
             fechasVencimiento.push(primeraFechaVencimiento);
             console.log('Primera fecha de vencimiento:', primeraFechaVencimiento.toLocaleDateString());
 
@@ -2258,6 +2278,14 @@ function configurarOrdenamiento() {
             if (!idProducto) {
                 Swal.fire('Error', 'Debe seleccionar un producto.', 'error');
                 return;
+            }
+
+            if ([14, 15, 16].includes(parseInt(grupoFinanciamiento))) {
+                const cuotasNum = parseInt(cuotas);
+                if (cuotasNum < 2 || cuotasNum > 4) {
+                    Swal.fire('Error', 'Para este grupo de financiamiento, solo se permiten entre 2 y 4 cuotas.', 'error');
+                    return;
+                }
             }
 
             // Validaciones
@@ -2812,11 +2840,8 @@ function configurarOrdenamiento() {
             const entregarSiElement = document.getElementById('entregarSi'); // Obtener el elemento del radiobutton "Sí" 
             if (entregarSiElement) { // Verificar si el radiobutton "Sí" existe
                 console.log("El radiobutton 'entregarSí' existe, deteniendo la función calcularMonto."); // Agregar un log para saber que se detuvo
-                // 📌 Obtener el select y su valor seleccionado
-                const grupoSelect = document.getElementById('grupo');
-                const idPlan = grupoSelect ? grupoSelect.value : null;
-
                 // 📌 Llamar a selectPlan SOLO si hay un valor válido seleccionado
+                const idPlan = grupoSelect ? grupoSelect.value : null;
                 if (idPlan && idPlan !== "") {
                     selectPlan(idPlan);
                 } else {
@@ -2846,8 +2871,44 @@ function configurarOrdenamiento() {
             $('#montoSinIntereses').val(monto.toFixed(2)); // Cambio: Setear solo el valor numérico sin prefijo de moneda  
             $('#montoSinIntereses')[0].dispatchEvent(new Event('input')); // Cambio: Emitimos el evento input para posibles dependencias
             $('#montoSinIntereses').val(monto.toFixed(2)); 
+
+            const idPlan = grupoSelect ? parseInt(grupoSelect.value) : null;
+            const esPlanEspecial = idPlan && [14, 15, 16].includes(idPlan);
+
+            if (!esPlanEspecial) {
+                setTimeout(recalcularMonto, 4000);
+            }
+
+        }
+
+        function verificarYMantenerCamposEspeciales() {
+            const grupoSelect = document.getElementById('grupo');
+            const idPlan = grupoSelect ? parseInt(grupoSelect.value) : null;
+            const esPlanEspecial = idPlan && [14, 15, 16].includes(idPlan);
             
-            setTimeout(recalcularMonto, 4000);
+            if (esPlanEspecial) {
+                // Mantener cuota inicial desbloqueada
+                const cuotaInicialInput = document.getElementById('cuotaInicial');
+                if (cuotaInicialInput) {
+                    cuotaInicialInput.style.backgroundColor = '#ffffff';
+                    cuotaInicialInput.style.color = '#333333';
+                    cuotaInicialInput.style.border = '1px solid #ced4da';
+                    cuotaInicialInput.style.pointerEvents = 'auto';
+                    cuotaInicialInput.style.cursor = 'text';
+                    cuotaInicialInput.disabled = false;
+                    cuotaInicialInput.readOnly = false;
+                    console.log('🔓 Manteniendo cuota inicial desbloqueada para plan especial');
+                }
+                
+                // Mantener cuotas con validación
+                const cuotasInput = document.getElementById('cuotas');
+                if (cuotasInput) {
+                    cuotasInput.setAttribute('min', '2');
+                    cuotasInput.setAttribute('max', '4');
+                    cuotasInput.removeEventListener('input', validarCuotasEspeciales);
+                    cuotasInput.addEventListener('input', validarCuotasEspeciales);
+                }
+            }
         }
 
         function planMensual() {
@@ -3504,8 +3565,47 @@ function configurarOrdenamiento() {
             let montoTotalInput = document.getElementById("monto");
             let frecuencia = document.getElementById("frecuenciaPago").value;
 
+            // REEMPLÁZALO POR:
             if (!fechaInicio) {
                 console.warn("Debe ingresar una fecha de inicio.");
+                
+                // NUEVO: Para MotosYa, intentar establecer la fecha automáticamente
+                if (planGlobal && (parseInt(planGlobal.idplan_financiamiento) === 33 || [18, 19, 20].includes(parseInt(planGlobal.id_variante)))) {
+                    const hoyMotos = new Date();
+                    const fechaInicioMotos = new Date(hoyMotos);
+                    fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7);
+                    
+                    const year = fechaInicioMotos.getFullYear();
+                    const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                    const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                    const fechaInicioFormateada = `${year}-${month}-${day}`;
+                    
+                    const fechaInicioInput = document.getElementById("fechaInicio");
+                    fechaInicioInput.disabled = false;
+                    fechaInicioInput.value = fechaInicioFormateada;
+                    fechaInicioInput.disabled = true;
+                    fechaInicio = fechaInicioFormateada;
+                    
+                    console.log('🏍️ Fecha de inicio establecida automáticamente en calcularCronogramaDinamico:', fechaInicioFormateada);
+                } else {
+                    return;
+                }
+            }
+
+            if (planGlobal && (parseInt(planGlobal.idplan_financiamiento) === 33 || [18, 19, 20].includes(parseInt(planGlobal.id_variante)))) {
+                // NUEVO: Bloquear monto de inscripción para MotosYa al final
+                const inputMontoInscripcion = document.getElementById('montoInscripcion');
+                if (inputMontoInscripcion) {
+                    inputMontoInscripcion.value = '200.00';
+                    inputMontoInscripcion.disabled = true;
+                    inputMontoInscripcion.readOnly = true;
+                    inputMontoInscripcion.style.backgroundColor = '#e9ecef';
+                    inputMontoInscripcion.style.color = '#6c757d';
+                    inputMontoInscripcion.style.cursor = 'not-allowed';
+                    inputMontoInscripcion.style.pointerEvents = 'none';
+                    console.log('🏍️ Monto de inscripción bloqueado para MotosYa: S/. 200.00');
+                }
+            } else {
                 return;
             }
 
@@ -3549,8 +3649,51 @@ function configurarOrdenamiento() {
                     primeraFechaVencimiento.setDate(30);
                 }
             }
-            fechasVencimiento.push(primeraFechaVencimiento);
 
+            // NUEVO: Corregir fechas para planes especiales por ID - MOVIDO ANTES DE push()
+            if (planGlobal && planGlobal.idplan_financiamiento) {
+                const idPlan = parseInt(planGlobal.idplan_financiamiento);
+                
+                // Verificar si es plan especial (IDs: 14, 15, 16)
+                if ([14, 15, 16].includes(idPlan)) {
+                    console.log('🔧 Plan especial detectado por ID:', idPlan);
+                    
+                    // Para planes especiales, la fecha de inicio en el input es HOY
+                    // Pero el cronograma debe empezar UNA SEMANA DESPUÉS
+                    const fechaInicioInput = document.getElementById('fechaInicio');
+                    const fechaHoy = new Date();
+                    
+                    // Establecer fecha de hoy en el input (para referencia)
+                    const year = fechaHoy.getFullYear();
+                    const month = (fechaHoy.getMonth() + 1).toString().padStart(2, '0');
+                    const day = fechaHoy.getDate().toString().padStart(2, '0');
+                    const fechaHoyFormateada = `${year}-${month}-${day}`;
+                    
+                    fechaInicioInput.value = fechaHoyFormateada;
+                    console.log('🔧 Fecha de inicio (input) establecida:', fechaHoyFormateada);
+                    
+                    // Pero para el cronograma, usar una semana después
+                    const fechaCronograma = new Date(fechaHoy);
+                    fechaCronograma.setDate(fechaCronograma.getDate() + 7);
+                    
+                    // Ajustar al próximo lunes si es semanal
+                    if (planGlobal.frecuencia_pago === 'semanal') {
+                        const diaSemana = fechaCronograma.getDay(); // 0 = domingo, 1 = lunes
+                        if (diaSemana !== 1) { // Si no es lunes
+                            const diasHastaLunes = diaSemana === 0 ? 1 : (8 - diaSemana);
+                            fechaCronograma.setDate(fechaCronograma.getDate() + diasHastaLunes);
+                        }
+                    }
+                    
+                    // CRÍTICO: Actualizar primeraFechaVencimiento para que use la fecha correcta
+                    primeraFechaVencimiento = new Date(fechaCronograma);
+                    
+                    console.log('🔧 Fecha para cronograma (una semana después):', fechaCronograma.toLocaleDateString());
+                    console.log('🔧 Primera fecha de vencimiento actualizada:', primeraFechaVencimiento.toLocaleDateString());
+                }
+            }
+
+            fechasVencimiento.push(primeraFechaVencimiento);
 
             for (let i = 1; i < cuotas; i++) {
                 if (frecuencia === "semanal") {
@@ -3788,7 +3931,8 @@ function configurarOrdenamiento() {
                         select.append('<option value=""  selected>Seleccione un grupo</option>');
                         // select.append('<option value="notGrupo">Sin grupo</option>'); // COMENTADO: Ocultar opción "Sin grupo"
                         response.planes.forEach(plan => {
-                            if (plan.idplan_financiamiento != 9 && plan.idplan_financiamiento != 12) {
+                            // CAMBIO: antes filtraba != 9 && != 12, ahora solo filtrará != 9 para que el 12 sí cargue
+                            if (plan.idplan_financiamiento != 9) { // CAMBIO
                                 let option = `<option value="${plan.idplan_financiamiento}">${plan.nombre_plan}</option>`;
                                 select.append(option);
                             }
@@ -3827,12 +3971,28 @@ function configurarOrdenamiento() {
 
             inputIds.forEach(id => {
                 const input = document.getElementById(id);
+                
+                // No bloquear cuotaInicial si es plan especial (IDs 14, 15, 16)
+                const esPlanEspecial = planGlobal && [14, 15, 16].includes(parseInt(planGlobal.idplan_financiamiento));
+                if (id === 'cuotaInicial' && esPlanEspecial) {
+                    input.style.backgroundColor = '#ffffff';
+                    input.style.color = '#333333';
+                    input.style.border = '1px solid #ced4da';
+                    input.style.pointerEvents = 'auto';
+                    input.style.cursor = 'text';
+                    input.disabled = false;
+                    input.readOnly = false;
+                    console.log('🔓 Cuota inicial desbloqueada en revertirEstilosInputs para plan especial');
+                    return;
+                }
+                
                 input.style.backgroundColor = '#e9ecef'; // Fondo gris claro deshabilitado
                 input.style.color = '#6c757d';           // Texto gris deshabilitado
                 input.style.border = '1px solid #ced4da'; // Borde ligero
                 input.style.pointerEvents = 'none';      // Evita interacción
                 input.style.cursor = 'not-allowed';      // Cursor deshabilitado
             });
+
         }
 
         function revertirVacioInput() {
@@ -3845,11 +4005,22 @@ function configurarOrdenamiento() {
             inputIds.forEach(id => {
                 const input = document.getElementById(id);
                 if (input) {
+                    // MODIFICADO: Mejorar la validación para MotosYa
+                    if (id === 'fechaInicio') {
+                        // Verificar si es MotosYa por ID del plan
+                        const esMotosYa = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 33;
+                        // Verificar si es variante de MotosYa
+                        const esVarianteMotosYa = planGlobal && [18, 19, 20].includes(parseInt(planGlobal.id_variante));
+                        
+                        if ((esMotosYa || esVarianteMotosYa) && input.value) {
+                            console.log('🏍️ Preservando fecha de inicio para MotosYa/variante:', input.value);
+                            return; // No limpiar este campo
+                        }
+                    }
                     input.value = ''; // Limpiar el input
                 }
             });
         }
-
 
         var planGlobal = {};
 
@@ -3870,7 +4041,55 @@ function configurarOrdenamiento() {
                         var plan = respuesta.plan;
                         planGlobal = plan;
                         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
-                        
+                                                
+                        // NUEVO: Lógica específica para MotosYa (ID 33)
+                        if (parseInt(plan.idplan_financiamiento) === 33) {
+                            // Para MotosYa, establecer fecha de inicio una semana después de hoy
+                            const hoyMotos = new Date();
+                            const fechaInicioMotos = new Date(hoyMotos);
+                            fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7); // Una semana después
+                            
+                            const year = fechaInicioMotos.getFullYear();
+                            const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                            const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                            const fechaInicioFormateada = `${year}-${month}-${day}`;
+                            
+                            // Asegurar que el input esté habilitado antes de establecer el valor
+                            const fechaInicioInput = document.getElementById('fechaInicio');
+                            if (fechaInicioInput) {
+                                fechaInicioInput.disabled = false;
+                                fechaInicioInput.readOnly = false;
+                                fechaInicioInput.value = fechaInicioFormateada;
+                                fechaInicioInput.disabled = true; // Bloquear después de establecer el valor
+                                
+                                console.log('🏍️ MotosYa detectado - Fecha de inicio establecida:', fechaInicioFormateada);
+                                console.log('🏍️ Valor del input después de setear:', fechaInicioInput.value);
+                            }
+                        }
+
+                        // Agregar después de: planGlobal = plan;
+                        // Verificar si es un plan especial (Llantas, Aceites, Baterías)
+                        if ([14, 15, 16].includes(parseInt(plan.idplan_financiamiento))) {
+                            // Limitar cuotas a valores entre 2 y 4
+                            const cuotasInput = document.getElementById('cuotas');
+                            if (cuotasInput) {
+                                cuotasInput.setAttribute('min', '2');
+                                cuotasInput.setAttribute('max', '4');
+                                cuotasInput.addEventListener('input', validarCuotasEspeciales);
+                            }
+                            
+                            // Desbloquear cuota inicial
+                            const cuotaInicialInput = document.getElementById('cuotaInicial');
+                            if (cuotaInicialInput) {
+                                cuotaInicialInput.style.backgroundColor = '#ffffff';
+                                cuotaInicialInput.style.color = '#333333';
+                                cuotaInicialInput.style.pointerEvents = 'auto';
+                                cuotaInicialInput.style.cursor = 'text';
+                                cuotaInicialInput.disabled = false;
+                                cuotaInicialInput.readOnly = false;
+                            }
+                        }
+
                         ocultarCarruselVariantes();
 
                         // Mostrar el carrusel si hay variantes
@@ -3892,10 +4111,32 @@ function configurarOrdenamiento() {
                         $("#valorCuota").val(''); // Limpiar valor cuota
                         $("#cuotas").val(''); // Limpiar cantidad de cuotas
                         $("#tasaInteres").val(''); // Limpiar tasa de interés
-                        $("#fechaInicio").val('').prop("disabled", false); // Limpiar y habilitar fecha inicio // ✅ NUEVO
-                        $("#fechaFin").val(''); // Limpiar fecha fin // ✅ NUEVO
+                       // MODIFICADO: No limpiar fechaInicio si es MotosYa
+                        if (parseInt(plan.idplan_financiamiento) !== 33) {
+                            $("#fechaInicio").val('').prop("disabled", false); // Limpiar y habilitar fecha inicio
+                        } else {
+                            console.log('🏍️ No limpiando fechaInicio para MotosYa en selectPlan');
+                        }
+                        $("#fechaFin").val(''); // Limpiar fecha fin
 
-                       
+                       // NUEVO: Aplicar lógica de MotosYa DESPUÉS de limpiar campos
+                        if (parseInt(plan.idplan_financiamiento) === 33) {
+                            // Para MotosYa, establecer fecha de inicio una semana después de hoy
+                            const hoyMotos = new Date();
+                            const fechaInicioMotos = new Date(hoyMotos);
+                            fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7); // Una semana después
+                            
+                            const year = fechaInicioMotos.getFullYear();
+                            const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                            const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                            const fechaInicioFormateada = `${year}-${month}-${day}`;
+                            
+                            // Establecer el valor y luego bloquear
+                            $("#fechaInicio").val(fechaInicioFormateada).prop("disabled", true);
+                            
+                            console.log('🏍️ MotosYa - Fecha de inicio establecida después de limpiar:', fechaInicioFormateada);
+                        }
+
                         $("#contenedorVehicular").empty();
                         $("#contenedorFechas").empty();
                         // Limpiar el input "Monto Recalculado" y ocultar su contenedor
@@ -3977,6 +4218,18 @@ function configurarOrdenamiento() {
                             validarCodigoAsociado();
                         }
 
+                        // NUEVO: Lógica específica para MotosYa antes de verificar fechas vehiculares
+                        if (parseInt(plan.idplan_financiamiento) === 33) {
+                            // Para MotosYa, limpiar contenedor vehicular y no mostrar opciones de entrega
+                            $("#contenedorVehicular").empty();
+                            
+                            // Habilitar cantidad para edición manual
+                            $("#cantidad").prop("disabled", false);
+                            
+                            // No ejecutar la lógica vehicular tradicional
+                            return;
+                        }
+
                         // Verificar si el plan tiene fecha_inicio y fecha_fin definidas // ✅ NUEVO
                         if (plan.fecha_inicio && plan.fecha_fin) {
 
@@ -3986,7 +4239,7 @@ function configurarOrdenamiento() {
                             const contenedorVehicular = $("#contenedorVehicular");
                             contenedorVehicular.html(`
                                 <label for="fechaIngreso">Fecha de Ingreso</label>
-                                <input type="date" class="form-control mb-3" id="fechaIngreso" required>
+                                <input type="date" class="form-control mb-3" id="fechaIngreso" value="<?php echo date('Y-m-d'); ?>" readonly required>
 
                                 <label for="entregarVehiculo">Vehículo Entregado</label>
                                 <div id="radioEntregarVehiculo">
@@ -4004,10 +4257,39 @@ function configurarOrdenamiento() {
                             // Calcular el monto total
                             montoCalculado = parseFloat(plan.monto_cuota) * parseInt(plan.cantidad_cuotas);
 
-                            // Llamamos a la función para recalcular el financiamiento al ingresar la fecha de ingreso
-                            $("#fechaIngreso").on("change", function () {
-                                calcularFinanciamientoConFechaIngreso(plan);
+                            // Autocompletar con la fecha de hoy y ejecutar la función
+                            const hoy = new Date().toISOString().slice(0, 10);
+                            $("#fechaIngreso").val(hoy).prop('readonly', true);
+
+                            // <CHANGE> Configurar permisos de fecha de ingreso después de crear el input
+                            setTimeout(() => {
+                                configurarAccesoFechaIngreso();
+                            }, 100);
+
+                            // <CHANGE> Agregar event listener para recalcular cuando cambie la fecha
+                            $("#fechaIngreso").on("change", function() {
+                                console.log('📅 Fecha de ingreso cambiada, recalculando cronograma...');
+                                setTimeout(() => {
+                                    calcularFinanciamientoConFechaIngreso(plan);
+                                }, 300);
                             });
+
+                            // MODIFICADO: Lógica específica para diferentes tipos de planes
+                            if (parseInt(plan.idplan_financiamiento) === 33) {
+                                // Para MotosYa, usar calcularCronogramaDinamico y mostrar notificación específica
+                                mostrarNotificacion("Has seleccionado MotosYa. La fecha de inicio se ha establecido automáticamente una semana después de hoy.");
+                                setTimeout(() => {
+                                    console.log('🏍️ Ejecutando calcularCronogramaDinamico para MotosYa');
+                                    calcularCronogramaDinamico();
+                                }, 1000);
+                            } else if (plan.fecha_inicio && plan.fecha_fin) {
+                                // Para otros planes vehiculares, usar calcularFinanciamientoConFechaIngreso
+                                setTimeout(() => {
+                                    console.log('🚗 Ejecutando calcularFinanciamientoConFechaIngreso con delay');
+                                    calcularFinanciamientoConFechaIngreso(plan);
+                                }, 300);
+                            }
+
                         } else if (idPlan === "33") {
                             
                             
@@ -4068,15 +4350,22 @@ function configurarOrdenamiento() {
                         $("#tasaInteres").val(plan.tasa_interes);
                         $("#tasaInteres").trigger("change");
 
-                        // AGREGADO: Calcular y aplicar monto de inscripción según tipo vehicular
+                        // MODIFICADO: Calcular y aplicar monto de inscripción según tipo vehicular y MotosYa
                         if (plan.tipo_vehicular && plan.monto_sin_interes) {
                             const montoInscripcionCalculado = calcularMontoInscripcion(plan.tipo_vehicular, plan.monto_sin_interes);
                             const monedaInscripcion = plan.tipo_vehicular === 'moto' ? 'S/.' : plan.moneda;
                             aplicarMontoInscripcion(montoInscripcionCalculado, plan.tipo_vehicular, monedaInscripcion);
+                        } else if (parseInt(plan.idplan_financiamiento) === 33 || plan.tipo_vehicular === 'moto') {
+                            // NUEVO: Para MotosYa (ID 33) o tipo moto, bloquear monto de inscripción
+                            aplicarMontoInscripcion(200, 'moto', 'S/.');
+                        } else if (plan.fecha_inicio && plan.fecha_fin) {
+                            // NUEVO: Para otros financiamientos vehiculares (con fechas), bloquear monto de inscripción
+                            aplicarMontoInscripcion(0, 'vehicular_bloqueado');
                         } else {
-                            // Si no es vehicular o no tiene monto sin interés, permitir edición manual
+                            // Si no es vehicular, permitir edición manual
                             aplicarMontoInscripcion(0, null);
                         }
+
 
                         // Setear el valor de monto_sin_interes si existe, o dejar en blanco si es null
                         $("#montoSinIntereses").val(plan.monto_sin_interes ? plan.monto_sin_interes : ''); // NUEVO
@@ -4096,11 +4385,21 @@ function configurarOrdenamiento() {
                             calcularCronogramaDinamico();
                         }, 4000);
 
+                        // Verificar y mantener campos especiales desbloqueados
+                        setTimeout(() => {
+                            verificarYMantenerCamposEspeciales();
+                        }, 4500);
+                        // MODIFICADO: No ejecutar verificarInputsVacios para MotosYa
                         if (!plan.fecha_inicio || !plan.fecha_fin) {
-                            setTimeout(() => {
-                                verificarInputsVacios(); // Ejecutar la función si alguna fecha no está definida después de 3 segundos
-                            }, 2000); // Retraso de 3 segundos
+                            if (parseInt(plan.idplan_financiamiento) !== 33) {
+                                setTimeout(() => {
+                                    verificarInputsVacios(); // Ejecutar la función si alguna fecha no está definida después de 3 segundos
+                                }, 2000); // Retraso de 3 segundos
+                            } else {
+                                console.log('🏍️ No ejecutando verificarInputsVacios para MotosYa');
+                            }
                         }
+
 
                     } else {
                         console.warn("No se encontró un plan de financiamiento.");
@@ -4112,6 +4411,28 @@ function configurarOrdenamiento() {
                     console.error("Error al obtener el plan:", error);
                 }
             });
+        }
+
+        function validarCuotasEspeciales() {
+            const cuotasInput = document.getElementById('cuotas');
+            const valor = parseInt(cuotasInput.value);
+            
+            if (valor < 2 || valor > 4) {
+                cuotasInput.style.borderColor = '#dc3545';
+                cuotasInput.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                
+                // Mostrar mensaje de advertencia
+                mostrarNotificacion('Para este grupo de financiamiento, solo se permiten entre 2 y 4 cuotas.', 5000);
+                
+                // Corregir automáticamente el valor
+                if (valor < 2) cuotasInput.value = 2;
+                if (valor > 4) cuotasInput.value = 4;
+                
+                setTimeout(() => {
+                    cuotasInput.style.borderColor = '';
+                    cuotasInput.style.boxShadow = '';
+                }, 3000);
+            }
         }
 
         function mostrarCarruselVariantes() {
@@ -4151,7 +4472,7 @@ function configurarOrdenamiento() {
                                         <p><strong>Cuotas:</strong> ${variante.cantidad_cuotas}</p>
                                     </div>
                                     <div class="col-md-6">
-                                        <p><strong>Tasa:</strong> ${variante.tasa_interes}%</p>
+                                        <p><strong>Tasa:</strong> ${variante.tasa_interes || '0'}%</p>
                                         <p><strong>Frecuencia:</strong> ${variante.frecuencia_pago}</p>
                                         <button class="btn btn-sm" onclick="seleccionarVariante(${index}, event)"
                                             style="background-color: #626ed4; color: white; padding: 6px 14px; border-radius: 5px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
@@ -4219,6 +4540,7 @@ function configurarOrdenamiento() {
             $("#fechaIngreso").off("change");    
 
             // Limpiar planGlobal y asignar los valores de la variante seleccionada
+            // REEMPLÁZALO POR:
             planGlobal = {
                 cuota_inicial: varianteSeleccionada.cuota_inicial,
                 tasa_interes: varianteSeleccionada.tasa_interes,
@@ -4230,13 +4552,63 @@ function configurarOrdenamiento() {
                 cantidad_cuotas: varianteSeleccionada.cantidad_cuotas,
                 monto_cuota: varianteSeleccionada.monto_cuota,
                 moneda: varianteSeleccionada.moneda,
-                id_variante: varianteSeleccionada.id_variante
+                id_variante: varianteSeleccionada.id_variante,
+                idplan_financiamiento: varianteSeleccionada.idplan_financiamiento, // NUEVO: Preservar el ID del plan
+                tipo_vehicular: varianteSeleccionada.tipo_vehicular // NUEVO: Preservar tipo vehicular
             };
 
-            // NUEVO: Agregar el nuevo event listener con planGlobal como parámetro
-            $("#fechaIngreso").on("change", function() {                              // NUEVO: Agrega el nuevo event listener
-                calcularFinanciamientoConFechaIngreso(planGlobal);                    // NUEVO: Usa planGlobal como parámetro
-            });
+            // NUEVO: Lógica específica para variantes de MotosYa (IDs 18, 19, 20)
+            if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                // Para variantes de MotosYa, establecer fecha de inicio una semana después de hoy
+                const hoyVarianteMotos = new Date();
+                const fechaInicioVarianteMotos = new Date(hoyVarianteMotos);
+                fechaInicioVarianteMotos.setDate(fechaInicioVarianteMotos.getDate() + 7); // Una semana después
+                
+                const year = fechaInicioVarianteMotos.getFullYear();
+                const month = (fechaInicioVarianteMotos.getMonth() + 1).toString().padStart(2, '0');
+                const day = fechaInicioVarianteMotos.getDate().toString().padStart(2, '0');
+                const fechaInicioVarianteFormateada = `${year}-${month}-${day}`;
+                
+                // Asegurar que el input esté habilitado antes de establecer el valor
+                const fechaInicioInput = document.getElementById('fechaInicio');
+                if (fechaInicioInput) {
+                    fechaInicioInput.disabled = false;
+                    fechaInicioInput.readOnly = false;
+                    fechaInicioInput.value = fechaInicioVarianteFormateada;
+                    fechaInicioInput.disabled = true; // Bloquear después de establecer el valor
+                    
+                    console.log('🏍️ Variante MotosYa detectada - Fecha establecida:', fechaInicioVarianteFormateada);
+                    console.log('🏍️ Valor del input después de setear:', fechaInicioInput.value);
+                }
+                
+                // Mostrar notificación específica para la variante
+                mostrarNotificacion(`Has seleccionado la variante: ${variante.nombre_variante}. La fecha de inicio se ha establecido automáticamente una semana después de hoy.`);
+            }
+
+
+            // MODIFICADO: Lógica diferenciada para variantes de MotosYa
+            if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                // Para variantes de MotosYa, limpiar contenedor vehicular
+                $("#contenedorVehicular").empty();
+                console.log('🏍️ Variante MotosYa - contenedor vehicular limpiado');
+            } else {
+                // Para otras variantes, autocompletar fecha de ingreso si existe el elemento
+                const fechaIngresoElement = document.getElementById('fechaIngreso');
+                if (fechaIngresoElement) {
+                    const hoy = new Date().toISOString().slice(0, 10);
+                    $("#fechaIngreso").val(hoy).prop('readonly', true);
+                    // <CHANGE> Reconfigurar permisos después de establecer readonly
+                    setTimeout(() => configurarAccesoFechaIngreso(), 50);
+                    // <CHANGE> Agregar event listener para recalcular cuando cambie la fecha
+                    $("#fechaIngreso").on("change", function() {
+                        console.log('📅 Fecha de ingreso cambiada, recalculando cronograma...');
+                        setTimeout(() => {
+                            calcularFinanciamientoConFechaIngreso(planGlobal);
+                        }, 300);
+                    });
+                }
+            }
+
 
             // Mostrar en consola el contenido actualizado de planGlobal
             console.log('planGlobal actualizado con la variante seleccionada:', planGlobal);
@@ -4253,8 +4625,50 @@ function configurarOrdenamiento() {
             $("#valorCuota").val('');
             $("#cuotas").val('');
             $("#tasaInteres").val('');
-            $("#fechaInicio").val('').prop("disabled", false);
+
+            // MODIFICADO: No limpiar fechaInicio si es variante de MotosYa
+            if (![18, 19, 20].includes(parseInt(variante.id_variante))) {
+                $("#fechaInicio").val('').prop("disabled", false);
+            } else {
+                console.log('🏍️ No limpiando fechaInicio para variante MotosYa');
+                // Asegurar que la fecha esté establecida para MotosYa
+                const fechaInicioInput = document.getElementById('fechaInicio');
+                if (!fechaInicioInput.value) {
+                    const hoyMotos = new Date();
+                    const fechaInicioMotos = new Date(hoyMotos);
+                    fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7);
+                    
+                    const year = fechaInicioMotos.getFullYear();
+                    const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                    const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                    const fechaInicioFormateada = `${year}-${month}-${day}`;
+                    
+                    fechaInicioInput.disabled = false;
+                    fechaInicioInput.value = fechaInicioFormateada;
+                    fechaInicioInput.disabled = true;
+                    
+                    console.log('🏍️ Fecha establecida en seleccionarVariante:', fechaInicioFormateada);
+                }
+            }
+
             $("#fechaFin").val('');
+            // Limpiar valores anteriores
+            $("#monedaSoles").prop("checked", false);
+            $("#monedaDolares").prop("checked", false);
+            $("#cuotaInicial").val('');
+            $("#valorCuota").val('');
+            $("#cuotas").val('');
+            $("#tasaInteres").val('');
+
+            // MODIFICADO: No limpiar fechaInicio si es variante de MotosYa
+            if (![18, 19, 20].includes(parseInt(variante.id_variante))) {
+                $("#fechaInicio").val('').prop("disabled", false);
+            } else {
+                console.log('🏍️ No limpiando fechaInicio para variante MotosYa');
+            }
+
+            $("#fechaFin").val('');
+
 
             // Establecer valores de la variante
             if (variante.moneda === "S/.") {
@@ -4269,7 +4683,7 @@ function configurarOrdenamiento() {
             $("#cuotas").val(variante.cantidad_cuotas);
             $("#tasaInteres").val(variante.tasa_interes);
             $("#montoSinIntereses").val(variante.monto_sin_interes || '');
-            // AGREGADO: Calcular y aplicar monto de inscripción para variante
+            // MODIFICADO: Calcular y aplicar monto de inscripción para variante y MotosYa
             if (variante.tipo_vehicular && variante.monto_sin_interes) {
                 const montoInscripcionCalculado = calcularMontoInscripcion(variante.tipo_vehicular, variante.monto_sin_interes);
                 const monedaInscripcion = variante.tipo_vehicular === 'moto' ? 'S/.' : variante.moneda;
@@ -4277,6 +4691,12 @@ function configurarOrdenamiento() {
                 
                 // Actualizar planGlobal con el tipo vehicular de la variante
                 planGlobal.tipo_vehicular = variante.tipo_vehicular;
+            } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                // NUEVO: Para variantes de MotosYa, bloquear monto de inscripción
+                aplicarMontoInscripcion(200, 'moto', 'S/.');
+            } else if (variante.fecha_inicio && variante.fecha_fin) {
+                // NUEVO: Para otras variantes vehiculares (con fechas), bloquear monto de inscripción
+                aplicarMontoInscripcion(0, 'vehicular_bloqueado');
             } else {
                 aplicarMontoInscripcion(0, null);
             }
@@ -4312,12 +4732,120 @@ function configurarOrdenamiento() {
                 $("#fechaFin").val(variante.fecha_fin);
                 mostrarNotificacion(`Has seleccionado la variante: ${variante.nombre_variante}`);
                 $("#cantidad").val(1).prop("disabled", true);
+            } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                // Para variantes de MotosYa, habilitar cantidad para edición manual
+                $("#cantidad").prop("disabled", false);
             }
 
-            // Recalcular cronograma
+            // MODIFICADO: Para planes vehiculares, usar calcularFinanciamientoConFechaIngreso en lugar de calcularCronogramaDinamico
+            if (variante.fecha_inicio && variante.fecha_fin) {
+                // Es plan vehicular - usar la función específica para fechas de ingreso
+                setTimeout(() => {
+                    console.log('🚗 Recalculando cronograma vehicular para variante seleccionada');
+                    calcularFinanciamientoConFechaIngreso(planGlobal);
+                }, 500);
+            } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                // NUEVO: Para variantes de MotosYa, usar calcularCronogramaDinamico (no tienen fechaIngreso)
+                setTimeout(() => {
+                    console.log('🏍️ Recalculando cronograma para variante MotosYa');
+                    // Asegurar que la fecha esté establecida antes del cálculo
+                    const fechaInicioInput = document.getElementById('fechaInicio');
+                    if (!fechaInicioInput.value) {
+                        const hoyMotos = new Date();
+                        const fechaInicioMotos = new Date(hoyMotos);
+                        fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7);
+                        
+                        const year = fechaInicioMotos.getFullYear();
+                        const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                        const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                        const fechaInicioFormateada = `${year}-${month}-${day}`;
+                        
+                        fechaInicioInput.value = fechaInicioFormateada;
+                        console.log('🏍️ Fecha establecida antes del cálculo:', fechaInicioFormateada);
+                    }
+                    calcularCronogramaDinamico();
+                }, 1500); // Aumentar el delay para asegurar que todo esté listo
+            } else {
+                // Para otros planes, usar la función normal
+                setTimeout(() => {
+                    calcularCronogramaDinamico();
+                }, 4000);
+            }
+
+            // Verificar y mantener campos especiales desbloqueados
             setTimeout(() => {
-                calcularCronogramaDinamico();
-            }, 4000);
+                verificarYMantenerCamposEspeciales();
+            }, 4500);
+
+            // NUEVO: Forzar establecimiento de fecha para MotosYa al final
+            if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+                setTimeout(() => {
+                    const fechaInicioInput = document.getElementById('fechaInicio');
+                    if (!fechaInicioInput.value) {
+                        const hoyMotos = new Date();
+                        const fechaInicioMotos = new Date(hoyMotos);
+                        fechaInicioMotos.setDate(fechaInicioMotos.getDate() + 7);
+                        
+                        const year = fechaInicioMotos.getFullYear();
+                        const month = (fechaInicioMotos.getMonth() + 1).toString().padStart(2, '0');
+                        const day = fechaInicioMotos.getDate().toString().padStart(2, '0');
+                        const fechaInicioFormateada = `${year}-${month}-${day}`;
+                        
+                        fechaInicioInput.disabled = false;
+                        fechaInicioInput.value = fechaInicioFormateada;
+                        fechaInicioInput.disabled = true;
+                        
+                        console.log('🏍️ FORZANDO fecha al final de seleccionarVariante:', fechaInicioFormateada);
+                        console.log('🏍️ Valor final del input:', fechaInicioInput.value);
+                    } else {
+                        console.log('🏍️ Fecha ya establecida, no forzando:', fechaInicioInput.value);
+                    }
+
+                    // NUEVO: Bloquear monto de inscripción para MotosYa al final
+                    const inputMontoInscripcion = document.getElementById('montoInscripcion');
+                    if (inputMontoInscripcion) {
+                        inputMontoInscripcion.value = '200.00';
+                        inputMontoInscripcion.disabled = true;
+                        inputMontoInscripcion.readOnly = true;
+                        inputMontoInscripcion.style.backgroundColor = '#e9ecef';
+                        inputMontoInscripcion.style.color = '#6c757d';
+                        inputMontoInscripcion.style.cursor = 'not-allowed';
+                        inputMontoInscripcion.style.pointerEvents = 'none';
+                        console.log('🏍️ Monto de inscripción bloqueado para MotosYa: S/. 200.00');
+                    }
+                }, 6000); // Ejecutar después de todas las otras operaciones
+            }
+
+            // NUEVO: Desmarcar checkbox de entrega al cambiar variante
+            setTimeout(() => {
+                const entregarSiElement = document.getElementById('entregarSi');
+                const entregarNoElement = document.getElementById('entregarNo');
+                const montoRecalculadoContainer = document.getElementById('montoRecalculadoContainer');
+                const cuotaInicialContenedor = document.getElementById('cuotaInicialContenedor');
+                
+                if (entregarSiElement && entregarNoElement) {
+                    // Desmarcar ambos checkboxes
+                    entregarSiElement.checked = false;
+                    entregarNoElement.checked = false;
+                    
+                    // Ocultar monto recalculado y mostrar cuota inicial
+                    if (montoRecalculadoContainer) {
+                        montoRecalculadoContainer.style.display = 'none';
+                    }
+                    if (cuotaInicialContenedor) {
+                        cuotaInicialContenedor.style.display = 'block';
+                    }
+                    
+                    // Limpiar el valor del monto recalculado
+                    const montoRecalculadoInput = document.getElementById('montoRecalculado');
+                    if (montoRecalculadoInput) {
+                        montoRecalculadoInput.value = '';
+                    }
+                    
+                    console.log('✅ Checkbox de entrega desmarcado al cambiar variante');
+                    console.log('✅ Interfaz restaurada a estado inicial');
+                }
+            }, 500); // Ejecutar después de que se establezcan los valores básicos
 
         }
 
@@ -4339,8 +4867,26 @@ function configurarOrdenamiento() {
             ];
 
             // MODIFICADO: Solo resaltar cuotas si es plan especial, sino NO resaltar nada
-            const resaltarInputs = esPlanEspecial ? ['cuotas'] : [];
+            let resaltarInputs = esPlanEspecial ? ['cuotas'] : [];
             console.log('🔍 Campos a resaltar:', resaltarInputs);
+
+            // NUEVO: Para planes especiales (IDs 14, 15, 16), también desbloquear cuota inicial
+            if (planGlobal && [14, 15, 16].includes(parseInt(planGlobal.idplan_financiamiento))) {
+                const cuotaInicialInput = document.getElementById('cuotaInicial');
+                if (cuotaInicialInput) {
+                    cuotaInicialInput.style.backgroundColor = '#ffffff';
+                    cuotaInicialInput.style.color = '#333333';
+                    cuotaInicialInput.style.border = '1px solid #ced4da';
+                    cuotaInicialInput.disabled = false;
+                    cuotaInicialInput.readOnly = false;
+                    cuotaInicialInput.style.pointerEvents = 'auto';
+                    cuotaInicialInput.style.cursor = 'text';
+                    console.log('🔓 HABILITANDO cuota inicial para plan especial');
+                }
+                
+                // Agregar cuota inicial a los campos a resaltar
+                resaltarInputs.push('cuotaInicial');
+            }
 
             // Manejar monto y montoSinIntereses por separado - solo si no se han habilitado antes
             if (!camposMontoHabilitadosUnaVez) {
@@ -4367,7 +4913,7 @@ function configurarOrdenamiento() {
                     // NUEVO COMPORTAMIENTO: 
                     // - SIEMPRE bloquear todos los campos por defecto
                     // - Solo si es plan especial Y es el campo 'cuotas', entonces habilitarlo
-                    if (esPlanEspecial && id === 'cuotas') {
+                    if (esPlanEspecial && (id === 'cuotas' || id === 'cuotaInicial')) {
                         console.log(`🔓 HABILITANDO campo: ${id} (es plan especial y es cuotas)`);
                         // Habilitar solo el campo cuotas en planes especiales
                         input.style.backgroundColor = '#ffffff';
@@ -4494,121 +5040,144 @@ function configurarOrdenamiento() {
         }
 
 
-    function calcularFinanciamientoConFechaIngreso(plan) {
-            const cuotaInicial = parseFloat(plan.cuota_inicial);
-            
-            const tasaInteres = parseFloat(plan.tasa_interes) / 100;
-            
-            const frecuenciaPago = plan.frecuencia_pago;
-            
-            // CORREGIDO: Determinar si es plan vehicular por fechas definidas
-            const esVehicular = plan.fecha_inicio !== null && plan.fecha_fin !== null;
-            
-            const montoSinIntereses = parseFloat(plan.monto_sin_interes);
-            
-            const montoTotal = parseFloat(plan.monto) ?? montoCalculado;
-
-            const fechaInicio = plan.fecha_inicio;
-
-            const montoInicial = plan.cuota_inicial;
-
-            // Capturamos la fecha de ingreso
-            const fechaIngreso = document.getElementById('fechaIngreso').value;
-
-            if (!fechaIngreso || !fechaInicio) {
-                alert("Por favor, ingrese las fechas correctamente.");
-                return;
-            }
-            
-            // MODIFICADO: Aseguramos que las fechas se interpreten correctamente
-            const fechaInicioObj = new Date(fechaInicio + 'T00:00:00');
-            
-            const fechaIngresoObj = new Date(fechaIngreso + 'T00:00:00');
-
-            // Calculamos la diferencia en días entre la fecha de inicio y la fecha de ingreso
-            const diffTime = fechaIngresoObj - fechaInicioObj;
-            
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-            // Verificamos si la fecha de ingreso es posterior a la fecha de inicio
-            if (diffDays >= -1) {
+        function calcularFinanciamientoConFechaIngreso(plan) {
+                const cuotaInicial = parseFloat(plan.cuota_inicial);
                 
-                // Si la fecha de ingreso es posterior a la fecha de inicio, calculamos cuántas cuotas se deben restar
-                const diasIntervalo = frecuenciaPago === 'semanal' ? 7 : 30;
+                const tasaInteres = parseFloat(plan.tasa_interes) / 100;
                 
-                const cuotasRestantes = Math.floor(diffDays / diasIntervalo);
+                const frecuenciaPago = plan.frecuencia_pago;
+                
+                // CORREGIDO: Determinar si es plan vehicular por fechas definidas
+                const esVehicular = plan.fecha_inicio !== null && plan.fecha_fin !== null;
+                
+                const montoSinIntereses = parseFloat(plan.monto_sin_interes);
+                
+                const montoTotal = parseFloat(plan.monto) ?? montoCalculado;
 
-                let cantidadCuotas = parseInt(plan.cantidad_cuotas);
+                const fechaInicio = plan.fecha_inicio;
 
-                // Restamos las cuotas restantes de la cantidad total de cuotas
-                cantidadCuotas -= cuotasRestantes;
+                const montoInicial = plan.cuota_inicial;
 
-                // Si la cantidad de cuotas es menor o igual a cero, mostramos un mensaje de error
-                if (!cantidadCuotas || cantidadCuotas <= 0) {
-                    alert("Cantidad de cuotas no válida.");
+                // VALIDACIÓN: Verificar si existe el elemento fechaIngreso (no existe en MotosYa)
+                const fechaIngresoElement = document.getElementById('fechaIngreso');
+                if (!fechaIngresoElement) {
+                    console.log('⚠️ No se encontró fechaIngreso - probablemente es MotosYa, usando calcularCronogramaDinamico');
+                    calcularCronogramaDinamico();
                     return;
                 }
+                const fechaIngreso = fechaIngresoElement.value;
 
-                // Actualizamos la cantidad de cuotas en el input
-                document.getElementById('cuotas').value = cantidadCuotas;
 
-                // La cuota sigue siendo la misma, no la vamos a cambiar
-                const valorCuota = parseFloat(plan.monto_cuota);
-
-                // 🔹 Recalcular el monto total basado en las nuevas cuotas
-                const nuevoMontoTotal = cantidadCuotas * valorCuota;
-
-                // 🔹 Recalcular el monto sin intereses aplicando la fórmula inversa de interés
-                const nuevoMontoSinIntereses = nuevoMontoTotal / (1 + tasaInteres);
-                
-                // 🔹 Actualizamos los campos de `monto` (total) y `montoSinIntereses`
-                document.getElementById('monto').value = nuevoMontoTotal;
-                
-                document.getElementById('montoSinIntereses').value = nuevoMontoSinIntereses;
-
-                // Calculamos las nuevas fechas de vencimiento con el monto ajustado
-                let fechasVencimiento = [];
-                
-                // CORREGIDO: Para planes vehiculares semanales, ajustar la fecha de ingreso al lunes más cercano
-                let primeraFechaVencimiento = new Date(fechaIngresoObj);
-                
-                if (esVehicular && frecuenciaPago === 'semanal') {
-                    primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
+                if (!fechaIngreso || !fechaInicio) {
+                    alert("Por favor, ingrese las fechas correctamente.");
+                    return;
                 }
                 
-                fechasVencimiento.push(primeraFechaVencimiento);
+                // MODIFICADO: Aseguramos que las fechas se interpreten correctamente
+                const fechaInicioObj = new Date(fechaInicio + 'T00:00:00');
+                
+                const fechaIngresoObj = new Date(fechaIngreso + 'T00:00:00');
 
-                // CAMBIO REQUERIDO: Calcular el número de cuota inicial basado en la diferencia de fechas
-                const numeroInicial = cuotasRestantes + 1;
+                // Calculamos la diferencia en días entre la fecha de inicio y la fecha de ingreso
+                const diffTime = fechaIngresoObj - fechaInicioObj;
+                
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-                // CORREGIDO: Cálculo de fechas posteriores
-                for (let i = 1; i < cantidadCuotas; i++) {
+                // Verificamos si la fecha de ingreso es posterior a la fecha de inicio
+                if (diffDays >= -1) {
                     
-                    let fechaAnterior = fechasVencimiento[i - 1];
+                    // Si la fecha de ingreso es posterior a la fecha de inicio, calculamos cuántas cuotas se deben restar
+                    const diasIntervalo = frecuenciaPago === 'semanal' ? 7 : 30;
                     
-                    let nuevaFecha = new Date(fechaAnterior);
+                    const cuotasRestantes = Math.floor(diffDays / diasIntervalo);
 
-                    if (frecuenciaPago === 'semanal') {
-                        nuevaFecha.setDate(nuevaFecha.getDate() + 7);
-                    } else {
-                        const diaInicio = nuevaFecha.getDate();
+                    let cantidadCuotas = parseInt(plan.cantidad_cuotas);
+
+                    // Restamos las cuotas restantes de la cantidad total de cuotas
+                    cantidadCuotas -= cuotasRestantes;
+
+                    // Si la cantidad de cuotas es menor o igual a cero, mostramos un mensaje de error
+                    if (!cantidadCuotas || cantidadCuotas <= 0) {
+                        alert("Cantidad de cuotas no válida.");
+                        return;
+                    }
+
+                    // Actualizamos la cantidad de cuotas en el input
+                    document.getElementById('cuotas').value = cantidadCuotas;
+
+                    // La cuota sigue siendo la misma, no la vamos a cambiar
+                    const valorCuota = parseFloat(plan.monto_cuota);
+
+                    // 🔹 Recalcular el monto total basado en las nuevas cuotas
+                    const nuevoMontoTotal = cantidadCuotas * valorCuota;
+
+                    // 🔹 Recalcular el monto sin intereses aplicando la fórmula inversa de interés
+                    const nuevoMontoSinIntereses = nuevoMontoTotal / (1 + tasaInteres);
+                    
+                    // 🔹 Actualizamos los campos de `monto` (total) y `montoSinIntereses`
+                    document.getElementById('monto').value = nuevoMontoTotal;
+                    
+                    document.getElementById('montoSinIntereses').value = nuevoMontoSinIntereses;
+
+                    // Calculamos las nuevas fechas de vencimiento con el monto ajustado
+                    let fechasVencimiento = [];
+                    
+                    // CORREGIDO: Para planes vehiculares semanales, ajustar la fecha de ingreso al lunes más cercano
+                    let primeraFechaVencimiento = new Date(fechaIngresoObj);
+                    let numeroInicial = cuotasRestantes + 1; // Cálculo base del número de cuota
+
+                    if (esVehicular && frecuenciaPago === 'semanal') {
+                        const fechaOriginalIngreso = new Date(fechaIngresoObj);
+                        primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
                         
-                        nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+                        console.log('📅 Fecha original de ingreso:', fechaOriginalIngreso.toLocaleDateString());
+                        console.log('📅 Fecha ajustada al lunes:', primeraFechaVencimiento.toLocaleDateString());
                         
-                        if (nuevaFecha.getDate() !== diaInicio) {
-                            nuevaFecha.setDate(diaInicio);
+                        // CORREGIDO: Si la fecha se movió al siguiente lunes, incrementar el número de cuota
+                        if (primeraFechaVencimiento.getTime() !== fechaOriginalIngreso.getTime()) {
+                            // Calcular cuántos días se movió la fecha
+                            const diasMovidos = Math.floor((primeraFechaVencimiento - fechaOriginalIngreso) / (1000 * 60 * 60 * 24));
+                            console.log('📅 Días movidos por ajuste al lunes:', diasMovidos);
+                            
+                            // Si se movió al menos 1 día, significa que pasó al siguiente lunes
+                            if (diasMovidos > 0) {
+                                numeroInicial += 1; // Incrementar una cuota porque pasó a la siguiente semana
+                                console.log('📊 Número de cuota incrementado por ajuste al siguiente lunes:', numeroInicial);
+                            }
                         }
                     }
 
-                    fechasVencimiento.push(new Date(nuevaFecha));
+                    fechasVencimiento.push(primeraFechaVencimiento);
+
+
+                    // CORREGIDO: Cálculo de fechas posteriores
+                    for (let i = 1; i < cantidadCuotas; i++) {
+                        
+                        let fechaAnterior = fechasVencimiento[i - 1];
+                        
+                        let nuevaFecha = new Date(fechaAnterior);
+
+                        if (frecuenciaPago === 'semanal') {
+                            nuevaFecha.setDate(nuevaFecha.getDate() + 7);
+                        } else {
+                            const diaInicio = nuevaFecha.getDate();
+                            
+                            nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+                            
+                            if (nuevaFecha.getDate() !== diaInicio) {
+                                nuevaFecha.setDate(diaInicio);
+                            }
+                        }
+
+                        fechasVencimiento.push(new Date(nuevaFecha));
+                    }
+
+                    // Mostrar el cronograma calculado usando el valor de la cuota correcta y el número de cuota inicial
+                    mostrarFechasVencimiento(fechasVencimiento, valorCuota, plan.moneda, numeroInicial);
+
+                } else {
+                    alert("La fecha de ingreso no puede ser anterior a la fecha de inicio.");
                 }
-
-                // Mostrar el cronograma calculado usando el valor de la cuota correcta y el número de cuota inicial
-                mostrarFechasVencimiento(fechasVencimiento, valorCuota, plan.moneda, numeroInicial);
-
-            } else {
-                alert("La fecha de ingreso no puede ser anterior a la fecha de inicio.");
-            }
         }
 
         function saveFinanciamientoVehicular() {
@@ -4920,16 +5489,33 @@ function configurarOrdenamiento() {
 
 
         function recalcularMonto() {
+            console.log('🔄 INICIANDO recalcularMonto()');
+            console.log('🔍 productoSeleccionado:', productoSeleccionado);
+            console.log('🔍 planGlobal:', planGlobal);
+            
+            if (!productoSeleccionado || !productoSeleccionado.precio_venta) {
+                console.warn('⚠️ No hay producto seleccionado o no tiene precio');
+                return;
+            }
+            
             const precioVenta = parseFloat(productoSeleccionado.precio_venta);
             let montoSinIntereses = parseFloat(planGlobal.monto_sin_interes); 
             let montoTotal = parseFloat(planGlobal.monto);
-            let cantidadCuotas = parseInt(planGlobal.cantidad_cuotas); // ✅ Tomamos la cantidad de cuotas desde planGlobal
+            let cantidadCuotas = parseInt(planGlobal.cantidad_cuotas);
             let valorCuota = parseFloat(document.getElementById('valorCuota').value.replace(/[^0-9.-]+/g, ""));
             let tasaInteres = parseFloat(document.getElementById('tasaInteres').value) / 100;
             let frecuenciaPago = document.getElementById('frecuenciaPago').value;
-           
-            console.log('Valores iniciales:', { precioVenta, montoSinIntereses, montoTotal, cantidadCuotas, valorCuota, tasaInteres, frecuenciaPago });
-            
+        
+            console.log('🔍 Valores iniciales recalcularMonto:', { 
+                precioVenta, 
+                montoSinIntereses, 
+                montoTotal, 
+                cantidadCuotas, 
+                valorCuota, 
+                tasaInteres, 
+                frecuenciaPago 
+            });
+
             // MODIFICADO: Obtener el número de la primera cuota del cronograma existente
             let numeroCuotaInicial = 1; // Valor por defecto si no se encuentra
             const contenedorFechas = document.getElementById('contenedorFechas');
@@ -5065,10 +5651,18 @@ function configurarOrdenamiento() {
                     }
                     
                     const nuevoMonto = (precioVenta - montoSinIntereses).toFixed(2);
+                    console.log('💰 Calculando monto recalculado:');
+                    console.log('💰 Precio venta:', precioVenta);
+                    console.log('💰 Monto sin intereses:', montoSinIntereses);
+                    console.log('💰 Nuevo monto recalculado:', nuevoMonto);
+
                     const montoRecalculadoInput = document.getElementById('montoRecalculado');
                     montoRecalculadoInput.value = nuevoMonto;
                     document.getElementById('montoRecalculadoContainer').style.display = 'block';
                     document.getElementById('cuotaInicialContenedor').style.display = 'none';
+
+                    console.log('✅ Monto recalculado actualizado en el input:', montoRecalculadoInput.value);
+
                 }
             }
         }
@@ -5887,11 +6481,10 @@ function configurarOrdenamiento() {
             return montoInscripcion;
         }
 
-        // NUEVA: Función para aplicar el monto de inscripción al formulario
         function aplicarMontoInscripcion(montoInscripcion, tipoVehicular, moneda = '$') {
             const inputMontoInscripcion = document.getElementById('montoInscripcion');
             
-            if (tipoVehicular === 'moto' || tipoVehicular === 'vehiculo') {
+            if (tipoVehicular === 'moto' || tipoVehicular === 'vehiculo' || tipoVehicular === 'vehicular_bloqueado') {
                 // Para grupos vehiculares, bloquear el input y mostrar el monto calculado
                 inputMontoInscripcion.value = montoInscripcion.toFixed(2);
                 inputMontoInscripcion.readOnly = true;
@@ -5909,16 +6502,24 @@ function configurarOrdenamiento() {
             }
         }
 
-        // NUEVA FUNCIÓN: Verifica si el nombre del plan es de tipo Llantas, Aceite o Baterías
+
         function esPlanLlantasAceiteBaterias(nombrePlan) {
             if (!nombrePlan) return false;
-            const normalizedName = nombrePlan
-                .normalize("NFD") // Normaliza para descomponer caracteres combinados (ej. 'í' a 'i' + tilde)
-                .replace(/[\u0300-\u036f]/g, "") // Elimina los diacríticos (tildes)
-                .toLowerCase() // Convierte a minúsculas
-                .replace(/\s+/g, ''); // Elimina todos los espacios
             
-            // Expresión regular para buscar "llanta", "aceite", "bateria" (singular o plural)
+            // Verificar también por ID del plan si está disponible
+            if (planGlobal && planGlobal.idplan_financiamiento) {
+                const idPlan = parseInt(planGlobal.idplan_financiamiento);
+                if ([14, 15, 16].includes(idPlan)) {
+                    return true;
+                }
+            }
+            
+            const normalizedName = nombrePlan
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/\s+/g, '');
+            
             const regex = /(llanta|aceite|bateria)s?/;
             return regex.test(normalizedName);
         }
@@ -5960,6 +6561,45 @@ function configurarOrdenamiento() {
                     cuotasInput.style.pointerEvents = 'auto';
                     cuotasInput.style.cursor = 'text';
                     cuotasInput.readOnly = false;
+                }
+            }
+        }
+
+        // <CHANGE> Función corregida para controlar fechaIngreso según rol de usuario
+        function configurarAccesoFechaIngreso() {
+            const rolUsuario = window.rolUsuarioActual || '1';
+            
+            // Controlar fechaHoraActual (input principal)
+            const fechaHoraActualInput = document.getElementById('fechaHoraActual');
+            if (fechaHoraActualInput) {
+                if (rolUsuario !== '3') {
+                    fechaHoraActualInput.disabled = true;
+                    fechaHoraActualInput.style.backgroundColor = '#f8f9fa';
+                    fechaHoraActualInput.style.cursor = 'not-allowed';
+                    fechaHoraActualInput.title = 'Solo los directores pueden modificar la fecha de ingreso';
+                } else {
+                    fechaHoraActualInput.disabled = false;
+                    fechaHoraActualInput.style.backgroundColor = '';
+                    fechaHoraActualInput.style.cursor = '';
+                    fechaHoraActualInput.title = '';
+                }
+            }
+            
+            // <CHANGE> Controlar fechaIngreso (input vehicular) - ESTE ERA EL PROBLEMA PRINCIPAL
+            const fechaIngresoInput = document.getElementById('fechaIngreso');
+            if (fechaIngresoInput) {
+                if (rolUsuario !== '3') {
+                    $("#fechaIngreso").prop('readonly', true);
+                    fechaIngresoInput.style.backgroundColor = '#f8f9fa';
+                    fechaIngresoInput.style.cursor = 'not-allowed';
+                    fechaIngresoInput.title = 'Solo los directores pueden modificar la fecha de ingreso';
+                } else {
+                    // <CHANGE> Para directores: remover readonly y habilitar edición
+                    $("#fechaIngreso").prop('readonly', false);
+                    fechaIngresoInput.style.backgroundColor = '';
+                    fechaIngresoInput.style.cursor = '';
+                    fechaIngresoInput.title = '';
+                    console.log('✅ Director detectado - fechaIngreso habilitado para edición');
                 }
             }
         }
@@ -6053,9 +6693,13 @@ function configurarOrdenamiento() {
                 timeout = setTimeout(calcularMonto, 300);
             });
 
-            // Evento onchange del select
             $("#grupo").on("change", function () {
                 selectPlan($(this).val());
+                
+                // Verificar campos especiales después de un breve delay
+                setTimeout(() => {
+                    verificarYMantenerCamposEspeciales();
+                }, 500);
             });
 
             document.addEventListener('click', function (event) {
@@ -6252,6 +6896,8 @@ function configurarOrdenamiento() {
             selectGrupo.addEventListener('change', NotGrupo);
 
             fechaHoraActual();
+
+            configurarAccesoFechaIngreso();
 
             // Escuchador para el cambio en el número de documento
             $("#numeroDocumento").on("input", function() {

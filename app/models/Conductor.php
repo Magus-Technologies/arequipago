@@ -1820,6 +1820,48 @@ public function eliminar() {
         // El siguiente número libre será el último + 1
         return $numeroLibre;
     }
+
+    public function buscarConductoresParaCupon($term)
+    {
+        try {
+            $term = "%{$term}%";
+            $sql = "SELECT c.id_conductor, c.foto, c.nro_documento, c.nombres, c.apellido_paterno, c.apellido_materno, v.placa
+                    FROM conductores c
+                    LEFT JOIN vehiculos v ON c.id_conductor = v.id_conductor
+                    WHERE c.nombres LIKE ? 
+                    OR c.apellido_paterno LIKE ? 
+                    OR c.nro_documento LIKE ?
+                    OR v.placa LIKE ?
+                    ORDER BY c.nombres ASC";
+            
+            $stmt = $this->conectar->prepare($sql);
+            
+            if (!$stmt) {
+                throw new Exception("Error preparing statement: " . $this->conectar->error);
+            }
+
+            $stmt->bind_param("ssss", $term, $term, $term, $term);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Error executing statement: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $conductores = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                if ($row['foto'] && !empty($row['foto'])) {
+                    $row['foto'] = '/arequipago/public/' . $row['foto'];
+                }
+                $conductores[] = $row;
+            }
+
+            $stmt->close();
+            return $conductores;
+        } catch (Exception $e) {
+            error_log("Error in Conductor::buscarConductoresParaCupon(): " . $e->getMessage());
+            return [];
+        }
+    }
 }   
 
-?>

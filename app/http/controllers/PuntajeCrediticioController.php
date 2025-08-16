@@ -1,5 +1,15 @@
 <?php
 require_once "app/models/PuntajeCrediticioModel.php";
+// Agregar las librerías necesarias al inicio del método
+require_once 'utils/lib/vendor/autoload.php';
+require_once 'utils/lib/mpdf/vendor/autoload.php';
+require_once 'utils/lib/exel/vendor/autoload.php';
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class PuntajeCrediticioController extends Controller
 {
@@ -13,8 +23,8 @@ class PuntajeCrediticioController extends Controller
     }
 
     // Mostrar la vista principal del sistema de puntaje crediticio
-//public function index()
-  //  {
+    //public function index()
+    //  {
     //    $data = [
     //      'title' => 'Sistema de Puntaje Crediticio',
     //        'css' => ['puntaje-crediticio.css'],
@@ -56,11 +66,13 @@ class PuntajeCrediticioController extends Controller
             $pagina = isset($_GET['pagina']) ? max(1, intval($_GET['pagina'])) : 1;
             $limite = isset($_GET['limite']) ? max(1, min(50, intval($_GET['limite']))) : 12;
             
+            // DESPUÉS:
             $filtros = [
                 'tipo' => isset($_GET['tipo']) ? $_GET['tipo'] : 'todos',
                 'busqueda' => isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '',
                 'rango' => isset($_GET['rango']) ? $_GET['rango'] : '',
-                'fecha' => isset($_GET['fecha']) ? $_GET['fecha'] : ''
+                'fechaInicio' => isset($_GET['fechaInicio']) ? $_GET['fechaInicio'] : '',
+                'fechaFin' => isset($_GET['fechaFin']) ? $_GET['fechaFin'] : ''
             ];
 
             $resultado = $this->puntajeModel->obtenerClientesPuntaje($filtros, $pagina, $limite);
@@ -310,60 +322,42 @@ class PuntajeCrediticioController extends Controller
     public function exportarPuntajes()
     {
         try {
+            
             $filtros = [
                 'tipo' => $_GET['tipo'] ?? 'todos',
                 'rango' => $_GET['rango'] ?? '',
                 'fecha' => $_GET['fecha'] ?? ''
             ];
 
-            // Obtener todos los datos sin paginación
-            $resultado = $this->puntajeModel->obtenerClientesPuntaje($filtros, 1, 10000);
-            
-            $filename = 'puntajes_crediticios_' . date('Y-m-d') . '.csv';
-            
-            header('Content-Type: text/csv');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Cache-Control: no-cache, must-revalidate');
+            $formato = $_GET['formato'] ?? 'excel';
+            $clienteIndividual = isset($_GET['id']) ? $_GET['id'] : null;
 
-            $output = fopen('php://output', 'w');
-            
-            // Escribir encabezados
-            fputcsv($output, [
-                'Tipo Cliente',
-                'Documento',
-                'Número Documento',
-                'Nombres',
-                'Apellido Paterno',
-                'Apellido Materno',
-                'Teléfono',
-                'Puntaje Actual',
-                'Total Financiamientos',
-                'Total Retrasos',
-                'Nivel',
-                'Fecha Actualización'
-            ]);
-
-            // Escribir datos
-            foreach ($resultado['clientes'] as $cliente) {
-                $nivel = $this->determinarNivel($cliente['puntaje_actual']);
-                
-                fputcsv($output, [
-                    ucfirst($cliente['tipo_cliente']),
-                    $cliente['tipo_doc'],
-                    $cliente['numero_documento'],
-                    $cliente['nombres'],
-                    $cliente['apellido_paterno'],
-                    $cliente['apellido_materno'],
-                    $cliente['telefono'] ?: 'N/A',
-                    $cliente['puntaje_actual'],
-                    $cliente['total_financiamientos'],
-                    $cliente['total_retrasos'],
-                    $nivel,
-                    $cliente['fecha_actualizacion']
-                ]);
+            // Obtener datos
+            if ($clienteIndividual) {
+                // Exportar cliente individual
+                $data = $this->puntajeModel->obtenerDetalleCliente($filtros['tipo'], $clienteIndividual);
+                $resultado = [
+                    'clientes' => [
+                        array_merge($data['cliente'], [
+                            'puntaje_actual' => $data['puntaje']['puntaje_actual'] ?? 100,
+                            'total_financiamientos' => $data['puntaje']['total_financiamientos'] ?? 0,
+                            'total_retrasos' => $data['puntaje']['total_retrasos'] ?? 0,
+                            'fecha_actualizacion' => $data['puntaje']['fecha_actualizacion'] ?? date('Y-m-d'),
+                            'tipo_cliente' => $filtros['tipo'],
+                            'numero_documento' => $data['cliente']['n_documento'] ?? $data['cliente']['nro_documento']
+                        ])
+                    ]
+                ];
+            } else {
+                // Exportar múltiples clientes
+                $resultado = $this->puntajeModel->obtenerClientesPuntaje($filtros, 1, 10000);
             }
 
-            fclose($output);
+            if ($formato === 'pdf') {
+                $this->exportarPDF($resultado, $clienteIndividual);
+            } else {
+                $this->exportarExcel($resultado, $clienteIndividual);
+            }
 
         } catch (Exception $e) {
             http_response_code(500);
@@ -373,6 +367,262 @@ class PuntajeCrediticioController extends Controller
             ]);
         }
     }
+
+    // Método para exportar a Excel
+    private function exportarExcel($resultado, $clienteIndividual = null)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Configurar título
+        $titulo = $clienteIndividual ? 'Detalle de Puntaje Crediticio - Cliente Individual' : 'Reporte de Puntajes Crediticios';
+        $sheet->setCellValue('A1', $titulo);
+        $sheet->mergeCells('A1:L1');
+        
+        // Estilo del título
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '2E86AB']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ]
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(30);
+
+        // Información adicional
+        $sheet->setCellValue('A2', 'Fecha de generación:');
+        $sheet->setCellValue('B2', date('d/m/Y H:i:s'));
+        $sheet->getStyle('A2')->getFont()->setBold(true);
+
+        // Encabezados
+        $headers = [
+            'A4' => 'Tipo Cliente',
+            'B4' => 'Documento',
+            'C4' => 'Número Documento',
+            'D4' => 'Nombres',
+            'E4' => 'Apellido Paterno',
+            'F4' => 'Apellido Materno',
+            'G4' => 'Teléfono',
+            'H4' => 'Puntaje Actual',
+            'I4' => 'Total Financiamientos',
+            'J4' => 'Total Retrasos',
+            'K4' => 'Nivel',
+            'L4' => 'Fecha Actualización'
+        ];
+
+        foreach ($headers as $cell => $header) {
+            $sheet->setCellValue($cell, $header);
+        }
+
+        // Estilo de encabezados
+        $sheet->getStyle('A4:L4')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4472C4']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ]);
+
+        // Datos
+        $row = 5;
+        foreach ($resultado['clientes'] as $cliente) {
+            $nivel = $this->determinarNivel($cliente['puntaje_actual']);
+            
+            $sheet->setCellValue('A' . $row, ucfirst($cliente['tipo_cliente']));
+            $sheet->setCellValue('B' . $row, $cliente['tipo_doc']);
+            $sheet->setCellValue('C' . $row, $cliente['numero_documento']);
+            $sheet->setCellValue('D' . $row, $cliente['nombres']);
+            $sheet->setCellValue('E' . $row, $cliente['apellido_paterno']);
+            $sheet->setCellValue('F' . $row, $cliente['apellido_materno']);
+            $sheet->setCellValue('G' . $row, $cliente['telefono'] ?: 'N/A');
+            $sheet->setCellValue('H' . $row, $cliente['puntaje_actual']);
+            $sheet->setCellValue('I' . $row, $cliente['total_financiamientos']);
+            $sheet->setCellValue('J' . $row, $cliente['total_retrasos']);
+            $sheet->setCellValue('K' . $row, $nivel);
+            $sheet->setCellValue('L' . $row, date('d/m/Y', strtotime($cliente['fecha_actualizacion'])));
+
+            // Colorear puntaje según nivel
+            $colorPuntaje = $this->obtenerColorPuntaje($cliente['puntaje_actual']);
+            $sheet->getStyle('H' . $row)->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => $colorPuntaje]]
+            ]);
+
+            // Estilo alternado de filas
+            if ($row % 2 == 0) {
+                $sheet->getStyle('A' . $row . ':L' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F8F9FA']
+                    ]
+                ]);
+            }
+
+            $row++;
+        }
+
+        // Bordes para todos los datos
+        $sheet->getStyle('A4:L' . ($row - 1))->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CCCCCC']
+                ]
+            ]
+        ]);
+
+        // Ajustar ancho de columnas
+        foreach (range('A', 'L') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        // Configurar respuesta
+        $filename = $clienteIndividual ? 'detalle_puntaje_cliente_' . date('Y-m-d') . '.xlsx' : 'puntajes_crediticios_' . date('Y-m-d') . '.xlsx';
+        
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+    }
+
+    // Método para exportar a PDF
+    private function exportarPDF($resultado, $clienteIndividual = null)
+    {
+        $mpdf = new \Mpdf\Mpdf([
+            'format' => 'A4-L', // Formato horizontal
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 20,
+            'margin_bottom' => 20
+        ]);
+
+        $titulo = $clienteIndividual ? 'Detalle de Puntaje Crediticio - Cliente Individual' : 'Reporte de Puntajes Crediticios';
+        
+        $html = '
+        <style>
+            body { font-family: Arial, sans-serif; font-size: 10px; }
+            .header { background-color: #2E86AB; color: white; padding: 10px; text-align: center; margin-bottom: 20px; }
+            .header h1 { margin: 0; font-size: 18px; }
+            .info { margin-bottom: 15px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th { background-color: #4472C4; color: white; padding: 8px; text-align: center; font-weight: bold; }
+            td { padding: 6px; text-align: center; border: 1px solid #ddd; }
+            tr:nth-child(even) { background-color: #f8f9fa; }
+            .puntaje-excelente { color: #28a745; font-weight: bold; }
+            .puntaje-bueno { color: #007bff; font-weight: bold; }
+            .puntaje-regular { color: #ffc107; font-weight: bold; }
+            .puntaje-malo { color: #dc3545; font-weight: bold; }
+            .nivel-badge { padding: 3px 8px; border-radius: 4px; color: white; font-size: 9px; }
+            .nivel-excelente { background-color: #28a745; }
+            .nivel-bueno { background-color: #007bff; }
+            .nivel-regular { background-color: #ffc107; }
+            .nivel-malo { background-color: #dc3545; }
+        </style>
+        
+        <div class="header">
+            <h1>' . $titulo . '</h1>
+        </div>
+        
+        <div class="info">
+            <strong>Fecha de generación:</strong> ' . date('d/m/Y H:i:s') . '<br>
+            <strong>Total de registros:</strong> ' . count($resultado['clientes']) . '
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Documento</th>
+                    <th>Número</th>
+                    <th>Nombres</th>
+                    <th>Apellidos</th>
+                    <th>Teléfono</th>
+                    <th>Puntaje</th>
+                    <th>Financiamientos</th>
+                    <th>Retrasos</th>
+                    <th>Nivel</th>
+                    <th>Última Actualización</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+        foreach ($resultado['clientes'] as $cliente) {
+            $nivel = $this->determinarNivel($cliente['puntaje_actual']);
+            $clasePuntaje = $this->obtenerClasePuntaje($cliente['puntaje_actual']);
+            $claseNivel = $this->obtenerClaseNivel($cliente['puntaje_actual']);
+            
+            $html .= '
+                <tr>
+                    <td>' . ucfirst($cliente['tipo_cliente']) . '</td>
+                    <td>' . $cliente['tipo_doc'] . '</td>
+                    <td>' . $cliente['numero_documento'] . '</td>
+                    <td>' . $cliente['nombres'] . '</td>
+                    <td>' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno'] . '</td>
+                    <td>' . ($cliente['telefono'] ?: 'N/A') . '</td>
+                    <td class="' . $clasePuntaje . '">' . $cliente['puntaje_actual'] . '</td>
+                    <td>' . $cliente['total_financiamientos'] . '</td>
+                    <td>' . $cliente['total_retrasos'] . '</td>
+                    <td><span class="nivel-badge ' . $claseNivel . '">' . $nivel . '</span></td>
+                    <td>' . date('d/m/Y', strtotime($cliente['fecha_actualizacion'])) . '</td>
+                </tr>';
+        }
+
+        $html .= '
+            </tbody>
+        </table>';
+
+        $mpdf->WriteHTML($html);
+        
+        $filename = $clienteIndividual ? 'detalle_puntaje_cliente_' . date('Y-m-d') . '.pdf' : 'puntajes_crediticios_' . date('Y-m-d') . '.pdf';
+        $mpdf->Output($filename, 'D');
+    }
+
+        // Métodos auxiliares para estilos
+        private function obtenerColorPuntaje($puntaje)
+        {
+            if ($puntaje >= 76) return '28A745'; // Verde
+            if ($puntaje >= 51) return '007BFF'; // Azul
+            if ($puntaje >= 26) return 'FFC107'; // Amarillo
+            return 'DC3545'; // Rojo
+        }
+
+        private function obtenerClasePuntaje($puntaje)
+        {
+            if ($puntaje >= 76) return 'puntaje-excelente';
+            if ($puntaje >= 51) return 'puntaje-bueno';
+            if ($puntaje >= 26) return 'puntaje-regular';
+            return 'puntaje-malo';
+        }
+
+        private function obtenerClaseNivel($puntaje)
+        {
+            if ($puntaje >= 76) return 'nivel-excelente';
+            if ($puntaje >= 51) return 'nivel-bueno';
+            if ($puntaje >= 26) return 'nivel-regular';
+            return 'nivel-malo';
+        }
 
     // Método privado para obtener puntaje actual
     private function obtenerPuntajeActual($tipo, $id)
@@ -649,5 +899,28 @@ class PuntajeCrediticioController extends Controller
                 'message' => $e->getMessage()
             ]);
         }
+    }
+
+    public function obtenerPuntajeYDatos()
+    {
+    try {
+    header('Content-Type: application/json');
+    $tipo = $_GET['tipo'] ?? '';
+    $id = $_GET['id'] ?? 0;
+    if (empty($tipo) || !in_array($tipo, ['cliente', 'conductor']) || !$id) {
+    throw new Exception("Parámetros inválidos: se requiere 'tipo' (cliente o conductor) e 'id'");
+    }
+    $detalle = $this->puntajeModel->obtenerDatosCompletos($tipo, $id);
+    echo json_encode([
+    'success' => true,
+    'data' => $detalle
+    ]);
+    } catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+    'success' => false,
+    'message' => $e->getMessage()
+    ]);
+    }
     }
 }

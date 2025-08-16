@@ -1599,11 +1599,11 @@ class FinanciamientoController extends Controller
     */
     public function registrarComisionFinanciamiento($financiamiento) {
         try {
-            // Obtener el usuario que está aprobando (de la sesión)
-            $usuario_aprueba = $_SESSION['usuario_id'] ?? null;
-            
-            if (!$usuario_aprueba) {
-                error_log("No se pudo obtener el usuario que aprueba para comisión");
+            // Obtener el usuario que registró el financiamiento (no el que lo aprueba)
+            $usuario_registra = $financiamiento['usuario_id'] ?? null;
+
+            if (!$usuario_registra) {
+                error_log("No se pudo obtener el usuario que registró el financiamiento para comisión");
                 return;
             }
             
@@ -1652,7 +1652,7 @@ class FinanciamientoController extends Controller
                 
                 // Registrar la comisión
                 $comisionId = $comisionModel->registrarComision(
-                    $usuario_aprueba,
+                    $usuario_registra,  // <- Usuario que registró el financiamiento
                     'financiamiento',
                     $financiamiento['idfinanciamiento'],
                     $datosComision['monto'],
@@ -1662,7 +1662,7 @@ class FinanciamientoController extends Controller
                 );
                 
                 if ($comisionId) {
-                    error_log("Comisión registrada exitosamente: ID $comisionId, Monto: {$datosComision['moneda']} {$datosComision['monto']}");
+                    error_log("Comisión registrada exitosamente para usuario {$usuario_registra}: ID $comisionId, Monto: {$datosComision['moneda']} {$datosComision['monto']}");
                 } else {
                     error_log("Error al registrar comisión para financiamiento {$financiamiento['idfinanciamiento']}");
                 }

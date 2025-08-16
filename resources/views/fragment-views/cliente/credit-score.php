@@ -1,11 +1,12 @@
 /<!DOCTYPE html>
 <html lang="es">
 <head>
+  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Puntaje Crediticio</title>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
       :root {
           --color-primary: #ec4561;
@@ -65,6 +66,8 @@
           transition: all 0.3s ease;
       }
 
+
+
       .btn-filter:hover,
       .btn-filter.active {
           background: var(--color-secondary);
@@ -85,6 +88,26 @@
           background: #333;
           color: white;
       }
+
+     /* REEMPLAZAR EL ESTILO ANTERIOR CON ESTE: */
+        .btn-outline-secondary {
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #6c757d;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            height: calc(1.5em + 1rem + 2px); /* Misma altura que los inputs */
+        }
+
+        .btn-outline-secondary:hover {
+            background: #f8f9fa;
+            color: #495057;
+            border-color: #adb5bd;
+        }
+
 
       .clientes-grid {
           display: grid;
@@ -139,13 +162,13 @@
   height: 120px;
   border-radius: 50%;
   background: conic-gradient(
-          from 225deg,
-          var(--color-red) 0deg 45deg,
-          var(--color-orange) 45deg 90deg,
-          var(--color-yellow) 90deg 135deg,
-          var(--color-green) 135deg 180deg,
-          transparent 180deg 360deg
-      );
+        from 270deg,
+        var(--color-red) 0deg 45deg,
+        var(--color-orange) 45deg 90deg,
+        var(--color-yellow) 90deg 135deg,
+        var(--color-green) 135deg 180deg,
+        transparent 180deg 360deg
+    );
   padding: 8px;
   position: relative;
   top: 0;
@@ -205,6 +228,7 @@
           background: var(--color-green); /* Corrected to green */
           border: 2px solid white;
           border-radius: 50%;
+          z-index: 21
 }
 
 .speedometer-labels {
@@ -573,23 +597,31 @@
                   </button>
               </div>
           </div>
-          <div class="row mt-3">
-              <div class="col-md-4">
-                  <input type="text" class="form-control" placeholder="Buscar por nombre..." id="buscarTexto" onkeyup="buscarClientes()">
-              </div>
-              <div class="col-md-4">
-                  <select class="form-select" id="filtroRango" onchange="filtrarPorRango()">
-                      <option value="">Todos los rangos</option>
-                      <option value="excelente">Excelente (76-100)</option>
-                      <option value="bueno">Bueno (51-75)</option>
-                      <option value="regular">Regular (26-50)</option>
-                      <option value="malo">Malo (0-25)</option>
-                  </select>
-              </div>
-              <div class="col-md-4">
-                  <input type="date" class="form-control" id="filtroFecha" onchange="filtrarPorFecha()">
-              </div>
-          </div>
+          <div class="row mt-4">
+            <div class="col-md-3">
+                <input type="text" class="form-control" placeholder="Buscar por nombre..." id="buscarTexto" onkeyup="buscarClientes()">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filtroRango" onchange="filtrarPorRango()">
+                    <option value="">Todos los rangos</option>
+                    <option value="excelente">Excelente (76-100)</option>
+                    <option value="bueno">Bueno (51-75)</option>
+                    <option value="regular">Regular (26-50)</option>
+                    <option value="malo">Malo (0-25)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" class="form-control" placeholder="Fecha inicio" id="filtroFechaInicio" onchange="filtrarPorRangoFechas()">
+            </div>
+            <div class="col-md-2">
+                <input type="date" class="form-control" placeholder="Fecha fin" id="filtroFechaFin" onchange="filtrarPorRangoFechas()">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltros()">
+                    <i class="fas fa-times me-2"></i>Limpiar
+                </button>
+            </div>
+        </div>
       </div>
 
       <!-- Indicador de carga -->
@@ -673,18 +705,18 @@
       </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+   
   <script>
       var paginaActual = 1;
       var totalPaginas = 1;
       var clientesPorPagina = 12;
       var filtros = {
-          tipo: 'todos',
-          busqueda: '',
-          rango: '',
-          fecha: ''
-      };
+            tipo: 'todos',
+            busqueda: '',
+            rango: '',
+            fechaInicio: '',
+            fechaFin: ''
+        };
 
       $(document).ready(function() {
           inicializarEventos();
@@ -846,11 +878,13 @@
           cargarClientes();
       }
 
-      function filtrarPorFecha() {
-          filtros.fecha = $('#filtroFecha').val();
-          paginaActual = 1;
-          cargarClientes();
-      }
+      // AGREGAR nueva función:
+        function filtrarPorRangoFechas() {
+            filtros.fechaInicio = $('#filtroFechaInicio').val();
+            filtros.fechaFin = $('#filtroFechaFin').val();
+            paginaActual = 1;
+            cargarClientes();
+        }
 
       // Funciones de modal
       function verHistorial(tipo, id) {
@@ -870,13 +904,6 @@
                   mostrarError('Error de conexión');
               }
           });
-      }
-
-      function mostrarHistorialModal(data, tipo, id) {
-          $('#historialModal').data('tipo', tipo).data('id', id);
-          generarTimeline(data.historial);
-          const modal = new bootstrap.Modal(document.getElementById('historialModal'));
-          modal.show();
       }
 
       function generarTimeline(historial) {
@@ -900,37 +927,149 @@
               const iconClass = obtenerIconClass(item.estado_cuota);
 
               const timelineItem = `
-                  <div class="timeline-item">
-                      <div class="timeline-date">
-                          <i class="fas fa-calendar me-2"></i>
-                          ${new Date(item.fecha_evento).toLocaleDateString()}
-                      </div>
-                      <div class="flex-grow-1 mx-3">
-                          <div class="d-flex align-items-center">
-                              <i class="fas ${iconClass} me-2"></i>
-                              <strong>Cuota #${item.numero_cuota}</strong>
-                              <span class="timeline-status ${statusClass} ms-2">${statusText}</span>
-                          </div>
-                          <div class="mt-1">
-                              <small class="text-muted">
-                                  Monto: S/ ${item.monto_cuota} | 
-                                  ${item.puntos_perdidos > 0 ? `Puntos perdidos: ${item.puntos_perdidos}` : 'Sin penalización'}
-                              </small>
-                          </div>
-                          <div class="mt-1">
-                              <small class="text-muted">${item.motivo}</small>
-                          </div>
-                      </div>
-                      <div class="puntaje-cambio">
-                          <span class="badge ${item.puntos_perdidos > 0 ? 'bg-danger' : 'bg-success'}">
-                              ${item.puntaje_anterior} → ${item.puntaje_nuevo}
-                          </span>
-                      </div>
-                  </div>
-              `;
+                <div class="timeline-item">
+                    <div class="timeline-date">
+                        <i class="fas fa-calendar me-2"></i>
+                        ${new Date(item.fecha_vencimiento).toLocaleDateString()}
+                    </div>
+                    <div class="flex-grow-1 mx-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas ${iconClass} me-2"></i>
+                            <strong>Cuota #${item.numero_cuota}</strong>
+                            <span class="timeline-status ${statusClass} ms-2">${statusText}</span>
+                        </div>
+                        <div class="mb-1">
+                            <small class="text-primary fw-bold">
+                                <i class="fas fa-box me-1"></i>
+                                ${item.nombre_producto || 'Producto N/A'}
+                            </small>
+                        </div>
+                        <div class="mb-1">
+                            <small class="text-muted">
+                                <strong>Monto:</strong> S/ ${parseFloat(item.monto_cuota).toFixed(2)} | 
+                                ${item.puntos_perdidos > 0 ? `<span class="text-danger fw-bold">Puntos perdidos: ${item.puntos_perdidos}</span>` : '<span class="text-success">Sin penalización</span>'}
+                            </small>
+                        </div>
+                        
+                    </div>
+                    <div class="puntaje-cambio">
+                        ${item.puntaje_anterior !== null && item.puntaje_nuevo !== null ? `
+                            <span class="badge ${item.puntos_perdidos > 0 ? 'bg-danger' : 'bg-success'} fs-6">
+                                ${item.puntaje_anterior} → ${item.puntaje_nuevo}
+                            </span>
+                        ` : `
+                            <span class="badge bg-warning text-dark fs-6">
+                                Sin historial
+                            </span>
+                        `}
+                    </div>
+                </div>
+            `;
               timeline.append(timelineItem);
           });
       }
+
+      // Agregar esta función DESPUÉS de la función generarTimeline()
+        function agruparHistorialPorFinanciamiento(historial) {
+            const financiamientos = {};
+            
+            historial.forEach(item => {
+                if (!financiamientos[item.idfinanciamiento]) {
+                    financiamientos[item.idfinanciamiento] = {
+                        nombre_producto: item.nombre_producto || 'Producto N/A',
+                        cuotas: []
+                    };
+                }
+                financiamientos[item.idfinanciamiento].cuotas.push(item);
+            });
+            
+            return financiamientos;
+        }
+
+        // MODIFICA la función mostrarHistorialModal existente:
+        function mostrarHistorialModal(data, tipo, id) {
+            $('#historialModal').data('tipo', tipo).data('id', id);
+            
+            if (data.historial.length === 0) {
+                generarTimeline(data.historial);
+            } else {
+                // Agrupar por financiamiento si hay múltiples
+                const financiamientos = agruparHistorialPorFinanciamiento(data.historial);
+                const cantidadFinanciamientos = Object.keys(financiamientos).length;
+                
+                if (cantidadFinanciamientos > 1) {
+                    generarTimelineAgrupado(financiamientos);
+                } else {
+                    generarTimeline(data.historial);
+                }
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('historialModal'));
+            modal.show();
+        }
+
+        // AGREGAR esta nueva función para mostrar agrupado:
+        function generarTimelineAgrupado(financiamientos) {
+            const timeline = $('#timelineContent');
+            timeline.empty();
+            
+            Object.keys(financiamientos).forEach(idFinanciamiento => {
+                const financiamiento = financiamientos[idFinanciamiento];
+                
+                timeline.append(`
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2">
+                            <i class="fas fa-credit-card me-2"></i>
+                            Financiamiento: ${financiamiento.nombre_producto}
+                        </h6>
+                        <div id="timeline-${idFinanciamiento}"></div>
+                    </div>
+                `);
+                
+                const timelineFinanciamiento = $(`#timeline-${idFinanciamiento}`);
+                
+                financiamiento.cuotas.forEach(item => {
+                    const statusClass = obtenerStatusClass(item.estado_cuota);
+                    const statusText = obtenerStatusText(item.estado_cuota);
+                    const iconClass = obtenerIconClass(item.estado_cuota);
+
+                   const timelineItem = `
+                        <div class="timeline-item">
+                            <div class="timeline-date">
+                                <i class="fas fa-calendar me-2"></i>
+                                ${new Date(item.fecha_vencimiento).toLocaleDateString()}
+                            </div>
+                            <div class="flex-grow-1 mx-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas ${iconClass} me-2"></i>
+                                    <strong>Cuota #${item.numero_cuota}</strong>
+                                    <span class="timeline-status ${statusClass} ms-2">${statusText}</span>
+                                </div>
+                                <div class="mb-1">
+                                    <small class="text-muted">
+                                        <strong>Monto:</strong> S/ ${parseFloat(item.monto_cuota).toFixed(2)} | 
+                                        ${item.puntos_perdidos > 0 ? `<span class="text-danger fw-bold">Puntos perdidos: ${item.puntos_perdidos}</span>` : '<span class="text-success">Sin penalización</span>'}
+                                    </small>
+                                </div>
+                                
+                            </div>
+                            <div class="puntaje-cambio">
+                                ${item.puntaje_anterior !== null && item.puntaje_nuevo !== null ? `
+                                    <span class="badge ${item.puntos_perdidos > 0 ? 'bg-danger' : 'bg-success'} fs-6">
+                                        ${item.puntaje_anterior} → ${item.puntaje_nuevo}
+                                    </span>
+                                ` : `
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        Sin historial
+                                    </span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                    timelineFinanciamiento.append(timelineItem);
+                });
+            });
+        }
 
       function filtrarHistorial() {
           const tipo = $('#historialModal').data('tipo');
@@ -1139,7 +1278,8 @@
       }
 
       // Función para mostrar modal de detalle (FALTABA ESTA FUNCIÓN COMPLETA)
-      function mostrarDetalleModal(data) {
+      function mostrarDetalleModal(data, tipo, id) {
+          console.log('Data recibida:', data);
           const content = `
               <div class="row">
                   <div class="col-md-6">
@@ -1156,20 +1296,17 @@
                   <div class="col-md-6">
                       <h6><i class="fas fa-chart-line me-2"></i>Información Crediticia</h6>
                       <div class="info-group">
-                          <div class="puntaje-detalle mb-3">
-                              <div class="speedometer-mini">
-                                  <div class="speedometer-bg-mini">
-                                      <div class="speedometer-inner-mini"></div>
-                                      <div class="speedometer-needle-mini" style="transform: translateX(-50%) rotate(${((data.puntaje ? data.puntaje.puntaje_actual : 100) / 100) * 180 - 90}deg);"></div>
-                                  </div>
-                                  <div class="speedometer-content-mini">
-                                      <div class="puntaje-numero-mini">${data.puntaje ? data.puntaje.puntaje_actual : 100}</div>
-                                  </div>
-                              </div>
-                              <span class="badge ${obtenerBadgeClass(data.puntaje ? data.puntaje.puntaje_actual : 100)} fs-6">
-                                  ${obtenerNivelTexto(data.puntaje ? data.puntaje.puntaje_actual : 100)}
-                              </span>
-                          </div>
+                          <div class="puntaje-detalle mb-3 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div>
+                                    <div class="display-6 fw-bold text-primary">${data.puntaje ? data.puntaje.puntaje_actual : 100}</div>
+                                    <small class="text-muted">PUNTOS</small>
+                                </div>
+                                <span class="badge ${obtenerBadgeClass(data.puntaje ? data.puntaje.puntaje_actual : 100)} fs-5 px-3 py-2">
+                                    ${obtenerNivelTexto(data.puntaje ? data.puntaje.puntaje_actual : 100)}
+                                </span>
+                            </div>
+                        </div>
                           <p><strong>Total Financiamientos:</strong> ${data.puntaje ? data.puntaje.total_financiamientos : 0}</p>
                           <p><strong>Total Retrasos:</strong> ${data.puntaje ? data.puntaje.total_retrasos : 0}</p>
                           <p><strong>Última Actualización:</strong> ${data.puntaje ? new Date(data.puntaje.fecha_actualizacion).toLocaleDateString() : 'N/A'}</p>
@@ -1184,7 +1321,7 @@
               <hr>
               <h6><i class="fas fa-credit-card me-2"></i>Financiamientos Activos</h6>
               <div class="table-responsive">
-                  ${data.financiamientos && data.financiamientos.length > 0 ? `
+                    ${data.financiamientos && data.financiamientos.length > 0 ? `
                       <table class="table table-sm table-hover">
                           <thead class="table-dark">
                               <tr>
@@ -1231,12 +1368,22 @@
               </div>
               
               <div class="mt-3 d-flex gap-2">
-                  <button class="btn btn-primary btn-sm" onclick="verHistorial('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor})">
+                  <button class="btn btn-primary btn-sm" onclick="verHistorial('${tipo}', ${id})">
                       <i class="fas fa-history me-1"></i>Ver Historial Completo
                   </button>
-                  <button class="btn btn-outline-secondary btn-sm" onclick="exportarDatosCliente('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor})">
-                      <i class="fas fa-download me-1"></i>Exportar Datos
-                  </button>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-1"></i>Exportar Datos
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="console.log('Click Excel detectado'); exportarDatosCliente('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor}, 'excel'); return false;">
+                            <i class="fas fa-file-excel me-1 text-success"></i>Exportar a Excel
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="console.log('Click PDF detectado'); exportarDatosCliente('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor}, 'pdf'); return false;">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i>Exportar a PDF
+                        </a></li>
+                    </ul>
+                </div>
               </div>
           `;
           
@@ -1292,10 +1439,22 @@
       }
 
       // Función para exportar datos de cliente individual
-      function exportarDatosCliente(tipo, id) {
-          window.open(`/arequipago/exportarPuntajes?tipo=${tipo}&id=${id}`, '_blank');
-      }
-
+    function exportarDatosCliente(tipo, id, formato = 'excel') {
+        console.log('=== DEBUG EXPORTAR ===');
+        console.log('Tipo:', tipo);
+        console.log('ID:', id);
+        console.log('Formato:', formato);
+        
+        const url = `/arequipago/exportarPuntajes?tipo=${tipo}&id=${id}&formato=${formato}`;
+        console.log('URL generada:', url);
+        
+        try {
+            window.open(url, '_blank');
+            console.log('window.open ejecutado correctamente');
+        } catch (error) {
+            console.error('Error al abrir ventana:', error);
+        }
+    }
       
       // Función para ver detalle del cliente (FALTABA ESTA FUNCIÓN COMPLETA)
       function verDetalle(tipo, id) {
@@ -1306,7 +1465,7 @@
               dataType: "json",
               success: function(response) {
                   if (response.success) {
-                      mostrarDetalleModal(response.data);
+                     mostrarDetalleModal(response.data, tipo, id);
                   } else {
                       mostrarError('Error al cargar los detalles');
                   }
@@ -1318,25 +1477,26 @@
       }
 
 
-      // 5. Función para limpiar filtros
       function limpiarFiltros() {
-          $('#buscarTexto').val('');
-          $('#filtroRango').val('');
-          $('#filtroFecha').val('');
-          
-          filtros = {
-              tipo: 'todos',
-              busqueda: '',
-              rango: '',
-              fecha: ''
-          };
-          
-          $('.btn-filter').removeClass('active');
-          $('.btn-filter[data-tipo="todos"]').addClass('active');
-          
-          paginaActual = 1;
-          cargarClientes();
-      }
+        $('#buscarTexto').val('');
+        $('#filtroRango').val('');
+        $('#filtroFechaInicio').val('');
+        $('#filtroFechaFin').val('');
+        
+        filtros = {
+            tipo: 'todos',
+            busqueda: '',
+            rango: '',
+            fechaInicio: '',
+            fechaFin: ''
+        };
+        
+        $('.btn-filter').removeClass('active');
+        $('.btn-filter[data-tipo="todos"]').addClass('active');
+        
+        paginaActual = 1;
+        cargarClientes();
+    }
 
       // 6. Función para mostrar métricas avanzadas
       function mostrarMetricasAvanzadas() {
@@ -1624,110 +1784,112 @@
       }
 
       // Función para crear velocímetro con progreso dinámico
-      function crearVelocimetroConProgreso(puntaje) {
-          // Calcular el ángulo de rotación para el progreso (0-180 grados)
-          const anguloProgreso = (puntaje / 100) * 180;
-          
-          return `
-              <div class="speedometer">
-                  <div class="speedometer-bg-base" style="
-                      width: 120px;
-                      height: 120px;
-                      border-radius: 50%;
-                      background: #e0e0e0;
-                      padding: 8px;
-                      position: relative;
-                      overflow: hidden;
-                  ">
-                      <!-- Máscara para mostrar solo la parte superior (semicírculo) -->
-                      <div style="
-                          position: absolute;
-                          top: 50%;
-                          left: 0;
-                          right: 0;
-                          bottom: 0;
-                          background: var(--color-bg);
-                          z-index: 1;
-                      "></div>
-                      
-                      <!-- Progreso dinámico -->
-                      <div class="speedometer-progress" style="
-                          position: absolute;
-                          top: 8px;
-                          left: 8px;
-                          width: calc(100% - 16px);
-                          height: calc(100% - 16px);
-                          border-radius: 50%;
-                          background: conic-gradient(
-                              from 225deg,
-                              var(--color-red) 0deg 45deg,
-                              var(--color-orange) 45deg 90deg,
-                              var(--color-yellow) 90deg 135deg,
-                              var(--color-green) 135deg 180deg,
-                              transparent 180deg 360deg
-                          );
-                          z-index: 1;
-                      "></div>
-                      
-                      <div class="speedometer-inner" style="
-                          width: calc(100% - 32px);
-                          height: calc(100% - 32px);
-                          background: white;
-                          border-radius: 50%;
-                          position: absolute;
-                          top: 16px;
-                          left: 16px;
-                          z-index: 2;
-                      "></div>
-                      
-                      <div class="speedometer-needle" style="
-                          position: absolute;
-                          bottom: 60px; /* antes: 16px */
-                          left: 50%;
-                          width: 3px;
-                          height: 52px; /* antes: 45px, para que la punta llegue al aro */
-                          background: var(--color-dark);
-                          transform-origin: bottom center;
-                          transform: translateX(-50%) rotate(${anguloProgreso - 90}deg);
-                          transition: transform 0.3s ease;
-                          z-index: 10;
-                      "></div>
-                      
-                  
-                  </div>
-                  
-                  <div class="speedometer-content" style="
-                      position: absolute;
-                      bottom: 25px;
-                      left: 50%;
-                      transform: translateX(-50%);
-                      text-align: center;
-                      z-index: 15;
-                  ">
-                      <div class="puntaje-numero">${puntaje}</div>
-                      <div class="puntaje-label">PUNTOS</div>
-                  </div>
-                  
-                  <div class="speedometer-labels" style="
-                      position: absolute;
-                      bottom: 5px;
-                      width: 100%;
-                      display: flex;
-                      justify-content: space-between;
-                      padding: 0 10px;
-                      font-size: 0.65rem;
-                      color: #666;
-                      z-index: 5;
-                  ">
-                      <span>0</span>
-                      <span>25</span>
-                      <span>50</span>
-                      <span>75</span>
-                      <span>100</span>
-                  </div>
-              </div>
-          `;
-      }
+function crearVelocimetroConProgreso(puntaje) {
+    // Calcular el ángulo de rotación para el progreso (0-180 grados)
+    const anguloProgreso = (puntaje / 100) * 270;
+    // Calcular tamaño dinámico de la aguja para los extremos
+    const tamanoAguja = (puntaje <= 10 || puntaje >= 90) ? 38 : 52;
+   
+
+    return `
+        <div class="speedometer">
+            <div class="speedometer-bg-base" style="
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                background: #e0e0e0;
+                padding: 8px;
+                position: relative;
+                overflow: hidden;
+            ">
+                <div style="
+                  position: absolute;
+                  top: 60px;
+                  left: 0;
+                  right: 0;
+                  bottom: 0;
+                  background: #e0e0e0;
+                  z-index: 1;
+              "></div>
+                
+                <!-- Progreso dinámico con colores proporcionalmente distribuidos -->
+                <div class="speedometer-progress" style="
+                    position: absolute;
+                    top: 8px;
+                    left: 8px;
+                    width: calc(100% - 16px);
+                    height: calc(100% - 16px);
+                    border-radius: 50%;
+                    background: conic-gradient(
+                    from 225deg,
+                    var(--color-red) 0deg 67.5deg,
+                    var(--color-orange) 67.5deg 135deg,
+                    var(--color-yellow) 135deg 202.5deg,
+                    var(--color-green) 202.5deg 270deg,
+                    transparent 270deg 360deg
+                    );
+                    z-index: 1;
+                "></div>
+                
+                <div class="speedometer-inner" style="
+                    width: calc(100% - 32px);
+                    height: calc(100% - 32px);
+                    background: white;
+                    border-radius: 50%;
+                    position: absolute;
+                    top: 16px;
+                    left: 16px;
+                    z-index: 2;
+                "></div>
+                
+                <div class="speedometer-needle" style="
+                    position: absolute;
+                    bottom: 60px;
+                    left: 50%;
+                    width: 3px;
+                    height: ${tamanoAguja}px;
+                    background: rgba(63, 74, 92, 0.7);
+                    transform-origin: bottom center;
+                    transform: translateX(-50%) rotate(${anguloProgreso - 135}deg);
+                    transition: transform 0.3s ease;
+                    z-index: 20;
+                "></div>
+                
+            
+            </div>
+            
+            <div class="speedometer-content" style="
+                position: absolute;
+                bottom: 25px;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
+                z-index: 15;
+            ">
+                <div class="puntaje-numero">${puntaje}</div>
+                <div class="puntaje-label">PUNTOS</div>
+            </div>
+            
+            <div class="speedometer-labels" style="
+                position: absolute;
+                bottom: 5px;
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding: 0 10px;
+                font-size: 0.65rem;
+                color: #666;
+                z-index: 5;
+            ">
+                <span>0</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+            </div>
+        </div>
+    `;
+}
       
   </script>
 </body>
