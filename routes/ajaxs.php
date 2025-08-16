@@ -37,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 
+
+
 Route::post('/ajs/generar/txt/ventareporte',"GeneradoresController@generarTextLibroVentas")->Middleware([ValidarTokenMiddleware::class]);
 
 Route::get('/ajs/ventas',"VentasController@listarVentas")->Middleware([ValidarTokenMiddleware::class]);
@@ -51,10 +53,28 @@ Route::get('/conductor', 'ListarConductoresController@listarConductores');
 Route::post('/conductor/eliminar/{id}','ListarConductoresController@eliminarConductor'); 
 Route::post('/conductor-buscar', 'ListarConductoresController@buscarConductores');
 Route::post('/listarConductoresPorFecha', 'ListarConductoresController@listarConductoresPorFecha');
-Route::post('/toggleDesvincularConductor', 'ConductorController@toggleDesvincularConductor');
 
-
-
+// Rutas básicas de cupones
+Route::post('/ajs/cupones/crear', 'CuponController@crearCupon'); // Para crear un nuevo cupón
+Route::get('/ajs/cupones/listar', 'CuponController@listarCupones'); // Para listar todos los cupones
+Route::get('/ajs/cupones/listar-con-conductores', 'CuponController@listarCuponesConConductores'); // Para listar todos los cupones y los conductores asociados
+Route::post('/ajs/cupones/buscar/usuarios', 'CuponController@buscarUsuarios');
+Route::post('/ajs/cupones/usuarios', 'CuponController@obtenerUsuariosCupon');
+// Mantener compatibilidad hacia atrás
+Route::post('/ajs/cupones/buscar/conductores', 'CuponController@buscarConductores'); // Para buscar conductores
+Route::post('/ajs/cupones/conductores', 'CuponController@obtenerConductoresCupon'); // Para obtener los conductores asociados a un cupón
+// Rutas de verificación
+Route::post('/ajs/cupones/verificar/conductores', 'CuponController@verificarConductoresConCupones'); // cupones de un conductor en especifico
+Route::get('/ajs/cupones/verificar/conductor/:id_conductor', 'CuponController@verificarCuponConductor'); // verifica si ese conductor tiene cupones
+// Rutas de estadísticas y uso
+Route::get('/ajs/cupones/estadisticas', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de todos los cupones
+Route::get('/ajs/cupones/estadisticas/:id', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de un cupón específico
+Route::post('/ajs/cupones/registrar-uso', 'CuponController@registrarUsoCupon'); // Para registrar el uso de un cupón
+// Ruta para verificar uso específico
+Route::get('/ajs/cupones/verificar/uso/:tipo/:id_usuario/:id_cupon', 'CuponController@verificarUsoCupon'); // Para verificar si un usuario (conductor/cliente) ya usó un cupón específico
+// Route::post('/ajs/cupones/verificar/uso', 'CuponController@verificarUsoCupon');
+Route::post('/ajs/cupones/usar-codigo/:tipo/:id_usuario/:id_cupon', 'CuponController@usarCuponPorCodigo'); // registrar cupon con el codigo por params
+// Route::post('/ajs/cupones/usar-codigo/:id_conductor/:id_cupon', 'CuponController@usarCuponPorCodigo'); // registrar cupon con el codigo por params
 
 /* Route::post('/ajs/cargar/productos/precios',"ConsultasController@cargarPreciosProd")->Middleware([ValidarTokenMiddleware::class]); */
 

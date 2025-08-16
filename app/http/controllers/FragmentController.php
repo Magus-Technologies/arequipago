@@ -215,5 +215,9 @@ class FragmentController extends Controller
     public function creditScore(){
         return $this->view("fragment-views/cliente/credit-score");
     }
+
+    public function cuponesDrivers(){
+        return $this->view("fragment-views/cliente/cupones-drivers");
+    }
         
 }

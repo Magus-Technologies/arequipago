@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 
+
 Route::get('/login',"ViewController@login");
 Route::get('/logout',"UsuarioController@logout");
 Route::get('/ge/bar/code',"ConsultaDelcontroller@generarBarCode");
@@ -75,7 +76,7 @@ Route::post("/ajs/registrar/conductor","RegistrarConductorController@registrarTo
 */
 Route::post("/ajs/registrar/conductor","RegistrarConductorController@registrarTodo")->Middleware([ValidarTokenMiddleware::class]);
 
-// Ruta para obtener las categorías de producto
+// Ruta para obtener las categor as de producto
 Route::get('/cargarcategoriaproductos', 'ProductosController@getCategoriasProducto');
 
 Route::get('/obtenerTipoProducto', 'ProductosController@obtenerTipoProducto');
@@ -107,7 +108,7 @@ Route::get("/obtenerDetallesProducto", "ProductosController@obtenerDetallesProdu
 
 Route::post('/busquedaFinanciamientos', 'GenerarContratosController@searchFinanciamientos');
 Route::get('/buscarConductor', 'RegistrarFinanciamientoController@buscarConductor');
-// Ruta para la búsqueda de planes mensuales
+// Ruta para la b squeda de planes mensuales
 Route::post('/buscarPlanesMensuales', 'FinanciamientoController@buscarPlanesMensuales');
 Route::post('/eliminar-masivo', 'ProductosController@saveProductsMassive');
 Route::post('/obtener-plan-financiamiento', 'FinanciamientoController@obtenerPlanFinanciamiento');
@@ -340,7 +341,7 @@ Route::post('/guia/motivos/crear', 'GuiaRemisionController@crearMotivo');
 Route::get('/guia/choferes/obtener', 'GuiaRemisionController@obtenerChoferes');
 Route::post('/guia/choferes/crear', 'GuiaRemisionController@crearChofer');
 
-// Rutas para vehículos
+// Rutas para veh culos
 Route::get('/guia/vehiculos/obtener', 'GuiaRemisionController@obtenerVehiculos');
 Route::post('/guia/vehiculos/crear', 'GuiaRemisionController@crearVehiculo');
 
@@ -348,7 +349,7 @@ Route::post('/guia/vehiculos/crear', 'GuiaRemisionController@crearVehiculo');
 Route::get('/guia/licencias/obtener', 'GuiaRemisionController@obtenerLicencias');
 Route::post('/guia/licencias/crear', 'GuiaRemisionController@crearLicencia');
 
-// Después de las rutas existentes, agregar:
+// Despu s de las rutas existentes, agregar:
 Route::post('/guia/motivos/eliminar', 'GuiaRemisionController@eliminarMotivo');
 Route::post('/guia/choferes/eliminar', 'GuiaRemisionController@eliminarChofer');
 Route::post('/guia/vehiculos/eliminar', 'GuiaRemisionController@eliminarVehiculo');
@@ -382,7 +383,7 @@ Route::post('/actualizarPuntajesCrediticios', 'PuntajeCrediticioController@actua
 Route::get('/obtenerDetalleCliente', 'PuntajeCrediticioController@obtenerDetalleCliente');
 Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
 
-// RUTAS DE EXPORTACIÓN
+// RUTAS DE EXPORTACI N
 Route::get('/exportarPuntajes', 'PuntajeCrediticioController@exportarPuntajes');
 
 // RUTAS ADICIONALES (opcionales - para funciones avanzadas)
@@ -390,3 +391,8 @@ Route::get('/obtenerMetricasAvanzadas', 'PuntajeCrediticioController@obtenerMetr
 Route::get('/obtenerAlertasRiesgo', 'PuntajeCrediticioController@obtenerAlertasRiesgo');
 Route::post('/simularPagoCuota', 'PuntajeCrediticioController@simularPagoCuota');
 Route::get('/obtenerLogs', 'PuntajeCrediticioController@obtenerLogs');
+
+Route::postBase("/cupones", "FragmentController@cuponesDrivers");
+
+// OBTENER PUNTAJES POR ID ÚNICO
+Route::get('/obtenerPuntajeYDatos', 'PuntajeCrediticioController@obtenerPuntajeYDatos');

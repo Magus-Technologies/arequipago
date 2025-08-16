@@ -198,6 +198,20 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             </a>
                         </li>
 
+                        <li class="nav-item">
+                            <a class="nav-link" href="/arequipago/creditScore">
+                                <i class="ti-stats-up"></i>
+                                CREDIT SCORE
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/arequipago/cupones">
+                                <i class="ti-gift"></i>
+                                CUPONES
+                            </a>
+                        </li>
+
                         <?php if ($id_rol == 3): ?>
                             <li class="nav-item">
                                 <a class="nav-link" href="usuarios" style="cursor: pointer;">
