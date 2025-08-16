@@ -525,18 +525,22 @@ class CuponController
 
             // Obtener datos del cupón
             $cuponInfo = $cuponModel->obtenerCuponPorId($idCupon);
+$response = [
+    'usuario' => $usuario,
+    'cupon' => $cuponInfo,
+    'tipo_usuario' => $tipo,
+    'id_cliente' => $tipo === 'cliente' ? (int)$idUsuario : null,
+    'id_conductor' => $tipo === 'conductor' ? (int)$idUsuario : null,
+    'ha_usado' => $usoInfo['ha_usado'] ?? false,
+    'veces_usado' => $usoInfo['veces_usado'] ?? 0,
+    'ultimo_uso' => $usoInfo['ultimo_uso'] ?? null,
+    'total_descontado' => $usoInfo['total_descontado'] ?? 0,
+    'puede_usar_mas' => $usoInfo['puede_usar_mas'] ?? true,
+    'limite_alcanzado' => $usoInfo['limite_alcanzado'] ?? false,
+    'historial_usos' => $usoInfo['historial_usos'] ?? []
+];
 
-            $response = [
-                'usuario' => $usuario,
-                'cupon' => $cuponInfo,
-                'ha_usado' => $usoInfo['ha_usado'] ?? false,
-                'veces_usado' => $usoInfo['veces_usado'] ?? 0,
-                'ultimo_uso' => $usoInfo['ultimo_uso'] ?? null,
-                'total_descontado' => $usoInfo['total_descontado'] ?? 0,
-                'puede_usar_mas' => $usoInfo['puede_usar_mas'] ?? true,
-                'limite_alcanzado' => $usoInfo['limite_alcanzado'] ?? false,
-                'historial_usos' => $usoInfo['historial_usos'] ?? []
-            ];
+
 
             header('Content-Type: application/json');
             echo json_encode($response);
@@ -605,17 +609,20 @@ class CuponController
             
             
             if ($resultado) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Cupón aplicado correctamente',
-                    'cupon' => [
-                        'tipo_descuento' => $cuponInfo['tipo_descuento'],
-                        'valor' => $cuponInfo['valor']
-                    ],
-                    'tipo_usuario' => $tipo,
-                    'id_usuario' => $idUsuario,
-                    'uso_id' => $resultado
-                ]);
+      echo json_encode([
+    'success' => true,
+    'message' => 'Cupón aplicado correctamente',
+    'cupon' => [
+        'tipo_descuento' => $cuponInfo['tipo_descuento'],
+        'valor' => $cuponInfo['valor']
+    ],
+    'tipo_usuario' => $tipo,
+    'id_cliente' => $tipo === 'cliente' ? (int)$idUsuario : null,
+    'id_conductor' => $tipo === 'conductor' ? (int)$idUsuario : null,
+    'uso_id' => $resultado
+]);
+
+
             } else {
                 echo json_encode(['success' => false, 'message' => 'Error al aplicar el cupón']);
             }

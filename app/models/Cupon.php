@@ -28,14 +28,15 @@ class Cupon
         try {
             $sql = "INSERT INTO cupones (titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
-            $stmt->bind_param('sssdsssiis',
+
+            $stmt->bind_param(
+                'sssdsssiis',
                 $datos['titulo'],
                 $datos['descripcion'],
                 $datos['tipo_descuento'],
@@ -47,14 +48,14 @@ class Cupon
                 $datos['limite_usos_total'],
                 $datos['activo']
             );
-            
+
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $insertId = $stmt->insert_id;
             $stmt->close();
-            
+
             return $insertId;
         } catch (Exception $e) {
             error_log('Error en Cupon::crear(): ' . $e->getMessage());
@@ -67,13 +68,13 @@ class Cupon
         try {
             $sql = "INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)";
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $this->conectar->autocommit(false);
-            
+
             foreach ($usuarios as $usuario) {
                 $stmt->bind_param('isi', $idCupon, $usuario['tipo'], $usuario['id']);
                 if (!$stmt->execute()) {
@@ -82,11 +83,11 @@ class Cupon
                     throw new Exception('Error al asignar cupón: ' . $stmt->error);
                 }
             }
-            
+
             $this->conectar->commit();
             $this->conectar->autocommit(true);
             $stmt->close();
-            
+
             return true;
         } catch (Exception $e) {
             $this->conectar->rollback();
@@ -112,20 +113,20 @@ class Cupon
                     LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon
                     GROUP BY c.id
                     ORDER BY c.created_at DESC";
-            
+
             $result = $this->conectar->query($sql);
-            
+
             if (!$result) {
                 throw new Exception('Error al obtener cupones: ' . $this->conectar->error);
             }
-            
+
             $cupones = [];
             while ($row = $result->fetch_assoc()) {
                 // Corregir para mostrar el total de usuarios correctamente
                 $row['conductores_asignados'] = $row['usuarios_asignados']; // Para mantener compatibilidad
                 $cupones[] = $row;
             }
-            
+
             return $cupones;
         } catch (Exception $e) {
             error_log('Error en Cupon::obtenerTodos(): ' . $e->getMessage());
@@ -167,47 +168,60 @@ class Cupon
                     WHERE ca.id_cupon = ? AND ca.activo = 1
                     GROUP BY ca.tipo_usuario, ca.id_usuario, ca.fecha_asignacion, ca.activo
                     ORDER BY ca.fecha_asignacion ASC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('i', $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $usuarios = [];
-            
+
             while ($row = $result->fetch_assoc()) {
-                // Procesar datos según el tipo de usuario
+                // NUEVO FORMATO: Siempre retornar id_cliente e id_conductor
+                $usuarioFormateado = [
+                    'tipo_usuario' => $row['tipo_usuario'], // Mantener para compatibilidad
+                    'fecha_asignacion' => $row['fecha_asignacion'],
+                    'asignacion_activa' => $row['asignacion_activa'],
+                    'veces_usado' => (int) $row['veces_usado'],
+                    'ultimo_uso' => $row['ultimo_uso'],
+                    'total_descontado' => $row['total_descontado'] ? (float) $row['total_descontado'] : 0,
+                    'ha_usado_cupon' => $row['veces_usado'] > 0,
+                    'placa' => null,
+                    'telefono' => null
+                ];
+
                 if ($row['tipo_usuario'] === 'conductor') {
-                    $row['foto'] = $row['conductor_foto'] ? '/arequipago/public/' . $row['conductor_foto'] : '/arequipago/public/img/default-user.png';
-                    $row['nro_documento'] = $row['conductor_documento'];
-                    $row['nombres'] = $row['conductor_nombres'];
-                    $row['apellido_paterno'] = $row['conductor_apellido_paterno'];
-                    $row['apellido_materno'] = $row['conductor_apellido_materno'];
-                    $row['telefono'] = null; // Los conductores no tienen teléfono en esta vista
+                    // $usuarioFormateado['tipo_cliente'] = 'conductor';
+                    $usuarioFormateado['id_cliente'] = null;
+                    $usuarioFormateado['id_conductor'] = (int) $row['id_usuario'];
+                    $usuarioFormateado['foto'] = $row['conductor_foto'] ? '/arequipago/public/' . $row['conductor_foto'] : '/arequipago/public/img/default-user.png';
+                    $usuarioFormateado['nro_documento'] = $row['conductor_documento'];
+                    $usuarioFormateado['nombres'] = $row['conductor_nombres'];
+                    $usuarioFormateado['apellido_paterno'] = $row['conductor_apellido_paterno'];
+                    $usuarioFormateado['apellido_materno'] = $row['conductor_apellido_materno'];
+                    $usuarioFormateado['placa'] = $row['placa'];
                 } else {
-                    $row['foto'] = '/arequipago/public/img/default-user.png'; // Imagen por defecto para clientes
-                    $row['nro_documento'] = $row['cliente_documento'];
-                    $row['nombres'] = $row['cliente_nombres'];
-                    $row['apellido_paterno'] = $row['cliente_apellido_paterno'];
-                    $row['apellido_materno'] = $row['cliente_apellido_materno'];
-                    $row['telefono'] = $row['cliente_telefono'];
-                    $row['placa'] = null; // Los clientes no tienen placa
+                    // $usuarioFormateado['tipo_cliente'] = 'cliente';
+                    $usuarioFormateado['id_cliente'] = (int) $row['id_usuario'];
+                    $usuarioFormateado['id_conductor'] = null;
+                    $usuarioFormateado['foto'] = '/arequipago/public/img/default-user.png';
+                    $usuarioFormateado['nro_documento'] = $row['cliente_documento'];
+                    $usuarioFormateado['nombres'] = $row['cliente_nombres'];
+                    $usuarioFormateado['apellido_paterno'] = $row['cliente_apellido_paterno'];
+                    $usuarioFormateado['apellido_materno'] = $row['cliente_apellido_materno'];
+                    $usuarioFormateado['telefono'] = $row['cliente_telefono'];
                 }
-                
-                // Información de uso
-                $row['ha_usado_cupon'] = $row['veces_usado'] > 0;
-                $row['veces_usado'] = (int)$row['veces_usado'];
-                $row['total_descontado'] = $row['total_descontado'] ? (float)$row['total_descontado'] : 0;
-                
-                $usuarios[] = $row;
+
+                $usuarios[] = $usuarioFormateado;
+
             }
-            
+
             $stmt->close();
             return $usuarios;
         } catch (Exception $e) {
@@ -225,15 +239,16 @@ class Cupon
             if (empty($usuarios)) {
                 return [];
             }
-            
+
             $usuariosConCupones = [];
-            
+
             // Verificar conductores
-            $conductores = array_filter($usuarios, function($u) { return $u['tipo'] === 'conductor'; });
+            $conductores = array_filter($usuarios, function ($u) {
+                return $u['tipo'] === 'conductor'; });
             if (!empty($conductores)) {
                 $idsConductores = array_column($conductores, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsConductores), '?'));
-                
+
                 $sql = "SELECT DISTINCT ca.id_usuario
                         FROM cupones_asignados ca
                         INNER JOIN cupones c ON ca.id_cupon = c.id
@@ -242,27 +257,28 @@ class Cupon
                         AND ca.activo = 1
                         AND c.activo = 1
                         AND c.fecha_fin >= CURDATE()";
-                
+
                 $stmt = $this->conectar->prepare($sql);
                 if ($stmt) {
                     $types = str_repeat('i', count($idsConductores));
                     $stmt->bind_param($types, ...$idsConductores);
                     $stmt->execute();
                     $result = $stmt->get_result();
-                    
+
                     while ($row = $result->fetch_assoc()) {
                         $usuariosConCupones[] = ['tipo' => 'conductor', 'id' => $row['id_usuario']];
                     }
                     $stmt->close();
                 }
             }
-            
+
             // Verificar clientes
-            $clientes = array_filter($usuarios, function($u) { return $u['tipo'] === 'cliente'; });
+            $clientes = array_filter($usuarios, function ($u) {
+                return $u['tipo'] === 'cliente'; });
             if (!empty($clientes)) {
                 $idsClientes = array_column($clientes, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsClientes), '?'));
-                
+
                 $sql = "SELECT DISTINCT ca.id_usuario
                         FROM cupones_asignados ca
                         INNER JOIN cupones c ON ca.id_cupon = c.id
@@ -271,21 +287,21 @@ class Cupon
                         AND ca.activo = 1
                         AND c.activo = 1
                         AND c.fecha_fin >= CURDATE()";
-                
+
                 $stmt = $this->conectar->prepare($sql);
                 if ($stmt) {
                     $types = str_repeat('i', count($idsClientes));
                     $stmt->bind_param($types, ...$idsClientes);
                     $stmt->execute();
                     $result = $stmt->get_result();
-                    
+
                     while ($row = $result->fetch_assoc()) {
                         $usuariosConCupones[] = ['tipo' => 'cliente', 'id' => $row['id_usuario']];
                     }
                     $stmt->close();
                 }
             }
-            
+
             return $usuariosConCupones;
         } catch (Exception $e) {
             error_log('Error en Cupon::verificarUsuariosConCuponesActivos(): ' . $e->getMessage());
@@ -302,9 +318,9 @@ class Cupon
             if (empty($idConductores)) {
                 return [];
             }
-            
+
             $placeholders = implode(',', array_fill(0, count($idConductores), '?'));
-            
+
             $sql = "SELECT DISTINCT ca.id_usuario
                     FROM cupones_asignados ca
                     INNER JOIN cupones c ON ca.id_cupon = c.id
@@ -313,26 +329,26 @@ class Cupon
                     AND ca.activo = 1
                     AND c.activo = 1
                     AND c.fecha_fin >= CURDATE()";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $types = str_repeat('i', count($idConductores));
             $stmt->bind_param($types, ...$idConductores);
-            
+
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $conductoresConCupones = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $conductoresConCupones[] = $row['id_usuario'];
             }
-            
+
             $stmt->close();
             return $conductoresConCupones;
         } catch (Exception $e) {
@@ -360,32 +376,32 @@ class Cupon
                     AND c.fecha_fin >= CURDATE()
                     GROUP BY c.id, ca.fecha_asignacion
                     ORDER BY c.fecha_fin ASC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idConductor, $idConductor);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $cupones = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 // Verificar si el cupón aún puede ser usado
                 $puedeUsar = true;
                 if (!empty($row['limite_usos_conductor']) && $row['usos_realizados'] >= $row['limite_usos_conductor']) {
                     $puedeUsar = false;
                 }
-                
+
                 $row['puede_usar'] = $puedeUsar;
                 $row['estado'] = $puedeUsar ? 'activo' : 'agotado';
                 $cupones[] = $row;
             }
-            
+
             $stmt->close();
             return $cupones;
         } catch (Exception $e) {
@@ -413,32 +429,32 @@ class Cupon
                     AND c.fecha_fin >= CURDATE()
                     GROUP BY c.id, ca.fecha_asignacion
                     ORDER BY c.fecha_fin ASC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idCliente, $idCliente);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $cupones = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 // Verificar si el cupón aún puede ser usado
                 $puedeUsar = true;
                 if (!empty($row['limite_usos_conductor']) && $row['usos_realizados'] >= $row['limite_usos_conductor']) {
                     $puedeUsar = false;
                 }
-                
+
                 $row['puede_usar'] = $puedeUsar;
                 $row['estado'] = $puedeUsar ? 'activo' : 'agotado';
                 $cupones[] = $row;
             }
-            
+
             $stmt->close();
             return $cupones;
         } catch (Exception $e) {
@@ -464,18 +480,18 @@ class Cupon
                 $stmt = $this->conectar->prepare($sql);
                 $stmt->bind_param('iid', $idCupon, $idConductor, $montoDescuento);
             }
-            
+
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $insertId = $stmt->insert_id;
             $stmt->close();
-            
+
             return $insertId;
         } catch (Exception $e) {
             error_log('Error en Cupon::registrarUso(): ' . $e->getMessage());
@@ -490,7 +506,7 @@ class Cupon
     {
         try {
             $whereClause = $idCupon ? "WHERE c.id = ?" : "";
-            
+
             $sql = "SELECT c.id, c.titulo,
                            COUNT(DISTINCT ca.id) as usuarios_asignados,
                            COUNT(cut.id) as total_usos,
@@ -502,27 +518,27 @@ class Cupon
                     $whereClause
                     GROUP BY c.id, c.titulo
                     ORDER BY c.created_at DESC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             if ($idCupon) {
                 $stmt->bind_param('i', $idCupon);
             }
-            
+
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $estadisticas = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $estadisticas[] = $row;
             }
-            
+
             $stmt->close();
             return $idCupon ? ($estadisticas[0] ?? null) : $estadisticas;
         } catch (Exception $e) {
@@ -546,29 +562,29 @@ class Cupon
                     LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon AND cut.id_conductor = ?
                     WHERE c.id = ?
                     GROUP BY c.id, c.limite_usos_conductor";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idConductor, $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
-            
-            $vecesUsado = (int)($row['veces_usado'] ?? 0);
-            $limiteUsos = $row['limite_usos_conductor'] ? (int)$row['limite_usos_conductor'] : null;
-            $totalDescontado = $row['total_descontado'] ? (float)$row['total_descontado'] : 0;
-            
+
+            $vecesUsado = (int) ($row['veces_usado'] ?? 0);
+            $limiteUsos = $row['limite_usos_conductor'] ? (int) $row['limite_usos_conductor'] : null;
+            $totalDescontado = $row['total_descontado'] ? (float) $row['total_descontado'] : 0;
+
             // Obtener historial detallado
             $historialUsos = $this->obtenerHistorialUsosCupon($idConductor, $idCupon);
-            
+
             $stmt->close();
-            
+
             return [
                 'ha_usado' => $vecesUsado > 0,
                 'veces_usado' => $vecesUsado,
@@ -608,29 +624,29 @@ class Cupon
                     LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon AND cut.id_cliente = ?
                     WHERE c.id = ?
                     GROUP BY c.id, c.limite_usos_conductor";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idCliente, $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
-            
-            $vecesUsado = (int)($row['veces_usado'] ?? 0);
-            $limiteUsos = $row['limite_usos_usuario'] ? (int)$row['limite_usos_usuario'] : null;
-            $totalDescontado = $row['total_descontado'] ? (float)$row['total_descontado'] : 0;
-            
+
+            $vecesUsado = (int) ($row['veces_usado'] ?? 0);
+            $limiteUsos = $row['limite_usos_usuario'] ? (int) $row['limite_usos_usuario'] : null;
+            $totalDescontado = $row['total_descontado'] ? (float) $row['total_descontado'] : 0;
+
             // Obtener historial detallado
             $historialUsos = $this->obtenerHistorialUsosCuponCliente($idCliente, $idCupon);
-            
+
             $stmt->close();
-            
+
             return [
                 'ha_usado' => $vecesUsado > 0,
                 'veces_usado' => $vecesUsado,
@@ -665,24 +681,24 @@ class Cupon
                     FROM cupones_uso_tracking 
                     WHERE id_conductor = ? AND id_cupon = ?
                     ORDER BY fecha_uso DESC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idConductor, $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $historial = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $historial[] = $row;
             }
-            
+
             $stmt->close();
             return $historial;
         } catch (Exception $e) {
@@ -701,24 +717,24 @@ class Cupon
                     FROM cupones_uso_tracking 
                     WHERE id_cliente = ? AND id_cupon = ?
                     ORDER BY fecha_uso DESC";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('ii', $idCliente, $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $historial = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $historial[] = $row;
             }
-            
+
             $stmt->close();
             return $historial;
         } catch (Exception $e) {
@@ -735,20 +751,20 @@ class Cupon
         try {
             $sql = "SELECT id, titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo
                     FROM cupones WHERE id = ?";
-            
+
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('i', $idCupon);
             if (!$stmt->execute()) {
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
-            
+
             $result = $stmt->get_result();
             $cupon = $result->fetch_assoc();
-            
+
             $stmt->close();
             return $cupon;
         } catch (Exception $e) {
@@ -768,22 +784,22 @@ class Cupon
                     OR n_documento LIKE ?
                     ORDER BY nombres ASC
                     LIMIT 20";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception("Error preparing statement: " . $this->conectar->error);
             }
 
             $stmt->bind_param("sss", $term, $term, $term);
-            
+
             if (!$stmt->execute()) {
                 throw new Exception("Error executing statement: " . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $clientes = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $row['foto'] = '/arequipago/public/img/default-user.png'; // Imagen por defecto
                 $clientes[] = $row;
@@ -798,38 +814,104 @@ class Cupon
     }
 
     // Getters y Setters
-    public function getId() { return $this->id; }
-    public function setId($id) { $this->id = $id; }
-    
-    public function getTitulo() { return $this->titulo; }
-    public function setTitulo($titulo) { $this->titulo = $titulo; }
-    
-    public function getDescripcion() { return $this->descripcion; }
-    public function setDescripcion($descripcion) { $this->descripcion = $descripcion; }
-    
-    public function getTipoDescuento() { return $this->tipo_descuento; }
-    public function setTipoDescuento($tipo_descuento) { $this->tipo_descuento = $tipo_descuento; }
-    
-    public function getValor() { return $this->valor; }
-    public function setValor($valor) { $this->valor = $valor; }
-    
-    public function getImagenBanner() { return $this->imagen_banner; }
-    public function setImagenBanner($imagen_banner) { $this->imagen_banner = $imagen_banner; }
-    
-    public function getFechaInicio() { return $this->fecha_inicio; }
-    public function setFechaInicio($fecha_inicio) { $this->fecha_inicio = $fecha_inicio; }
-    
-    public function getFechaFin() { return $this->fecha_fin; }
-    public function setFechaFin($fecha_fin) { $this->fecha_fin = $fecha_fin; }
-    
-    public function getLimiteUsosConductor() { return $this->limite_usos_conductor; }
-    public function setLimiteUsosConductor($limite_usos_conductor) { $this->limite_usos_conductor = $limite_usos_conductor; }
-    
-    public function getLimiteUsosTotal() { return $this->limite_usos_total; }
-    public function setLimiteUsosTotal($limite_usos_total) { $this->limite_usos_total = $limite_usos_total; }
-    
-    public function getActivo() { return $this->activo; }
-    public function setActivo($activo) { $this->activo = $activo; }
+    public function getId()
+    {
+        return $this->id;
+    }
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    public function getTitulo()
+    {
+        return $this->titulo;
+    }
+    public function setTitulo($titulo)
+    {
+        $this->titulo = $titulo;
+    }
+
+    public function getDescripcion()
+    {
+        return $this->descripcion;
+    }
+    public function setDescripcion($descripcion)
+    {
+        $this->descripcion = $descripcion;
+    }
+
+    public function getTipoDescuento()
+    {
+        return $this->tipo_descuento;
+    }
+    public function setTipoDescuento($tipo_descuento)
+    {
+        $this->tipo_descuento = $tipo_descuento;
+    }
+
+    public function getValor()
+    {
+        return $this->valor;
+    }
+    public function setValor($valor)
+    {
+        $this->valor = $valor;
+    }
+
+    public function getImagenBanner()
+    {
+        return $this->imagen_banner;
+    }
+    public function setImagenBanner($imagen_banner)
+    {
+        $this->imagen_banner = $imagen_banner;
+    }
+
+    public function getFechaInicio()
+    {
+        return $this->fecha_inicio;
+    }
+    public function setFechaInicio($fecha_inicio)
+    {
+        $this->fecha_inicio = $fecha_inicio;
+    }
+
+    public function getFechaFin()
+    {
+        return $this->fecha_fin;
+    }
+    public function setFechaFin($fecha_fin)
+    {
+        $this->fecha_fin = $fecha_fin;
+    }
+
+    public function getLimiteUsosConductor()
+    {
+        return $this->limite_usos_conductor;
+    }
+    public function setLimiteUsosConductor($limite_usos_conductor)
+    {
+        $this->limite_usos_conductor = $limite_usos_conductor;
+    }
+
+    public function getLimiteUsosTotal()
+    {
+        return $this->limite_usos_total;
+    }
+    public function setLimiteUsosTotal($limite_usos_total)
+    {
+        $this->limite_usos_total = $limite_usos_total;
+    }
+
+    public function getActivo()
+    {
+        return $this->activo;
+    }
+    public function setActivo($activo)
+    {
+        $this->activo = $activo;
+    }
 
     /**
      * Generar código único para cupón
@@ -840,7 +922,7 @@ class Cupon
             // Limpiar título y tomar primeras palabras
             $palabras = explode(' ', strtoupper(trim($titulo)));
             $base = '';
-            
+
             // Tomar hasta 2 palabras y máximo 8 caracteres
             foreach ($palabras as $palabra) {
                 $palabra = preg_replace('/[^A-Z0-9]/', '', $palabra);
@@ -851,15 +933,15 @@ class Cupon
                     break;
                 }
             }
-            
+
             // Si queda muy corto, agregar caracteres
             if (strlen($base) < 4) {
                 $base = strtoupper(substr(preg_replace('/[^A-Z0-9]/', '', $titulo), 0, 6));
             }
-            
+
             // Agregar número aleatorio
             $codigo = $base . rand(10, 99);
-            
+
             // Verificar que no exista
             $contador = 1;
             $codigoOriginal = $codigo;
@@ -867,7 +949,7 @@ class Cupon
                 $codigo = $codigoOriginal . $contador;
                 $contador++;
             }
-            
+
             return $codigo;
         } catch (Exception $e) {
             error_log('Error en generarCodigoUnico: ' . $e->getMessage());
@@ -883,17 +965,17 @@ class Cupon
         try {
             $sql = "SELECT COUNT(*) as total FROM cupones WHERE codigo = ?";
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 return false;
             }
-            
+
             $stmt->bind_param('s', $codigo);
             $stmt->execute();
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
             $stmt->close();
-            
+
             return $row['total'] > 0;
         } catch (Exception $e) {
             error_log('Error en existeCodigo: ' . $e->getMessage());
@@ -909,17 +991,17 @@ class Cupon
         try {
             $sql = "SELECT * FROM cupones WHERE codigo = ? AND activo = 1 AND fecha_fin >= CURDATE()";
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
-            
+
             $stmt->bind_param('s', $codigo);
             $stmt->execute();
             $result = $stmt->get_result();
             $cupon = $result->fetch_assoc();
             $stmt->close();
-            
+
             return $cupon;
         } catch (Exception $e) {
             error_log('Error en obtenerPorCodigo: ' . $e->getMessage());

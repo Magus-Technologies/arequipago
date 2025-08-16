@@ -1,3 +1,4 @@
+<!-- resources\views\fragment-views\cliente\cupones-drivers.php -->
 <!DOCTYPE html>
 <html lang="es">
 
@@ -1028,15 +1029,16 @@
                             <div class="mb-3">
                                 <h6 class="text-muted">Total: {{ usuariosCupon.length }} usuario(s)</h6>
                             </div>
-                            <div class="usuario-item" v-for="usuario in usuariosCupon"
-                                :key="usuario.tipo_usuario + '-' + usuario.id_usuario">
-                                
+                           <div class="usuario-item" v-for="usuario in usuariosCupon"
+     :key="usuario.tipo_usuario + '-' + (usuario.id_conductor || usuario.id_cliente)">
+
                                 <!-- Badge de tipo -->
-                                <span class="badge me-2" 
-                                      :class="usuario.tipo_usuario === 'conductor' ? 'bg-primary' : 'bg-success'">
-                                    <i class="bi" :class="usuario.tipo_usuario === 'conductor' ? 'bi-car-front' : 'bi-person'"></i>
-                                    {{ usuario.tipo_usuario === 'conductor' ? 'Conductor' : 'Cliente' }}
-                                </span>
+                               <span class="badge me-2" 
+      :class="usuario.tipo_usuario === 'conductor' ? 'bg-primary' : 'bg-success'">
+    <i class="bi" :class="usuario.tipo_usuario === 'conductor' ? 'bi-car-front' : 'bi-person'"></i>
+    {{ usuario.tipo_usuario === 'conductor' ? 'Conductor' : 'Cliente' }}
+</span>
+
 
                                 <img :src="usuario.foto" class="usuario-foto-small" :alt="usuario.nombres">
                                 <div class="flex-grow-1">
