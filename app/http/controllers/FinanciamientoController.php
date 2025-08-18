@@ -1673,5 +1673,286 @@ class FinanciamientoController extends Controller
         }
     }
 
+    public function marcarIncobrable()
+    {
+        if ($_POST) {
+            $id_persona = $_POST['id_persona'];
+            $tipo_persona = $_POST['tipo_persona'];
+            
+            try {
+                // Marcar financiamientos como incobrables
+                if ($tipo_persona == 'conductor') {
+                    // Marcar financiamientos de productos como incobrables
+                    $query1 = "UPDATE financiamiento SET incobrable = 1 WHERE id_conductor = ?";
+                    $stmt1 = $this->conexion->prepare($query1);
+                    $stmt1->bind_param("i", $id_persona);
+                    $result1 = $stmt1->execute();
+                    
+                    // Marcar financiamientos de inscripción como incobrables
+                    $query2 = "UPDATE conductor_regfinanciamiento SET incobrable = 1 WHERE id_conductor = ?";
+                    $stmt2 = $this->conexion->prepare($query2);
+                    $stmt2->bind_param("i", $id_persona);
+                    $result2 = $stmt2->execute();
+                    
+                    $success = $result1 || $result2; // Al menos uno debe ejecutarse correctamente
+                } else {
+                    // Solo para clientes (productos)
+                    $query = "UPDATE financiamiento SET incobrable = 1 WHERE id_cliente = ?";
+                    $stmt = $this->conexion->prepare($query);
+                    $stmt->bind_param("i", $id_persona);
+                    $success = $stmt->execute();
+                }
+                
+                if ($success) {
+                    echo json_encode(['success' => true, 'message' => 'Financiamientos marcados como incobrables']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al marcar como incobrable']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            }
+        }
+    }
 
-}
+        public function obtenerDetalleCuotas()
+        {
+            if ($_POST) {
+                $id_persona = $_POST['id_persona'];
+                $tipo_persona = $_POST['tipo_persona'];
+                $filtro = $_POST['filtro'] ?? 'pendientes';
+                
+                try {
+                    $detalles = [];
+                    
+                    if ($tipo_persona == 'conductor') {
+                        // Consulta para conductores - inscripción a flota
+                        $incobrable_condition_inscripcion = $filtro == 'incobrables' ? 'AND crf.incobrable = 1' : 'AND crf.incobrable = 0';
+                        // AGREGADO: Definir también la variable para productos de conductores
+                        $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
+                        
+                        // Reemplazar la consulta $query1 (inscripción) por:
+                        $query1 = "
+                            SELECT 
+                                DATE_FORMAT(cc.fecha_vencimiento, '%Y-%m') as mes_anio,
+                                MONTHNAME(cc.fecha_vencimiento) as mes_nombre,
+                                YEAR(cc.fecha_vencimiento) as anio,
+                                cc.numero_cuota,
+                                DATE_FORMAT(cc.fecha_vencimiento, '%d/%m/%Y') as fecha_vencimiento_formateada,
+                                cc.monto_cuota as monto_individual,
+                                'inscripcion' as tipo_financiamiento
+                            FROM conductor_cuotas cc
+                            INNER JOIN conductor_regfinanciamiento crf ON cc.idconductor_Financiamiento = crf.idconductor_regfinanciamiento
+                            WHERE crf.id_conductor = ? AND cc.fecha_vencimiento < CURDATE() AND cc.estado_cuota != 'pagado' $incobrable_condition_inscripcion
+                            ORDER BY cc.fecha_vencimiento ASC
+                        ";
+
+                        $query2 = "
+                            SELECT 
+                                DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
+                                MONTHNAME(cf.fecha_vencimiento) as mes_nombre,
+                                YEAR(cf.fecha_vencimiento) as anio,
+                                cf.numero_cuota,
+                                DATE_FORMAT(cf.fecha_vencimiento, '%d/%m/%Y') as fecha_vencimiento_formateada,
+                                cf.monto as monto_individual,
+                                p.nombre as nombre_producto,
+                                f.moneda,
+                                'productos' as tipo_financiamiento
+                            FROM cuotas_financiamiento cf
+                            INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                            INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                            WHERE f.id_conductor = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso' $incobrable_condition
+                            ORDER BY cf.fecha_vencimiento ASC
+                        ";
+                    } else {
+                        // Consulta para clientes
+                        $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
+                        $query2 = "
+                            SELECT 
+                                DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
+                                MONTHNAME(cf.fecha_vencimiento) as mes_nombre,
+                                YEAR(cf.fecha_vencimiento) as anio,
+                                SUM(cf.monto) as total_mes,
+                                f.moneda,
+                                'productos' as tipo_financiamiento
+                            FROM cuotas_financiamiento cf
+                            INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                            WHERE f.id_cliente = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso' $incobrable_condition
+                            GROUP BY DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m')
+                        ";
+                    }
+                    
+                    // Ejecutar consultas
+                    $resultado = [];
+
+                    // Procesar cuotas de inscripción
+                    if (isset($query1)) {
+                        $stmt1 = $this->conexion->prepare($query1);
+                        $stmt1->bind_param("i", $id_persona);
+                        $stmt1->execute();
+                        $result1 = $stmt1->get_result();
+                        while ($row = $result1->fetch_assoc()) {
+                            $key = $row['mes_anio'];
+                            if (!isset($resultado[$key])) {
+                                $resultado[$key] = [
+                                    'mes' => $row['mes_nombre'] . ' ' . $row['anio'],
+                                    'mes_ordenable' => $row['mes_anio'], // AGREGADO: campo para ordenamiento
+                                    'total' => 0,
+                                    'cuotas' => []
+                                ];
+                            }
+                            $resultado[$key]['total'] += $row['monto_individual'];
+                            $resultado[$key]['cuotas'][] = [
+                                'numero' => $row['numero_cuota'],
+                                'fecha' => $row['fecha_vencimiento_formateada'],
+                                'monto' => $row['monto_individual'],
+                                'tipo' => 'Inscripción a Flota'
+                            ];
+                        }
+                    }
+
+                    // Procesar cuotas de productos
+                    $stmt2 = $this->conexion->prepare($query2);
+                    $stmt2->bind_param("i", $id_persona);
+                    $stmt2->execute();
+                    $result2 = $stmt2->get_result();
+                    while ($row = $result2->fetch_assoc()) {
+                        $key = $row['mes_anio'];
+                        if (!isset($resultado[$key])) {
+                            $resultado[$key] = [
+                                'mes' => $row['mes_nombre'] . ' ' . $row['anio'],
+                                'total' => 0,
+                                'cuotas' => []
+                            ];
+                        }
+                        $resultado[$key]['total'] += $row['monto_individual'];
+                        $resultado[$key]['cuotas'][] = [
+                            'numero' => $row['numero_cuota'],
+                            'fecha' => $row['fecha_vencimiento_formateada'],
+                            'monto' => $row['monto_individual'],
+                            'moneda' => isset($row['moneda']) ? $row['moneda'] : 'S/.',
+                            'tipo' => isset($row['nombre_producto']) ? $row['nombre_producto'] : 'Producto'
+                        ];
+                    }
+
+                    // Convertir a array indexado y ordenar por fecha (más reciente primero)
+                    $detalles = array_values($resultado);
+                    usort($detalles, function($a, $b) {
+                        return strcmp($b['mes'], $a['mes']); // Cambiado: $b comparado con $a para orden descendente
+                    });
+                    
+                    echo json_encode(['success' => true, 'data' => $detalles]);
+                    
+                } catch (Exception $e) {
+                    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                }
+            }
+        }
+
+        public function obtenerCuotasVencidasFiltradas()
+        {
+            if ($_POST) {
+                $filtro = $_POST['filtro'] ?? 'pendientes';
+                
+                try {
+                    $fecha_actual = date('Y-m-d');
+                    $conductores_vencidos = [];
+                    
+                    // Filtro para incobrables
+                    $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
+                    
+                    $query = "
+                        SELECT 
+                            c.id_conductor, 
+                            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
+                            COUNT(cc.id_conductorcuota) AS num_cuotas,
+                            SUM(cc.monto_cuota) AS deuda_total,
+                            'Financiamiento de Inscripción' AS tipo_financiamiento,
+                            c.numUnidad,
+                            c.desvinculado,
+                            c.telefono,
+                            'S/.' AS moneda,
+                            'conductor' AS tipo_persona 
+                        FROM 
+                            conductor_cuotas cc
+                        INNER JOIN 
+                            conductor_regfinanciamiento crf ON cc.idconductor_Financiamiento = crf.idconductor_regfinanciamiento
+                        INNER JOIN 
+                            conductores c ON crf.id_conductor = c.id_conductor
+                        WHERE 
+                            cc.fecha_vencimiento < '$fecha_actual' 
+                            AND cc.estado_cuota != 'pagado'
+                            " . ($filtro == 'incobrables' ? 'AND crf.incobrable = 1' : 'AND crf.incobrable = 0') . "
+                        GROUP BY 
+                            c.id_conductor
+
+                        UNION 
+
+                        SELECT 
+                            c.id_conductor, 
+                            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
+                            COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
+                            SUM(cf.monto) AS deuda_total,
+                            p.nombre AS tipo_financiamiento,
+                            c.numUnidad,
+                            c.desvinculado,
+                            c.telefono,
+                            f.moneda,
+                            'conductor' AS tipo_persona
+                        FROM 
+                            cuotas_financiamiento cf
+                        INNER JOIN 
+                            financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                        INNER JOIN 
+                            conductores c ON f.id_conductor = c.id_conductor
+                        INNER JOIN 
+                            productosv2 p ON f.idproductosv2 = p.idproductosv2
+                        WHERE 
+                            cf.fecha_vencimiento < '$fecha_actual' 
+                            AND cf.estado = 'En Progreso'
+                            $incobrable_condition
+                        GROUP BY 
+                            c.id_conductor, p.nombre
+
+                        UNION
+                    
+                        SELECT 
+                            cl.id AS id_conductor, 
+                            CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo, 
+                            COUNT(cf.idcuotas_financiamiento) AS num_cuotas, 
+                            SUM(cf.monto) AS deuda_total, 
+                            p.nombre AS tipo_financiamiento, 
+                            NULL AS numUnidad, 
+                            0 AS desvinculado, 
+                            cl.telefono, 
+                            f.moneda,
+                            'cliente' AS tipo_persona 
+                        FROM 
+                            cuotas_financiamiento cf 
+                        INNER JOIN 
+                            financiamiento f ON cf.id_financiamiento = f.idfinanciamiento 
+                        INNER JOIN 
+                            clientes_financiar cl ON f.id_cliente = cl.id 
+                        INNER JOIN 
+                            productosv2 p ON f.idproductosv2 = p.idproductosv2 
+                        WHERE 
+                            cf.fecha_vencimiento < '$fecha_actual' 
+                            AND cf.estado = 'En Progreso' 
+                            AND f.id_cliente IS NOT NULL
+                            $incobrable_condition
+                        GROUP BY 
+                            cl.id, p.nombre 
+                    ";
+                    
+                    $result = $this->conexion->query($query);
+                    while ($row = $result->fetch_assoc()) {
+                        $conductores_vencidos[] = $row;
+                    }
+                    
+                    echo json_encode(['success' => true, 'data' => $conductores_vencidos]);
+                    
+                } catch (Exception $e) {
+                    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                }
+            }
+        }
+    }

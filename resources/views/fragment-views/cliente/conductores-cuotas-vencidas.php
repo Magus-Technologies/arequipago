@@ -4,6 +4,16 @@ $conexion = (new Conexion())->getConexion();
 $fecha_actual = date('Y-m-d');  
 $conductores_vencidos = [];
 
+$conductores_vencidos = [];
+
+// Agregar después de esta línea:
+if (session_status() == PHP_SESSION_NONE) {
+    session_start(); // Aseguramos que la sesión está iniciada
+}
+
+// Verificamos si el usuario tiene sesión activa
+$id_rol = $_SESSION['id_rol'] ?? null;
+
 // Consultas para obtener los conductores con cuotas vencidas
 $query = "
     SELECT 
@@ -26,6 +36,7 @@ $query = "
     WHERE 
         cc.fecha_vencimiento < '$fecha_actual' 
         AND cc.estado_cuota != 'pagado'
+        AND crf.incobrable = 0
     GROUP BY 
         c.id_conductor
 
@@ -53,6 +64,7 @@ $query = "
     WHERE 
         cf.fecha_vencimiento < '$fecha_actual' 
         AND cf.estado = 'En Progreso'
+        AND f.incobrable = 0
     GROUP BY 
         c.id_conductor, p.nombre
 
@@ -80,7 +92,8 @@ $query = "
     WHERE 
         cf.fecha_vencimiento < '$fecha_actual' 
         AND cf.estado = 'En Progreso' 
-        AND f.id_cliente IS NOT NULL 
+        AND f.id_cliente IS NOT NULL
+        AND f.incobrable = 0
     GROUP BY 
         cl.id, p.nombre 
 ";
@@ -98,7 +111,6 @@ while ($row = $result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conductores con Cuotas Vencidas</title>
-    
     <style>
         
         h2 {
@@ -213,7 +225,7 @@ while ($row = $result->fetch_assoc()) {
 
     .btn-whatsapp-send {
         background-color: #fcf34b; /* Amarillo como color de acción */
-        color: #8b8c64; /* Texto con el color institucional */
+        color: #3f4a5c; /* Texto con el color institucional */
         border: none;
         width: 100%;
         padding: 10px;
@@ -225,6 +237,7 @@ while ($row = $result->fetch_assoc()) {
     .btn-whatsapp-send:hover {
         background-color: #02a499; /* Suave para hover */
         color: white;
+        font-weight: normal;
     }
 
     #btnDescargar {
@@ -238,13 +251,159 @@ while ($row = $result->fetch_assoc()) {
         border-radius: 4px;
     }
 
+    .table-detalle {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .table-detalle-mejorada {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .table-detalle-mejorada th,
+    .table-detalle-mejorada td {
+        padding: 15px;
+        text-align: center;
+        border: 2px solid #ddd;
+    }
+
+    .table-detalle-mejorada th {
+        background-color: #3f4a5c;
+        color: white;
+        font-weight: 500;
+        border: 2px solid #6b7c32;
+    }
+
+    .table-detalle th,
+    .table-detalle td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: center;
+    }
+
+    .table-detalle th {
+        background-color: #fcf34b;
+        color: #333;
+        font-weight: bold;
+    }
+
+    /* Loader overlay */
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; /* AGREGADO: para centrar correctamente */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loader-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #38a4f8;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para botones deshabilitados - CORREGIDO */
+        .btn-activo {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+        }
+
+        .btn-inactivo {
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }
+
+        .whatsapp-pendientes {
+            background-color: #38a4f8;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-bottom: 5px;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .whatsapp-incobrables {
+            background-color: #38a4f8;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 12px; /* AUMENTADO: mayor separación entre botones */
+            vertical-align: middle;
+            display: inline-block; /* AGREGADO: para mejor control del espaciado */
+        }
+
+        /* Separación específica para incobrables */
+        .btn-detalle-incobrables {
+            margin-left: 8px; /* Separación adicional */
+        }
+
+        .btn-whatsapp {
+            background-color: #38a4f8;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            vertical-align: middle; /* Alineación vertical */
+        }
+
+        .btn-whatsapp:hover,
+        .whatsapp-pendientes:hover,
+        .whatsapp-incobrables:hover {
+            background-color: #0d6efd;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container">
+    <!-- Loader overlay -->
+    <div class="page-loader" id="pageLoader" style="display: none;">
+        <div class="loader-spinner"></div>
+    </div>
     <div id="contenedor-cuotas-vencidas">
-        <h3 id="titulo-cuotas-vencidas">Conductores y Clientes con Cuotas Vencidas</h3> <!-- コード: Título actualizado -->
+        <h3 id="titulo-cuotas-vencidas">Conductores y Clientes con Cuotas Vencidas</h3>
+ 
+        <!-- Botones de filtro -->
+        <div class="d-flex justify-content-center mb-3">
+            <button type="button" class="btn me-2" id="btnPendientes" style="background-color: #38a4f8; color: white;">
+                Pendientes
+            </button>
+            <button type="button" class="btn" id="btnIncobrables" style="background-color: #02a499; color: white;">
+                Incobrables
+            </button>
+        </div>
+
+        <!-- Spinner de carga -->
+        <div id="loadingSpinner" class="text-center" style="display: none;">
+            <div class="spinner-border" role="status" style="color: #38a4f8;">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
     </div>
 
      <!-- Agregado: Contenedor para búsqueda y botón de descarga -->
@@ -284,17 +443,39 @@ while ($row = $result->fetch_assoc()) {
                     <!-- コード: Estado solo aplica para conductores -->
                     <td><?= $conductor['tipo_persona'] == 'conductor' ? ($conductor['desvinculado'] == 0 ? 'Activo' : 'Desvinculado') : 'Activo' ?></td>
                     <!-- MODIFICADO: Botón con atributos data para almacenar información del conductor -->
-                    <td>
-                        <button class="btn-whatsapp open-whatsapp-modal" 
-                                data-nombre="<?= $conductor['nombre_completo'] ?>" 
-                                data-telefono="<?= $conductor['telefono'] ?>"
-                                data-cuotas="<?= $conductor['num_cuotas'] ?>"
-                                data-deuda="<?= number_format($conductor['deuda_total'], 2, '.', ',') ?>"
-                                data-financiamiento="<?= $conductor['tipo_financiamiento'] ?>"
-                                data-moneda="<?= $conductor['moneda'] ?>"
-                                data-tipo="<?= $conductor['tipo_persona'] ?>"> <!-- コード: Agregado tipo de persona -->
-                            <i class="fab fa-whatsapp"></i>
-                        </button>
+                    <td class="acciones-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <button class="whatsapp-pendientes open-whatsapp-modal" 
+                                    data-nombre="<?= $conductor['nombre_completo'] ?>" 
+                                    data-telefono="<?= $conductor['telefono'] ?>"
+                                    data-cuotas="<?= $conductor['num_cuotas'] ?>"
+                                    data-deuda="<?= number_format($conductor['deuda_total'], 2, '.', ',') ?>"
+                                    data-financiamiento="<?= $conductor['tipo_financiamiento'] ?>"
+                                    data-moneda="<?= $conductor['moneda'] ?>"
+                                    data-tipo="<?= $conductor['tipo_persona'] ?>">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <?php if ($id_rol == 3): ?>
+                                <button class="btn btn-sm marcar-incobrable-btn" 
+                                        style="background-color: #626ed4; color: white; border: none;"
+                                        data-id="<?= $conductor['id_conductor'] ?>"
+                                        data-tipo="<?= $conductor['tipo_persona'] ?>"
+                                        data-nombre="<?= $conductor['nombre_completo'] ?>">
+                                    Marcar Incobrable
+                                </button>
+                                <?php endif; ?>
+                                
+                                <button class="btn btn-sm ver-detalle-btn" 
+                                        style="background-color: #02a499; color: white; border: none;"
+                                        data-id="<?= $conductor['id_conductor'] ?>"
+                                        data-tipo="<?= $conductor['tipo_persona'] ?>"
+                                        data-nombre="<?= $conductor['nombre_completo'] ?>">
+                                    Ver Detalle
+                                </button>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -352,194 +533,590 @@ while ($row = $result->fetch_assoc()) {
     </div>
 </div>
 
+<!-- Modal para ver detalle de cuotas -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="detalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #8b8c64; color: white;">
+                <h5 class="modal-title" id="detalleModalLabel">Detalle de Cuotas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                                
+                <!-- Spinner para el modal -->
+                <div id="modalSpinner" class="text-center" style="display: none;">
+                    <div class="spinner-border" role="status" style="color: #38a4f8;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+                
+                <!-- Tabla de detalles -->
+                <div id="tablaDetalle">
+                    <!-- Aquí se cargará la tabla dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Agregado: Scripts para generación de PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- MODIFICADO: Scripts necesarios para Bootstrap y la funcionalidad del modal -->
 <script>
-    $(document).ready(function() {
-        // Referencias a elementos del DOM
-        const modal = new bootstrap.Modal(document.getElementById('whatsappModal'));
-        const messageTextarea = $('#whatsappMessage');
-        const storedPhoneSpan = $('#storedPhoneNumber');
-        const customPhoneInput = $('#customPhoneNumber');
-        const sendButton = $('#sendWhatsappBtn');
-        const useStoredRadio = $('#useStoredPhone');
-        const useCustomRadio = $('#useCustomPhone');
-        const phoneOption1 = $('#phoneOption1');
-        const phoneOption2 = $('#phoneOption2');
+$(document).ready(function() {
+    // Variables globales
+    let modalDetalleInstance;
+    let modalWhatsappInstance;
+    let currentConductorData = {};
+    let filtroActual = 'pendientes';
+    let busquedaActiva = '';
+
+    // Inicialización
+    modalDetalleInstance = new bootstrap.Modal(document.getElementById('detalleModal'));
+    modalWhatsappInstance = new bootstrap.Modal(document.getElementById('whatsappModal'));
+
+    // Configurar estado inicial de botones
+    actualizarEstadoBotones('pendientes');
+    configurarEventosWhatsApp();
+
+    // EVENTOS DE FILTROS PRINCIPALES
+    $('#btnPendientes').on('click', function() {
+        if (!$(this).hasClass('btn-inactivo')) return; // No hacer nada si ya está activo
+        cambiarFiltroPrincipal('pendientes');
+    });
+
+    $('#btnIncobrables').on('click', function() {
+        if (!$(this).hasClass('btn-inactivo')) return; // No hacer nada si ya está activo
+        cambiarFiltroPrincipal('incobrables');
+    });
+
+    // EVENTO DE BÚSQUEDA
+    $('#searchInput').on('input', function() {
+        busquedaActiva = $(this).val().toLowerCase();
+        filtrarTabla();
+    });
+
+    // EVENTOS DELEGADOS PARA BOTONES DINÁMICOS
+    $(document).on('click', '.marcar-incobrable-btn', function() {
+        marcarComoIncobrable(this);
+    });
+
+    $(document).on('click', '.ver-detalle-btn', function() {
+        abrirModalDetalle(this);
+    });
+
+    
+    
+    function mostrarSpinner(mostrar) {
+        if (mostrar) {
+            $('#loadingSpinner').show();
+            $('table').parent().hide();
+        } else {
+            $('#loadingSpinner').hide();
+            $('table').parent().show();
+        }
+    }
+
+    function actualizarEstadoBotones(filtroActivo) {
+        const btnPendientes = $('#btnPendientes');
+        const btnIncobrables = $('#btnIncobrables');
         
-        // Variables para almacenar los datos del conductor actual
-        let currentConductorData = {};
+        if (filtroActivo === 'pendientes') {
+            // Pendientes activo, incobrables deshabilitado
+            btnPendientes.prop('disabled', true).removeClass('btn-inactivo').addClass('btn-activo');
+            btnIncobrables.prop('disabled', false).removeClass('btn-activo').addClass('btn-inactivo');
+        } else {
+            // Incobrables activo, pendientes deshabilitado
+            btnIncobrables.prop('disabled', true).removeClass('btn-inactivo').addClass('btn-activo');
+            btnPendientes.prop('disabled', false).removeClass('btn-activo').addClass('btn-inactivo');
+        }
+    }
+
+    function cambiarFiltroPrincipal(filtro) {
+        filtroActual = filtro;
+        $('#pageLoader').show(); // Mostrar loader
+        actualizarEstadoBotones(filtro);
         
-        // Evento para abrir el modal
-        $('.open-whatsapp-modal').on('click', function() {
-            // Guardar datos del conductor
-            currentConductorData = {
-                nombre: $(this).data('nombre'),
-                telefono: $(this).data('telefono'),
-                cuotas: $(this).data('cuotas'),
-                deuda: $(this).data('deuda'),
-                financiamiento: $(this).data('financiamiento'),
-                moneda: $(this).data('moneda')
-            };
-            
-            // Mostrar el número de teléfono almacenado
-            storedPhoneSpan.text(`+51 ${currentConductorData.telefono}`);
-            
-            let mensajePredefinido = `Estimado(a) ${currentConductorData.nombre},
-
-                        Esperamos se encuentre bien. Le recordamos que tiene ${currentConductorData.cuotas} cuota(s) pendiente(s) por un monto total de ${currentConductorData.moneda} ${currentConductorData.deuda} correspondiente a su ${currentConductorData.financiamiento}.
-
-                        Por favor, regularice su pago a la brevedad posible para evitar inconvenientes con su servicio.
-
-                        Gracias por su atención.
-                    `;
-
-            // Eliminar sangrías al inicio de cada línea
-            mensajePredefinido = mensajePredefinido
-            .split('\n')               
-            .map(line => line.trimStart()) 
-            .join('\n');               
-
-
-
-            messageTextarea.val(mensajePredefinido);
-            
-            // Resetear selección de teléfono
-            useStoredRadio.prop('checked', true);
-            useCustomRadio.prop('checked', false);
-            customPhoneInput.prop('disabled', true);
-            customPhoneInput.val('');
-            
-            phoneOption1.addClass('selected');
-            phoneOption2.removeClass('selected');
-            
-            // Mostrar el modal
-            modal.show();
-        });
-        
-        // Cambiar entre opciones de teléfono
-        useStoredRadio.on('change', function() {
-            if ($(this).prop('checked')) {
-                customPhoneInput.prop('disabled', true);
-                phoneOption1.addClass('selected');
-                phoneOption2.removeClass('selected');
-            }
-        });
-        
-        useCustomRadio.on('change', function() {
-            if ($(this).prop('checked')) {
-                customPhoneInput.prop('disabled', false);
-                customPhoneInput.focus();
-                phoneOption1.removeClass('selected');
-                phoneOption2.addClass('selected');
-            }
-        });
-        
-        // Clic en las divisiones para seleccionar la opción
-        phoneOption1.on('click', function() {
-            useStoredRadio.prop('checked', true).trigger('change');
-        });
-        
-        phoneOption2.on('click', function() {
-            useCustomRadio.prop('checked', true).trigger('change');
-        });
-        
-        // Enviar mensaje de WhatsApp
-        sendButton.on('click', function() {
-            const mensaje = encodeURIComponent(messageTextarea.val());
-            let telefono;
-            
-            if (useStoredRadio.prop('checked')) {
-                telefono = currentConductorData.telefono;
-            } else {
-                telefono = customPhoneInput.val();
-            }
-            
-            if (!telefono) {
-                alert('Por favor ingrese un número de teléfono válido');
-                return;
-            }
-            
-            // CORRECCIÓN: Asegurarse de que telefono sea una cadena de texto antes de usar replace()
-            telefono = String(telefono).replace(/\s+/g, ''); // Convertimos a string y luego aplicamos replace
-            
-            // Abrir WhatsApp Web con el mensaje
-            const whatsappUrl = `https://api.whatsapp.com/send?phone=51${telefono}&text=${mensaje}`;
-            window.open(whatsappUrl, '_blank');
-            
-            // Cerrar el modal
-            modal.hide();
-        });
-
-            // Agregado: Función de búsqueda en tiempo real
-        $('#searchInput').on('input', function() { // Agregado: Event listener para búsqueda
-            const searchTerm = $(this).val().toLowerCase();
-            
-            $('tbody tr').each(function() {
-                const financiamiento = $(this).find('td:eq(5)').text().toLowerCase();
-                const unidad = $(this).find('td:eq(2)').text().toLowerCase();
-                const nombre = $(this).find('td:eq(1)').text().toLowerCase();
-                
-                if (financiamiento.includes(searchTerm) || 
-                    unidad.includes(searchTerm) || 
-                    nombre.includes(searchTerm)) {
-                    $(this).show();
+        $.ajax({
+            url: "/arequipago/obtenerCuotasVencidasFiltradas",
+            method: 'POST',
+            data: { filtro: filtro },
+            dataType: 'json',
+            success: function(data) {
+            // Agregar delay de 800ms para que se vea mejor el loader
+            setTimeout(function() {
+                $('#pageLoader').hide();
+                if (data.success) {
+                    actualizarTabla(data.data);
+                    // Aplicar filtro de búsqueda si hay uno activo
+                    if (busquedaActiva) {
+                        filtrarTabla();
+                    }
                 } else {
-                    $(this).hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al cargar los datos: ' + data.message
+                    });
                 }
-            });
-        });
-
-        window.downloadData = function () {
-            const originalTable = document.querySelector('table');
-
-            // Clonamos la tabla para no modificar la original
-            const tableClone = originalTable.cloneNode(true);
-
-            // Quitamos la última columna "Acciones" que contiene botones
-            for (let row of tableClone.rows) {
-                row.deleteCell(-1); // Elimina última celda
+                }, 400);
+            },
+            error: function() {
+                // Agregar delay también en caso de error
+                setTimeout(function() {
+                    $('#pageLoader').hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error de conexión'
+                    });
+                }, 400); // AGREGADO: cierre del setTimeout
             }
-
-            // Encapsulamos en HTML válido para Excel
-            const excelHTML = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office"
-                    xmlns:x="urn:schemas-microsoft-com:office:excel"
-                    xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        table, th, td {
-                            border: 1px solid black;
-                            border-collapse: collapse;
-                            text-align: center;
-                        }
-                        th {
-                            background-color: #f2f2f2;
-                        }
-                    </style>
-                </head>
-                <body>${tableClone.outerHTML}</body>
-                </html>`;
-
-            // Creamos el archivo como Blob
-            const blob = new Blob([excelHTML], {
-                type: 'application/vnd.ms-excel'
-            });
-
-            // Creamos el link para la descarga
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'conductores-deudas.xls';
-            a.click();
-        };
-
-
-
         });
+    }
+
+    function actualizarTabla(datos) {
+        const tbody = $('tbody');
+        const rolUsuario = <?php echo json_encode($id_rol); ?>; // Pasar rol a JavaScript
+        
+        if (datos.length === 0) {
+            tbody.html('<tr><td colspan="8" style="text-align: center; color: #8b8c64;">No hay registros para mostrar</td></tr>');
+            return;
+        }
+        
+        let html = '';
+        
+        datos.forEach((conductor, index) => {
+            const deudaFormateada = parseFloat(conductor.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${conductor.nombre_completo}</td>
+                    <td>${conductor.tipo_persona == 'conductor' ? conductor.numUnidad : '-'}</td>
+                    <td>${conductor.num_cuotas}</td>
+                    <td class="deuda">${deudaFormateada}</td>
+                    <td>${conductor.tipo_financiamiento}</td>
+                    <td>${conductor.tipo_persona == 'conductor' ? (conductor.desvinculado == 0 ? 'Activo' : 'Desvinculado') : 'Activo'}</td>
+                    <td class="acciones-container">
+                        ${filtroActual === 'pendientes' ? `
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <button class="whatsapp-pendientes open-whatsapp-modal"
+                                        data-nombre="${conductor.nombre_completo}" 
+                                        data-telefono="${conductor.telefono}"
+                                        data-cuotas="${conductor.num_cuotas}"
+                                        data-deuda="${deudaFormateada}"
+                                        data-financiamiento="${conductor.tipo_financiamiento}"
+                                        data-moneda="${conductor.moneda}"
+                                        data-tipo="${conductor.tipo_persona}">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 5px;">
+                                    ${rolUsuario == 3 ? `
+                                    <button class="btn btn-sm marcar-incobrable-btn" 
+                                            style="background-color: #626ed4; color: white; border: none;"
+                                            data-id="${conductor.id_conductor}"
+                                            data-tipo="${conductor.tipo_persona}"
+                                            data-nombre="${conductor.nombre_completo}">
+                                        Marcar Incobrable
+                                    </button>
+                                    ` : ''}
+                                    
+                                    <button class="btn btn-sm ver-detalle-btn" 
+                                            style="background-color: #02a499; color: white; border: none;"
+                                            data-id="${conductor.id_conductor}"
+                                            data-tipo="${conductor.tipo_persona}"
+                                            data-nombre="${conductor.nombre_completo}">
+                                        Ver Detalle
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <button class="whatsapp-incobrables open-whatsapp-modal" 
+                                        data-nombre="${conductor.nombre_completo}" 
+                                        data-telefono="${conductor.telefono}"
+                                        data-cuotas="${conductor.num_cuotas}"
+                                        data-deuda="${deudaFormateada}"
+                                        data-financiamiento="${conductor.tipo_financiamiento}"
+                                        data-moneda="${conductor.moneda}"
+                                        data-tipo="${conductor.tipo_persona}">
+                                    <i class="fab fa-whatsapp"></i>
+                                </button>
+                                <button class="btn btn-sm ver-detalle-btn" 
+                                        style="background-color: #02a499; color: white; border: none;"
+                                        data-id="${conductor.id_conductor}"
+                                        data-tipo="${conductor.tipo_persona}"
+                                        data-nombre="${conductor.nombre_completo}">
+                                    Ver Detalle
+                                </button>
+                            </div>
+                        `}
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.html(html);
+        configurarEventosWhatsApp();
+    }
+
+    function marcarComoIncobrable(button) {
+        const $btn = $(button);
+        const id = $btn.data('id');
+        const tipo = $btn.data('tipo');
+        const nombre = $btn.data('nombre');
+        
+        Swal.fire({
+            title: '¿Está seguro?',
+            text: `¿Desea marcar como incobrable las deudas de ${nombre}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#626ed4',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, marcar como incobrable',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.prop('disabled', true).text('Procesando...');
+                
+                $.ajax({
+                    url: "/arequipago/marcarIncobrable",
+                    method: 'POST',
+                    data: { id_persona: id, tipo_persona: tipo },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                text: 'Marcado como incobrable exitosamente'
+                            });
+                            cambiarFiltroPrincipal(filtroActual);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message
+                            });
+                            $btn.prop('disabled', false).text('Marcar Incobrable');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error de conexión'
+                        });
+                        $btn.prop('disabled', false).text('Marcar Incobrable');
+                    }
+                });
+            }
+        });
+    }
+
+    function abrirModalDetalle(button) {
+        const $btn = $(button);
+        currentConductorData = {
+            id: $btn.data('id'),
+            tipo: $btn.data('tipo'),
+            nombre: $btn.data('nombre')
+        };
+        
+        $('#detalleModalLabel').text(`Detalle de Cuotas - ${currentConductorData.nombre}`);
+        cargarDetalleModal('pendientes'); // Solo cargar pendientes
+        modalDetalleInstance.show();
+    }
+
+    function cargarDetalleModal() {
+        $('#modalSpinner').show();
+        $('#tablaDetalle').hide();
+        
+        $.ajax({
+            url: "/arequipago/obtenerDetalleCuotas",
+            method: 'POST',
+            data: { 
+                id_persona: currentConductorData.id, 
+                tipo_persona: currentConductorData.tipo, 
+                filtro: filtroActual  // CAMBIADO: antes era 'pendientes', ahora usa el filtro actual
+            },
+            dataType: 'json',
+            success: function(data) {
+                $('#modalSpinner').hide();
+                $('#tablaDetalle').show();
+                
+                if (data.success) {
+                    mostrarTablaDetalle(data.data); // Eliminado: parámetro filtro
+                } else {
+                    $('#tablaDetalle').html('<p class="text-center text-danger">Error al cargar los datos</p>');
+                }
+            },
+            error: function() {
+                $('#modalSpinner').hide();
+                $('#tablaDetalle').show().html('<p class="text-center text-danger">Error de conexión</p>');
+            }
+        });
+    }
+
+    function mostrarTablaDetalle(datos) {
+        if (datos.length === 0) {
+            const tipoDeuda = filtroActual === 'incobrables' ? 'incobrables' : 'pendientes';
+            $('#tablaDetalle').html(`<p class="text-center text-muted">No hay cuotas ${tipoDeuda} para mostrar</p>`);
+            return;
+        }
+        
+        const tituloColumna = filtroActual === 'incobrables' ? 'Total Incobrable' : 'Total Pendiente';
+        
+        let html = `
+            <table class="table-detalle-mejorada">
+                <thead>
+                    <tr>
+                        <th style="width: 20%; background-color: #fcf34b; color: black; font-weight: 600; border: 2px solid #6b7c32;">Mes</th>
+                        <th style="width: 20%; background-color: #fcf34b; color: black; font-weight: 600; border: 2px solid #6b7c32;">${tituloColumna}</th>
+                        <th style="width: 60%; background-color: #fcf34b; color: black; font-weight: 600; border: 2px solid #6b7c32;">Detalle de Cuotas</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        datos.forEach(detalle => {
+            const totalFormateado = parseFloat(detalle.total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+            
+            // Obtener la moneda de la primera cuota para el total
+            const monedaTotal = detalle.cuotas.length > 0 ? (detalle.cuotas[0].moneda || 'S/.') : 'S/.';
+            
+            // Función para convertir mes a español
+            const mesEnEspanol = convertirMesAEspanol(detalle.mes);
+            
+            // Crear el detalle de cuotas para este mes
+            let detalleCuotas = `
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 14px; margin: 0;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">Cuota #</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">Fecha Venc.</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">Tipo</th>
+                                <th style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            detalle.cuotas.forEach(cuota => {
+                const montoCuota = parseFloat(cuota.monto).toLocaleString('es-PE', {minimumFractionDigits: 2});
+                const monedaCuota = cuota.moneda || 'S/.';
+                detalleCuotas += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 14px;">${cuota.numero}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 14px;">${cuota.fecha}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-size: 13px;">${cuota.tipo}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-size: 14px; font-weight: 500;">${monedaCuota} ${montoCuota}</td>
+                    </tr>
+                `;
+            });
+            
+            detalleCuotas += '</tbody></table></div>';
+            
+            html += `
+                <tr>
+                    <td style="vertical-align: top; font-weight: bold; background-color: #f8f9fa; padding: 15px; border: 2px solid #ddd;">${mesEnEspanol}</td>
+                    <td style="vertical-align: top; padding: 15px; border: 2px solid #ddd; text-align: center;" class="deuda"><strong>${monedaTotal} ${totalFormateado}</strong></td>
+                    <td style="vertical-align: top; padding: 15px; border: 2px solid #ddd;">${detalleCuotas}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        $('#tablaDetalle').html(html);
+    }
+        
+    // NUEVA FUNCIÓN: Agregar esta función después de mostrarTablaDetalle
+    function convertirMesAEspanol(mesIngles) {
+        const meses = {
+            'January': 'Enero',
+            'February': 'Febrero', 
+            'March': 'Marzo',
+            'April': 'Abril',
+            'May': 'Mayo',
+            'June': 'Junio',
+            'July': 'Julio',
+            'August': 'Agosto',
+            'September': 'Septiembre',
+            'October': 'Octubre',
+            'November': 'Noviembre',
+            'December': 'Diciembre'
+        };
+        
+        // Dividir el mes del año (ej: "February 2025" -> ["February", "2025"])
+        const partes = mesIngles.split(' ');
+        const mesTraducido = meses[partes[0]] || partes[0];
+        return `${mesTraducido} ${partes[1]}`;
+    }
+
+    function configurarEventosWhatsApp() {
+        // Eventos para abrir modal WhatsApp
+        $(document).off('click', '.open-whatsapp-modal');
+        $(document).on('click', '.open-whatsapp-modal', function() {
+            abrirModalWhatsApp(this);
+        });
+        
+        // Configurar radio buttons del modal WhatsApp
+        configurarRadioButtonsWhatsApp();
+        
+        // Configurar botón de envío
+        $('#sendWhatsappBtn').off('click').on('click', enviarWhatsApp);
+    }
+
+    function abrirModalWhatsApp(button) {
+        const $btn = $(button);
+        currentConductorData = {
+            nombre: $btn.data('nombre'),
+            telefono: $btn.data('telefono'),
+            cuotas: $btn.data('cuotas'),
+            deuda: $btn.data('deuda'),
+            financiamiento: $btn.data('financiamiento'),
+            moneda: $btn.data('moneda')
+        };
+        
+        $('#storedPhoneNumber').text(`+51 ${currentConductorData.telefono}`);
+        
+        const mensajePredefinido = `Estimado(a) ${currentConductorData.nombre},
+
+Esperamos se encuentre bien. Le recordamos que tiene ${currentConductorData.cuotas} cuota(s) pendiente(s) por un monto total de ${currentConductorData.moneda} ${currentConductorData.deuda} correspondiente a su ${currentConductorData.financiamiento}.
+
+Por favor, regularice su pago a la brevedad posible para evitar inconvenientes con su servicio.
+
+Gracias por su atención.`;
+
+        $('#whatsappMessage').val(mensajePredefinido);
+        resetearOpcionesTelefono();
+        modalWhatsappInstance.show();
+    }
+
+    function resetearOpcionesTelefono() {
+        $('#useStoredPhone').prop('checked', true);
+        $('#useCustomPhone').prop('checked', false);
+        $('#customPhoneNumber').prop('disabled', true).val('');
+        $('#phoneOption1').addClass('selected');
+        $('#phoneOption2').removeClass('selected');
+    }
+
+    function configurarRadioButtonsWhatsApp() {
+        $('#useStoredPhone').off('change').on('change', function() {
+            if (this.checked) {
+                $('#customPhoneNumber').prop('disabled', true);
+                $('#phoneOption1').addClass('selected');
+                $('#phoneOption2').removeClass('selected');
+            }
+        });
+        
+        $('#useCustomPhone').off('change').on('change', function() {
+            if (this.checked) {
+                $('#customPhoneNumber').prop('disabled', false).focus();
+                $('#phoneOption1').removeClass('selected');
+                $('#phoneOption2').addClass('selected');
+            }
+        });
+        
+        $('#phoneOption1').off('click').on('click', function() {
+            $('#useStoredPhone').prop('checked', true).trigger('change');
+        });
+        
+        $('#phoneOption2').off('click').on('click', function() {
+            $('#useCustomPhone').prop('checked', true).trigger('change');
+        });
+    }
+
+    function enviarWhatsApp() {
+        const mensaje = encodeURIComponent($('#whatsappMessage').val());
+        let telefono;
+        
+        if ($('#useStoredPhone').is(':checked')) {
+            telefono = currentConductorData.telefono;
+        } else {
+            telefono = $('#customPhoneNumber').val();
+        }
+        
+        if (!telefono) {
+            alert('Por favor ingrese un número de teléfono válido');
+            return;
+        }
+        
+        telefono = String(telefono).replace(/\s+/g, '');
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=51${telefono}&text=${mensaje}`;
+        window.open(whatsappUrl, '_blank');
+        modalWhatsappInstance.hide();
+    }
+
+    function filtrarTabla() {
+        const filas = $('tbody tr');
+        
+        filas.each(function() {
+            const $fila = $(this);
+            const financiamiento = $fila.find('td:nth-child(6)').text().toLowerCase();
+            const unidad = $fila.find('td:nth-child(3)').text().toLowerCase();
+            const nombre = $fila.find('td:nth-child(2)').text().toLowerCase();
+            
+            if (financiamiento.includes(busquedaActiva) || 
+                unidad.includes(busquedaActiva) || 
+                nombre.includes(busquedaActiva)) {
+                $fila.show();
+            } else {
+                $fila.hide();
+            }
+        });
+    }
+
+    // Función global para descarga
+    window.downloadData = function() {
+        const originalTable = $('table')[0];
+        
+        if (!originalTable) {
+            alert('No hay datos para descargar');
+            return;
+        }
+        
+        const tableClone = originalTable.cloneNode(true);
+        
+        for (let row of tableClone.rows) {
+            row.deleteCell(-1);
+        }
+        
+        const excelHTML = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:x="urn:schemas-microsoft-com:office:excel"
+                xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    table, th, td {
+                        border: 1px solid black;
+                        border-collapse: collapse;
+                        text-align: center;
+                    }
+                    th {
+                        background-color: #f2f2f2;
+                    }
+                </style>
+            </head>
+            <body>${tableClone.outerHTML}</body>
+            </html>`;
+        
+        const blob = new Blob([excelHTML], {
+            type: 'application/vnd.ms-excel'
+        });
+        
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `conductores-deudas-${filtroActual}.xls`;
+        a.click();
+    };
+});
 </script>
 </body>
 </html>

@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 
 
+
 Route::get('/login',"ViewController@login");
 Route::get('/logout',"UsuarioController@logout");
 Route::get('/ge/bar/code',"ConsultaDelcontroller@generarBarCode");
@@ -396,3 +397,8 @@ Route::postBase("/cupones", "FragmentController@cuponesDrivers");
 
 // OBTENER PUNTAJES POR ID ÚNICO
 Route::get('/obtenerPuntajeYDatos', 'PuntajeCrediticioController@obtenerPuntajeYDatos');
+
+// Agregar estas rutas para el manejo de deudas incobrables
+Route::post('/marcarIncobrable', 'FinanciamientoController@marcarIncobrable');
+Route::post('/obtenerDetalleCuotas', 'FinanciamientoController@obtenerDetalleCuotas');
+Route::post('/obtenerCuotasVencidasFiltradas', 'FinanciamientoController@obtenerCuotasVencidasFiltradas');
