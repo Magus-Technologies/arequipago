@@ -1,0 +1,9 @@
+/vendor
+/node_modules
+/public/storage
+/public/hot
+/public/assets
+/.env
+/.idea
+/.vscode
+/routes
