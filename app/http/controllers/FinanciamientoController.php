@@ -981,12 +981,43 @@ class FinanciamientoController extends Controller
             
             // Paginación
             $totalPaginas = ceil($totalRegistros / $limit);
-            $paginacion = '';
-            for ($i = 1; $i <= $totalPaginas; $i++) {
-                $active = $i == $page ? 'btn-primary' : 'btn-secondary'; // MODIFICADO: Agregar clase active para la página actual
-                // MODIFICADO: Incluir parámetros de fecha en la función de paginación 
-                $paginacion .= "<button class='btn $active btn-sm mx-1' onclick='cargarReportes($i, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>$i</button> ";
+            $paginacion = '<nav><ul class="pagination justify-content-center">';
+
+            // Botón "Anterior"
+            if ($page > 1) {
+                $prevPage = $page - 1;
+                $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($prevPage, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>Anterior</button></li>";
+            } else {
+                $paginacion .= "<li class='page-item disabled'><span class='page-link'>Anterior</span></li>";
             }
+
+            $rango = 2; // Número de enlaces a cada lado de la página actual
+
+            // Enlaces de páginas
+            for ($i = 1; $i <= $totalPaginas; $i++) {
+                // Mostrar siempre la primera página, la última página, y las páginas en el rango de la actual
+                if ($i == 1 || $i == $totalPaginas || ($i >= $page - $rango && $i <= $page + $rango)) {
+                    if ($i == $page) {
+                        $paginacion .= "<li class='page-item active'><span class='page-link'>$i</span></li>";
+                    } else {
+                        $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($i, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>$i</button></li>";
+                    }
+                } 
+                // Mostrar puntos suspensivos si es necesario
+                elseif ($i == $page - $rango - 1 || $i == $page + $rango + 1) {
+                    $paginacion .= "<li class='page-item disabled'><span class='page-link'>...</span></li>";
+                }
+            }
+
+            // Botón "Siguiente"
+            if ($page < $totalPaginas) {
+                $nextPage = $page + 1;
+                $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($nextPage, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>Siguiente</button></li>";
+            } else {
+                $paginacion .= "<li class='page-item disabled'><span class='page-link'>Siguiente</span></li>";
+            }
+
+            $paginacion .= '</ul></nav>';
     
             // Modificación: Enviar número de página y límite para que el frontend pueda hacer una numeración continua
             echo json_encode([

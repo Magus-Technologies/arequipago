@@ -27,18 +27,18 @@ class GenerarReporte extends Controller
 
     public function ingresosEgresos($id)
     {
-        $mpdf  = new \Mpdf\Mpdf([
-    'margin_bottom' => 5,
-    'margin_top' => 10,
-    'margin_left' => 4,
-    'margin_right' => 4,
-    'mode' => 'utf-8',
-]);
+        $mpdf = new \Mpdf\Mpdf([
+            'margin_bottom' => 5,
+            'margin_top' => 10,
+            'margin_left' => 4,
+            'margin_right' => 4,
+            'mode' => 'utf-8',
+        ]);
 
-$empresa = $this->conexion->query("select * from empresas
+        $empresa = $this->conexion->query("select * from empresas
         where id_empresa = '{$_SESSION['id_empresa']}'")->fetch_assoc();
 
-$rowHmtl = '';
+        $rowHmtl = '';
         $sql = "SELECT ingreso_egreso.*,productos.descripcion,IF(ingreso_egreso.tipo = 'e', 'Egreso', 'Ingreso') AS tipoIntercambio FROM ingreso_egreso JOIN productos ON ingreso_egreso.id_producto=productos.id_producto WHERE intercambio_id = '$id'";
         $result = $this->conexion->query($sql)->fetch_assoc();
 
@@ -46,7 +46,7 @@ $rowHmtl = '';
         $resul2 = $this->conexion->query($sql)->fetch_assoc();
         /*  $sql */
         $dominio = DOMINIO;
-       $rowHmtl .= "<tr>
+        $rowHmtl .= "<tr>
         <td style='border-bottom:1px solid black;font-size: 11px'>{$result['cantidad']}</td>
         <td style='border-bottom:1px solid black;font-size: 11px'>Almacen {$result['almacen_ingreso']}</td>
         <td style='border-bottom:1px solid black;font-size: 11px'>Almacen {$result['almacen_egreso']}</td>
@@ -121,18 +121,19 @@ $rowHmtl = '';
     </div>
         </div>";
 
-$mpdf->AddPageByArray([
-    "orientation" => "P",
-    "newformat" => [80, 240 - 20]
-]);
-$mpdf->WriteHTML($html);
-$mpdf->Output();
+        $mpdf->AddPageByArray([
+            "orientation" => "P",
+            "newformat" => [80, 240 - 20]
+        ]);
+        $mpdf->WriteHTML($html);
+        $mpdf->Output();
 
     }
-    public function generarExcelProducto(){
+    public function generarExcelProducto()
+    {
 
         $texto = $_GET['texto'];
-        $sql="select descripcion,MIN(codigo) AS codigo,
+        $sql = "select descripcion,MIN(codigo) AS codigo,
  MIN(costo) as costo,
        SUM(CASE WHEN almacen = 1 THEN cantidad ELSE 0 END) AS cantidad1, SUM(CASE WHEN almacen = 2 THEN cantidad ELSE 0 END) AS cantidad2 
         from productos where descripcion like '%$texto%' or codigo like '%$texto%' GROUP BY descripcion;";
@@ -184,8 +185,8 @@ $mpdf->Output();
     {
 
         $explodeFecha = explode('-', $id);
-        $anio =  $explodeFecha[0];
-        $mes =  $explodeFecha[1];
+        $anio = $explodeFecha[0];
+        $mes = $explodeFecha[1];
         $sql = 'SELECT *,CASE
         WHEN v1.cnt_pv > 0 THEN "VENTA DE MERCADERIA"
         ELSE "VENTA DE SERVICIO"
@@ -211,7 +212,7 @@ $mpdf->Output();
         $tabla = '';
         $tbody = '';
         foreach ($result as $fila) {
-            if ($fila['id_tido']!='1'&&$fila['id_tido']!='2'){
+            if ($fila['id_tido'] != '1' && $fila['id_tido'] != '2') {
                 continue;
             }
             $tbody .= '
@@ -292,8 +293,8 @@ $mpdf->Output();
 
 
         $explodeFecha = explode('-', $fecha);
-        $anio =  $explodeFecha[0];
-        $mes =  $explodeFecha[1];
+        $anio = $explodeFecha[0];
+        $mes = $explodeFecha[1];
         $sql = 'SELECT v.id_tido,v.id_venta,v.fecha_emision,v.fecha_vencimiento,ds.nombre AS tipoDocPago,v.serie,v.numero AS numeroVenta,v.enviado_sunat,v.igv,
        IF(v.enviado_sunat = 0,"No enviado","Enviado") AS enviadoSunat,
         (CASE 
@@ -315,13 +316,13 @@ $mpdf->Output();
         $totalOpgravado = 0;
         /*   $total = 0; */
         foreach ($result as $fila) {
-            if ($fila['id_tido']!='1'&&$fila['id_tido']!='2'){
+            if ($fila['id_tido'] != '1' && $fila['id_tido'] != '2') {
                 continue;
             }
             $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
             $igv = $fila['total'] / ($fila['igv'] + 1) * $fila['igv'];
             $totalOpgravado = $fila['total'] - $igv;
-            $total = number_format((float)$fila['total'], 2, '.', '');
+            $total = number_format((float) $fila['total'], 2, '.', '');
             $igv = number_format($igv, 2, '.', ',');
             $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
             $style = '';
@@ -342,7 +343,7 @@ $mpdf->Output();
                <td style="font-size: 10px;border:1px solid black;">' . $fila['documento'] . '</td>
                <td style="font-size: 10px;border:1px solid black;" colspan="2">' . $fila['cliente'] . '</td>
                <td style="font-size: 10px;border:1px solid black;">0</td>
-               <td style="font-size: 10px;border:1px solid black;">' .  $totalOpgravado . '</td>
+               <td style="font-size: 10px;border:1px solid black;">' . $totalOpgravado . '</td>
                <td style="font-size: 10px;border:1px solid black;">0</td>
                <td style="font-size: 10px;border:1px solid black;">0</td>
                <td style="font-size: 10px;border:1px solid black;"colspan="2"></td>
@@ -405,7 +406,7 @@ $mpdf->Output();
         $writer->save($nombre_exel);
         header('Location: ' . URL::to($nombre_exel));
     }
-    
+
     public function generarExcelProductoImporte()
     {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
@@ -414,9 +415,20 @@ $mpdf->Output();
         $sheet1 = $spreadsheet->getActiveSheet();
         $sheet1->setTitle('Productos');
         $headers1 = [
-            'Nombre', 'Código', 'Cantidad', 'Cantidad por unidad', 'Unidad de medida',
-            'Tipo de Producto', 'Categoría', 'Fecha de Vencimiento', 'RUC', 
-            'Razón Social', 'Precio','Precio de Venta', 'Fecha de Registro', 'Guía de Remisión'
+            'Nombre',
+            'Código',
+            'Cantidad',
+            'Cantidad por unidad',
+            'Unidad de medida',
+            'Tipo de Producto',
+            'Categoría',
+            'Fecha de Vencimiento',
+            'RUC',
+            'Razón Social',
+            'Precio',
+            'Precio de Venta',
+            'Fecha de Registro',
+            'Guía de Remisión'
         ];
 
         foreach ($headers1 as $index => $header) {
@@ -427,7 +439,7 @@ $mpdf->Output();
         $sheet1->getColumnDimension('B')->setWidth(30); // Columna Código (más ancha)
         $sheet1->getColumnDimension('I')->setWidth(35); // Columna RUC (más ancha)
 
-       // Aplicar setAutoSize a las columnas de la C a la H
+        // Aplicar setAutoSize a las columnas de la C a la H
         foreach (range('C', 'H') as $columnID) {
             $sheet1->getColumnDimension($columnID)->setAutoSize(true); // Ajusta automáticamente el ancho
         }
@@ -462,7 +474,7 @@ $mpdf->Output();
         $validationCategoria->setShowDropDown(true);
         $validationCategoria->setFormula1($opcionesCategoria); // 🔹 Se usa la cadena generada correctamente
         $sheet1->setDataValidation('G2:G101', $validationCategoria);
-        
+
         // Validación de Unidad de Medida con lista desplegable
         $validationUnidadMedida = $sheet1->getCell('E2')->getDataValidation();
         $validationUnidadMedida->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
@@ -476,12 +488,12 @@ $mpdf->Output();
         $tipos = new TipoProductoModel();
         $tiposProducto = $tipos->obtenerTiposProducto();
         $opcionesTipoProducto = '"Físico,Intangible';
-        
+
         foreach ($tiposProducto as $tipo) {
             $opcionesTipoProducto .= ',' . $tipo['tipo_productocol'];
         }
         $opcionesTipoProducto .= '"';
-        
+
         $validationTipoProducto = $sheet1->getCell('F2')->getDataValidation();
         $validationTipoProducto->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
         $validationTipoProducto->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
@@ -532,7 +544,7 @@ $mpdf->Output();
         foreach (range('A', $sheet2->getHighestColumn()) as $columnID) {
             $sheet2->getColumnDimension($columnID)->setAutoSize(true);
         }
-        
+
 
         // Crear hoja para listas (categorías y características)
         $sheetCategorias = $spreadsheet->createSheet();
@@ -611,13 +623,14 @@ $mpdf->Output();
         unlink($nombre_excel);
     }
 
-     public function getReportePagoFinan() {
-        
+    public function getReportePagoFinan()
+    {
+
         // Crear una nueva hoja de cálculo
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Reporte de Pagos');
-        
+
         // Establecer los encabezados de columna
         $headers = [
             'A1' => 'Ítem',
@@ -632,12 +645,12 @@ $mpdf->Output();
             'J1' => 'Cuotas Pagadas',
             'K1' => 'Cuotas No Pagadas'
         ];
-        
+
         // Aplicar encabezados a la hoja
         foreach ($headers as $cell => $value) {
             $sheet->setCellValue($cell, $value);
         }
-        
+
         // Estilo para los encabezados
         $headerStyle = [
             'font' => [
@@ -659,46 +672,46 @@ $mpdf->Output();
                 ],
             ],
         ];
-        
+
         // Aplicar estilo a los encabezados
         $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
-        
+
         // Obtener datos para el reporte
         $query = "SELECT DISTINCT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, 
                   pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda
                   FROM pagos_financiamiento pf
                   ORDER BY pf.fecha_pago DESC";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         // Array para controlar financiamientos ya procesados
         $financiamientosYaProcesados = [];
-        
+
         // Iniciar fila para datos
         $row = 2;
         $item = 1;
-        
+
         $usuarioModel = new Usuario();
-        
+
         // Procesar resultados
         while ($pago = $result->fetch_assoc()) {
             $id_financiamiento = $pago['id_financiamiento'];
-            
+
             // Si id_financiamiento es null, obtenerlo desde las tablas relacionadas
             if ($id_financiamiento === null) {
                 $id_financiamiento = $this->buscarIdFinanciamiento($pago['idpagos_financiamiento']);
             }
-            
+
             // Si no se puede obtener id_financiamiento o ya fue procesado, continuar con el siguiente registro
             if ($id_financiamiento === null || in_array($id_financiamiento, $financiamientosYaProcesados)) {
                 continue;
             }
-            
+
             // Marcar este id_financiamiento como procesado
             $financiamientosYaProcesados[] = $id_financiamiento;
-            
+
             // 3. Obtener datos del financiamiento
             $financiamientoData = $this->obtenerDatosFinanciamiento($id_financiamiento);
 
@@ -715,11 +728,11 @@ $mpdf->Output();
                     $stmtCliente->bind_param("i", $financiamientoData['id_cliente']);
                     $stmtCliente->execute();
                     $resultCliente = $stmtCliente->get_result();
-            
+
                     if ($resultCliente->num_rows > 0) {
                         $clienteData = $resultCliente->fetch_assoc();
                         $nombreCompleto = $clienteData['nombres'] . ' ' . $clienteData['apellido_paterno'] . ' ' . $clienteData['apellido_materno'];
-            
+
                         $conductorData = [
                             'nombre_completo' => $nombreCompleto,
                             'nro_documento' => $clienteData['n_documento'],
@@ -742,37 +755,37 @@ $mpdf->Output();
                     ];
                 }
             }
-            
-            
+
+
             // 2. Obtener datos del asesor
             $asesorData = $usuarioModel->getData($pago['id_asesor']);
             $nombreAsesor = $asesorData ? $asesorData['nombres'] . ' ' . $asesorData['apellidos'] : 'No registrado';
-            
-            
+
+
             // 4. Obtener información del grupo
             $grupoInfo = $this->obtenerGrupoInfo($financiamientoData['grupo_financiamiento']);
-            
+
             // 5. Obtener nombre del producto
             $nombreProducto = $this->obtenerNombreProducto($financiamientoData['idproductosv2']);
-            
-            
+
+
 
             $moneda = isset($financiamientoData['moneda']) && $financiamientoData['moneda'] !== null
-            ? $financiamientoData['moneda']
-            : 'S/.';
-        
+                ? $financiamientoData['moneda']
+                : 'S/.';
+
 
             // 6. Obtener cuotas pagadas y pendientes
             $cuotasPagadas = $this->obtenerCuotasPagadas($id_financiamiento, $moneda);
             $cuotasPendientes = $this->obtenerCuotasPendientes($id_financiamiento, $moneda);
-            
+
             // Llenar la fila con datos
             $sheet->setCellValue('A' . $row, $item);
             $sheet->setCellValue('B' . $row, $conductorData['nombre_completo']);
             $sheet->setCellValue('C' . $row, $conductorData['nro_documento']);
             $sheet->setCellValue('D' . $row, $conductorData['numUnidad']);
             $sheet->setCellValue('E' . $row, $nombreAsesor);
-            
+
             // MODIFICADO: Obtener la fecha de pago de la cuota inicial
             $queryFechaPagoInicial = "SELECT fecha_pago 
                                     FROM pagos_financiamiento 
@@ -793,26 +806,26 @@ $mpdf->Output();
             } else {
                 $sheet->setCellValue('F' . $row, $financiamientoData['cuota_inicial']); // MODIFICADO: Solo mostrar el monto cuando es 0
             }
-            
+
             $sheet->setCellValue('G' . $row, $financiamientoData['monto_recalculado']);
             $sheet->setCellValue('H' . $row, $grupoInfo);
             $sheet->setCellValue('I' . $row, $nombreProducto);
             $sheet->setCellValue('J' . $row, $cuotasPagadas);
             $sheet->setCellValue('K' . $row, $cuotasPendientes);
-            
+
             // Aplicar alineación para cuotas (para manejar múltiples líneas)
             $sheet->getStyle('J' . $row)->getAlignment()->setWrapText(true);
             $sheet->getStyle('K' . $row)->getAlignment()->setWrapText(true);
-            
+
             $row++;
             $item++;
         }
-        
+
         // Ajustar ancho de columnas automáticamente
-        foreach(range('A', 'K') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        
+
         // Configurar la respuesta HTTP
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="Reporte_Pagos_Financiamiento.xlsx"');
@@ -829,84 +842,87 @@ $mpdf->Output();
         $writer->save('php://output');
         exit;
     }
-    
+
     /**
      * Método para buscar el ID de financiamiento a partir del ID de pago
      */
-    private function buscarIdFinanciamiento($idPagoFinanciamiento) {
+    private function buscarIdFinanciamiento($idPagoFinanciamiento)
+    {
         // Paso 1: Buscar en detalle_pago_financiamiento
         $query = "SELECT dpf.id_cuota 
                   FROM detalle_pago_financiamiento dpf 
                   WHERE dpf.idfinanciamiento = ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idPagoFinanciamiento);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             $idCuota = $row['id_cuota'];
-            
+
             // Paso 2: Con el ID de cuota, buscar en cuotas_financiamiento
             $query2 = "SELECT cf.id_financiamiento 
                       FROM cuotas_financiamiento cf 
                       WHERE cf.idcuotas_financiamiento = ?";
-            
+
             $stmt2 = $this->conexion->prepare($query2);
             $stmt2->bind_param("i", $idCuota);
             $stmt2->execute();
             $result2 = $stmt2->get_result();
-            
+
             if ($row2 = $result2->fetch_assoc()) {
                 return $row2['id_financiamiento'];
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Método para obtener los datos del conductor
      */
-    private function obtenerDatosConductor($idConductor) {
+    private function obtenerDatosConductor($idConductor)
+    {
         $query = "SELECT CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo, 
                  nro_documento, numUnidad 
                  FROM conductores 
                  WHERE id_conductor = ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idConductor);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($conductor = $result->fetch_assoc()) {
             return $conductor;
         }
-        
+
         return [
             'nombre_completo' => 'No registrado',
             'nro_documento' => 'No registrado',
             'numUnidad' => 'N/A'
         ];
     }
-    
+
     /**
      * Método para obtener los datos del financiamiento
      */
-    private function obtenerDatosFinanciamiento($idFinanciamiento) {
-           $query = "SELECT cuota_inicial, monto_recalculado, grupo_financiamiento, idproductosv2, moneda, id_cliente 
+    private function obtenerDatosFinanciamiento($idFinanciamiento)
+    {
+        $query = "SELECT cuota_inicial, monto_recalculado, grupo_financiamiento, idproductosv2, moneda, id_cliente 
                  FROM financiamiento 
                  WHERE idfinanciamiento = ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idFinanciamiento);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($financiamiento = $result->fetch_assoc()) {
             return $financiamiento;
         }
-        
+
         return [
             'cuota_inicial' => 0,
             'monto_recalculado' => 0,
@@ -916,136 +932,142 @@ $mpdf->Output();
             'id_cliente' => null
         ];
     }
-    
+
     /**
      * Método para obtener información del grupo
      */
-    private function obtenerGrupoInfo($grupoFinanciamiento) {
+    private function obtenerGrupoInfo($grupoFinanciamiento)
+    {
         // Comprobar si grupo_financiamiento es numérico
         if (is_numeric($grupoFinanciamiento)) {
             $query = "SELECT nombre_plan 
                      FROM planes_financiamiento 
                      WHERE idplan_financiamiento = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $grupoFinanciamiento);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($plan = $result->fetch_assoc()) {
                 return $plan['nombre_plan'];
             }
         }
-        
+
         return $grupoFinanciamiento ?: 'Sin Grupo';
     }
-    
+
     /**
      * Método para obtener el nombre del producto
      */
-    private function obtenerNombreProducto($idProducto) {
+    private function obtenerNombreProducto($idProducto)
+    {
         if (!$idProducto) {
             return 'No registrado';
         }
-        
+
         $query = "SELECT nombre FROM productosv2 WHERE idproductosv2 = ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idProducto);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($producto = $result->fetch_assoc()) {
             return $producto['nombre'];
         }
-        
+
         return 'No registrado';
     }
-    
+
     /**
      * Método para obtener las cuotas pagadas
      */
-    private function obtenerCuotasPagadas($idFinanciamiento, $moneda) {
+    private function obtenerCuotasPagadas($idFinanciamiento, $moneda)
+    {
         $query = "SELECT cf.numero_cuota, cf.monto, cf.fecha_pago, cf.idcuotas_financiamiento 
                  FROM cuotas_financiamiento cf 
                  WHERE cf.id_financiamiento = ? AND cf.estado = 'pagado' 
                  ORDER BY cf.numero_cuota ASC";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idFinanciamiento);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $cuotasPagadas = '';
-        
+
         while ($cuota = $result->fetch_assoc()) {
             // Obtener método de pago
             $metodoPago = $this->obtenerMetodoPago($cuota['idcuotas_financiamiento']);
-            
+
             // Formatear fecha
             $fecha = date('d/m/Y', strtotime($cuota['fecha_pago']));
-            
+
             // Agregar a la lista de cuotas pagadas
             $cuotasPagadas .= "Cuota {$cuota['numero_cuota']} {$moneda}{$cuota['monto']} {$metodoPago} {$fecha}\n";
         }
-        
+
         return $cuotasPagadas ?: 'No hay cuotas pagadas';
     }
-    
+
     /**
      * Método para obtener las cuotas pendientes
      */
-    private function obtenerCuotasPendientes($idFinanciamiento, $moneda) {
+    private function obtenerCuotasPendientes($idFinanciamiento, $moneda)
+    {
         $query = "SELECT cf.numero_cuota, cf.monto, cf.fecha_vencimiento 
                  FROM cuotas_financiamiento cf 
                  WHERE cf.id_financiamiento = ? AND cf.estado = 'En Progreso' 
                  ORDER BY cf.numero_cuota ASC";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idFinanciamiento);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $cuotasPendientes = '';
-        
+
         while ($cuota = $result->fetch_assoc()) {
             // Formatear fecha
             $fecha = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
-            
+
             // Agregar a la lista de cuotas pendientes
             $cuotasPendientes .= "Cuota {$cuota['numero_cuota']} {$moneda}{$cuota['monto']} FV: {$fecha}\n";
         }
-        
+
         return $cuotasPendientes ?: 'No hay cuotas pendientes';
     }
-    
+
     /**
      * Método para obtener el método de pago
      */
-    private function obtenerMetodoPago($idCuotaFinanciamiento) {
+    private function obtenerMetodoPago($idCuotaFinanciamiento)
+    {
         $query = "SELECT pf.metodo_pago 
                  FROM detalle_pago_financiamiento dpf 
                  JOIN pagos_financiamiento pf ON dpf.idfinanciamiento = pf.idpagos_financiamiento 
                  WHERE dpf.id_cuota = ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("i", $idCuotaFinanciamiento);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($row = $result->fetch_assoc()) {
             return $row['metodo_pago'];
         }
-        
+
         return 'N/A';
     }
 
     /*CODIGO PARA LOS REPORTES NUEVOS*/
-    public function ventasGenerales() {
+    public function ventasGenerales()
+    {
         // Validar y obtener parámetros
         $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
         $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
-            
+
         // Validar formato de fechas
         if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
             $this->responderError('Formato de fecha inválido');
@@ -1066,7 +1088,7 @@ $mpdf->Output();
                         vv.fecha_emision BETWEEN '$fechaInicio' AND '$fechaFin'
                     ORDER BY 
                         vv.fecha_emision DESC";
-                    
+
             // Ejecutar con MySQLi
             $resultado = $this->conexion->query($query);
 
@@ -1086,7 +1108,7 @@ $mpdf->Output();
             foreach ($ventas as $venta) {
                 $id_venta = $venta['id_venta'];
                 $cod_v = $venta['cod_v'];
-                
+
                 // Usar cod_v cuando id_venta es null o vacío
                 if ($id_venta === null || $id_venta === '') {
                     $id_para_consultas = $cod_v;
@@ -1102,7 +1124,7 @@ $mpdf->Output();
 
                 // Obtener productos
                 $productos = $this->obtenerProductosVenta($id_para_consultas);
-                            
+
                 // Agregar a resultados
                 $ventaData = [
                     'fecha' => $venta['fecha_emision'],
@@ -1132,27 +1154,28 @@ $mpdf->Output();
         }
     }
 
-public function ventasPorEmpleado() {
-    // Validar y obtener parámetros
-    $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
-    $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
-    $empleados = isset($_POST['empleados']) ? $_POST['empleados'] : [];
+    public function ventasPorEmpleado()
+    {
+        // Validar y obtener parámetros
+        $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
+        $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
+        $empleados = isset($_POST['empleados']) ? $_POST['empleados'] : [];
 
-    // Validar formato de fechas
-    if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
-        $this->responderError('Formato de fecha inválido');
-        return;
-    }
-
-    try {
-        // Consulta principal
-        $condicionEmpleados = '';
-        if (!empty($empleados)) {
-            $empleadosStr = implode(',', $empleados);
-            $condicionEmpleados = " AND v.id_vendedor IN ($empleadosStr)";
+        // Validar formato de fechas
+        if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
+            $this->responderError('Formato de fecha inválido');
+            return;
         }
 
-        $query = "SELECT 
+        try {
+            // Consulta principal
+            $condicionEmpleados = '';
+            if (!empty($empleados)) {
+                $empleadosStr = implode(',', $empleados);
+                $condicionEmpleados = " AND v.id_vendedor IN ($empleadosStr)";
+            }
+
+            $query = "SELECT 
                     u.usuario_id,
                     CONCAT_WS(' ', u.nombres, u.apellidos) AS asesor,
                     v.id_venta,
@@ -1168,95 +1191,96 @@ public function ventasPorEmpleado() {
                 ORDER BY 
                     u.usuario_id, v.fecha_emision DESC";
 
-        $resultado = $this->conexion->query($query);
+            $resultado = $this->conexion->query($query);
 
-        if (!$resultado) {
-            throw new Exception("Error en la consulta: " . $this->conexion->error);
-        }
-
-        $ventas = [];
-        while ($fila = $resultado->fetch_assoc()) {
-            $ventas[] = $fila;
-        }
-
-        // Estructura para organizar datos por asesor
-        $ventasPorAsesor = [];
-        $total_general = 0;
-
-        foreach ($ventas as $venta) {
-            $id_venta = $venta['id_venta'];
-            $id_asesor = $venta['usuario_id'];
-
-            // Inicializar array para este asesor si no existe
-            if (!isset($ventasPorAsesor[$id_asesor])) {
-                $ventasPorAsesor[$id_asesor] = [
-                    'asesor' => $venta['asesor'],
-                    'productos' => [],
-                    'total' => 0
-                ];
+            if (!$resultado) {
+                throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
 
-            // Obtener productos de esta venta
-            $detallesProductos = $this->obtenerDetallesProductosVenta($id_venta);
+            $ventas = [];
+            while ($fila = $resultado->fetch_assoc()) {
+                $ventas[] = $fila;
+            }
 
-            // Agregar productos al asesor
-            foreach ($detallesProductos as $detalle) {
-                $productoExistente = false;
-                foreach ($ventasPorAsesor[$id_asesor]['productos'] as &$prod) {
-                    if ($prod['id_producto'] == $detalle['id_producto']) {
-                        $prod['cantidad'] += $detalle['cantidad'];
-                        $prod['total_producto'] += $detalle['total_producto'];
-                        $productoExistente = true;
-                        break;
+            // Estructura para organizar datos por asesor
+            $ventasPorAsesor = [];
+            $total_general = 0;
+
+            foreach ($ventas as $venta) {
+                $id_venta = $venta['id_venta'];
+                $id_asesor = $venta['usuario_id'];
+
+                // Inicializar array para este asesor si no existe
+                if (!isset($ventasPorAsesor[$id_asesor])) {
+                    $ventasPorAsesor[$id_asesor] = [
+                        'asesor' => $venta['asesor'],
+                        'productos' => [],
+                        'total' => 0
+                    ];
+                }
+
+                // Obtener productos de esta venta
+                $detallesProductos = $this->obtenerDetallesProductosVenta($id_venta);
+
+                // Agregar productos al asesor
+                foreach ($detallesProductos as $detalle) {
+                    $productoExistente = false;
+                    foreach ($ventasPorAsesor[$id_asesor]['productos'] as &$prod) {
+                        if ($prod['id_producto'] == $detalle['id_producto']) {
+                            $prod['cantidad'] += $detalle['cantidad'];
+                            $prod['total_producto'] += $detalle['total_producto'];
+                            $productoExistente = true;
+                            break;
+                        }
                     }
-                }
 
-                // Si no existe, agregar nuevo producto
-                if (!$productoExistente) {
-                    $ventasPorAsesor[$id_asesor]['productos'][] = $detalle;
-                }
+                    // Si no existe, agregar nuevo producto
+                    if (!$productoExistente) {
+                        $ventasPorAsesor[$id_asesor]['productos'][] = $detalle;
+                    }
 
-                // Actualizar total del asesor
-                $ventasPorAsesor[$id_asesor]['total'] += $detalle['total_producto'];
-                $total_general += $detalle['total_producto'];
+                    // Actualizar total del asesor
+                    $ventasPorAsesor[$id_asesor]['total'] += $detalle['total_producto'];
+                    $total_general += $detalle['total_producto'];
+                }
             }
+
+            // Convertir a formato de resultado
+            $resultados = array_values($ventasPorAsesor);
+
+            $this->responderExito([
+                'registros' => $resultados,
+                'total_general' => number_format($total_general, 2)
+            ]);
+        } catch (Exception $e) {
+            $this->responderError('Error al procesar las ventas por empleado: ' . $e->getMessage());
+        }
+    }
+
+    public function financiamientos()
+    {
+        // Validar y obtener parámetros
+        $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
+        $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
+        $tipoCliente = $_POST['tipo_cliente'] ?? 'todos';
+
+        // Validar formato de fechas
+        if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
+            $this->responderError('Formato de fecha inválido');
+            return;
         }
 
-        // Convertir a formato de resultado
-        $resultados = array_values($ventasPorAsesor);
+        try {
+            // Construir condición de tipo de cliente
+            $condicionTipoCliente = '';
+            if ($tipoCliente == 'clientes') {
+                $condicionTipoCliente = " AND f.id_cliente IS NOT NULL AND f.id_conductor IS NULL";
+            } elseif ($tipoCliente == 'conductores') {
+                $condicionTipoCliente = " AND f.id_conductor IS NOT NULL AND f.id_cliente IS NULL";
+            }
 
-        $this->responderExito([
-            'registros' => $resultados,
-            'total_general' => number_format($total_general, 2)
-        ]);
-    } catch (Exception $e) {
-        $this->responderError('Error al procesar las ventas por empleado: ' . $e->getMessage());
-    }
-}
-
-public function financiamientos() {
-    // Validar y obtener parámetros
-    $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
-    $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
-    $tipoCliente = $_POST['tipo_cliente'] ?? 'todos';
-    
-    // Validar formato de fechas
-    if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
-        $this->responderError('Formato de fecha inválido');
-        return;
-    }
-    
-    try {
-        // Construir condición de tipo de cliente
-        $condicionTipoCliente = '';
-        if ($tipoCliente == 'clientes') {
-            $condicionTipoCliente = " AND f.id_cliente IS NOT NULL AND f.id_conductor IS NULL";
-        } elseif ($tipoCliente == 'conductores') {
-            $condicionTipoCliente = " AND f.id_conductor IS NOT NULL AND f.id_cliente IS NULL";
-        }
-        
-        // Consulta principal
-        $query = "SELECT 
+            // Consulta principal
+            $query = "SELECT 
                     f.idfinanciamiento,
                     f.id_cliente,
                     f.id_conductor,
@@ -1275,45 +1299,45 @@ public function financiamientos() {
                     $condicionTipoCliente
                 ORDER BY 
                      f.fecha_creacion DESC";
-        
-        $resultado = $this->conexion->query($query);
-        if (!$resultado) {
-            throw new Exception("Error en la consulta: " . $this->conexion->error);
-        }
 
-        $financiamientos = [];
-        while ($fila = $resultado->fetch_assoc()) {
-            $financiamientos[] = $fila;
-        }
-
-        // Procesar cada financiamiento
-        $resultados = [];
-
-        foreach ($financiamientos as $financiamiento) {
-            $id_financiamiento = $financiamiento['idfinanciamiento'];
-
-            // Obtener información del cliente o conductor
-            $clienteData = [];
-            if (!empty($financiamiento['id_cliente'])) {
-                $clienteData = $this->obtenerDatosCliente($financiamiento['id_cliente']);
-                $clienteData['tipo'] = 'Cliente';
-                $clienteData['numUnidad'] = '';
-            } elseif (!empty($financiamiento['id_conductor'])) {
-                $clienteData = $this->obtenerDatosConductorparaReporte($financiamiento['id_conductor']);
-                $clienteData['tipo'] = 'Conductor';
+            $resultado = $this->conexion->query($query);
+            if (!$resultado) {
+                throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
 
-            // Obtener producto
-            $producto = $this->obtenerDatosProducto($financiamiento['idproductosv2']);
+            $financiamientos = [];
+            while ($fila = $resultado->fetch_assoc()) {
+                $financiamientos[] = $fila;
+            }
 
-            // Obtener información de cuotas
-            $cuotasInfo = $this->obtenerInfoCuotas($id_financiamiento);
+            // Procesar cada financiamiento
+            $resultados = [];
 
-            // Calcular saldo pendiente
-            $saldoPendiente = $cuotasInfo['cuotas_pendientes'] * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+            foreach ($financiamientos as $financiamiento) {
+                $id_financiamiento = $financiamiento['idfinanciamiento'];
 
-            $nombreGrupo = $this->obtenerNombreGrupoFinanciamiento($financiamiento['id_variante'], $financiamiento['grupo_financiamiento']); // 🐱 Obtener nombre del grupo
-            // Agregar a resultados
+                // Obtener información del cliente o conductor
+                $clienteData = [];
+                if (!empty($financiamiento['id_cliente'])) {
+                    $clienteData = $this->obtenerDatosCliente($financiamiento['id_cliente']);
+                    $clienteData['tipo'] = 'Cliente';
+                    $clienteData['numUnidad'] = '';
+                } elseif (!empty($financiamiento['id_conductor'])) {
+                    $clienteData = $this->obtenerDatosConductorparaReporte($financiamiento['id_conductor']);
+                    $clienteData['tipo'] = 'Conductor';
+                }
+
+                // Obtener producto
+                $producto = $this->obtenerDatosProducto($financiamiento['idproductosv2']);
+
+                // Obtener información de cuotas
+                $cuotasInfo = $this->obtenerInfoCuotas($id_financiamiento);
+
+                // Calcular saldo pendiente
+                $saldoPendiente = $cuotasInfo['cuotas_pendientes'] * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+
+                $nombreGrupo = $this->obtenerNombreGrupoFinanciamiento($financiamiento['id_variante'], $financiamiento['grupo_financiamiento']); // 🐱 Obtener nombre del grupo
+                // Agregar a resultados
                 $financiamientoData = [
                     'nro_documento' => $clienteData['documento'] ?? '',
                     'cliente' => $clienteData['nombre_completo'] ?? '',
@@ -1330,41 +1354,42 @@ public function financiamientos() {
                     'codigo_asociado' => $financiamiento['codigo_asociado'] ?? ''
                 ];
 
-            $resultados[] = $financiamientoData;
+                $resultados[] = $financiamientoData;
+            }
+
+            $this->responderExito([
+                'registros' => $resultados
+            ]);
+        } catch (Exception $e) {
+            $this->responderError('Error al procesar los financiamientos: ' . $e->getMessage());
         }
-
-        $this->responderExito([
-            'registros' => $resultados
-        ]);
-    } catch (Exception $e) {
-        $this->responderError('Error al procesar los financiamientos: ' . $e->getMessage());
-    }
-}
-
-public function cuotasPagadas() {
-    // Validar y obtener parámetros
-    $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
-    $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
-    $tipoCliente = $_POST['tipo_cliente'] ?? 'todos';
-    $incluirMorosos = isset($_POST['incluir_morosos']) ? filter_var($_POST['incluir_morosos'], FILTER_VALIDATE_BOOLEAN) : true;
-
-    // Validar formato de fechas
-    if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
-        $this->responderError('Formato de fecha inválido');
-        return;
     }
 
-    try {
-        // Construir condición de tipo de cliente
-        $condicionTipoCliente = '';
-        if ($tipoCliente == 'clientes') {
-            $condicionTipoCliente = " AND f.id_cliente IS NOT NULL AND f.id_conductor IS NULL";
-        } elseif ($tipoCliente == 'conductores') {
-            $condicionTipoCliente = " AND f.id_conductor IS NOT NULL AND f.id_cliente IS NULL";
+    public function cuotasPagadas()
+    {
+        // Validar y obtener parámetros
+        $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
+        $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
+        $tipoCliente = $_POST['tipo_cliente'] ?? 'todos';
+        $incluirMorosos = isset($_POST['incluir_morosos']) ? filter_var($_POST['incluir_morosos'], FILTER_VALIDATE_BOOLEAN) : true;
+
+        // Validar formato de fechas
+        if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
+            $this->responderError('Formato de fecha inválido');
+            return;
         }
 
-        // Obtener financiamientos
-        $query = "SELECT 
+        try {
+            // Construir condición de tipo de cliente
+            $condicionTipoCliente = '';
+            if ($tipoCliente == 'clientes') {
+                $condicionTipoCliente = " AND f.id_cliente IS NOT NULL AND f.id_conductor IS NULL";
+            } elseif ($tipoCliente == 'conductores') {
+                $condicionTipoCliente = " AND f.id_conductor IS NOT NULL AND f.id_cliente IS NULL";
+            }
+
+            // Obtener financiamientos
+            $query = "SELECT 
                     f.idfinanciamiento,
                     f.id_cliente,
                     f.id_conductor,
@@ -1381,104 +1406,105 @@ public function cuotasPagadas() {
                 ORDER BY 
                     f.fecha_inicio DESC";
 
-        $resultado = $this->conexion->query($query);
-        if (!$resultado) {
-            throw new Exception("Error en la consulta: " . $this->conexion->error);
-        }
-
-        $financiamientos = [];
-        while ($row = $resultado->fetch_assoc()) {
-            $financiamientos[] = $row;
-        }
-
-        // Procesar para obtener cuotas pagadas
-        $cuotasPorCliente = [];
-        $clientesMorosos = [];
-
-        foreach ($financiamientos as $financiamiento) {
-            $id_financiamiento = $financiamiento['idfinanciamiento'];
-
-            // Obtener información del cliente o conductor
-            $clienteData = [];
-            if (!empty($financiamiento['id_cliente'])) {
-                $clienteData = $this->obtenerDatosCliente($financiamiento['id_cliente']);
-                $clienteData['tipo'] = 'Cliente';
-                $clienteData['numUnidad'] = '';
-                $clienteData['id'] = $financiamiento['id_cliente'];
-            } elseif (!empty($financiamiento['id_conductor'])) {
-                $clienteData = $this->obtenerDatosConductorparaReporte($financiamiento['id_conductor']);
-                $clienteData['tipo'] = 'Conductor';
-                $clienteData['id'] = $financiamiento['id_conductor'];
+            $resultado = $this->conexion->query($query);
+            if (!$resultado) {
+                throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
 
-            // Obtener producto
-            $producto = $this->obtenerDatosProducto($financiamiento['idproductosv2']);
-
-            // Obtener información de cuotas
-            $cuotasInfo = $this->obtenerInfoCuotas($id_financiamiento);
-
-            // Calcular saldo pendiente
-            $saldoPendiente = $cuotasInfo['cuotas_pendientes'] * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
-
-            // Verificar si tiene cuotas vencidas
-            $cuotasVencidas = $this->obtenerCuotasVencidas($id_financiamiento);
-
-            // Agregar a arreglo de cuotas por cliente
-            $clienteKey = $clienteData['tipo'] . '-' . $clienteData['id'];
-
-            if (!isset($cuotasPorCliente[$clienteKey])) {
-                $cuotasPorCliente[$clienteKey] = [
-                    'nro_documento' => $clienteData['documento'] ?? '',
-                    'cliente' => $clienteData['nombre_completo'] ?? '',
-                    'tipo_cliente' => $clienteData['tipo'] ?? '',
-                    'numUnidad' => $clienteData['numUnidad'] ?? '',
-                    'financiamientos' => []
-                ];
+            $financiamientos = [];
+            while ($row = $resultado->fetch_assoc()) {
+                $financiamientos[] = $row;
             }
 
-            // Agregar financiamiento a este cliente
-            $cuotasPorCliente[$clienteKey]['financiamientos'][] = [
-                'idfinanciamiento' => $id_financiamiento,
-                'producto' => $producto['nombre'] ?? '',
-                'cuotas_totales' => $financiamiento['cuotas'],
-                'cuotas_pagadas' => $cuotasInfo['cuotas_pagadas'],
-                'cuotas_pendientes' => $cuotasInfo['cuotas_pendientes'],
-                'saldo_pendiente' => number_format($saldoPendiente, 2),
-                'fecha_inicio' => $financiamiento['fecha_inicio'],
-                'fecha_fin' => $financiamiento['fecha_fin']
-            ];
+            // Procesar para obtener cuotas pagadas
+            $cuotasPorCliente = [];
+            $clientesMorosos = [];
 
-            // Si tiene cuotas vencidas, agregar a morosos
-            if ($cuotasVencidas > 0) {
-                if (!isset($clientesMorosos[$clienteKey])) {
-                    $clientesMorosos[$clienteKey] = [
+            foreach ($financiamientos as $financiamiento) {
+                $id_financiamiento = $financiamiento['idfinanciamiento'];
+
+                // Obtener información del cliente o conductor
+                $clienteData = [];
+                if (!empty($financiamiento['id_cliente'])) {
+                    $clienteData = $this->obtenerDatosCliente($financiamiento['id_cliente']);
+                    $clienteData['tipo'] = 'Cliente';
+                    $clienteData['numUnidad'] = '';
+                    $clienteData['id'] = $financiamiento['id_cliente'];
+                } elseif (!empty($financiamiento['id_conductor'])) {
+                    $clienteData = $this->obtenerDatosConductorparaReporte($financiamiento['id_conductor']);
+                    $clienteData['tipo'] = 'Conductor';
+                    $clienteData['id'] = $financiamiento['id_conductor'];
+                }
+
+                // Obtener producto
+                $producto = $this->obtenerDatosProducto($financiamiento['idproductosv2']);
+
+                // Obtener información de cuotas
+                $cuotasInfo = $this->obtenerInfoCuotas($id_financiamiento);
+
+                // Calcular saldo pendiente
+                $saldoPendiente = $cuotasInfo['cuotas_pendientes'] * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+
+                // Verificar si tiene cuotas vencidas
+                $cuotasVencidas = $this->obtenerCuotasVencidas($id_financiamiento);
+
+                // Agregar a arreglo de cuotas por cliente
+                $clienteKey = $clienteData['tipo'] . '-' . $clienteData['id'];
+
+                if (!isset($cuotasPorCliente[$clienteKey])) {
+                    $cuotasPorCliente[$clienteKey] = [
                         'nro_documento' => $clienteData['documento'] ?? '',
                         'cliente' => $clienteData['nombre_completo'] ?? '',
                         'tipo_cliente' => $clienteData['tipo'] ?? '',
                         'numUnidad' => $clienteData['numUnidad'] ?? '',
-                        'cuotas_vencidas' => $cuotasVencidas,
-                        'monto_vencido' => $cuotasVencidas * ($financiamiento['monto_total'] / $financiamiento['cuotas']),
-                        'producto' => $producto['nombre'] ?? '',
-                        'idfinanciamiento' => $id_financiamiento
+                        'financiamientos' => []
                     ];
-                } else {
-                    $clientesMorosos[$clienteKey]['cuotas_vencidas'] += $cuotasVencidas;
-                    $clientesMorosos[$clienteKey]['monto_vencido'] += $cuotasVencidas * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+                }
+
+                // Agregar financiamiento a este cliente
+                $cuotasPorCliente[$clienteKey]['financiamientos'][] = [
+                    'idfinanciamiento' => $id_financiamiento,
+                    'producto' => $producto['nombre'] ?? '',
+                    'cuotas_totales' => $financiamiento['cuotas'],
+                    'cuotas_pagadas' => $cuotasInfo['cuotas_pagadas'],
+                    'cuotas_pendientes' => $cuotasInfo['cuotas_pendientes'],
+                    'saldo_pendiente' => number_format($saldoPendiente, 2),
+                    'fecha_inicio' => $financiamiento['fecha_inicio'],
+                    'fecha_fin' => $financiamiento['fecha_fin']
+                ];
+
+                // Si tiene cuotas vencidas, agregar a morosos
+                if ($cuotasVencidas > 0) {
+                    if (!isset($clientesMorosos[$clienteKey])) {
+                        $clientesMorosos[$clienteKey] = [
+                            'nro_documento' => $clienteData['documento'] ?? '',
+                            'cliente' => $clienteData['nombre_completo'] ?? '',
+                            'tipo_cliente' => $clienteData['tipo'] ?? '',
+                            'numUnidad' => $clienteData['numUnidad'] ?? '',
+                            'cuotas_vencidas' => $cuotasVencidas,
+                            'monto_vencido' => $cuotasVencidas * ($financiamiento['monto_total'] / $financiamiento['cuotas']),
+                            'producto' => $producto['nombre'] ?? '',
+                            'idfinanciamiento' => $id_financiamiento
+                        ];
+                    } else {
+                        $clientesMorosos[$clienteKey]['cuotas_vencidas'] += $cuotasVencidas;
+                        $clientesMorosos[$clienteKey]['monto_vencido'] += $cuotasVencidas * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+                    }
                 }
             }
+
+            $this->responderExito([
+                'cuotas_por_cliente' => array_values($cuotasPorCliente),
+                'clientes_morosos' => array_values($clientesMorosos)
+            ]);
+        } catch (Exception $e) {
+            $this->responderError('Error al procesar las cuotas pagadas: ' . $e->getMessage());
         }
-
-        $this->responderExito([
-            'cuotas_por_cliente' => array_values($cuotasPorCliente),
-            'clientes_morosos' => array_values($clientesMorosos)
-        ]);
-    } catch (Exception $e) {
-        $this->responderError('Error al procesar las cuotas pagadas: ' . $e->getMessage());
     }
-}
 
 
-    public function getEmpleados() {
+    public function getEmpleados()
+    {
         try {
             $query = "SELECT 
                         usuario_id, 
@@ -1490,9 +1516,9 @@ public function cuotasPagadas() {
                         estado = '1'
                     ORDER BY 
                         nombres ASC";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if ($resultado) {
                 $empleados = [];
                 while ($fila = $resultado->fetch_assoc()) {
@@ -1508,139 +1534,143 @@ public function cuotasPagadas() {
             $this->responderError('Error al obtener empleados: ' . $e->getMessage());
         }
     }
-      
+
     /**
      * Endpoint para descargar reporte en Excel
      */
-   public function downloadExcel() {
-    // Validar y obtener parámetros (los mismos que se usaron para generar el reporte)
-    $tipoReporte = $_POST['tipo_reporte'] ?? '';
-    $jsonData = $_POST['data'] ?? '{}';
-    
-    // Decodificar el JSON a un array asociativo
-    $data = json_decode($jsonData, true);
-    
-    if (empty($tipoReporte) || empty($data)) {
-        $this->responderError('Parámetros inválidos');
-        return;
-    }
-    
-    try {
-        // Crear nuevo archivo Excel
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        
-        // Configurar el reporte según el tipo
-        switch ($tipoReporte) {
-            case 'ventas-generales':
-                $this->generarExcelVentasGenerales($spreadsheet, $data);
-                break;
-            case 'ventas-por-empleado':
-                $this->generarExcelVentasPorEmpleado($spreadsheet, $data);
-                break;
-            case 'financiamientos':
-                $this->generarExcelFinanciamientos($spreadsheet, $data);
-                break;
-            case 'cuotas-pagadas':
-                $this->generarExcelCuotasPagadas($spreadsheet, $data);
-                break;
-            case 'ventas-por-categoria':  // ← AGREGAR ESTA LÍNEA
-                $this->generarExcelVentasPorCategoria($spreadsheet, $data);  // ← AGREGAR ESTA LÍNEA
-                break;  // ← AGREGAR ESTA LÍNEA
-            case 'ingresos':
-                $this->generarExcelIngresos($spreadsheet, $data);
-                break;
-            default:
-                $this->responderError('Tipo de reporte no válido');
-                return;
+    public function downloadExcel()
+    {
+        // Validar y obtener parámetros (los mismos que se usaron para generar el reporte)
+        $tipoReporte = $_POST['tipo_reporte'] ?? '';
+        $jsonData = $_POST['data'] ?? '{}';
+
+        // Decodificar el JSON a un array asociativo
+        $data = json_decode($jsonData, true);
+
+        if (empty($tipoReporte) || empty($data)) {
+            $this->responderError('Parámetros inválidos');
+            return;
         }
-        
-        // Configurar cabeceras para descarga
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="Reporte_' . $tipoReporte . '_' . date('Y-m-d') . '.xlsx"');
-        header('Cache-Control: max-age=0');
-        
-        // Crear el archivo Excel y enviarlo al navegador
-        $writer = new Xlsx($spreadsheet);
-        // Limpiar buffers antes de enviar el archivo
-        if (ob_get_length()) ob_end_clean(); // Finaliza buffer si está activo
-        ob_start();                          // Inicia uno nuevo para asegurarse
-        $writer->save('php://output');
-        ob_end_flush(); // Envía el contenido y limpia
 
-        exit;
-    } catch (Exception $e) {
-        $this->responderError('Error al generar el archivo Excel: ' . $e->getMessage());
-    }
-}
+        try {
+            // Crear nuevo archivo Excel
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
 
-  
-public function downloadPDF() {
-    // Validar y obtener parámetros
-    $tipoReporte = $_POST['tipo_reporte'] ?? '';
-    $jsonData = $_POST['data'] ?? '{}';
-    
-    // Decodificar el JSON a un array asociativo
-    $data = json_decode($jsonData, true);
-    
-    if (empty($tipoReporte) || empty($data)) {
-        $this->responderError('Parámetros inválidos');
-        return;
-    }
-    
-    try {
-        // Crear instancia de mPDF
-        $this->mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'margin_left' => 10,
-            'margin_right' => 10,
-            'margin_top' => 15,
-            'margin_bottom' => 15
-        ]);
-        
-        // Configurar el reporte según el tipo
-        switch ($tipoReporte) {
-            case 'ventas-generales':
-                $this->generarPDFVentasGenerales($data);
-                break;
-            case 'ventas-por-empleado':
-                $this->generarPDFVentasPorEmpleado($data);
-                break;
-            case 'financiamientos':
-                $this->generarPDFFinanciamientos($data);
-                break;
-            case 'cuotas-pagadas':
-                $this->generarPDFCuotasPagadas($data);
-                break;
-            case 'ventas-por-categoria':  // ← AGREGAR ESTA LÍNEA
-                $this->generarPDFVentasPorCategoria($data);  // ← AGREGAR ESTA LÍNEA
-                break;  // ← AGREGAR ESTA LÍNEA
-            case 'ingresos':
-                $this->generarPDFIngresos($data);
-                break;
-            default:
-                $this->responderError('Tipo de reporte no válido');
-                return;
+            // Configurar el reporte según el tipo
+            switch ($tipoReporte) {
+                case 'ventas-generales':
+                    $this->generarExcelVentasGenerales($spreadsheet, $data);
+                    break;
+                case 'ventas-por-empleado':
+                    $this->generarExcelVentasPorEmpleado($spreadsheet, $data);
+                    break;
+                case 'financiamientos':
+                    $this->generarExcelFinanciamientos($spreadsheet, $data);
+                    break;
+                case 'cuotas-pagadas':
+                    $this->generarExcelCuotasPagadas($spreadsheet, $data);
+                    break;
+                case 'ventas-por-categoria':  // ← AGREGAR ESTA LÍNEA
+                    $this->generarExcelVentasPorCategoria($spreadsheet, $data);  // ← AGREGAR ESTA LÍNEA
+                    break;  // ← AGREGAR ESTA LÍNEA
+                case 'ingresos':
+                    $this->generarExcelIngresos($spreadsheet, $data);
+                    break;
+                default:
+                    $this->responderError('Tipo de reporte no válido');
+                    return;
+            }
+
+            // Configurar cabeceras para descarga
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="Reporte_' . $tipoReporte . '_' . date('Y-m-d') . '.xlsx"');
+            header('Cache-Control: max-age=0');
+
+            // Crear el archivo Excel y enviarlo al navegador
+            $writer = new Xlsx($spreadsheet);
+            // Limpiar buffers antes de enviar el archivo
+            if (ob_get_length())
+                ob_end_clean(); // Finaliza buffer si está activo
+            ob_start();                          // Inicia uno nuevo para asegurarse
+            $writer->save('php://output');
+            ob_end_flush(); // Envía el contenido y limpia
+
+            exit;
+        } catch (Exception $e) {
+            $this->responderError('Error al generar el archivo Excel: ' . $e->getMessage());
         }
-        
-        // Salida del PDF
-        $this->mpdf->Output('Reporte_' . $tipoReporte . '_' . date('Y-m-d') . '.pdf', 'D');
-        exit;
-    } catch (Exception $e) {
-        $this->responderError('Error al generar el archivo PDF: ' . $e->getMessage());
     }
-}
 
 
-    private function generarExcelVentasGenerales($spreadsheet, $data) {
+    public function downloadPDF()
+    {
+        // Validar y obtener parámetros
+        $tipoReporte = $_POST['tipo_reporte'] ?? '';
+        $jsonData = $_POST['data'] ?? '{}';
+
+        // Decodificar el JSON a un array asociativo
+        $data = json_decode($jsonData, true);
+
+        if (empty($tipoReporte) || empty($data)) {
+            $this->responderError('Parámetros inválidos');
+            return;
+        }
+
+        try {
+            // Crear instancia de mPDF
+            $this->mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'margin_left' => 10,
+                'margin_right' => 10,
+                'margin_top' => 15,
+                'margin_bottom' => 15
+            ]);
+
+            // Configurar el reporte según el tipo
+            switch ($tipoReporte) {
+                case 'ventas-generales':
+                    $this->generarPDFVentasGenerales($data);
+                    break;
+                case 'ventas-por-empleado':
+                    $this->generarPDFVentasPorEmpleado($data);
+                    break;
+                case 'financiamientos':
+                    $this->generarPDFFinanciamientos($data);
+                    break;
+                case 'cuotas-pagadas':
+                    $this->generarPDFCuotasPagadas($data);
+                    break;
+                case 'ventas-por-categoria':  // ← AGREGAR ESTA LÍNEA
+                    $this->generarPDFVentasPorCategoria($data);  // ← AGREGAR ESTA LÍNEA
+                    break;  // ← AGREGAR ESTA LÍNEA
+                case 'ingresos':
+                    $this->generarPDFIngresos($data);
+                    break;
+                default:
+                    $this->responderError('Tipo de reporte no válido');
+                    return;
+            }
+
+            // Salida del PDF
+            $this->mpdf->Output('Reporte_' . $tipoReporte . '_' . date('Y-m-d') . '.pdf', 'D');
+            exit;
+        } catch (Exception $e) {
+            $this->responderError('Error al generar el archivo PDF: ' . $e->getMessage());
+        }
+    }
+
+
+    private function generarExcelVentasGenerales($spreadsheet, $data)
+    {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Ventas Generales');
-        
+
         // Definir encabezados
         $headers = ['Fecha', 'Cliente', 'Productos', 'Total', 'Vendedor', 'Método de Pago'];
         $this->configurarEncabezadosExcel($sheet, $headers);
-        
+
         // Fila para el total general
         $sheet->setCellValue('A2', 'TOTAL GENERAL');
         $sheet->setCellValue('D2', $data['total_general'] ?? '0.00');
@@ -1648,36 +1678,37 @@ public function downloadPDF() {
         $sheet->getStyle('A2:F2')->getFont()->setBold(true);
         $sheet->getStyle('A2:F2')->getFill()->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('f8f8fa');
-        
+
         // Datos de ventas
         $row = 3;
         if (isset($data['registros']) && is_array($data['registros'])) {
             foreach ($data['registros'] as $venta) {
                 $sheet->setCellValue('A' . $row, $venta['fecha'] ?? '');
                 $sheet->setCellValue('B' . $row, $venta['cliente'] ?? '');
-                $sheet->setCellValue('C' . $row, isset($venta['productos']) && is_array($venta['productos']) ? 
-                                               implode(', ', $venta['productos']) : '');
+                $sheet->setCellValue('C' . $row, isset($venta['productos']) && is_array($venta['productos']) ?
+                    implode(', ', $venta['productos']) : '');
                 $sheet->setCellValue('D' . $row, $venta['total'] ?? '');
                 $sheet->setCellValue('E' . $row, $venta['vendedor'] ?? '');
                 $sheet->setCellValue('F' . $row, $venta['metodo_pago'] ?? '');
                 $row++;
             }
         }
-        
+
         // Ajustar anchos de columna
         foreach (range('A', 'F') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }
-    
-    private function generarExcelVentasPorEmpleado($spreadsheet, $data) {
+
+    private function generarExcelVentasPorEmpleado($spreadsheet, $data)
+    {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Ventas por Empleado');
-        
+
         // Definir encabezados
         $headers = ['Asesor', 'Producto', 'Cantidad', 'Precio Unitario', 'Total Producto'];
         $this->configurarEncabezadosExcel($sheet, $headers);
-        
+
         // Datos por asesor
         $row = 2;
         foreach ($data['registros'] as $asesor) {
@@ -1688,7 +1719,7 @@ public function downloadPDF() {
             $sheet->getStyle('A' . $row . ':E' . $row)->getFill()->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('f8f8fa');
             $row++;
-            
+
             // Productos del asesor
             foreach ($asesor['productos'] as $producto) {
                 $sheet->setCellValue('A' . $row, '');
@@ -1698,18 +1729,18 @@ public function downloadPDF() {
                 $sheet->setCellValue('E' . $row, $producto['total_producto']);
                 $row++;
             }
-            
+
             // Subtotal por asesor
             $sheet->setCellValue('A' . $row, 'Subtotal');
             $sheet->setCellValue('E' . $row, $asesor['total']);
             $sheet->mergeCells('A' . $row . ':D' . $row);
             $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
             $row++;
-            
+
             // Espacio entre asesores
             $row++;
         }
-        
+
         // Total general
         $sheet->setCellValue('A' . $row, 'TOTAL GENERAL');
         $sheet->setCellValue('E' . $row, $data['total_general']);
@@ -1717,7 +1748,7 @@ public function downloadPDF() {
         $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
         $sheet->getStyle('A' . $row . ':E' . $row)->getFill()->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('f8f8fa');
-        
+
         // Ajustar anchos de columna
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -1725,14 +1756,15 @@ public function downloadPDF() {
     }
 
     /* MÉTODOS AUXILIARES PARA OBTENER DATOS */
-    
+
     /**
      * Obtiene el vendedor asociado a una venta
      */
-    private function obtenerVendedor($id_venta) {
+    private function obtenerVendedor($id_venta)
+    {
         try {
             $id_venta = $this->conexion->real_escape_string($id_venta); // Seguridad básica
-    
+
             // Modificación: Cambiar CONCAT por CONCAT_WS para manejar valores NULL
             $query = "SELECT 
                         CONCAT_WS(' ', u.nombres, u.apellidos) AS vendedor
@@ -1742,9 +1774,9 @@ public function downloadPDF() {
                         usuarios u ON v.id_vendedor = u.usuario_id
                     WHERE 
                         v.id_venta = '$id_venta'";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if ($resultado && $fila = $resultado->fetch_assoc()) {
                 return $fila['vendedor'];
             } else {
@@ -1756,52 +1788,54 @@ public function downloadPDF() {
     }
 
     /**
- * Obtiene el método de pago asociado a una venta
- */
-/**
- * Obtiene el método de pago asociado a una venta
- */
-private function obtenerMetodoPagoparaReporte($id_venta) {
-    try {
-        // Sanitizar y extraer la parte válida del id_venta
-        $id_venta = $this->conexion->real_escape_string($id_venta);
-        $id_venta = explode('-', $id_venta)[0]; // Eliminar desde el primer guion hacia la derecha
-        $id_venta = preg_replace('/[^0-9]/', '', $id_venta); // Asegurar que sea numérico
+     * Obtiene el método de pago asociado a una venta
+     */
+    /**
+     * Obtiene el método de pago asociado a una venta
+     */
+    private function obtenerMetodoPagoparaReporte($id_venta)
+    {
+        try {
+            // Sanitizar y extraer la parte válida del id_venta
+            $id_venta = $this->conexion->real_escape_string($id_venta);
+            $id_venta = explode('-', $id_venta)[0]; // Eliminar desde el primer guion hacia la derecha
+            $id_venta = preg_replace('/[^0-9]/', '', $id_venta); // Asegurar que sea numérico
 
-        $query = "SELECT metodo_pago FROM ventas_pagos WHERE id_venta = '$id_venta' LIMIT 1";
-        $resultado = $this->conexion->query($query);
+            $query = "SELECT metodo_pago FROM ventas_pagos WHERE id_venta = '$id_venta' LIMIT 1";
+            $resultado = $this->conexion->query($query);
 
-        if ($resultado && $fila = $resultado->fetch_assoc()) {
-            $id_metodo_pago = $this->conexion->real_escape_string($fila['metodo_pago']);
+            if ($resultado && $fila = $resultado->fetch_assoc()) {
+                $id_metodo_pago = $this->conexion->real_escape_string($fila['metodo_pago']);
 
-            $queryNombre = "SELECT nombre FROM metodo_pago WHERE id_metodo_pago = '$id_metodo_pago'";
-            $resultadoNombre = $this->conexion->query($queryNombre);
+                $queryNombre = "SELECT nombre FROM metodo_pago WHERE id_metodo_pago = '$id_metodo_pago'";
+                $resultadoNombre = $this->conexion->query($queryNombre);
 
-            if ($resultadoNombre && $filaNombre = $resultadoNombre->fetch_assoc()) {
-                return $filaNombre['nombre'];
+                if ($resultadoNombre && $filaNombre = $resultadoNombre->fetch_assoc()) {
+                    return $filaNombre['nombre'];
+                }
             }
+
+            $query2 = "SELECT metodo_pago FROM ventas_pagos WHERE id_venta = '$id_venta' AND metodo_pago = '99'";
+            $resultado2 = $this->conexion->query($query2);
+
+            if ($resultado2 && $resultado2->num_rows > 0) {
+                return 'FLOTA';
+            }
+
+            return 'No especificado';
+
+        } catch (Exception $e) {
+            return 'Error al obtener método de pago';
         }
-
-        $query2 = "SELECT metodo_pago FROM ventas_pagos WHERE id_venta = '$id_venta' AND metodo_pago = '99'";
-        $resultado2 = $this->conexion->query($query2);
-
-        if ($resultado2 && $resultado2->num_rows > 0) {
-            return 'FLOTA';
-        }
-
-        return 'No especificado';
-
-    } catch (Exception $e) {
-        return 'Error al obtener método de pago';
     }
-}
 
 
-private function obtenerProductosVenta($id_venta) {
-    try {
-        $id_venta = $this->conexion->real_escape_string($id_venta); // Seguridad básica
+    private function obtenerProductosVenta($id_venta)
+    {
+        try {
+            $id_venta = $this->conexion->real_escape_string($id_venta); // Seguridad básica
 
-        $query = "SELECT 
+            $query = "SELECT 
                     pv.descripcion,
                     p.nombre
                 FROM 
@@ -1811,27 +1845,28 @@ private function obtenerProductosVenta($id_venta) {
                 WHERE 
                     pv.id_venta = '$id_venta'";
 
-        $resultado = $this->conexion->query($query);
+            $resultado = $this->conexion->query($query);
 
-        $nombresProductos = [];
-        if ($resultado) {
-            while ($producto = $resultado->fetch_assoc()) {
-                $nombreProducto = !empty($producto['nombre']) ? $producto['nombre'] : $producto['descripcion'];
-                $nombresProductos[] = $nombreProducto;
+            $nombresProductos = [];
+            if ($resultado) {
+                while ($producto = $resultado->fetch_assoc()) {
+                    $nombreProducto = !empty($producto['nombre']) ? $producto['nombre'] : $producto['descripcion'];
+                    $nombresProductos[] = $nombreProducto;
+                }
             }
+
+            return $nombresProductos;
+        } catch (Exception $e) {
+            return ['Error al obtener productos'];
         }
-
-        return $nombresProductos;
-    } catch (Exception $e) {
-        return ['Error al obtener productos'];
     }
-}
 
-private function obtenerDetallesProductosVenta($id_venta) {
-    try {
-        $id_venta = $this->conexion->real_escape_string($id_venta);
+    private function obtenerDetallesProductosVenta($id_venta)
+    {
+        try {
+            $id_venta = $this->conexion->real_escape_string($id_venta);
 
-        $query = "SELECT 
+            $query = "SELECT 
                     pv.id_producto,
                     p.nombre,
                     pv.cantidad,
@@ -1844,29 +1879,30 @@ private function obtenerDetallesProductosVenta($id_venta) {
                 WHERE 
                     pv.id_venta = '$id_venta'";
 
-        $resultado = $this->conexion->query($query);
+            $resultado = $this->conexion->query($query);
 
-        if (!$resultado) {
-            throw new Exception("Error en la consulta: " . $this->conexion->error);
+            if (!$resultado) {
+                throw new Exception("Error en la consulta: " . $this->conexion->error);
+            }
+
+            $detalles = [];
+            while ($fila = $resultado->fetch_assoc()) {
+                $detalles[] = $fila;
+            }
+
+            return $detalles;
+        } catch (Exception $e) {
+            return [];
         }
-
-        $detalles = [];
-        while ($fila = $resultado->fetch_assoc()) {
-            $detalles[] = $fila;
-        }
-
-        return $detalles;
-    } catch (Exception $e) {
-        return [];
     }
-}
 
 
-private function obtenerDatosCliente($id_cliente) {
-    try {
-        $id_cliente = $this->conexion->real_escape_string($id_cliente);
+    private function obtenerDatosCliente($id_cliente)
+    {
+        try {
+            $id_cliente = $this->conexion->real_escape_string($id_cliente);
 
-        $query = "SELECT 
+            $query = "SELECT 
                     n_documento AS documento,
                     CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo
                 FROM 
@@ -1874,32 +1910,33 @@ private function obtenerDatosCliente($id_cliente) {
                 WHERE 
                     id = '$id_cliente'";
 
-        $resultado = $this->conexion->query($query);
-        if (!$resultado) {
-            throw new Exception("Error en la consulta: " . $this->conexion->error);
+            $resultado = $this->conexion->query($query);
+            if (!$resultado) {
+                throw new Exception("Error en la consulta: " . $this->conexion->error);
+            }
+
+            $fila = $resultado->fetch_assoc();
+
+            return $fila ?: [
+                'documento' => 'No disponible',
+                'nombre_completo' => 'Cliente no encontrado'
+            ];
+        } catch (Exception $e) {
+            return [
+                'documento' => 'Error',
+                'nombre_completo' => 'Error al obtener datos del cliente'
+            ];
         }
-
-        $fila = $resultado->fetch_assoc();
-
-        return $fila ?: [
-            'documento' => 'No disponible',
-            'nombre_completo' => 'Cliente no encontrado'
-        ];
-    } catch (Exception $e) {
-        return [
-            'documento' => 'Error',
-            'nombre_completo' => 'Error al obtener datos del cliente'
-        ];
     }
-}
 
     /**
      * Obtiene datos de un conductor
      */
-    private function obtenerDatosConductorparaReporte($id_conductor) {
+    private function obtenerDatosConductorparaReporte($id_conductor)
+    {
         try {
             $id_conductor = $this->conexion->real_escape_string($id_conductor);
-    
+
             $query = "SELECT 
                         nro_documento AS documento,
                         CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo,
@@ -1908,15 +1945,15 @@ private function obtenerDatosCliente($id_cliente) {
                         conductores
                     WHERE 
                         id_conductor = '$id_conductor'";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if (!$resultado) {
                 throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
-    
+
             $fila = $resultado->fetch_assoc();
-    
+
             return $fila ?: [
                 'documento' => 'No disponible',
                 'nombre_completo' => 'Conductor no encontrado',
@@ -1930,12 +1967,13 @@ private function obtenerDatosCliente($id_cliente) {
             ];
         }
     }
-   
 
-    private function obtenerDatosProducto($id_producto) {
+
+    private function obtenerDatosProducto($id_producto)
+    {
         try {
             $id_producto = $this->conexion->real_escape_string($id_producto);
-    
+
             $query = "SELECT 
                         nombre,
                         precio_venta
@@ -1943,14 +1981,14 @@ private function obtenerDatosCliente($id_cliente) {
                         productosv2
                     WHERE 
                         idproductosv2 = '$id_producto'";
-    
+
             $resultado = $this->conexion->query($query);
             if (!$resultado) {
                 throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
-    
+
             $fila = $resultado->fetch_assoc();
-    
+
             return $fila ?: [
                 'nombre' => 'Producto no encontrado',
                 'precio_venta' => 0
@@ -1962,14 +2000,15 @@ private function obtenerDatosCliente($id_cliente) {
             ];
         }
     }
-    
-      /**
+
+    /**
      * Obtiene información de cuotas de un financiamiento
      */
-    private function obtenerInfoCuotas($id_financiamiento) {
+    private function obtenerInfoCuotas($id_financiamiento)
+    {
         try {
             $id_financiamiento = $this->conexion->real_escape_string($id_financiamiento);
-    
+
             // Contar cuotas totales
             $query1 = "SELECT 
                         COUNT(*) as total
@@ -1977,14 +2016,14 @@ private function obtenerDatosCliente($id_cliente) {
                         cuotas_financiamiento
                     WHERE 
                         id_financiamiento = '$id_financiamiento'";
-    
+
             $resultado1 = $this->conexion->query($query1);
             if (!$resultado1) {
                 throw new Exception("Error en la consulta 1: " . $this->conexion->error);
             }
-    
+
             $totalCuotas = $resultado1->fetch_assoc()['total'] ?? 0;
-    
+
             // Contar cuotas pagadas
             $query2 = "SELECT 
                         COUNT(*) as pagadas
@@ -1993,17 +2032,17 @@ private function obtenerDatosCliente($id_cliente) {
                     WHERE 
                         id_financiamiento = '$id_financiamiento'
                         AND estado = 'pagado'";
-    
+
             $resultado2 = $this->conexion->query($query2);
             if (!$resultado2) {
                 throw new Exception("Error en la consulta 2: " . $this->conexion->error);
             }
-    
+
             $cuotasPagadas = $resultado2->fetch_assoc()['pagadas'] ?? 0;
-    
+
             // Calcular cuotas pendientes
             $cuotasPendientes = $totalCuotas - $cuotasPagadas;
-    
+
             return [
                 'cuotas_totales' => $totalCuotas,
                 'cuotas_pagadas' => $cuotasPagadas,
@@ -2017,15 +2056,16 @@ private function obtenerDatosCliente($id_cliente) {
             ];
         }
     }
-    
-    
+
+
     /**
      * Obtiene el número de cuotas vencidas de un financiamiento
      */
-    private function obtenerCuotasVencidas($id_financiamiento) {
+    private function obtenerCuotasVencidas($id_financiamiento)
+    {
         try {
             $fechaActual = date('Y-m-d');
-            
+
             // Construimos la consulta SQL
             $query = "SELECT 
                         COUNT(*) as vencidas
@@ -2035,45 +2075,47 @@ private function obtenerDatosCliente($id_cliente) {
                         id_financiamiento = '$id_financiamiento'
                         AND fecha_vencimiento < '$fechaActual'
                         AND estado = 'En Progreso'";
-            
+
             // Ejecutamos la consulta
             $resultado = $this->conexion->query($query);
-            
+
             // Verificamos si hubo error en la consulta
             if (!$resultado) {
                 throw new Exception("Error en la consulta: " . $this->conexion->error);
             }
-            
+
             // Obtenemos el resultado de la consulta
             $row = $resultado->fetch_assoc();
-            
+
             // Devolvemos el número de cuotas vencidas, si existe
             return $row['vencidas'] ?? 0;
         } catch (Exception $e) {
             return 0;
         }
     }
-    
-    
+
+
     /**
      * Valida el formato de una fecha
      */
-    private function validarFecha($fecha) {
+    private function validarFecha($fecha)
+    {
         $formato = 'Y-m-d';
         $fechaObj = DateTime::createFromFormat($formato, $fecha);
         return $fechaObj && $fechaObj->format($formato) === $fecha;
     }
 
-      /**
+    /**
      * Configura los encabezados para un archivo Excel
      */
-    private function configurarEncabezadosExcel($sheet, $headers) {
+    private function configurarEncabezadosExcel($sheet, $headers)
+    {
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);
             $col++;
         }
-        
+
         // Estilo para encabezados
         $lastCol = chr(ord('A') + count($headers) - 1);
         $sheet->getStyle('A1:' . $lastCol . '1')->getFont()->setBold(true);
@@ -2082,36 +2124,37 @@ private function obtenerDatosCliente($id_cliente) {
         $sheet->getStyle('A1:' . $lastCol . '1')->getBorders()->getAllBorders()
             ->setBorderStyle(Border::BORDER_THIN);
     }
-    
+
     /**
      * Genera el Excel para el reporte de financiamientos
      */
-    private function generarExcelFinanciamientos($spreadsheet, $data) {
+    private function generarExcelFinanciamientos($spreadsheet, $data)
+    {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Financiamientos');
-        
+
         // Definir encabezados
         $headers = [
-            'Nro. Documento', 
-            'Cliente', 
+            'Nro. Documento',
+            'Cliente',
             'Código Asociado',
-            'Producto', 
+            'Producto',
             'Grupo',
-            'Cuotas Totales', 
-            'Cuotas Pagadas', 
-            'Cuotas Pendientes', 
-            'Saldo Pendiente', 
-            'Fecha Inicio', 
+            'Cuotas Totales',
+            'Cuotas Pagadas',
+            'Cuotas Pendientes',
+            'Saldo Pendiente',
+            'Fecha Inicio',
             'Fecha Fin'
         ];
-        
+
         // Agregar columna para conductores
         if (in_array('Conductor', array_column($data['registros'], 'tipo_cliente'))) {
             $headers[] = 'Número Unidad';
         }
-        
+
         $this->configurarEncabezadosExcel($sheet, $headers);
-        
+
         // Datos de financiamientos
         $row = 2;
         foreach ($data['registros'] as $financiamiento) {
@@ -2127,15 +2170,15 @@ private function obtenerDatosCliente($id_cliente) {
             $sheet->setCellValue($col++ . $row, $financiamiento['saldo_pendiente']);
             $sheet->setCellValue($col++ . $row, $financiamiento['fecha_inicio']);
             $sheet->setCellValue($col++ . $row, $financiamiento['fecha_fin']);
-            
+
             // Agregar número de unidad para conductores
             if (isset($financiamiento['numUnidad']) && in_array('Número Unidad', $headers)) {
                 $sheet->setCellValue($col++ . $row, $financiamiento['numUnidad']);
             }
-            
+
             $row++;
         }
-        
+
         // Ajustar anchos de columna
         foreach (range('A', chr(ord('A') + count($headers) - 1)) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -2143,67 +2186,69 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     /**
- * Método para obtener el nombre del grupo de financiamiento
- */
-    private function obtenerNombreGrupoFinanciamiento($idVariante, $grupoFinanciamiento) {
+     * Método para obtener el nombre del grupo de financiamiento
+     */
+    private function obtenerNombreGrupoFinanciamiento($idVariante, $grupoFinanciamiento)
+    {
         // Si id_variante no está vacío, buscar en grupos_variantes
         if (!empty($idVariante)) {
             $query = "SELECT nombre_variante 
                     FROM grupos_variantes 
                     WHERE idgrupos_variantes = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idVariante);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($variante = $result->fetch_assoc()) {
                 return $variante['nombre_variante'];
             }
         }
-        
+
         // Si id_variante está vacío o no se encontró, usar grupo_financiamiento
         if (is_numeric($grupoFinanciamiento)) {
             $query = "SELECT nombre_plan 
                     FROM planes_financiamiento 
                     WHERE idplan_financiamiento = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $grupoFinanciamiento);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($plan = $result->fetch_assoc()) {
                 return $plan['nombre_plan'];
             }
         }
-        
+
         // Si no se encontró o grupo_financiamiento no es válido
         return $grupoFinanciamiento ?: 'Sin grupo';
     }
-    
+
     /**
      * Genera el Excel para el reporte de cuotas pagadas
      */
-    private function generarExcelCuotasPagadas($spreadsheet, $data) {
+    private function generarExcelCuotasPagadas($spreadsheet, $data)
+    {
         // Hoja 1: Cuotas por cliente
         $sheet1 = $spreadsheet->getActiveSheet();
         $sheet1->setTitle('Cuotas por Cliente');
-        
+
         // Definir encabezados para la primera hoja
         $headers1 = [
-            'Nro. Documento', 
-            'Cliente', 
-            'Tipo', 
-            'Producto', 
-            'Cuotas Totales', 
-            'Cuotas Pagadas', 
-            'Cuotas Pendientes', 
-            'Saldo Pendiente', 
-            'Fecha Inicio', 
+            'Nro. Documento',
+            'Cliente',
+            'Tipo',
+            'Producto',
+            'Cuotas Totales',
+            'Cuotas Pagadas',
+            'Cuotas Pendientes',
+            'Saldo Pendiente',
+            'Fecha Inicio',
             'Fecha Fin'
         ];
-        
+
         // Agregar columna para conductores
         $incluirNumUnidad = false;
         foreach ($data['cuotas_por_cliente'] as $cliente) {
@@ -2212,13 +2257,13 @@ private function obtenerDatosCliente($id_cliente) {
                 break;
             }
         }
-        
+
         if ($incluirNumUnidad) {
             $headers1[] = 'Número Unidad';
         }
-        
+
         $this->configurarEncabezadosExcel($sheet1, $headers1);
-        
+
         // Datos de cuotas por cliente
         $row = 2;
         foreach ($data['cuotas_por_cliente'] as $cliente) {
@@ -2234,40 +2279,40 @@ private function obtenerDatosCliente($id_cliente) {
                 $sheet1->setCellValue($col++ . $row, $financiamiento['saldo_pendiente']);
                 $sheet1->setCellValue($col++ . $row, $financiamiento['fecha_inicio']);
                 $sheet1->setCellValue($col++ . $row, $financiamiento['fecha_fin']);
-                
+
                 if ($incluirNumUnidad) {
                     $sheet1->setCellValue($col++ . $row, $cliente['numUnidad']);
                 }
-                
+
                 $row++;
             }
         }
-        
+
         // Ajustar anchos de columna
         foreach (range('A', chr(ord('A') + count($headers1) - 1)) as $col) {
             $sheet1->getColumnDimension($col)->setAutoSize(true);
         }
-        
+
         // Hoja 2: Clientes morosos
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('Clientes Morosos');
-        
+
         // Definir encabezados para la segunda hoja
         $headers2 = [
-            'Nro. Documento', 
-            'Cliente', 
-            'Tipo', 
-            'Producto', 
-            'Cuotas Vencidas', 
+            'Nro. Documento',
+            'Cliente',
+            'Tipo',
+            'Producto',
+            'Cuotas Vencidas',
             'Monto Vencido'
         ];
-        
+
         if ($incluirNumUnidad) {
             $headers2[] = 'Número Unidad';
         }
-        
+
         $this->configurarEncabezadosExcel($sheet2, $headers2);
-        
+
         // Datos de clientes morosos
         $row = 2;
         foreach ($data['clientes_morosos'] as $moroso) {
@@ -2278,27 +2323,28 @@ private function obtenerDatosCliente($id_cliente) {
             $sheet2->setCellValue($col++ . $row, $moroso['producto']);
             $sheet2->setCellValue($col++ . $row, $moroso['cuotas_vencidas']);
             $sheet2->setCellValue($col++ . $row, number_format($moroso['monto_vencido'], 2));
-            
+
             if ($incluirNumUnidad) {
                 $sheet2->setCellValue($col++ . $row, $moroso['numUnidad']);
             }
-            
+
             $row++;
         }
-        
+
         // Ajustar anchos de columna
         foreach (range('A', chr(ord('A') + count($headers2) - 1)) as $col) {
             $sheet2->getColumnDimension($col)->setAutoSize(true);
         }
     }
-    
+
     /**
      * Genera el PDF para el reporte de ventas generales
      */
-    private function generarPDFVentasGenerales($data) {
+    private function generarPDFVentasGenerales($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Ventas Generales|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -2327,7 +2373,7 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>Vendedor</th>
                 <th>Método de Pago</th>
             </tr>';
-        
+
         // Agregar filas de datos si existen registros
         if (isset($data['registros']) && is_array($data['registros'])) {
             foreach ($data['registros'] as $venta) {
@@ -2335,7 +2381,7 @@ private function obtenerDatosCliente($id_cliente) {
                 <tr>
                     <td>' . ($venta['fecha'] ?? '') . '</td>
                     <td>' . ($venta['cliente'] ?? 'Sin cliente') . '</td>
-                    <td>' . (isset($venta['productos']) && is_array($venta['productos']) ? 
+                    <td>' . (isset($venta['productos']) && is_array($venta['productos']) ?
                         htmlspecialchars(implode(', ', $venta['productos'])) : '') . '</td>
                     <td>' . ($venta['total'] ?? '0.00') . '</td>
                     <td>' . ($venta['vendedor'] ?? 'No asignado') . '</td>
@@ -2343,21 +2389,22 @@ private function obtenerDatosCliente($id_cliente) {
                 </tr>';
             }
         }
-        
+
         $html .= '</table>';
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
-    
-    
+
+
     /**
      * Genera el PDF para el reporte de ventas por empleado
      */
-    private function generarPDFVentasPorEmpleado($data) {
+    private function generarPDFVentasPorEmpleado($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Ventas por Empleado|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -2375,7 +2422,7 @@ private function obtenerDatosCliente($id_cliente) {
         <h1>Reporte de Ventas por Empleado</h1>
         
         <table>';
-        
+
         // Agregar filas de datos por asesor
         foreach ($data['registros'] as $asesor) {
             $html .= '
@@ -2389,7 +2436,7 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>Precio Unitario</th>
                 <th>Total Producto</th>
             </tr>';
-            
+
             foreach ($asesor['productos'] as $producto) {
                 $html .= '
                 <tr>
@@ -2400,7 +2447,7 @@ private function obtenerDatosCliente($id_cliente) {
                     <td>' . $producto['total_producto'] . '</td>
                 </tr>';
             }
-            
+
             $html .= '
             <tr class="subtotal-row">
                 <td colspan="4">Subtotal</td>
@@ -2408,27 +2455,28 @@ private function obtenerDatosCliente($id_cliente) {
             </tr>
             <tr><td colspan="5">&nbsp;</td></tr>';
         }
-        
+
         // Agregar total general
         $html .= '
         <tr class="total-row">
             <td colspan="4">TOTAL GENERAL</td>
             <td>' . $data['total_general'] . '</td>
         </tr>';
-        
+
         $html .= '</table>';
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
-    
+
     /**
      * Genera el PDF para el reporte de financiamientos
      */
-    private function generarPDFFinanciamientos($data) {
+    private function generarPDFFinanciamientos($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Financiamientos|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Determinar si incluir columna de número de unidad
         $incluirNumUnidad = false;
         foreach ($data['registros'] as $financiamiento) {
@@ -2437,7 +2485,7 @@ private function obtenerDatosCliente($id_cliente) {
                 break;
             }
         }
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -2464,13 +2512,13 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>Saldo Pendiente</th>
                 <th>Fecha Inicio</th>
                 <th>Fecha Fin</th>';
-        
+
         if ($incluirNumUnidad) {
             $html .= '<th>Número Unidad</th>';
         }
-        
+
         $html .= '</tr>';
-        
+
         // Agregar filas de datos
         foreach ($data['registros'] as $financiamiento) {
             $html .= '
@@ -2486,27 +2534,28 @@ private function obtenerDatosCliente($id_cliente) {
                 <td>' . $financiamiento['saldo_pendiente'] . '</td>
                 <td>' . $financiamiento['fecha_inicio'] . '</td>
                 <td>' . $financiamiento['fecha_fin'] . '</td>';
-            
+
             if ($incluirNumUnidad) {
                 $html .= '<td>' . $financiamiento['numUnidad'] . '</td>';
             }
-            
+
             $html .= '</tr>';
         }
-        
+
         $html .= '</table>';
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
-    
+
     /**
      * Genera el PDF para el reporte de cuotas pagadas
      */
-    private function generarPDFCuotasPagadas($data) {
+    private function generarPDFCuotasPagadas($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Cuotas Pagadas|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Determinar si incluir columna de número de unidad
         $incluirNumUnidad = false;
         foreach ($data['cuotas_por_cliente'] as $cliente) {
@@ -2515,7 +2564,7 @@ private function obtenerDatosCliente($id_cliente) {
                 break;
             }
         }
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -2545,13 +2594,13 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>Saldo Pendiente</th>
                 <th>Fecha Inicio</th>
                 <th>Fecha Fin</th>';
-        
+
         if ($incluirNumUnidad) {
             $html .= '<th>Número Unidad</th>';
         }
-        
+
         $html .= '</tr>';
-        
+
         // Agregar filas de datos de cuotas por cliente
         foreach ($data['cuotas_por_cliente'] as $cliente) {
             foreach ($cliente['financiamientos'] as $financiamiento) {
@@ -2567,17 +2616,17 @@ private function obtenerDatosCliente($id_cliente) {
                     <td>' . $financiamiento['saldo_pendiente'] . '</td>
                     <td>' . $financiamiento['fecha_inicio'] . '</td>
                     <td>' . $financiamiento['fecha_fin'] . '</td>';
-                
+
                 if ($incluirNumUnidad) {
                     $html .= '<td>' . $cliente['numUnidad'] . '</td>';
                 }
-                
+
                 $html .= '</tr>';
             }
         }
-        
+
         $html .= '</table>';
-        
+
         // Sección de clientes morosos
         if (!empty($data['clientes_morosos'])) {
             $html .= '
@@ -2591,13 +2640,13 @@ private function obtenerDatosCliente($id_cliente) {
                     <th>Producto</th>
                     <th>Cuotas Vencidas</th>
                     <th>Monto Vencido</th>';
-            
+
             if ($incluirNumUnidad) {
                 $html .= '<th>Número Unidad</th>';
             }
-            
+
             $html .= '</tr>';
-            
+
             // Agregar filas de datos de clientes morosos
             foreach ($data['clientes_morosos'] as $moroso) {
                 $html .= '
@@ -2608,25 +2657,26 @@ private function obtenerDatosCliente($id_cliente) {
                     <td>' . $moroso['producto'] . '</td>
                     <td>' . $moroso['cuotas_vencidas'] . '</td>
                     <td>' . number_format($moroso['monto_vencido'], 2) . '</td>';
-                
+
                 if ($incluirNumUnidad) {
                     $html .= '<td>' . $moroso['numUnidad'] . '</td>';
                 }
-                
+
                 $html .= '</tr>';
             }
-            
+
             $html .= '</table>';
         }
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
-    
+
     /**
      * Responde con un mensaje de éxito y datos
      */
-    private function responderExito($data) {
+    private function responderExito($data)
+    {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => true,
@@ -2634,11 +2684,12 @@ private function obtenerDatosCliente($id_cliente) {
         ]);
         exit;
     }
-    
-     /**
+
+    /**
      * Responde con un mensaje de error
      */
-    private function responderError($mensaje) {
+    private function responderError($mensaje)
+    {
         header('Content-Type: application/json');
         echo json_encode([
             'success' => false,
@@ -2647,11 +2698,12 @@ private function obtenerDatosCliente($id_cliente) {
         exit;
     }
 
-    public function ingresos() {
+    public function ingresos()
+    {
         // 🔴 Validar y obtener parámetros
         $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
         $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
-        
+
         // 🔴 Obtener filtros de tipo de ingreso
         $inscripcionContado = isset($_POST['inscripcion_contado']) ? filter_var($_POST['inscripcion_contado'], FILTER_VALIDATE_BOOLEAN) : true;
         $inscripcionFinanciadaCuotas = isset($_POST['inscripcion_financiada_cuotas']) ? filter_var($_POST['inscripcion_financiada_cuotas'], FILTER_VALIDATE_BOOLEAN) : true;
@@ -2661,15 +2713,15 @@ private function obtenerDatosCliente($id_cliente) {
         $financiamientoMontoInscripcion = isset($_POST['financiamiento_monto_inscripcion']) ? filter_var($_POST['financiamiento_monto_inscripcion'], FILTER_VALIDATE_BOOLEAN) : true;
         $financiamientoMontoRecalculado = isset($_POST['financiamiento_monto_recalculado']) ? filter_var($_POST['financiamiento_monto_recalculado'], FILTER_VALIDATE_BOOLEAN) : true;
         $incluirVentas = isset($_POST['ventas']) ? filter_var($_POST['ventas'], FILTER_VALIDATE_BOOLEAN) : true;
-        
+
         // 🔴 Obtener filtros de método de pago
         $metodosPago = isset($_POST['metodos_pago']) ? $_POST['metodos_pago'] : ['Efectivo', 'QR', 'Pago Bono', 'Transferencia', 'Tarjeta'];
-        
+
         try {
             $resultados = [];
             $totalSoles = 0;
             $totalDolares = 0;
-            
+
             // 🔴 1. Obtener inscripciones al contado
             if ($inscripcionContado) {
                 $inscripcionesContado = $this->obtenerInscripcionesContado($fechaInicio, $fechaFin, $metodosPago);
@@ -2677,7 +2729,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $inscripcionesContado['total_soles'];
                 $totalDolares += $inscripcionesContado['total_dolares'];
             }
-            
+
             // 🔴 2. Obtener inscripciones financiadas - cuota inicial
             if ($inscripcionFinanciadaInicial) {
                 $inscripcionesFinanciadasInicial = $this->obtenerInscripcionesFinanciadasInicial($fechaInicio, $fechaFin, $metodosPago);
@@ -2685,7 +2737,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $inscripcionesFinanciadasInicial['total_soles'];
                 $totalDolares += $inscripcionesFinanciadasInicial['total_dolares'];
             }
-            
+
             // 🔴 3. Obtener inscripciones financiadas - cuotas
             if ($inscripcionFinanciadaCuotas) {
                 $inscripcionesFinanciadasCuotas = $this->obtenerInscripcionesFinanciadasCuotas($fechaInicio, $fechaFin, $metodosPago);
@@ -2693,7 +2745,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $inscripcionesFinanciadasCuotas['total_soles'];
                 $totalDolares += $inscripcionesFinanciadasCuotas['total_dolares'];
             }
-            
+
             // 🔴 4. Obtener financiamientos - cuota inicial
             if ($financiamientoCuotaInicial) {
                 $financiamientosCuotaInicial = $this->obtenerFinanciamientosCuotaInicial($fechaInicio, $fechaFin, $metodosPago);
@@ -2701,7 +2753,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $financiamientosCuotaInicial['total_soles'];
                 $totalDolares += $financiamientosCuotaInicial['total_dolares'];
             }
-            
+
             // 🔴 5. Obtener financiamientos - cuotas
             if ($financiamientoCuotas) {
                 $financiamientosCuotas = $this->obtenerFinanciamientosCuotas($fechaInicio, $fechaFin, $metodosPago);
@@ -2709,7 +2761,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $financiamientosCuotas['total_soles'];
                 $totalDolares += $financiamientosCuotas['total_dolares'];
             }
-            
+
             // 🔴 6. Obtener financiamientos - monto inscripción
             if ($financiamientoMontoInscripcion) {
                 $financiamientosMontoInscripcion = $this->obtenerFinanciamientosMontoInscripcion($fechaInicio, $fechaFin, $metodosPago);
@@ -2717,7 +2769,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $financiamientosMontoInscripcion['total_soles'];
                 $totalDolares += $financiamientosMontoInscripcion['total_dolares'];
             }
-            
+
             // 🔴 7. Obtener financiamientos - monto recalculado
             if ($financiamientoMontoRecalculado) {
                 $financiamientosMontoRecalculado = $this->obtenerFinanciamientosMontoRecalculado($fechaInicio, $fechaFin, $metodosPago);
@@ -2725,7 +2777,7 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $financiamientosMontoRecalculado['total_soles'];
                 $totalDolares += $financiamientosMontoRecalculado['total_dolares'];
             }
-            
+
             // 🔴 8. Obtener ventas
             if ($incluirVentas) {
                 $ventas = $this->obtenerVentas($fechaInicio, $fechaFin, $metodosPago);
@@ -2733,12 +2785,12 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $ventas['total_soles'];
                 $totalDolares += $ventas['total_dolares'];
             }
-            
+
             // 🔴 Ordenar resultados por fecha
-            usort($resultados, function($a, $b) {
+            usort($resultados, function ($a, $b) {
                 return strtotime($a['fecha']) - strtotime($b['fecha']);
             });
-            
+
             $this->responderExito([
                 'registros' => $resultados,
                 'total_soles' => number_format($totalSoles, 2),
@@ -2751,58 +2803,59 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener inscripciones al contado
-    private function obtenerInscripcionesContado($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerInscripcionesContado($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos al contado
         $query = "SELECT cp.id_conductorpago, cp.id_conductor, cp.fecha_pago 
                 FROM conductor_pago cp 
                 WHERE cp.id_tipopago = 1 
                 AND cp.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Obtener detalles del pago de inscripción
             $queryPago = "SELECT pi.id_pago, pi.medio_pago, pi.monto, pi.id_asesor, pi.fecha_pago, pi.id_conductor 
                         FROM pagos_inscripcion pi 
                         WHERE pi.id_conductor = ?";
-            
+
             $stmtPago = $this->conexion->prepare($queryPago);
             $stmtPago->bind_param("i", $pago['id_conductor']);
             $stmtPago->execute();
             $resultPago = $stmtPago->get_result();
-            
+
             while ($detallePago = $resultPago->fetch_assoc()) {
                 // Verificar si el método de pago está en los filtros
                 if (!$this->verificarMetodoPago($detallePago['medio_pago'], $metodosPago)) {
                     continue;
                 }
-                
+
                 // Obtener datos del conductor
                 $conductor = $this->obtenerDatosConductorparaReporte($detallePago['id_conductor']);
-                
+
                 // Obtener datos del asesor
                 $asesor = $this->obtenerDatosAsesor($detallePago['id_asesor']);
-                
+
                 // Formatear fecha
                 $fechaFormateada = date('Y-m-d', strtotime($detallePago['fecha_pago']));
-                
+
                 // Determinar moneda (por defecto soles)
                 $moneda = "S/.";
-                
+
                 // Agregar al total correspondiente
                 if ($moneda == "S/.") {
                     $totalSoles += $detallePago['monto'];
                 } else {
                     $totalDolares += $detallePago['monto'];
                 }
-                
+
                 // Crear registro
                 $registros[] = [
                     'fecha' => $fechaFormateada,
@@ -2820,7 +2873,7 @@ private function obtenerDatosCliente($id_cliente) {
                 ];
             }
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -2829,72 +2882,73 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener inscripciones financiadas - cuota inicial
-    private function obtenerInscripcionesFinanciadasInicial($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerInscripcionesFinanciadasInicial($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos financiados
         $query = "SELECT cp.id_conductorpago, cp.id_conductor, cp.fecha_pago 
                 FROM conductor_pago cp 
                 WHERE cp.id_tipopago = 2 
                 AND cp.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Obtener pagos de inscripción
             $queryPagos = "SELECT pi.id_pago, pi.medio_pago, pi.monto, pi.id_asesor, pi.fecha_pago, pi.id_conductor 
                         FROM pagos_inscripcion pi 
                         WHERE pi.id_conductor = ?";
-            
+
             $stmtPagos = $this->conexion->prepare($queryPagos);
             $stmtPagos->bind_param("i", $pago['id_conductor']);
             $stmtPagos->execute();
             $resultPagos = $stmtPagos->get_result();
-            
+
             while ($detallePago = $resultPagos->fetch_assoc()) {
                 // Verificar si es cuota inicial (no tiene registro en detalle_pago_inscripcion)
                 $queryDetalle = "SELECT id_detallepago FROM detalle_pago_inscripcion 
                                 WHERE idpagos_inscripcion = ?";
-                
+
                 $stmtDetalle = $this->conexion->prepare($queryDetalle);
                 $stmtDetalle->bind_param("i", $detallePago['id_pago']);
                 $stmtDetalle->execute();
                 $resultDetalle = $stmtDetalle->get_result();
-                
+
                 // Si hay registros, no es cuota inicial
                 if ($resultDetalle->num_rows > 0) {
                     continue;
                 }
-                
+
                 // Verificar si el método de pago está en los filtros
                 if (!$this->verificarMetodoPago($detallePago['medio_pago'], $metodosPago)) {
                     continue;
                 }
-                
+
                 // Obtener datos del conductor
                 $conductor = $this->obtenerDatosConductorparaReporte($detallePago['id_conductor']);
-                
+
                 // Obtener datos del asesor
                 $asesor = $this->obtenerDatosAsesor($detallePago['id_asesor']);
-                
+
                 // Formatear fecha
                 $fechaFormateada = date('Y-m-d', strtotime($detallePago['fecha_pago']));
-                
+
                 // Determinar moneda (por defecto soles)
                 $moneda = "S/.";
-                
+
                 // Agregar al total correspondiente
                 if ($moneda == "S/.") {
                     $totalSoles += $detallePago['monto'];
                 } else {
                     $totalDolares += $detallePago['monto'];
                 }
-                
+
                 // Crear registro
                 $registros[] = [
                     'fecha' => $fechaFormateada,
@@ -2912,7 +2966,7 @@ private function obtenerDatosCliente($id_cliente) {
                 ];
             }
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -2921,78 +2975,79 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener inscripciones financiadas - cuotas
-    private function obtenerInscripcionesFinanciadasCuotas($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerInscripcionesFinanciadasCuotas($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos de inscripción con detalle (cuotas)
         $query = "SELECT pi.id_pago, pi.medio_pago, pi.monto, pi.id_asesor, pi.fecha_pago, pi.id_conductor 
                 FROM pagos_inscripcion pi 
                 JOIN detalle_pago_inscripcion dpi ON pi.id_pago = dpi.idpagos_inscripcion 
                 WHERE pi.fecha_pago BETWEEN ? AND ? 
                 GROUP BY pi.id_pago";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($pago['medio_pago'], $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener detalles de cuotas
             $queryDetalles = "SELECT dpi.id_detallepago, dpi.id_cuota 
                             FROM detalle_pago_inscripcion dpi 
                             WHERE dpi.idpagos_inscripcion = ?";
-            
+
             $stmtDetalles = $this->conexion->prepare($queryDetalles);
             $stmtDetalles->bind_param("i", $pago['id_pago']);
             $stmtDetalles->execute();
             $resultDetalles = $stmtDetalles->get_result();
-            
+
             $numerosCuota = [];
             $totalCuotas = 0;
-            
+
             while ($detalle = $resultDetalles->fetch_assoc()) {
                 // Obtener información de la cuota
                 $queryCuota = "SELECT cc.numero_cuota 
                             FROM conductor_cuotas cc 
                             WHERE cc.id_conductorcuota = ?";
-                
+
                 $stmtCuota = $this->conexion->prepare($queryCuota);
                 $stmtCuota->bind_param("i", $detalle['id_cuota']);
                 $stmtCuota->execute();
                 $resultCuota = $stmtCuota->get_result();
-                
+
                 if ($cuota = $resultCuota->fetch_assoc()) {
                     $numerosCuota[] = $cuota['numero_cuota'];
                     $totalCuotas++;
                 }
             }
-            
+
             // Obtener datos del conductor
             $conductor = $this->obtenerDatosConductorparaReporte($pago['id_conductor']);
-            
+
             // Obtener datos del asesor
             $asesor = $this->obtenerDatosAsesor($pago['id_asesor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($pago['fecha_pago']));
-            
+
             // Determinar moneda (por defecto soles)
             $moneda = "S/.";
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $pago['monto'];
             } else {
                 $totalDolares += $pago['monto'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3009,7 +3064,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $asesor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3018,36 +3073,37 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener financiamientos - cuota inicial
-    private function obtenerFinanciamientosCuotaInicial($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerFinanciamientosCuotaInicial($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos de financiamiento - cuota inicial
         $query = "SELECT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, pf.id_cliente, 
                         pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda, pf.concepto 
                 FROM pagos_financiamiento pf 
                 WHERE pf.concepto = 'Cuota Inicial' 
                 AND pf.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($pago['metodo_pago'], $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener información del producto financiado
             $producto = $this->obtenerProductoFinanciado($pago['id_financiamiento']);
-            
+
             // Obtener datos del cliente o conductor
             $cliente = [];
             $tipoCliente = '';
-            
+
             if (!empty($pago['id_conductor'])) {
                 $cliente = $this->obtenerDatosConductorparaReporte($pago['id_conductor']);
                 $tipoCliente = 'Conductor';
@@ -3055,23 +3111,23 @@ private function obtenerDatosCliente($id_cliente) {
                 $cliente = $this->obtenerDatosCliente($pago['id_cliente']);
                 $tipoCliente = 'Cliente';
             }
-            
+
             // Obtener datos del asesor
             $asesor = $this->obtenerDatosAsesor($pago['id_asesor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($pago['fecha_pago']));
-            
+
             // Determinar moneda
             $moneda = $pago['moneda'] ?: "S/.";
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $pago['monto'];
             } else {
                 $totalDolares += $pago['monto'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3088,7 +3144,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $asesor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3097,73 +3153,74 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener financiamientos - cuotas
-    private function obtenerFinanciamientosCuotas($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerFinanciamientosCuotas($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos de financiamiento - cuotas (sin concepto específico)
         $query = "SELECT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, pf.id_cliente, 
                         pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda, pf.concepto 
                 FROM pagos_financiamiento pf 
                 WHERE pf.concepto IS NULL 
                 AND pf.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($pago['metodo_pago'], $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener detalles de cuotas
             $queryDetalles = "SELECT dpf.iddetalle_pago_financiamiento, dpf.id_cuota 
                             FROM detalle_pago_financiamiento dpf 
                             WHERE dpf.idfinanciamiento = ?";
-            
+
             $stmtDetalles = $this->conexion->prepare($queryDetalles);
             $stmtDetalles->bind_param("i", $pago['idpagos_financiamiento']);
             $stmtDetalles->execute();
             $resultDetalles = $stmtDetalles->get_result();
-            
+
             $numerosCuota = [];
             $totalCuotas = 0;
             $idFinanciamiento = null;
-            
+
             while ($detalle = $resultDetalles->fetch_assoc()) {
                 // Obtener información de la cuota
                 $queryCuota = "SELECT cf.id_financiamiento, cf.numero_cuota 
                             FROM cuotas_financiamiento cf 
                             WHERE cf.idcuotas_financiamiento = ?";
-                
+
                 $stmtCuota = $this->conexion->prepare($queryCuota);
                 $stmtCuota->bind_param("i", $detalle['id_cuota']);
                 $stmtCuota->execute();
                 $resultCuota = $stmtCuota->get_result();
-                
+
                 if ($cuota = $resultCuota->fetch_assoc()) {
                     $numerosCuota[] = $cuota['numero_cuota'];
                     $totalCuotas++;
                     $idFinanciamiento = $cuota['id_financiamiento'];
                 }
             }
-            
+
             // Si no se encontró id_financiamiento en las cuotas, usar el de la tabla pagos_financiamiento
             if (!$idFinanciamiento) {
                 $idFinanciamiento = $pago['id_financiamiento'];
             }
-            
+
             // Obtener información del producto financiado
             $producto = $this->obtenerProductoFinanciado($idFinanciamiento);
-            
+
             // Obtener datos del cliente o conductor
             $cliente = [];
             $tipoCliente = '';
-            
+
             if (!empty($pago['id_conductor'])) {
                 $cliente = $this->obtenerDatosConductorparaReporte($pago['id_conductor']);
                 $tipoCliente = 'Conductor';
@@ -3171,23 +3228,23 @@ private function obtenerDatosCliente($id_cliente) {
                 $cliente = $this->obtenerDatosCliente($pago['id_cliente']);
                 $tipoCliente = 'Cliente';
             }
-            
+
             // Obtener datos del asesor
             $asesor = $this->obtenerDatosAsesor($pago['id_asesor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($pago['fecha_pago']));
-            
+
             // Determinar moneda
             $moneda = $pago['moneda'] ?: "S/.";
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $pago['monto'];
             } else {
                 $totalDolares += $pago['monto'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3204,7 +3261,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $asesor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3213,36 +3270,37 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener financiamientos - monto inscripción
-    private function obtenerFinanciamientosMontoInscripcion($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerFinanciamientosMontoInscripcion($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos de financiamiento - monto inscripción
         $query = "SELECT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, pf.id_cliente, 
                         pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda, pf.concepto 
                 FROM pagos_financiamiento pf 
                 WHERE pf.concepto = 'Monto de Inscripción' 
                 AND pf.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($pago['metodo_pago'], $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener información del producto financiado
             $producto = $this->obtenerProductoFinanciado($pago['id_financiamiento']);
-            
+
             // Obtener datos del cliente o conductor
             $cliente = [];
             $tipoCliente = '';
-            
+
             if (!empty($pago['id_conductor'])) {
                 $cliente = $this->obtenerDatosConductorparaReporte($pago['id_conductor']);
                 $tipoCliente = 'Conductor';
@@ -3250,23 +3308,23 @@ private function obtenerDatosCliente($id_cliente) {
                 $cliente = $this->obtenerDatosCliente($pago['id_cliente']);
                 $tipoCliente = 'Cliente';
             }
-            
+
             // Obtener datos del asesor
             $asesor = $this->obtenerDatosAsesor($pago['id_asesor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($pago['fecha_pago']));
-            
+
             // Determinar moneda
             $moneda = $pago['moneda'] ?: "S/.";
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $pago['monto'];
             } else {
                 $totalDolares += $pago['monto'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3283,7 +3341,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $asesor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3292,36 +3350,37 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener financiamientos - monto recalculado
-    private function obtenerFinanciamientosMontoRecalculado($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerFinanciamientosMontoRecalculado($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener pagos de financiamiento - monto recalculado
         $query = "SELECT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, pf.id_cliente, 
                         pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda, pf.concepto 
                 FROM pagos_financiamiento pf 
                 WHERE pf.concepto = 'Monto Recalculado' 
                 AND pf.fecha_pago BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($pago = $result->fetch_assoc()) {
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($pago['metodo_pago'], $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener información del producto financiado
             $producto = $this->obtenerProductoFinanciado($pago['id_financiamiento']);
-            
+
             // Obtener datos del cliente o conductor
             $cliente = [];
             $tipoCliente = '';
-            
+
             if (!empty($pago['id_conductor'])) {
                 $cliente = $this->obtenerDatosConductorparaReporte($pago['id_conductor']);
                 $tipoCliente = 'Conductor';
@@ -3329,23 +3388,23 @@ private function obtenerDatosCliente($id_cliente) {
                 $cliente = $this->obtenerDatosCliente($pago['id_cliente']);
                 $tipoCliente = 'Cliente';
             }
-            
+
             // Obtener datos del asesor
             $asesor = $this->obtenerDatosAsesor($pago['id_asesor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($pago['fecha_pago']));
-            
+
             // Determinar moneda
             $moneda = $pago['moneda'] ?: "S/.";
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $pago['monto'];
             } else {
                 $totalDolares += $pago['monto'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3362,7 +3421,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $asesor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3371,52 +3430,53 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener ventas
-    private function obtenerVentas($fechaInicio, $fechaFin, $metodosPago) {
+    private function obtenerVentas($fechaInicio, $fechaFin, $metodosPago)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         // Obtener ventas
         $query = "SELECT v.id_venta, v.fecha_emision, v.id_cliente, v.total, v.id_vendedor, v.moneda 
                 FROM ventas v 
                 WHERE v.fecha_emision BETWEEN ? AND ?";
-        
+
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param("ss", $fechaInicio, $fechaFin);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($venta = $result->fetch_assoc()) {
             // Obtener método de pago
             $metodoPago = $this->obtenerMetodoPagoVenta($venta['id_venta']);
-            
+
             // Verificar si el método de pago está en los filtros
             if (!$this->verificarMetodoPago($metodoPago, $metodosPago)) {
                 continue;
             }
-            
+
             // Obtener productos de la venta
             $productos = $this->obtenerProductosVentaParaReporte($venta['id_venta']);
-            
+
             // Obtener datos del cliente
             $cliente = $this->obtenerDatosClienteVenta($venta['id_cliente']);
-            
+
             // Obtener datos del vendedor
             $vendedor = $this->obtenerDatosAsesor($venta['id_vendedor']);
-            
+
             // Formatear fecha
             $fechaFormateada = date('Y-m-d', strtotime($venta['fecha_emision']));
-            
+
             // Determinar moneda
             $moneda = "S/."; // Las ventas son en soles por defecto
-            
+
             // Agregar al total correspondiente
             if ($moneda == "S/.") {
                 $totalSoles += $venta['total'];
             } else {
                 $totalDolares += $venta['total'];
             }
-            
+
             // Crear registro
             $registros[] = [
                 'fecha' => $fechaFormateada,
@@ -3433,7 +3493,7 @@ private function obtenerDatosCliente($id_cliente) {
                 'asesor_cobro' => $vendedor['nombre_completo']
             ];
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
@@ -3442,25 +3502,26 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener datos del asesor
-    private function obtenerDatosAsesor($idAsesor) {
+    private function obtenerDatosAsesor($idAsesor)
+    {
         try {
             $idAsesor = $this->conexion->real_escape_string($idAsesor);
-            
+
             $query = "SELECT nombres, apellidos 
                     FROM usuarios 
                     WHERE usuario_id = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idAsesor);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($asesor = $result->fetch_assoc()) {
                 return [
                     'nombre_completo' => $asesor['nombres'] . ' ' . $asesor['apellidos']
                 ];
             }
-            
+
             return [
                 'nombre_completo' => 'No registrado'
             ];
@@ -3472,40 +3533,41 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener producto financiado
-    private function obtenerProductoFinanciado($idFinanciamiento) {
+    private function obtenerProductoFinanciado($idFinanciamiento)
+    {
         try {
             if (!$idFinanciamiento) {
                 return 'Producto no especificado';
             }
-            
+
             $idFinanciamiento = $this->conexion->real_escape_string($idFinanciamiento);
-            
+
             $query = "SELECT f.idproductosv2 
                     FROM financiamiento f 
                     WHERE f.idfinanciamiento = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idFinanciamiento);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($financiamiento = $result->fetch_assoc()) {
                 $idProducto = $financiamiento['idproductosv2'];
-                
+
                 $queryProducto = "SELECT nombre 
                                 FROM productosv2 
                                 WHERE idproductosv2 = ?";
-                
+
                 $stmtProducto = $this->conexion->prepare($queryProducto);
                 $stmtProducto->bind_param("i", $idProducto);
                 $stmtProducto->execute();
                 $resultProducto = $stmtProducto->get_result();
-                
+
                 if ($producto = $resultProducto->fetch_assoc()) {
                     return $producto['nombre'];
                 }
             }
-            
+
             return 'Producto no encontrado';
         } catch (Exception $e) {
             return 'Error al obtener producto';
@@ -3513,42 +3575,43 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener método de pago de venta
-    private function obtenerMetodoPagoVenta($idVenta) {
+    private function obtenerMetodoPagoVenta($idVenta)
+    {
         try {
             $idVenta = $this->conexion->real_escape_string($idVenta);
-            
+
             $query = "SELECT vp.metodo_pago 
                     FROM ventas_pagos vp 
                     WHERE vp.id_venta = ? 
                     LIMIT 1";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idVenta);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($pago = $result->fetch_assoc()) {
                 $idMetodoPago = $pago['metodo_pago'];
-                
+
                 // Si es 99, es FLOTA
                 if ($idMetodoPago == '99') {
                     return 'FLOTA';
                 }
-                
+
                 $queryMetodo = "SELECT nombre 
                                 FROM metodo_pago 
                                 WHERE id_metodo_pago = ?";
-                
+
                 $stmtMetodo = $this->conexion->prepare($queryMetodo);
                 $stmtMetodo->bind_param("i", $idMetodoPago);
                 $stmtMetodo->execute();
                 $resultMetodo = $stmtMetodo->get_result();
-                
+
                 if ($metodo = $resultMetodo->fetch_assoc()) {
                     return $metodo['nombre'];
                 }
             }
-            
+
             return 'No especificado';
         } catch (Exception $e) {
             return 'Error al obtener método de pago';
@@ -3556,7 +3619,8 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // Renombrada para evitar conflicto con la función existente
-    private function obtenerProductosVentaParaReporte($id_venta) {
+    private function obtenerProductosVentaParaReporte($id_venta)
+    {
         try {
             $id_venta = $this->conexion->real_escape_string($id_venta); // Seguridad básica
 
@@ -3587,26 +3651,27 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para obtener datos del cliente de venta
-    private function obtenerDatosClienteVenta($idCliente) {
+    private function obtenerDatosClienteVenta($idCliente)
+    {
         try {
             $idCliente = $this->conexion->real_escape_string($idCliente);
-            
+
             $query = "SELECT documento, datos 
                     FROM clientes 
                     WHERE id_cliente = ?";
-            
+
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idCliente);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             if ($cliente = $result->fetch_assoc()) {
                 return [
                     'documento' => $cliente['documento'],
                     'nombre_completo' => $cliente['datos']
                 ];
             }
-            
+
             return [
                 'documento' => 'No disponible',
                 'nombre_completo' => 'Cliente no encontrado'
@@ -3620,55 +3685,59 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para verificar si un método de pago está en los filtros
-    private function verificarMetodoPago($metodoPago, $metodosFiltro) {
+    private function verificarMetodoPago($metodoPago, $metodosFiltro)
+    {
         // Normalizar método de pago
         $metodoPago = strtolower($metodoPago);
-        
+
         // Verificar si es efectivo
         if (strpos($metodoPago, 'efectivo') !== false && in_array('Efectivo', $metodosFiltro)) {
             return true;
         }
-        
+
         // Verificar si es QR (Yape, Plin)
         if ((strpos($metodoPago, 'yape') !== false || strpos($metodoPago, 'plin') !== false) && in_array('QR', $metodosFiltro)) {
             return true;
         }
-        
+
         // Verificar si es transferencia
         if (strpos($metodoPago, 'transferencia') !== false && in_array('Transferencia', $metodosFiltro)) {
             return true;
         }
-        
+
         // Verificar si es tarjeta
-        if ((strpos($metodoPago, 'tarjeta') !== false || strpos($metodoPago, 'visa') !== false || 
-            strpos($metodoPago, 'mastercard') !== false || strpos($metodoPago, 'dinners') !== false || 
-            strpos($metodoPago, 'pos') !== false) && in_array('Tarjeta', $metodosFiltro)) {
+        if (
+            (strpos($metodoPago, 'tarjeta') !== false || strpos($metodoPago, 'visa') !== false ||
+                strpos($metodoPago, 'mastercard') !== false || strpos($metodoPago, 'dinners') !== false ||
+                strpos($metodoPago, 'pos') !== false) && in_array('Tarjeta', $metodosFiltro)
+        ) {
             return true;
         }
-        
+
         // Verificar si es bono
         if (strpos($metodoPago, 'bono') !== false && in_array('Pago Bono', $metodosFiltro)) {
             return true;
         }
-        
+
         return false;
     }
 
     // 🔴 Función para obtener tipo de cambio
-    private function obtenerTipoCambio() {
+    private function obtenerTipoCambio()
+    {
         try {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, "/arequipago/TipoCambio");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $response = curl_exec($ch);
             curl_close($ch);
-            
+
             $data = json_decode($response, true);
-            
+
             if (isset($data['tipo_cambio'])) {
                 return $data['tipo_cambio'];
             }
-            
+
             return 3.70; // Valor por defecto si no se puede obtener
         } catch (Exception $e) {
             return 3.70; // Valor por defecto en caso de error
@@ -3676,35 +3745,46 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para generar Excel de ingresos
-    private function generarExcelIngresos($spreadsheet, $data) {
+    private function generarExcelIngresos($spreadsheet, $data)
+    {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Reporte de Ingresos');
-        
+
         // Definir encabezados
         $headers = [
-            'FECHA', 'TIPO DE INGRESO', 'CATEGORÍA', 'DETALLE', 'CLIENTE', 'Nº DOCUMENTO', 
-            'MONEDA', 'MONTO', 'FORMA DE PAGO', 'Nº CUOTA', 'TOTAL CUOTAS', 'ASESOR DE COBRO'
+            'FECHA',
+            'TIPO DE INGRESO',
+            'CATEGORÍA',
+            'DETALLE',
+            'CLIENTE',
+            'Nº DOCUMENTO',
+            'MONEDA',
+            'MONTO',
+            'FORMA DE PAGO',
+            'Nº CUOTA',
+            'TOTAL CUOTAS',
+            'ASESOR DE COBRO'
         ];
-        
+
         // Agregar totales en la parte superior
         $sheet->setCellValue('A1', '💰 Total en soles (PEN): S/ ' . $data['total_soles']);
         $sheet->setCellValue('A2', '💵 Total en dólares (USD): $' . $data['total_dolares']);
         $sheet->mergeCells('A1:L1');
         $sheet->mergeCells('A2:L2');
         $sheet->getStyle('A1:L2')->getFont()->setBold(true);
-        
+
         // Agregar encabezados en la fila 4
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '4', $header);
             $col++;
         }
-        
+
         // Estilo para encabezados
         $sheet->getStyle('A4:L4')->getFont()->setBold(true);
         $sheet->getStyle('A4:L4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('f8f8fa');
-        
+
         // Datos de ingresos
         $row = 5;
         foreach ($data['registros'] as $ingreso) {
@@ -3723,7 +3803,7 @@ private function obtenerDatosCliente($id_cliente) {
             $sheet->setCellValue($col++ . $row, $ingreso['asesor_cobro']);
             $row++;
         }
-        
+
         // Ajustar anchos de columna
         foreach (range('A', 'L') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -3731,10 +3811,11 @@ private function obtenerDatosCliente($id_cliente) {
     }
 
     // 🔴 Función para generar PDF de ingresos
-    private function generarPDFIngresos($data) {
+    private function generarPDFIngresos($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Ingresos|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -3777,7 +3858,7 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>TOTAL CUOTAS</th>
                 <th>ASESOR DE COBRO</th>
             </tr>';
-        
+
         // Agregar filas de datos
         foreach ($data['registros'] as $ingreso) {
             $html .= '
@@ -3796,9 +3877,9 @@ private function obtenerDatosCliente($id_cliente) {
                 <td>' . $ingreso['asesor_cobro'] . '</td>
             </tr>';
         }
-        
+
         $html .= '</table>';
-        
+
         // Agregar script para conversión de moneda
         $html .= '
         <script>
@@ -3815,39 +3896,48 @@ private function obtenerDatosCliente($id_cliente) {
                 // Lógica de conversión
             }
         </script>';
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
 
-     private function generarExcelVentasPorCategoria($spreadsheet, $data) {
+    private function generarExcelVentasPorCategoria($spreadsheet, $data)
+    {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Ventas por Categoría');
-        
+
         // Agregar totales en la parte superior
         $sheet->setCellValue('A1', '💰 Total en soles (PEN): S/ ' . $data['total_soles']);
         $sheet->setCellValue('A2', '💵 Total en dólares (USD): $' . $data['total_dolares']);
-        $sheet->mergeCells('A1:H1');
-        $sheet->mergeCells('A2:H2');
-        $sheet->getStyle('A1:H2')->getFont()->setBold(true);
-        
+        $sheet->mergeCells('A1:J1');
+        $sheet->mergeCells('A2:J2');
+        $sheet->getStyle('A1:J2')->getFont()->setBold(true);
+
         // Definir encabezados en la fila 4
         $headers = [
-            'CATEGORÍA', 'PRODUCTO', 'TIPO DE VENTA', 'CANTIDAD VENDIDA', 
-            'PRECIO UNITARIO', 'TOTAL PRODUCTO', 'MONEDA', 'GRUPO/VARIANTE'
+            'CATEGORÍA',
+            'PRODUCTO',
+            'TIPO DE VENTA',
+            'CANTIDAD VENDIDA',
+            'PRECIO UNITARIO',
+            'TOTAL PRODUCTO',
+            'MONEDA',
+            'GRUPO/VARIANTE',
+            'FECHA EMISIÓN',
+            'VENDEDOR'
         ];
-        
+
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '4', $header);
             $col++;
         }
-        
+
         // Estilo para encabezados
-        $sheet->getStyle('A4:H4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:H4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        $sheet->getStyle('A4:J4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:J4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('f8f8fa');
-        
+
         // Agrupar datos por categoría
         $categorias = [];
         foreach ($data['registros'] as $item) {
@@ -3856,21 +3946,21 @@ private function obtenerDatosCliente($id_cliente) {
             }
             $categorias[$item['categoria']][] = $item;
         }
-        
+
         // Datos por categoría
         $row = 5;
         foreach ($categorias as $categoria => $productos) {
             // Fila de categoría
             $sheet->setCellValue('A' . $row, $categoria);
-            $sheet->mergeCells('A' . $row . ':H' . $row);
-            $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
-            $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            $sheet->mergeCells('A' . $row . ':J' . $row);
+            $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('e9ecef');
             $row++;
-            
+
             $totalCategoriaSoles = 0;
             $totalCategoriaDolares = 0;
-            
+
             // Productos de la categoría
             foreach ($productos as $producto) {
                 $col = 'A';
@@ -3882,52 +3972,55 @@ private function obtenerDatosCliente($id_cliente) {
                 $sheet->setCellValue($col++ . $row, $producto['total_producto']);
                 $sheet->setCellValue($col++ . $row, $producto['moneda']);
                 $sheet->setCellValue($col++ . $row, $producto['grupo_variante']);
-                
+                $sheet->setCellValue($col++ . $row, date('d/m/Y', strtotime($producto['fecha_emision'])));
+                $sheet->setCellValue($col++ . $row, $producto['nombre_vendedor']);
+
                 // Sumar totales por categoría
                 if ($producto['moneda'] === 'S/.') {
                     $totalCategoriaSoles += floatval(str_replace([',', 'S/', '$'], '', $producto['total_producto']));
                 } else {
                     $totalCategoriaDolares += floatval(str_replace([',', 'S/', '$'], '', $producto['total_producto']));
                 }
-                
+
                 $row++;
             }
-            
+
             // Subtotal por categoría
             $sheet->setCellValue('A' . $row, 'Subtotal ' . $categoria);
             $sheet->setCellValue('F' . $row, 'S/ ' . number_format($totalCategoriaSoles, 2) . ' | $ ' . number_format($totalCategoriaDolares, 2));
             $sheet->mergeCells('A' . $row . ':E' . $row);
-            $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
-            $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('d1ecf1');
             $row++;
-            
+
             // Espacio entre categorías
             $row++;
         }
-        
+
         // Total general
         $sheet->setCellValue('A' . $row, 'TOTAL GENERAL');
         $sheet->setCellValue('F' . $row, 'S/ ' . $data['total_soles'] . ' | $ ' . $data['total_dolares']);
         $sheet->mergeCells('A' . $row . ':E' . $row);
-        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':H' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('343a40');
-        $sheet->getStyle('A' . $row . ':H' . $row)->getFont()->getColor()->setRGB('ffffff');
-        
+        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->getColor()->setRGB('ffffff');
+
         // Ajustar anchos de columna
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }
-    
+
     /**
      * Genera el PDF para el reporte de ventas por categoría
      */
-    private function generarPDFVentasPorCategoria($data) {
+    private function generarPDFVentasPorCategoria($data)
+    {
         // Configurar encabezado
         $this->mpdf->SetHeader('Reporte de Ventas por Categoría|' . date('d/m/Y') . '|Página {PAGENO}');
-        
+
         // Iniciar HTML
         $html = '
         <style>
@@ -3960,9 +4053,11 @@ private function obtenerDatosCliente($id_cliente) {
                 <th>PRECIO UNIT.</th>
                 <th>TOTAL</th>
                 <th>MONEDA</th>
-                <th>GRUPO/VARIANTE</th>
+              <th>GRUPO/VARIANTE</th>
+<th>FECHA EMISIÓN</th>
+<th>VENDEDOR</th>
             </tr>';
-        
+
         // Agrupar por categoría
         $categorias = [];
         foreach ($data['registros'] as $item) {
@@ -3971,7 +4066,7 @@ private function obtenerDatosCliente($id_cliente) {
             }
             $categorias[$item['categoria']][] = $item;
         }
-        
+
         // Renderizar por categoría
         foreach ($categorias as $categoria => $productos) {
             // Fila de categoría
@@ -3979,10 +4074,10 @@ private function obtenerDatosCliente($id_cliente) {
             <tr class="categoria-row">
                 <td colspan="8">' . $categoria . '</td>
             </tr>';
-            
+
             $totalCategoriaSoles = 0;
             $totalCategoriaDolares = 0;
-            
+
             // Productos de la categoría
             foreach ($productos as $producto) {
                 $html .= '
@@ -3994,9 +4089,11 @@ private function obtenerDatosCliente($id_cliente) {
                     <td>' . $producto['precio_unitario'] . '</td>
                     <td>' . $producto['total_producto'] . '</td>
                     <td>' . $producto['moneda'] . '</td>
-                    <td>' . ($producto['grupo_variante'] ?: '') . '</td>
+                   <td>' . ($producto['grupo_variante'] ?: '') . '</td>
+<td>' . date('d/m/Y', strtotime($producto['fecha_emision'])) . '</td>
+<td>' . $producto['nombre_vendedor'] . '</td>
                 </tr>';
-                
+
                 // Sumar totales por categoría
                 if ($producto['moneda'] === 'S/.') {
                     $totalCategoriaSoles += floatval(str_replace([',', 'S/', '$'], '', $producto['total_producto']));
@@ -4005,7 +4102,7 @@ private function obtenerDatosCliente($id_cliente) {
                 }
 
             }
-            
+
             // Subtotal por categoría
             $html .= '
             <tr class="subtotal-row">
@@ -4015,7 +4112,7 @@ private function obtenerDatosCliente($id_cliente) {
             </tr>
             <tr><td colspan="8">&nbsp;</td></tr>';
         }
-        
+
         // Total general
         $html .= '
         <tr class="total-row">
@@ -4023,14 +4120,15 @@ private function obtenerDatosCliente($id_cliente) {
             <td>S/ ' . $data['total_soles'] . ' | $ ' . $data['total_dolares'] . '</td>
             <td colspan="2"></td>
         </tr>';
-        
+
         $html .= '</table>';
-        
+
         // Escribir HTML al PDF
         $this->mpdf->WriteHTML($html);
     }
-    
-    public function getCategorias() {
+
+    public function getCategorias()
+    {
         try {
             $query = "SELECT 
                         idcategoria_producto, 
@@ -4039,9 +4137,9 @@ private function obtenerDatosCliente($id_cliente) {
                         categoria_producto
                     ORDER BY 
                         nombre ASC";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if ($resultado) {
                 $categorias = [];
                 while ($fila = $resultado->fetch_assoc()) {
@@ -4055,23 +4153,24 @@ private function obtenerDatosCliente($id_cliente) {
             $this->responderError('Error al obtener categorías: ' . $e->getMessage());
         }
     }
-    
-    public function getProductosPorCategoria() {
+
+    public function getProductosPorCategoria()
+    {
         try {
             $categorias = $_POST['categorias'] ?? [];
-            
+
             if (empty($categorias)) {
                 $this->responderError('No se especificaron categorías');
                 return;
             }
-            
+
             // Escapar categorías para seguridad
-            $categoriasEscapadas = array_map(function($cat) {
+            $categoriasEscapadas = array_map(function ($cat) {
                 return "'" . $this->conexion->real_escape_string($cat) . "'";
             }, $categorias);
-            
+
             $categoriasStr = implode(',', $categoriasEscapadas);
-            
+
             $query = "SELECT 
                         idproductosv2, 
                         nombre,
@@ -4083,9 +4182,9 @@ private function obtenerDatosCliente($id_cliente) {
                         AND estado = '1'
                     ORDER BY 
                         categoria, nombre ASC";
-    
+
             $resultado = $this->conexion->query($query);
-   
+
             if ($resultado) {
                 $productos = [];
                 while ($fila = $resultado->fetch_assoc()) {
@@ -4099,8 +4198,9 @@ private function obtenerDatosCliente($id_cliente) {
             $this->responderError('Error al obtener productos: ' . $e->getMessage());
         }
     }
-    
-    public function getGruposFinanciamiento() {
+
+    public function getGruposFinanciamiento()
+    {
         try {
             $query = "SELECT 
                         idplan_financiamiento, 
@@ -4109,13 +4209,13 @@ private function obtenerDatosCliente($id_cliente) {
                         planes_financiamiento
                     ORDER BY 
                         nombre_plan ASC";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if ($resultado) {
                 $grupos = [];
-               while ($fila = $resultado->fetch_assoc()) {
-                   $grupos[] = $fila;
+                while ($fila = $resultado->fetch_assoc()) {
+                    $grupos[] = $fila;
                 }
                 $this->responderExito($grupos);
             } else {
@@ -4125,23 +4225,24 @@ private function obtenerDatosCliente($id_cliente) {
             $this->responderError('Error al obtener grupos de financiamiento: ' . $e->getMessage());
         }
     }
-    
-    public function getVariantesPorGrupo() {
+
+    public function getVariantesPorGrupo()
+    {
         try {
             $grupos = $_POST['grupos'] ?? [];
-            
+
             if (empty($grupos)) {
                 $this->responderError('No se especificaron grupos');
                 return;
             }
-            
+
             // Escapar grupos para seguridad
-            $gruposEscapados = array_map(function($grupo) {
+            $gruposEscapados = array_map(function ($grupo) {
                 return intval($grupo);
             }, $grupos);
-            
+
             $gruposStr = implode(',', $gruposEscapados);
-            
+
             $query = "SELECT 
                         idgrupos_variantes, 
                         nombre_variante,
@@ -4152,9 +4253,9 @@ private function obtenerDatosCliente($id_cliente) {
                         idplan_financiamiento IN ($gruposStr)
                     ORDER BY 
                         nombre_variante ASC";
-    
+
             $resultado = $this->conexion->query($query);
-    
+
             if ($resultado) {
                 $variantes = [];
                 while ($fila = $resultado->fetch_assoc()) {
@@ -4168,30 +4269,31 @@ private function obtenerDatosCliente($id_cliente) {
             $this->responderError('Error al obtener variantes: ' . $e->getMessage());
         }
     }
-    
-    public function ventasPorCategoria() {
-        
+
+    public function ventasPorCategoria()
+    {
+
         // Validar y obtener parámetros
         $fechaInicio = $_POST['fecha_inicio'] ?? date('Y-m-01');
         $fechaFin = $_POST['fecha_fin'] ?? date('Y-m-d');
         $categorias = $_POST['categorias'] ?? [];
         $productos = $_POST['productos'] ?? [];
-       $tipoVenta = $_POST['tipo_venta'] ?? 'todos';
+        $tipoVenta = $_POST['tipo_venta'] ?? 'todos';
         $moneda = $_POST['moneda'] ?? 'todos';
         $grupos = $_POST['grupos'] ?? [];
         $variantes = $_POST['variantes'] ?? [];
-        
+
         // Validar formato de fechas
         if (!$this->validarFecha($fechaInicio) || !$this->validarFecha($fechaFin)) {
             $this->responderError('Formato de fecha inválido');
             return;
         }
-        
+
         try {
             $resultados = [];
-           $totalSoles = 0;
+            $totalSoles = 0;
             $totalDolares = 0;
-            
+
             // 1. Obtener ventas normales si aplica
             if ($tipoVenta === 'todos' || $tipoVenta === 'venta') {
                 $ventasNormales = $this->obtenerVentasNormalesPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda);
@@ -4199,25 +4301,25 @@ private function obtenerDatosCliente($id_cliente) {
                 $totalSoles += $ventasNormales['total_soles'];
                 $totalDolares += $ventasNormales['total_dolares'];
             }
-            
+
             // 2. Obtener financiamientos si aplica
             if ($tipoVenta === 'todos' || $tipoVenta === 'financiamiento') {
                 $financiamientos = $this->obtenerFinanciamientosPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda, $grupos, $variantes);
-               $resultados = array_merge($resultados, $financiamientos['registros']);
+                $resultados = array_merge($resultados, $financiamientos['registros']);
                 $totalSoles += $financiamientos['total_soles'];
-               $totalDolares += $financiamientos['total_dolares'];
+                $totalDolares += $financiamientos['total_dolares'];
             }
-            
+
             // Ordenar resultados por categoría y producto
-            usort($resultados, function($a, $b) {
+            usort($resultados, function ($a, $b) {
                 if ($a['categoria'] === $b['categoria']) {
                     return strcmp($a['producto'], $b['producto']);
                 }
                 return strcmp($a['categoria'], $b['categoria']);
             });
-            
+
             $this->responderExito([
-               'registros' => $resultados,
+                'registros' => $resultados,
                 'total_soles' => number_format($totalSoles, 2),
                 'total_dolares' => number_format($totalDolares, 2)
             ]);
@@ -4225,67 +4327,71 @@ private function obtenerDatosCliente($id_cliente) {
             $this->responderError('Error al procesar las ventas por categoría: ' . $e->getMessage());
         }
     }
-    
-    private function obtenerVentasNormalesPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda) {
+
+    private function obtenerVentasNormalesPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         try {
             // Construir condiciones WHERE
             $condicionCategorias = '';
             if (!empty($categorias)) {
-                $categoriasEscapadas = array_map(function($cat) {
+                $categoriasEscapadas = array_map(function ($cat) {
                     return "'" . $this->conexion->real_escape_string($cat) . "'";
                 }, $categorias);
                 $condicionCategorias = " AND p.categoria IN (" . implode(',', $categoriasEscapadas) . ")";
             }
-            
+
             $condicionProductos = '';
             if (!empty($productos)) {
                 $productosEscapados = array_map('intval', $productos);
                 $condicionProductos = " AND p.idproductosv2 IN (" . implode(',', $productosEscapados) . ")";
             }
-            
+
             // Consulta principal para ventas normales
             $query = "SELECT 
-                        v.id_venta,
-                        v.fecha_emision,
-                        v.total as total_venta,
-                        pv.id_producto,
-                        pv.cantidad,
-                        pv.precio,
-                        p.nombre as producto_nombre,
-                        p.categoria,
-                        p.precio_venta
-                    FROM 
-                        ventas v
-                   JOIN 
-                        productos_ventas pv ON v.id_venta = pv.id_venta
-                    JOIN 
-                        productosv2 p ON pv.id_producto = p.idproductosv2
-                    WHERE 
-                        v.fecha_emision BETWEEN '$fechaInicio' AND '$fechaFin'
-                        $condicionCategorias
-                        $condicionProductos
-                   ORDER BY 
-                        p.categoria, p.nombre";
-            
+            v.id_venta,
+            v.fecha_emision,
+            v.total as total_venta,
+            pv.id_producto,
+            pv.cantidad,
+            pv.precio,
+            p.nombre as producto_nombre,
+            p.categoria,
+            p.precio_venta,
+            u.usuario as nombre_vendedor
+        FROM 
+            ventas v
+       JOIN 
+            productos_ventas pv ON v.id_venta = pv.id_venta
+        JOIN 
+            productosv2 p ON pv.id_producto = p.idproductosv2
+        JOIN 
+            usuarios u ON v.id_vendedor =u.usuario_id
+        WHERE 
+            v.fecha_emision BETWEEN '$fechaInicio' AND '$fechaFin'
+            $condicionCategorias
+            $condicionProductos
+       ORDER BY 
+            p.categoria, p.nombre";
+
             $resultado = $this->conexion->query($query);
-            
+
             if (!$resultado) {
                 throw new Exception("Error en la consulta de ventas normales: " . $this->conexion->error);
             }
-            
+
             while ($fila = $resultado->fetch_assoc()) {
                 // Calcular total del producto
                 $totalProducto = $fila['cantidad'] * $fila['precio'];
-                
+
                 // Filtrar por moneda (ventas normales siempre en soles)
                 if ($moneda === 'dolares') {
                     continue; // Saltar si solo queremos dólares
                 }
-                
+
                 $registros[] = [
                     'categoria' => $fila['categoria'],
                     'producto' => $fila['producto_nombre'],
@@ -4295,105 +4401,115 @@ private function obtenerDatosCliente($id_cliente) {
                     'total_producto' => number_format($totalProducto, 2),
                     'total_producto_raw' => $totalProducto, // Agregar valor sin formato
                     'moneda' => 'S/.',
-                    'grupo_variante' => ''
+                    'grupo_variante' => '',
+                    'fecha_emision' => $fila['fecha_emision'],
+                    'nombre_vendedor' => $fila['nombre_vendedor'] ?? 'No asignado'
                 ];
+
 
                 $totalSoles += $totalProducto;
             }
-           
+
         } catch (Exception $e) {
-           throw new Exception("Error al obtener ventas normales: " . $e->getMessage());
+            throw new Exception("Error al obtener ventas normales: " . $e->getMessage());
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
             'total_dolares' => $totalDolares
         ];
     }
-    
-    private function obtenerFinanciamientosPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda, $grupos, $variantes) {
+
+    private function obtenerFinanciamientosPorCategoria($fechaInicio, $fechaFin, $categorias, $productos, $moneda, $grupos, $variantes)
+    {
         $registros = [];
         $totalSoles = 0;
         $totalDolares = 0;
-        
+
         try {
             // Construir condiciones WHERE
             $condicionCategorias = '';
             if (!empty($categorias)) {
-                $categoriasEscapadas = array_map(function($cat) {
+                $categoriasEscapadas = array_map(function ($cat) {
                     return "'" . $this->conexion->real_escape_string($cat) . "'";
                 }, $categorias);
                 $condicionCategorias = " AND p.categoria IN (" . implode(',', $categoriasEscapadas) . ")";
             }
-            
+
             $condicionProductos = '';
             if (!empty($productos)) {
                 $productosEscapados = array_map('intval', $productos);
                 $condicionProductos = " AND p.idproductosv2 IN (" . implode(',', $productosEscapados) . ")";
             }
-            
+
             $condicionGrupos = '';
             if (!empty($grupos)) {
                 $gruposEscapados = array_map('intval', $grupos);
                 $condicionGrupos = " AND f.grupo_financiamiento IN (" . implode(',', $gruposEscapados) . ")";
             }
-            
+
             $condicionVariantes = '';
             if (!empty($variantes)) {
                 $variantesEscapadas = array_map('intval', $variantes);
                 $condicionVariantes = " AND f.id_variante IN (" . implode(',', $variantesEscapadas) . ")";
             }
-            
-            // Consulta principal para financiamientos
-            $query = "SELECT 
-                        f.idfinanciamiento,
-                        f.fecha_creacion,
-                        f.monto_total,
-                        f.cantidad_producto,
-                        f.grupo_financiamiento,
-                       f.id_variante,
-                        f.moneda,
-                        p.nombre as producto_nombre,
-                        p.categoria,
-                        p.precio_venta
-                    FROM 
-                        financiamiento f
-                    JOIN 
-                        productosv2 p ON f.idproductosv2 = p.idproductosv2
-                    WHERE 
-                        DATE(f.fecha_creacion) BETWEEN '$fechaInicio' AND '$fechaFin'
-                        $condicionCategorias
-                       $condicionProductos
-                        $condicionGrupos
-                        $condicionVariantes
-                    ORDER BY 
-                        p.categoria, p.nombre";
-            
+
+            $query = "SELECT
+                         f.idfinanciamiento,
+                         f.fecha_creacion,
+                         f.monto_total,
+                         f.cantidad_producto,
+                         f.grupo_financiamiento,
+                         f.id_variante,
+                         f.moneda,
+                         p.nombre as producto_nombre,
+                         p.categoria,
+                         p.precio_venta,
+                         u.usuario as nombre_vendedor
+                     FROM
+                         financiamiento f
+                     JOIN
+                         productosv2 p ON f.idproductosv2 = p.idproductosv2
+                     LEFT JOIN
+                         pagos_financiamiento pf ON f.idfinanciamiento = pf.id_financiamiento
+                     LEFT JOIN
+                         usuarios u ON pf.id_asesor = u.usuario_id
+                     WHERE
+                         DATE(f.fecha_creacion) BETWEEN '$fechaInicio' AND '$fechaFin'
+                         $condicionCategorias
+                         $condicionProductos
+                         $condicionGrupos
+                         $condicionVariantes
+                     GROUP BY f.idfinanciamiento
+                     ORDER BY
+                         p.categoria, p.nombre";
+
+
             $resultado = $this->conexion->query($query);
-            
+
             if (!$resultado) {
-               throw new Exception("Error en la consulta de financiamientos: " . $this->conexion->error);
+                throw new Exception("Error en la consulta de financiamientos: " . $this->conexion->error);
             }
-            
+
             while ($fila = $resultado->fetch_assoc()) {
                 // Determinar moneda del financiamiento
                 $monedaFinanciamiento = $fila['moneda'] ?: 'S/.';
-                
+
                 // Filtrar por moneda si se especificó
                 if ($moneda === 'soles' && $monedaFinanciamiento !== 'S/.') {
                     continue;
                 } elseif ($moneda === 'dolares' && $monedaFinanciamiento !== '$') {
                     continue;
                 }
-                
+
                 // Obtener nombre del grupo/variante
                 $grupoVariante = $this->obtenerNombreGrupoFinanciamiento($fila['id_variante'], $fila['grupo_financiamiento']);
-                
+
                 // Calcular precio unitario
                 $cantidad = intval($fila['cantidad_producto']) ?: 1;
                 $precioUnitario = $fila['monto_total'] / $cantidad;
-                
+
                 $registros[] = [
                     'categoria' => $fila['categoria'],
                     'producto' => $fila['producto_nombre'],
@@ -4403,21 +4519,24 @@ private function obtenerDatosCliente($id_cliente) {
                     'total_producto' => number_format($fila['monto_total'], 2),
                     'total_producto_raw' => floatval($fila['monto_total']), // Agregar valor sin formato
                     'moneda' => $monedaFinanciamiento,
-                    'grupo_variante' => $grupoVariante
+                    'grupo_variante' => $grupoVariante,
+                    'fecha_emision' => $fila['fecha_creacion'],
+                    'nombre_vendedor' => $fila['nombre_vendedor'] ?? 'No asignado'
                 ];
-                
+
+
                 // Sumar al total correspondiente
                 if ($monedaFinanciamiento === 'S/.') {
                     $totalSoles += $fila['monto_total'];
-               } else {
+                } else {
                     $totalDolares += $fila['monto_total'];
                 }
             }
-            
+
         } catch (Exception $e) {
             throw new Exception("Error al obtener financiamientos: " . $e->getMessage());
         }
-        
+
         return [
             'registros' => $registros,
             'total_soles' => $totalSoles,
