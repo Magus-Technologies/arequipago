@@ -233,7 +233,7 @@ class GenerarContratosController extends controller
                
                 
                 if (!$esVehiculo) {
-                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites' , 'Celular', 'Chip (Linea corporativa)'])) {
+                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías'])) {
                         throw new Exception("No hay un modelo de contrato para este producto.");
                     }
 
@@ -537,6 +537,8 @@ class GenerarContratosController extends controller
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_llantas.html";
         } elseif ($categoria === 'Aceites') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_aceites.html";
+        } elseif ($categoria === 'Baterías') {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_baterias.html";
         } elseif ($categoria === 'Celular') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_celular.html";
             if (isset($financiamiento['second_product']) && $financiamiento['second_product'] !== null) {
@@ -569,9 +571,9 @@ class GenerarContratosController extends controller
                 $plantillaChip = str_replace('<span id="dia">', $dia, $plantillaChip);
                 $plantillaChip = str_replace('<span id="mes">', $mes, $plantillaChip);
                 $plantillaChip = str_replace('<span id="anio">', $anio, $plantillaChip);
-                $plantillaChip = str_replace('<span id="conductor">', $nombreConductor, $plantillaChip);
-                $plantillaChip = str_replace('<span id="dni">', $conductor['nro_documento'], $plantillaChip);
-                $plantillaChip = str_replace('<span id="licencia">', $conductor['nro_licencia'], $plantillaChip);
+                $plantillaChip = str_replace('<span id="conductor">', $nombrePersona, $plantillaChip);
+                $plantillaChip = str_replace('<span id="dni">', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantillaChip);
+                $plantillaChip = str_replace('<span id="licencia">', $persona['nro_licencia'] ?? '', $plantillaChip);
                 $plantillaChip = str_replace('<span id="cantidad">', $financiamiento['cantidad_producto'], $plantillaChip);
 
                  // Solo incluir licencia si es conductor
@@ -739,8 +741,10 @@ class GenerarContratosController extends controller
     
         foreach ($reemplazos as $id => $valor) {
             $plantilla = str_replace("<span id=\"$id\"></span>", $valor, $plantilla);
+            
         }
     
+        
         // Generar lista de cuotas
         $listaCuotas = '';
         foreach ($cuotas as $index => $cuota) {

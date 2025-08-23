@@ -216,7 +216,8 @@ public function obtenerPorConductor($id_conductor)
 public function obtenerFinanciamientoPorCliente($id_cliente)
     {
         try {
-            $sql = "SELECT * FROM financiamiento WHERE id_cliente = ?";
+            // $sql = "SELECT * FROM financiamiento WHERE id_cliente = ?";
+            $sql = "SELECT * FROM financiamiento WHERE id_cliente = ? AND estado_eliminado = 0";
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param("i", $id_cliente);
             $stmt->execute();
@@ -230,7 +231,8 @@ public function obtenerFinanciamientoPorCliente($id_cliente)
         
     public function ObtenerFinanciamientoPorConductor ($id_conductor){
         try {
-            $sql = "SELECT * FROM financiamiento WHERE id_conductor = ?";
+            // $sql = "SELECT * FROM financiamiento WHERE id_conductor = ?";
+            $sql = "SELECT * FROM financiamiento WHERE id_conductor = ? AND estado_eliminado = 0";
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param("i", $id_conductor);
             $stmt->execute();
@@ -289,7 +291,8 @@ public function obtenerFinanciamientoPorCliente($id_cliente)
     }
 
     public function getFinanciamientoById($id) {
-        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
+        // $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
+        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
         $stmt = $this->conectar->prepare($sql);
         
         if (!$stmt) {
@@ -525,55 +528,51 @@ public function obtenerFinanciamientoPorCliente($id_cliente)
     public function eliminarFinanciamiento($id_financiamiento) {
         try {
             $this->conectar->begin_transaction(); // Iniciar transacción
-
+    
             // --- NUEVO BLOQUE: Restaurar stock del producto asociado al financiamiento ---
             // 1. Obtener idproductosv2 y cantidad_producto del financiamiento
-            $sqlBuscarProducto = "SELECT idproductosv2, cantidad_producto FROM financiamiento WHERE idfinanciamiento = ?"; // <-- Línea agregada
-            $stmtBuscar = $this->conectar->prepare($sqlBuscarProducto); // <-- Línea agregada
-            $stmtBuscar->bind_param("i", $id_financiamiento); // <-- Línea agregada
-            $stmtBuscar->execute(); // <-- Línea agregada
-            $stmtBuscar->bind_result($idProducto, $cantidadProductoStr); // <-- Línea modificada (variable renombrada)
-            if ($stmtBuscar->fetch()) { // <-- Línea agregada
-                $stmtBuscar->close(); // <-- Línea agregada
-
-                $cantidadProducto = (int) $cantidadProductoStr; // <-- Línea agregada: conversión de VARCHAR a int
-
+            $sqlBuscarProducto = "SELECT idproductosv2, cantidad_producto FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
+            $stmtBuscar = $this->conectar->prepare($sqlBuscarProducto);
+            $stmtBuscar->bind_param("i", $id_financiamiento);
+            $stmtBuscar->execute();
+            $stmtBuscar->bind_result($idProducto, $cantidadProductoStr);
+            if ($stmtBuscar->fetch()) {
+                $stmtBuscar->close();
+    
+                $cantidadProducto = (int) $cantidadProductoStr;
+    
                 // 2. Actualizar stock en productosv2 sumando la cantidad del financiamiento
-                $sqlActualizarStock = "UPDATE productosv2 SET cantidad = cantidad + ? WHERE idproductosv2 = ?"; // <-- Línea agregada
-                $stmtUpdateStock = $this->conectar->prepare($sqlActualizarStock); // <-- Línea agregada
-                $stmtUpdateStock->bind_param("ii", $cantidadProducto, $idProducto); // <-- Línea modificada: ahora cantidadProducto es int
-                $stmtUpdateStock->execute(); // <-- Línea agregada
-                if ($stmtUpdateStock->affected_rows === -1) { // <-- Línea agregada
-                    throw new Exception("Error al actualizar el stock del producto."); // <-- Línea agregada
+                $sqlActualizarStock = "UPDATE productosv2 SET cantidad = cantidad + ? WHERE idproductosv2 = ?";
+                $stmtUpdateStock = $this->conectar->prepare($sqlActualizarStock);
+                $stmtUpdateStock->bind_param("ii", $cantidadProducto, $idProducto);
+                $stmtUpdateStock->execute();
+                if ($stmtUpdateStock->affected_rows === -1) {
+                    throw new Exception("Error al actualizar el stock del producto.");
                 }
-                $stmtUpdateStock->close(); // <-- Línea agregada
-            } else { // <-- Línea agregada
-                $stmtBuscar->close(); // <-- Línea agregada
-                throw new Exception("No se encontró el financiamiento con el ID proporcionado."); // <-- Línea agregada
+                $stmtUpdateStock->close();
+            } else {
+                $stmtBuscar->close();
+                throw new Exception("No se encontró el financiamiento con el ID proporcionado.");
             }
-
-            // 1. Eliminar las cuotas asociadas
-            $sqlCuotas = "DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?";
-            $stmtCuotas = $this->conectar->prepare($sqlCuotas);
-            $stmtCuotas->bind_param("i", $id_financiamiento);
-            $stmtCuotas->execute();
-
-            if ($stmtCuotas->affected_rows === -1) {
-                throw new Exception("Error al eliminar cuotas.");
-            }
-            $stmtCuotas->close();
-
-            // 2. Eliminar el financiamiento
-            $sqlFinanciamiento = "DELETE FROM financiamiento WHERE idfinanciamiento = ?";
+    
+            // <CHANGE> En lugar de DELETE, hacer UPDATE para marcar como eliminado
+            // SOFT DELETE: Marcar como eliminado en lugar de eliminar físicamente
+            $sqlFinanciamiento = "UPDATE financiamiento SET estado_eliminado = 1 WHERE idfinanciamiento = ?";
             $stmtFinanciamiento = $this->conectar->prepare($sqlFinanciamiento);
             $stmtFinanciamiento->bind_param("i", $id_financiamiento);
             $stmtFinanciamiento->execute();
-
+    
             if ($stmtFinanciamiento->affected_rows === -1) {
-                throw new Exception("Error al eliminar financiamiento.");
+                throw new Exception("Error al marcar financiamiento como eliminado.");
             }
             $stmtFinanciamiento->close();
-
+    
+            // <CHANGE> También marcar las cuotas como eliminadas (soft delete)
+            $sqlCuotas = "UPDATE cuotas_financiamiento SET estado_eliminado = 1 WHERE id_financiamiento = ?";
+            $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+            $stmtCuotas->bind_param("i", $id_financiamiento);
+            $stmtCuotas->execute();
+    
             $this->conectar->commit(); // Confirmar transacción
             return true;
         } catch (Exception $e) {
@@ -1050,7 +1049,8 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
 
     {
     
-        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
+        // $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
+        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
     
         $stmt = $this->conectar->prepare($sql);
     
@@ -1186,7 +1186,8 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
 
     public function getAllFinanciamientos()
     {
-        $sql = "SELECT * FROM financiamiento";
+        // $sql = "SELECT * FROM financiamiento";
+        $sql = "SELECT * FROM financiamiento WHERE estado_eliminado = 0";
         $result = $this->conectar->query($sql);
         $financiamientos = [];
 
@@ -1250,8 +1251,10 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
                 // Solo validar si es vehicular (vehiculo o moto)
                 if ($tipoVehicular === 'vehiculo' || $tipoVehicular === 'moto') {
                     // Verificar si existe código duplicado
+                    // $sqlFinanciamiento = "SELECT COUNT(*) as total FROM financiamiento 
+                    //                     WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL";
                     $sqlFinanciamiento = "SELECT COUNT(*) as total FROM financiamiento 
-                                        WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL";
+                    WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL AND estado_eliminado = 0";
                     $stmtFinanciamiento = mysqli_prepare($this->conectar, $sqlFinanciamiento);
                     mysqli_stmt_bind_param($stmtFinanciamiento, "ss", $codigoAsociado, $grupoFinanciamiento);
                     mysqli_stmt_execute($stmtFinanciamiento);
@@ -1274,7 +1277,8 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
     public function contarCreditosActivos($tipo, $id)
     {
         $campo = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
-        $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso')";
+        // $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso')";
+        $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso') AND estado_eliminado = 0";
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -1282,5 +1286,50 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
         $fila = $result->fetch_assoc();
         return (int)$fila['total'];
     }
-    
+    // Función para obtener financiamientos eliminados (papelera)
+public function getFinanciamientosEliminados() {
+    try {
+        $sql = "SELECT f.*, 
+                       COALESCE(c.nombre, cf.nombre) as nombre_cliente,
+                       COALESCE(c.apellido, cf.apellido) as apellido_cliente,
+                       COALESCE(c.documento_identidad, cf.dni) as documento_cliente
+                FROM financiamiento f
+                LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+                LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
+                WHERE f.estado_eliminado = 1
+                ORDER BY f.fecha_creacion DESC";
+        
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+// Función para restaurar un financiamiento eliminado
+public function restaurarFinanciamiento($id_financiamiento) {
+    try {
+        $this->conectar->begin_transaction();
+        
+        // Restaurar financiamiento
+        $sql = "UPDATE financiamiento SET estado_eliminado = 0 WHERE idfinanciamiento = ?";
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param("i", $id_financiamiento);
+        $stmt->execute();
+        
+        // Restaurar cuotas
+        $sqlCuotas = "UPDATE cuotas_financiamiento SET estado_eliminado = 0 WHERE id_financiamiento = ?";
+        $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+        $stmtCuotas->bind_param("i", $id_financiamiento);
+        $stmtCuotas->execute();
+        
+        $this->conectar->commit();
+        return true;
+    } catch (Exception $e) {
+        $this->conectar->rollback();
+        return false;
+    }
+}
 }
