@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrato de Entrega de Batería</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 40px 60px;
+            color: #000;
+            background-color: #fff;
+        }
+        
+        .titulo {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-decoration: underline;
+        }
+        
+        .parrafo {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        .importante {
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .clausula-titulo {
+            font-weight: bold;
+            /* text-decoration: underline; */
+        }
+        
+        @media print {
+            body {
+                margin: 20px 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="titulo">
+        CONTRATO DE ENTREGA DE BATERIA
+    </div>
+
+    <div class="parrafo">
+        Siendo las <span id="hora"></span> hrs. del día <span id="dia"></span>, Año <span id="año"></span>, la empresa <strong>Arequipa Go</strong>  hace entrega <strong>AL CONDUCTOR</strong>: <span id="conductor"></span>
+    </div>
+
+    <div class="parrafo">
+        Identificado con <strong>DNI</strong> <span id="dni"></span> y <strong>N° de licencia</strong> <span id="licencia"></span> afiliado a la empresa <strong>AREQUIPA GO</strong> donde actualmente labora.
+    </div>
+
+    <div class="parrafo">
+        Se hace entrega AL CONDUCTOR la cantidad de <span id="cantidad"></span> <strong>BATERIA <span id="marca"></span></strong> (Estado nuevo), con las siguientes características:
+    </div>
+
+    <div class="parrafo">
+        <strong>MARCA:</strong> <span id="marca"></span><br>
+        <strong>PRECIO TOTAL:</strong> <span id="precio_total"></span>
+    </div>
+
+    <div class="parrafo">
+        El cual será pagado en:<br>
+        <strong>N°cuotas</strong> <span id="num_cuotas"></span><br>
+        Cuota inicial de <span id="cuota_semanal"></span> soles comprometiéndose a pagar en <span id="num_cuotas2"></span> cuotas semanales de <span id="valor_cuota"></span> soles.
+    </div>
+
+    <div class="parrafo">
+        El receptor declara conocer y asume la responsabilidad del pago establecido en las fechas pactadas. El conductor es el único responsable y tendrá que hacer la cancelación total de lo adquirido.
+    </div>
+
+    <div class="importante">
+        <strong>IMPORTANTE:</strong><br>
+        <span class="clausula-titulo">CLAUSULA DE DESCUENTO AUTOMATICO POR MOROSIDAD</span>
+    </div>
+
+    <div class="parrafo">
+        Si cancelan después de la fecha pactada se le cobrara una mora diaria de s/ 10.00 soles.
+    </div>
+
+    <div class="parrafo">
+        En caso de que <strong>EL CONDUCTOR</strong> incurra en morosidad respecto a las obligaciones económicas adquiridas con <strong>LA EMPRESA AREQUIPA GO</strong>, <strong>EL CONDUCTOR</strong> autoriza expresamente a la empresa a realizar un descuento automático de la cantidad adeudada de su bono semanal, con el fin de saldar el monto correspondiente. Dicho descuento se efectuará sin necesidad de notificación adicional, y será aplicado a la mayor brevedad posible para regularizar la deuda.
+    </div>
+
+    <div class="parrafo">
+        <strong>EL CONDUCTOR</strong> reconoce que esta autorización es otorgada como parte de las condiciones contractuales y que, en caso de no contar con fondos suficientes, la empresa podrá tomar las medidas legales necesarias para recuperar la deuda.
+    </div>
+
+    <div class="firmas">
+        <table style="width: 100%; border: none; margin-top: 40px;">
+            <tr>
+                <td style="text-align: center; padding: 10px; width: 50%;">
+                    <div style="border-top: 1px solid #000; margin-top: 40px; margin-bottom: 10px; width: 100%;"></div>
+                    <p>_________________________________________</p>
+                    <div style="text-align: left; margin-top: 10px;">
+                        <div><span id="nombre_conductor"></span></div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                        <div>DNI: <span id="dni_firma"></span></div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                    </div>
+                </td>
+                <td style="text-align: center; padding: 10px; width: 50%;">
+                    <div style="border-top: 1px solid #000; margin-top: 40px; margin-bottom: 10px; width: 100%;"></div>
+                    <p>____________________________</p>
+                    <div style="text-align: left; margin-top: 10px;">
+                        <div>La Empresa:</div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                        <div>RUC:</div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        // Función para llenar los datos del contrato
+        function llenarContrato(datos) {
+            document.getElementById('hora').textContent = datos.hora || '';
+            document.getElementById('dia').textContent = datos.dia || '';
+            document.getElementById('año').textContent = datos.año || '';
+            document.getElementById('conductor').textContent = datos.conductor || '';
+            document.getElementById('dni').textContent = datos.dni || '';
+            document.getElementById('licencia').textContent = datos.licencia || '';
+            document.getElementById('cantidad').textContent = datos.cantidad || '';
+            document.getElementById('marca').textContent = datos.marca || '';
+            document.getElementById('precio_total').textContent = datos.precio_total || '';
+            document.getElementById('num_cuotas').textContent = datos.num_cuotas || '';
+            document.getElementById('cuota_semanal').textContent = datos.cuota_semanal || '';
+            document.getElementById('num_cuotas2').textContent = datos.num_cuotas || '';
+            document.getElementById('valor_cuota').textContent = datos.valor_cuota || '';
+            document.getElementById('nombre_conductor').textContent = datos.conductor || '';
+            document.getElementById('dni_firma').textContent = datos.dni || '';
+        }
+    </script>
+</body>
+</html>

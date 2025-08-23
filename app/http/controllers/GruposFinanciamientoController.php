@@ -276,6 +276,33 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
         }
     }
+    public function obtenerDetallesPlan() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = isset($_POST['id']) ? $_POST['id'] : null;
+            
+            if (!$id) {
+                echo json_encode(['status' => 'error', 'message' => 'ID del plan no especificado']);
+                return;
+            }
+            
+            try {
+                $modelo = new GrupoFinanciamientoModel();
+                $plan = $modelo->getGroupById($id);
+                $variantes = $modelo->getVariantesGrupo($id);
+                
+                echo json_encode([
+                    'status' => 'success', 
+                    'plan' => $plan,
+                    'variantes' => $variantes
+                ]);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
+        }
+    }
+    
 
 }
 ?>
