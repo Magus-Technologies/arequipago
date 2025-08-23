@@ -1,0 +1,194 @@
+
+        .tab-button-active {
+            background-color: #f4f750 !important;
+            color: #2E217A !important;
+        }
+
+        .producto-seleccionado {
+            background-color: #e8f4ff !important;
+        }
+
+        #notificacion {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            height: 94px;
+            width: 90%; /* Ajusta el ancho según prefieras */
+            max-width: 600px;
+            background-color: #e8f4ff;  /* Color suave que combina con tu interfaz */
+            border-left: 5px solid #626ed4; /* Un detalle llamativo */
+            color: #2d2d2d; /* Color de texto para contraste */
+            padding: 15px 20px;
+            margin-top: 60px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra elegante */
+            font-family: 'Arial', sans-serif;
+            font-size: 16px;
+            display: none;
+            z-index: 1000;
+            transition: opacity 0.5s ease, transform 0.5s ease; /* Transición suave */
+        }
+
+        #notificacion.show {
+            display: block;
+            animation: fadeInDown 0.5s ease forwards; /* Animación suave */
+        }
+
+        @keyframes fadeInDown {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px); /* Empieza desplazada hacia arriba */
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(10px); /* Se desplaza hacia abajo ligeramente */
+            }
+        }
+
+
+        .tabla-brillo {
+            border: 3px solid white; /* Brillo blanco */
+            box-shadow: 0 0 10px white;
+            animation: flash 0.15s ease-in-out; /* Parpadeo rápido */
+        }
+
+        @keyframes flash {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6; /* Efecto de "diluir" momentáneo */
+            }
+        }
+        /* Estilos personalizados del tooltip activados por el ID */
+        .tooltip-custom {
+                background-color: #626ed4 !important;  /* Fondo personalizado */
+                color: white !important;  /* Texto blanco */
+                font-size: 14px !important;  /* Tamaño del texto */
+                border-radius: 8px !important;  /* Bordes redondeados */
+                padding: 10px !important;  /* Espaciado interno */
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;  /* Sombra elegante */
+            }
+
+            /* Estilo del piquito activado por el ID */
+            .tooltip-custom .tooltip-arrow {
+                border-top-color: #626ed4 !important;  /* Color del piquito */
+            }
+
+            /* Ajuste del ícono */
+            .tooltip-icon i {
+                font-size: 18px;  /* Tamaño del ícono */
+                color: #626ed4;  /* Color del ícono */
+                cursor: pointer;  /* Cambia a manita */
+            }
+
+            /* Estilos aplicados solo a inputs por ID */
+            #monto,
+            #cuotaInicial,
+            #montoRecalculado,
+            #montoInscripcion,
+            #tasaInteres,
+            #valorCuota,
+            #montoSinIntereses,
+            #fechaInicio,
+            #fechaFin,
+            #cuotas,
+            #frecuenciaPago,
+            #fechaHoraActual {
+                background-color: #e9ecef; /* Color de fondo deshabilitado */
+                color: #6c757d;            /* Color de texto deshabilitado */
+                border: 1px solid #ced4da; /* Borde ligero */
+                pointer-events: none;      /* Evita que el usuario interactúe con el input */
+                cursor: not-allowed;       /* Cursor de prohibido */
+            }
+
+            /* Efecto de luz en el borde inferior del div que envuelve el select */
+            .glow-effect-wrapper {
+                position: relative; /* Cambiado: Se aplica al div envolvente */
+                border: 1px solid #ced4da;
+                overflow: hidden; /* Corrección: Evita que la animación se recorte */
+            }
+
+            .glow-effect-wrapper::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: -100%; /* Empieza fuera de vista */
+                width: 100%;
+                height: 3px;
+                background: linear-gradient(90deg, transparent, #f4f750, transparent); /* Cambiado: color del efecto de luz */
+                animation: glow-animation 1.5s infinite linear;
+                opacity: 0; /* Cambiado: Comienza invisible */
+            }
+
+            @keyframes glow-animation {
+                0% {
+                    left: -100%;  /* Empieza la animación desde fuera de la vista */
+                }
+                50% {
+                    left: 50%;  /* La luz pasa por el centro */
+                }
+                100% {
+                    left: 100%;  /* Sale completamente del área visible */
+                }
+            }
+
+            /* Clase visible que activa la animación */
+            .glow-active-wrapper::after {
+                opacity: 1; /* Cambiado: Se muestra cuando está activa */
+            }
+
+            /* Estilos para el contenedor de la imagen flotante */
+            #imagen-flotante {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                pointer-events: none; /* Permite interactuar con elementos debajo */
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            }
+
+            /* Estilos para la imagen */
+            #imagen-flotante img {
+                max-width: 150px;
+                filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+                animation: pulso 2s infinite ease-in-out;
+            }
+
+            /* Animación de pulso */
+            @keyframes pulso {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
+
+        #btnDescargar { /* Estilos aplicados exclusivamente a este botón */
+            background-color: #38a4f8 !important; /* Color solicitado */
+            color: white; /* Texto blanco para contraste */
+            margin-top: 4px;
+            display: block;
+            margin: 10px auto;
+        }
+
+        #btnDescargar:hover {
+            background-color: #1c86d1 !important; /* Efecto hover más oscuro */
+        }
+
+        .border-danger {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+
+        #spinnerCodigoAsociado {
+            color: #6c757d;
+        }
+
+        #mensajeCodigoAsociado {
+            font-size: 0.875rem;
+        }

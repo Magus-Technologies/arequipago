@@ -1,0 +1,174 @@
+.btn-custom {
+        margin-top: -50px;
+        /* Ajusta este valor según lo necesites */
+    }
+
+    .switch-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+        margin-left: 28px;
+    }
+
+    .switch-label {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-right: 18px;
+    }
+
+    #regislabel {
+        margin-left: 18px;
+    }
+
+
+
+
+    /* Estilos personalizados para el switch */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        /* Ancho del switch */
+        height: 30px;
+        /* Alto del switch */
+    }
+
+    /* Ocultamos el input real */
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* Estilo del fondo del switch */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #38a4f8;
+        /* Color del switch apagado */
+        transition: 0.4s;
+        border-radius: 10px;
+        /* Bordes redondeados */
+    }
+
+    /* Elemento móvil del switch */
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 3px;
+        /* Posición inicial a la izquierda */
+        bottom: 3px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 19%;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Cuando el switch está activado */
+    input:checked+.slider {
+        background-color: #38a4f8;
+        /* Color verde al activarse */
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(30px);
+        /* Desplaza el círculo a la derecha */
+    }
+
+
+
+
+
+
+    .content-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 50vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .content {
+        position: absolute;
+        width: 80%;
+
+
+        transition: transform 0.5s ease-in-out;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .hidden-right {
+        transform: translateX(100%);
+    }
+
+    .hidden-left {
+        transform: translateX(-100%);
+    }
+
+    /* Agregado: Ocultar completamente después de la animación */
+    .hidden {
+        display: none !important;
+        /* Hace que el div desaparezca completamente */
+    }
+
+    #btnDescargar {
+        background-color: #02a499;
+        color: white;
+        border: none;
+        padding: 8px 24px; /* Más espacio horizontal para hacerlo alargado */
+        border-radius: 4px;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        margin-left: 140px; /* Empuja el botón más a la derecha */
+        white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+    }
+
+    #btnDescargar:hover {
+        background-color: #028f84;
+    }
+
+    #btnDescargar i {
+        margin-left: 5px;
+    }
+
+    .input-group { /* Agregado: aseguramos que el input esté centrado dentro de su columna */
+        width: 100%; /* Asegura que el input se ocupe del espacio completo disponible */
+    }
+
+    /* Ajustamos el margen para mover el input hacia la derecha */
+    #colInputBusqueda { /* Agregado: mueve la columna del input un poco a la derecha */
+        padding-right: 20px; /* Agregado: espacio entre el input y el botón */
+        transform: translateX(18%);
+    }
+
+    /* Estructura para alinear el input y el botón de manera correcta */
+    .row.align-items-center { /* Agregado: Alineación centrada para los elementos en la fila */
+        display: flex;
+        justify-content: center; /* Centra los elementos horizontalmente */
+        align-items: center; /* Centra los elementos verticalmente */
+    }
+
+    .table-responsive {
+        max-height: 400px; /* Ajusta esto a la altura deseada */
+        overflow-y: auto;
+        position: relative;
+    }
+
+    .table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #cfe2ff; /* Coincide con .table-primary de Bootstrap */
+    }

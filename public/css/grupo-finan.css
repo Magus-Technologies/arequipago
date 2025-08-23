@@ -1,0 +1,293 @@
+
+        .form-section {
+            border: 2px solid #D7D7D7;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background-color: #FAFAFA;
+            color: #000000;
+            font-weight: normal;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .form-section:hover {
+            transform: translateY(-4px);
+        }
+        .btn-custom {
+            background-color: #F2E74B;
+            color: #343F40;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-custom:hover {
+            background-color: #F2D64B;
+            transform: scale(1.05);
+        }
+        .nav-tabs .nav-link {
+            color: black;
+            font-size: 18px;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #8b8c64;
+            color: white;
+            border-color: black;
+        }
+        .dropdown-list {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            list-style: none;
+            padding: 0;
+            margin-top: 40px;
+            width: 700px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .dropdown-list li {
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .dropdown-list li:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        
+        .tab-button-active {
+            background-color: #f4f750 !important;
+            color: #2E217A !important;
+        }
+        
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-edit {
+            background-color: #4e73df;
+            color: white;
+        }
+        
+        .btn-delete {
+            background-color: #e74a3b;
+            color: white;
+        }
+        
+        /* Estilo mejorado para el checkbox */
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .custom-checkbox:hover {
+            background-color: #e9ecef;
+            border-color: #ced4da;
+        }
+        
+        .custom-checkbox input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .custom-checkbox i {
+            margin-right: 8px;
+            color: #2E217A;
+        }
+        
+        .custom-checkbox.active {
+            background-color: #e8f4ff;
+            border-color: #4e73df;
+        }
+
+        /* Agregar al archivo de estilos */
+        .variantes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .variante-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .variante-card .delete-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            color: #ff0000;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+        }
+
+        .variante-card h6 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .variante-card p {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .btn-edit-variante {
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-size: 14px;
+            padding: 2px 5px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-edit-variante:hover {
+            color: #007bff;
+        }
+
+        /* Evita que las celdas se rompan en varias líneas */
+        .table thead th,
+        .table tbody td {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Sticky para la última columna ("Acciones") */
+        .table th:last-child,
+        .table td:last-child {
+            position: sticky !important; /* Añadido !important para asegurar que se aplique */
+            right: 0;
+            background: #f8f9fa;
+            z-index: 2;
+            box-shadow: -1px 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Asegura que el encabezado de "Acciones" quede sobre las celdas */
+        .table thead th:last-child {
+            z-index: 5 !important; /* Aumentado y añadido !important para asegurar mayor prioridad */
+            background-color: #212529 !important; /* Usando el color estándar de .table-dark para consistencia */
+            color: white !important; /* Forzando el color del texto a blanco */
+        }
+
+        /* Fijar el encabezado al hacer scroll vertical */
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+        }
+
+        /* DataTables específicos */
+        table.dataTable thead th:last-child,
+        table.dataTable tbody td:last-child {
+            position: sticky !important;
+            right: 0;
+            z-index: 2;
+        }
+
+        /* Asegura que el encabezado de "Acciones" en DataTables tenga fondo negro */
+        table.dataTable thead th:last-child {
+            background-color: #212529 !important; /* Color estándar table-dark */
+            color: white !important;
+            z-index: 5 !important; /* Mayor z-index para estar encima de todo */
+        }
+
+        /* Arregla el problema con la cabecera clonada por DataTables */
+        .dataTables_scrollHead .table thead th:last-child,
+        div.dataTables_scrollHead table thead th:last-child,
+        .dataTables_scrollHead table.dataTable thead th:last-child {
+            position: sticky !important; /* Fuerza posición sticky */
+            right: 0 !important;
+            background-color: #212529 !important; /* Color negro para cabecera */
+            color: white !important;
+            z-index: 5 !important; /* Z-index elevado */
+        }
+
+        /* Asegurarse que cualquier contenedor personalizado de DataTables no interfiera */
+        .dataTables_wrapper .dataTables_scrollHead .table th:last-child {
+            position: sticky !important;
+            right: 0 !important;
+            background-color: #212529 !important;
+            color: white !important;
+            z-index: 5 !important;
+        }
+
+        /* Ajuste para cuando se usa scroll horizontal */
+        .dataTables_scrollBody .table th:last-child,
+        .dataTables_scrollBody .table td:last-child {
+            position: sticky !important;
+            right: 0 !important;
+            z-index: 2 !important;
+        }
+
+        /* Agregar después del estilo .variante-card */
+        .variante-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .variante-header h5 {
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .btn-edit-variante {
+            background: none;
+            border: none;
+            color: #4e73df;
+            font-size: 16px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: color 0.2s;
+            margin-left: 10px;
+        }
+
+        .btn-edit-variante:hover {
+            color: #2e59d9;
+        }
