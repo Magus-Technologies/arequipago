@@ -369,6 +369,8 @@ function obtenerConductoresYClientesConCuotasVencidas() {
         WHERE 
             cc.fecha_vencimiento < '$fecha_actual' 
             AND cc.estado_cuota != 'pagado'
+            AND crf.incobrable = 0
+            AND c.desvinculado = 0
         GROUP BY 
             c.id_conductor
     ";
@@ -411,6 +413,8 @@ function obtenerConductoresYClientesConCuotasVencidas() {
         WHERE 
             cf.fecha_vencimiento < '$fecha_actual' 
             AND cf.estado = 'En Progreso'
+            AND f.incobrable = 0
+            AND c.desvinculado = 0
         GROUP BY 
             c.id_conductor, p.nombre, f.moneda  /* MODIFICADO: Agrupamos también por moneda */
     ";
@@ -453,6 +457,7 @@ function obtenerConductoresYClientesConCuotasVencidas() {
             WHERE 
                 cfc.fecha_vencimiento < '$fecha_actual' 
                 AND cfc.estado = 'En Progreso'
+                AND f.incobrable = 0
             GROUP BY 
                 cf.id, p.nombre, f.moneda  
         ";
