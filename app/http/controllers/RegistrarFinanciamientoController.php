@@ -582,7 +582,7 @@ class RegistrarFinanciamientoController extends Controller
         private function registrarComisionAutomatica($idFinanciamiento) {
             // Verificar si el usuario puede tener comisión automática
 
-            if (!in_array($_SESSION['id_rol'], [1, 3])) {
+            if (!in_array($_SESSION['id_rol'], [1,2, 3])) {
                 return; // Solo roles 1 y 3 tienen comisión automática
             }
             

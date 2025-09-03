@@ -20,7 +20,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
 ?>
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script> -->
     <style>
         
         input{
@@ -1200,13 +1200,13 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
 
 
-<script src="
+<!-- <script src="
 https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
 "></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+ -->
 
 <script>
 

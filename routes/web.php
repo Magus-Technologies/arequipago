@@ -1,55 +1,5 @@
 <?php
 
-// Verifica si la URL contiene "/arequipago/"
-if (strpos($_SERVER['REQUEST_URI'], '/arequipago/') === 0) {
-    // Extrae la ruta después de "/arequipago/"
-    $newPath = substr($_SERVER['REQUEST_URI'], strlen('/arequipago'));
-    
-    // Construye la nueva URL
-    $newUrl = 'https://arequipago-ventas.pe' . $newPath;
-    
-    // Preserva el método HTTP original
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    // Inicia la salida del buffer
-    ob_start();
-    
-    // Genera un formulario oculto para preservar el método y los datos POST
-    echo "<html><body><form id='redirect_form' method='$method' action='$newUrl'>";
-    foreach ($_POST as $key => $value) {
-        echo "<input type='hidden' name='" . htmlspecialchars($key) . "' value='" . htmlspecialchars($value) . "'>";
-    }
-    echo "</form>";
-    echo "<script>document.getElementById('redirect_form').submit();</script></body></html>";
-    
-    // Envía los headers de redirección
-    header("HTTP/1.1 307 Temporary Redirect");
-    header("Location: $newUrl");
-    
-    // Envía el contenido del buffer y termina el script
-    ob_end_flush();
-    exit;
-}
-
-// Si no hay redirección, continúa con el procesamiento normal de la solicitud
-// Aquí puedes agregar tu lógica para manejar las rutas específicas
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if ($_SERVER['REQUEST_URI'] === '/login') {
-        // Lógica para la vista de login
-    } elseif ($_SERVER['REQUEST_URI'] === '/logout') {
-        // Lógica para el logout
-    }
-    // Agrega más rutas GET según sea necesario
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Maneja las solicitudes POST aquí
-    // Por ejemplo:
-    // if ($_SERVER['REQUEST_URI'] === '/submit-form') {
-    //     // Lógica para manejar el envío del formulario
-    // }
-}
-
-
-
 
 Route::get('/login',"ViewController@login");
 Route::get('/logout',"UsuarioController@logout");
@@ -65,7 +15,6 @@ Route::post('/guardarTipoProducto', 'ProductosController@guardarTipoProducto');
 Route::get('/obtenerTodosProductos', 'ProductosController@obtenerTodosProductos');
 Route::post('/guardarProducto', 'ProductosController@guardarProducto');
 Route::get('/buscarAlmacen', 'ProductosController@buscarProductos');
-Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
 Route::post('/guardarCategoriaProducto', 'ProductosController@guardarCategoriaProducto');
 Route::get('/conductorPago', 'RegistrarConductorController@obtenerConductor');
 Route::get('/verdetalleconductor', 'ConductorController@verDetalleConductor');
@@ -83,37 +32,19 @@ Route::get('/cargarcategoriaproductos', 'ProductosController@getCategoriasProduc
 Route::get('/obtenerTipoProducto', 'ProductosController@obtenerTipoProducto');
 
 Route::get('/obtenerFinanciamientoDetalle', 'GenerarContratosController@obtenerFinanciamientoDetalle');
-Route::get('/cargarGruposFinanciamiento', 'FinanciamientoController@cargarGruposFinanciamiento');
-
-Route::post('/guardarGrupoFinanciamiento', 'FinanciamientoController@guardarGrupoFinanciamiento');
-
 Route::post('/guardarRegistroPago', 'RegistroPagoController@guardarRegistroPago');
-Route::post('/generarCronogramaPDF', 'FinanciamientoController@generarCronogramaPDF');
 Route::post('/generarContratosRegistro', 'GenerarContratosController@generarContratosRegistro');
-Route::get('/TipoCambio', 'FinanciamientoController@obtenerTipoCambio');
 
-Route::get('/obtenerClientesFinanciamiento', 'FinanciamientoController@obtenerClientesFinanciamiento');
-Route::get('/obtenerClientesBuscados', 'FinanciamientoController@obtenerClientesFiltrados');
-Route::get('/obtenerFinanciamientoPorCliente', 'FinanciamientoController@obtenerFinanciamientoPorCliente');
-Route::get('/obtenerCuotasPorCliente', 'FinanciamientoController@obtenerCuotasPorCliente');
-Route::get('/obtenerClienteDetalle', 'FinanciamientoController@obtenerClienteDetalle'); 
-Route::get('/obtenerClientesAutocompletado', 'FinanciamientoController@obtenerClientesAutocompletado');
-Route::get('/obtenerNumDocAutocompletado', 'FinanciamientoController@obtenerNumDocAutocompletado');
 
-Route::get('/obtenerProductos', 'FinanciamientoController@obtenerProductos');
-Route::get('/busquedaProductos', 'FinanciamientoController@searchProductos');
-Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
 Route::get('/downloadReport', 'ProductosController@downloadReport');
 
 Route::get("/obtenerDetallesProducto", "ProductosController@obtenerDetallesProducto");
 
 Route::post('/busquedaFinanciamientos', 'GenerarContratosController@searchFinanciamientos');
-Route::get('/buscarConductor', 'RegistrarFinanciamientoController@buscarConductor');
-// Ruta para la b squeda de planes mensuales
-Route::post('/buscarPlanesMensuales', 'FinanciamientoController@buscarPlanesMensuales');
 Route::post('/eliminar-masivo', 'ProductosController@saveProductsMassive');
-Route::post('/obtener-plan-financiamiento', 'FinanciamientoController@obtenerPlanFinanciamiento');
+// Ruta para la b squeda de planes mensuales
 
+Route::get('/buscarConductor', 'RegistrarFinanciamientoController@buscarConductor');
 // Ruta para guardar el financiamiento
 Route::post('/guardarFinanciamiento', 'RegistrarFinanciamientoController@guardarFinanciamiento');
 Route::post('/obtenerFinanciamientosPorFecha', 'GenerarContratosController@obtenerFinanciamientosPorFecha');
@@ -140,7 +71,6 @@ Route::get('/venta/pdf/voucher/8cm/:voucher',"ReportesVentaController@imprimirvo
 Route::get('/venta/pdf/voucher/8cm/:voucher/:nom',"ReportesVentaController@imprimirvoucher8cm");
 Route::get('/venta/pdf/voucher/5.6cm/:voucher',"ReportesVentaController@imprimirvoucher5_6cm");
 Route::get('/venta/pdf/voucher/5.6cm/:voucher/:nom',"ReportesVentaController@imprimirvoucher5_6cm");
-Route::postBase("/reporte/cotizaciones/vendedores","GenerarReporte@reporteVentaPorVendedor");
 Route::postBase("/reporte-almacen", "FragmentController@reporteAlmacen");
 Route::postBase('/mostrarReportes','FragmentController@reportesview');
 
@@ -214,14 +144,7 @@ Route::postBase("/financimientosAprobar", "FragmentController@financimientosApro
 
 Route::postBase("/creditScore","FragmentController@creditScore");
 
-Route::get("/reporte/excel/:fecha","GenerarReporte@generarExcel");
-Route::get("/reporte/producto/excel","GenerarReporte@generarExcelProducto");
 
-Route::get("/reporte/rvta/excel/:fecha","GenerarReporte@generarExcelRVTA");
-Route::post("/dataEditProducto","ProductosController@obtenerDatosProducto");
-/* Route::get("/reporte/excel/test2","GenerarReporte@testExcel"); */
-
-Route::get("/reporte/ingresos/egresos/:id","GenerarReporte@ingresosEgresos");
 Route::get("/chargedData", "ConductorController@allConductors");
 Route::get("/chargedData-asesor", "ConductorController@allConductorsva");
 
@@ -235,9 +158,6 @@ Route::get("/reporte/compras/pdf/:id","ReportesVentaController@reporteCompra");
 Route::get("/reporte/productos/pdf/:id","ReportesVentaController@reporteProductos");
 Route::get("/reporte/ventasganancias/pdf/:id","GeneradoresController@reportePeriodoVentaGanancias");
 
-Route::get("/reporte/producto/guia","GenerarReporte@generarExcelProductoImporte");
-
-Route::get("/reporte/caja/excel/:id","GenerarReporte@generarExcelCaja");
 Route::get("/reporte/compras","ReportesVentaController@reporteCompraAll");
 Route::postBase("/usuarios","FragmentController@usuariosLista");
 Route::postBase("/grupo-financiamiento", "FragmentController@openGruposFinance");
@@ -255,38 +175,27 @@ Route::get("/generateBarcode", "ProductosController@generateBarCode");
 Route::post("/deleteProducts", "ProductosController@deleteProducts");
 Route::get("/getDataSelets", "ProductosController@getEditsSeletProducto");
 Route::get("/consultar-productos-venta", "VentasController@buscarProductoController");
-route::post("/deleteFinance", "FinanciamientoController@deleteFinance");
+
 route::post("/busquedaPorDni", "ConductorController@buscarPorDni");
 route::post("/paymentMade", "ConductorController@paymentMade");
-route::post("/save-newGroupFinance", "GruposFinanciamientoController@guardarPlanFinanciamiento");
-route::get("/getAllPlanes", "GruposFinanciamientoController@getAllPlanes");
-route::post("/asociar", "GruposFinanciamientoController@asociarProducto");
+
 
 Route::post("/generarEnlacePDF", "ConductorController@generarEnlacePDF");
 Route::get("/obtenerReportesPagos", "ConductorController@obtenerReportesPagos");
 Route::post("/eliminarReportePago", "ConductorController@eliminarReportePago");
 Route::post('/actualizarProducto', 'ProductosController@actualizarProducto');
-Route::post('/obtenerPlanFinanciamiento', 'FinanciamientoController@getPlanFinanciamiento');
 Route::get('/chargedReportAlmacen', 'ReportesMovimientosController@chargedReportAlmacen');
 Route::get('/chargedUsuarios','ReportesMovimientosController@chargedUsuarios');
 Route::get('/filtrarMovimientos','ReportesMovimientosController@filtrarMovimientos');
-Route::post('/editGroup','GruposFinanciamientoController@editarGrupo');
-Route::post('/getTipoVehicular', 'GruposFinanciamientoController@obtenerTipoVehicular');
-Route::post('/deleteGroup','GruposFinanciamientoController@deleteGroup');
 Route::post('/getIdConductorforDni', 'ConductorController@getIdConductorforDni');
 Route::post('/financiamientoVehicular', 'RegistrarFinanciamientoController@SaveFinanciamientoVehicular');
-Route::post('/newPagofinance', 'FinanciamientoController@newPagofinance');
-Route::post('/getReportFinance', 'FinanciamientoController@getReportFinance');
-Route::post('/deleteReportFinance', 'FinanciamientoController@deleteReportFinance');
-Route::post('/downloadReportFinance', 'ReportFinanciamientoController@downloadReportFinance');
 Route::get('/obtenerProductoPorCodigo', 'ReportesMovimientosController@verProductoReporte');
+Route::post('/downloadReportFinance', 'ReportFinanciamientoController@downloadReportFinance');
 
-Route::get('/cargarGruposFinanciamiento1', 'FinanciamientoController@cargarGruposFinanciamiento1');
+
 Route::post('/generateBoletaFinance', 'ReportFinanciamientoController@generateBoletaFinance');
 Route::get('/numUnidad','RegistrarConductorController@obtenerNumeroLibre');
 Route::get('/reportPagos', 'ConductorController@reportPagos');
-Route::get('/get-reporte-pagos-finan', 'GenerarReporte@getReportePagoFinan');
-Route::post('/deleteMassiveReportFinance', 'FinanciamientoController@deleteMassive');
 Route::post('/generatePdf', 'ConductorController@generatePdfFromTable');
 Route::post('/buscarClienteExiste', 'RegistrarFinanciamientoController@buscarClienteExiste');
 Route::post('/buscaroCrearCliente', 'RegistrarFinanciamientoController@buscarOCrearCliente');
@@ -299,8 +208,21 @@ Route::post('/clienteObtenerProvincias','ClientesController@obtenerProvincias');
 Route::post('/clienesObtenerDistritos','ClientesController@obtenerDistritos');
 Route::post('/deleteCliente', 'ClientesController@eliminarCliente');
 Route::post('/editarCliente', 'ClientesController@verEditarCliente');
+
+
+// rutas de GruposFinanciamientoController
 Route::post('/getVariantesGrupo', 'GruposFinanciamientoController@obtenerVariantesGrupo');
 Route::post('/updateVariante', 'GruposFinanciamientoController@actualizarVariante');
+route::post("/save-newGroupFinance", "GruposFinanciamientoController@guardarPlanFinanciamiento");
+route::get("/getAllPlanes", "GruposFinanciamientoController@getAllPlanes");
+route::post("/asociar", "GruposFinanciamientoController@asociarProducto");
+Route::post('/editGroup','GruposFinanciamientoController@editarGrupo');
+Route::post('/getTipoVehicular', 'GruposFinanciamientoController@obtenerTipoVehicular');
+Route::post('/deleteGroup','GruposFinanciamientoController@deleteGroup');
+Route::post('/getDetallesPlan', 'GruposFinanciamientoController@obtenerDetallesPlan');
+
+
+// RUTAS DE GenerarReporte 
 Route::get('/get-empleados', 'GenerarReporte@getEmpleados');
 Route::post('/download-excel', 'GenerarReporte@downloadExcel');
 Route::post('/download-pdf', 'GenerarReporte@downloadPDF');
@@ -309,18 +231,22 @@ Route::post('/ventas-generales', 'GenerarReporte@ventasGenerales');
 Route::post('/ventas-por-empleado', 'GenerarReporte@ventasPorEmpleado');
 Route::post('/cuotas-pagadas', 'GenerarReporte@cuotasPagadas');
 Route::post('/ingresos', 'GenerarReporte@ingresos');
+Route::get('/get-reporte-pagos-finan', 'GenerarReporte@getReportePagoFinan');
+Route::get('/get-categorias', 'GenerarReporte@getCategorias');
+Route::post('/get-productos-por-categoria', 'GenerarReporte@getProductosPorCategoria');
+Route::get('/get-grupos-financiamiento', 'GenerarReporte@getGruposFinanciamiento');
+Route::post('/get-variantes-por-grupo', 'GenerarReporte@getVariantesPorGrupo');
+Route::post('/ventas-por-categoria', 'GenerarReporte@ventasPorCategoria');
+Route::get("/reporte/excel/:fecha","GenerarReporte@generarExcel");
+Route::get("/reporte/producto/excel","GenerarReporte@generarExcelProducto");
+Route::get("/reporte/rvta/excel/:fecha","GenerarReporte@generarExcelRVTA");
+Route::post("/dataEditProducto","ProductosController@obtenerDatosProducto");
+/* Route::get("/reporte/excel/test2","GenerarReporte@testExcel"); */
+Route::get("/reporte/ingresos/egresos/:id","GenerarReporte@ingresosEgresos");
+Route::postBase("/reporte/cotizaciones/vendedores","GenerarReporte@reporteVentaPorVendedor");
+Route::get("/reporte/producto/guia","GenerarReporte@generarExcelProductoImporte");
+Route::get("/reporte/caja/excel/:id","GenerarReporte@generarExcelCaja");
 
-Route::post('/obtenerDatosFinanciamientoCliente', 'FinanciamientoController@obtenerDatosFinanciamientoCliente');
-
-Route::get('getFinanciamientos-pendientes', 'FinanciamientoController@getFinanciamientos_pendientes');
-
-Route::post('getFinanciamientos-aprobar', 'FinanciamientoController@getFinanciamientosAprobar');
-Route::post('getDetalleFinanciamiento', 'FinanciamientoController@getDetalleFinanciamiento');
-Route::post('financiamiento-aprobado', 'FinanciamientoController@financiamientoAprobado');
-Route::post('rechazarFinanciamiento', 'FinanciamientoController@rechazarFinanciamiento');
-Route::post('reactivaFinanciamiento', 'FinanciamientoController@reactivaFinanciamiento');
-Route::post('deleteFinanceRechazado', 'FinanciamientoController@deleteFinanciamientoRechazado');
-Route::get('contarFinanciamientosRechazados', 'FinanciamientoController@contarFinanciamientosRechazados');
 
 Route::post('changePasswordUser', 'UsuariosController@changePasswordUser');
 
@@ -358,7 +284,6 @@ Route::post('/guia/licencias/eliminar', 'GuiaRemisionController@eliminarLicencia
 
 Route::post('/guia/remision/insertar3', 'GuiaRemisionController@insertar3');
 
-Route::post('/verificarCodigoAsociado', 'FinanciamientoController@verificarCodigoAsociado');
 
 Route::post('/cargarComisiones', 'ComisionesController@cargarComisiones');
 // Cambiar de POST a GET
@@ -369,11 +294,6 @@ Route::get('/chargedUsuarios', 'ComisionesController@chargedUsuarios');
 Route::get('/numUnidadLima', 'RegistrarConductorController@obtenerNumeroLibreLima');
 
 
-Route::get('/get-categorias', 'GenerarReporte@getCategorias');
-Route::post('/get-productos-por-categoria', 'GenerarReporte@getProductosPorCategoria');
-Route::get('/get-grupos-financiamiento', 'GenerarReporte@getGruposFinanciamiento');
-Route::post('/get-variantes-por-grupo', 'GenerarReporte@getVariantesPorGrupo');
-Route::post('/ventas-por-categoria', 'GenerarReporte@ventasPorCategoria');
 
 
 //PUNTAJE CREDITICIO:
@@ -395,10 +315,51 @@ Route::get('/obtenerLogs', 'PuntajeCrediticioController@obtenerLogs');
 
 Route::postBase("/cupones", "FragmentController@cuponesDrivers");
 
-// OBTENER PUNTAJES POR ID �NICO
+// OBTENER PUNTAJES POR ID �NICO
 Route::get('/obtenerPuntajeYDatos', 'PuntajeCrediticioController@obtenerPuntajeYDatos');
+Route::postBase("/financiamiento-eliminados", "FragmentController@pepeleraFinanciamientos");
 
-// Agregar estas rutas para el manejo de deudas incobrables
+// rutas de FinanciamientoController
 Route::post('/marcarIncobrable', 'FinanciamientoController@marcarIncobrable');
 Route::post('/obtenerDetalleCuotas', 'FinanciamientoController@obtenerDetalleCuotas');
 Route::post('/obtenerCuotasVencidasFiltradas', 'FinanciamientoController@obtenerCuotasVencidasFiltradas');
+Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
+
+Route::get('/cargarGruposFinanciamiento', 'FinanciamientoController@cargarGruposFinanciamiento');
+Route::post('/guardarGrupoFinanciamiento', 'FinanciamientoController@guardarGrupoFinanciamiento');
+Route::post('/generarCronogramaPDF', 'FinanciamientoController@generarCronogramaPDF');
+Route::get('/TipoCambio', 'FinanciamientoController@obtenerTipoCambio');
+
+Route::get('/obtenerClientesFinanciamiento', 'FinanciamientoController@obtenerClientesFinanciamiento');
+Route::get('/obtenerClientesBuscados', 'FinanciamientoController@obtenerClientesFiltrados');
+Route::get('/obtenerFinanciamientoPorCliente', 'FinanciamientoController@obtenerFinanciamientoPorCliente');
+Route::get('/obtenerCuotasPorCliente', 'FinanciamientoController@obtenerCuotasPorCliente');
+Route::get('/obtenerClienteDetalle', 'FinanciamientoController@obtenerClienteDetalle'); 
+Route::get('/obtenerClientesAutocompletado', 'FinanciamientoController@obtenerClientesAutocompletado');
+Route::get('/obtenerNumDocAutocompletado', 'FinanciamientoController@obtenerNumDocAutocompletado');
+
+Route::get('/obtenerProductos', 'FinanciamientoController@obtenerProductos');
+Route::get('/busquedaProductos', 'FinanciamientoController@searchProductos');
+Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
+Route::post('/buscarPlanesMensuales', 'FinanciamientoController@buscarPlanesMensuales');
+Route::post('/obtener-plan-financiamiento', 'FinanciamientoController@obtenerPlanFinanciamiento');
+route::post("/deleteFinance", "FinanciamientoController@deleteFinance");
+Route::post('/obtenerPlanFinanciamiento', 'FinanciamientoController@getPlanFinanciamiento');
+Route::post('/newPagofinance', 'FinanciamientoController@newPagofinance');
+Route::post('/getReportFinance', 'FinanciamientoController@getReportFinance');
+Route::post('/deleteReportFinance', 'FinanciamientoController@deleteReportFinance');
+
+Route::get('/cargarGruposFinanciamiento1', 'FinanciamientoController@cargarGruposFinanciamiento1');
+Route::post('/deleteMassiveReportFinance', 'FinanciamientoController@deleteMassive');
+Route::post('/obtenerDatosFinanciamientoCliente', 'FinanciamientoController@obtenerDatosFinanciamientoCliente');
+Route::get('getFinanciamientos-pendientes', 'FinanciamientoController@getFinanciamientos_pendientes');
+
+Route::post('getFinanciamientos-aprobar', 'FinanciamientoController@getFinanciamientosAprobar');
+Route::post('getDetalleFinanciamiento', 'FinanciamientoController@getDetalleFinanciamiento');
+Route::post('financiamiento-aprobado', 'FinanciamientoController@financiamientoAprobado');
+Route::post('rechazarFinanciamiento', 'FinanciamientoController@rechazarFinanciamiento');
+Route::post('reactivaFinanciamiento', 'FinanciamientoController@reactivaFinanciamiento');
+Route::post('deleteFinanceRechazado', 'FinanciamientoController@deleteFinanciamientoRechazado');
+Route::get('contarFinanciamientosRechazados', 'FinanciamientoController@contarFinanciamientosRechazados');
+Route::post('/verificarCodigoAsociado', 'FinanciamientoController@verificarCodigoAsociado');
+Route::post('/toggleDesvincularConductor', 'ConductorController@toggleDesvincularConductor');

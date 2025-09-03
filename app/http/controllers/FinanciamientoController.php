@@ -4,7 +4,6 @@ require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MP
 
 use Mpdf\Mpdf;
 
-
 require_once "app/models/Cliente.php";
 require_once "app/models/Conductor.php";
 require_once "app/models/Financiamiento.php";
@@ -272,79 +271,134 @@ class FinanciamientoController extends Controller
             }
         }
 
-        public function obtenerClienteDetalle()
-        {
-             try {
-                // Verificar si se proporcionó id_conductor o id
-                $id_conductor = isset($_GET['id_conductor']) ? (int)$_GET['id_conductor'] : 0;
-                $id_cliente = isset($_GET['id']) ? (int)$_GET['id'] : 0; 
-                
-                $financiamientos = null;
-                $persona = null;
-                $direccion = null;
-                
-                // Crear instancia del modelo Financiamiento
-                $financiamientoModel = new Financiamiento();
-                $productoModel = new Productov2();
-                
-                if ($id_conductor > 0) {
-                    // Obtener financiamientos del conductor
-                    $financiamientos = $financiamientoModel->getFinanciamientoList($id_conductor);
-                    
-                    // Obtener información del conductor
-                    $conductorModel = new Conductor();
-                    $persona = $conductorModel->getConductorFinanceList($id_conductor);
-                    
-                    // Obtener dirección del conductor
-                    $direccionModel = new DireccionConductor();
-                    $direccion = $direccionModel->obtenerDatosDireccion($id_conductor);
-                    
-                } else if ($id_cliente > 0) {  // Añadido: verificar si hay id_cliente
-                    // Obtener financiamientos del cliente
-                    $financiamientos = $financiamientoModel->getFinanciamientoListCliente($id_cliente);
-                    
-                    // Obtener información del cliente
-                    $clienteModel = new Cliente();  // Asumiendo que existe un modelo Cliente
-                    $persona = $clienteModel->getClienteList($id_cliente);
-                    
-                    $direccion = $clienteModel->obtenerDatosDireccionCliente($id_cliente);
-                    
-                } else {
-                    echo json_encode(['error' => 'ID no proporcionado']);  // Modificado: mensaje más genérico
-                    return;
-                }
-                
-                if (empty($financiamientos)) {
-                    echo json_encode(['financiamientos' => null]);
-                    return;
-                }        
-                
-                $cuotaModel = new CuotaFinanciamiento(); 
-
+      public function obtenerClienteDetalle()
+{
+    try {
+        // Verificar si se proporcionó id_conductor o id
+        $id_conductor = isset($_GET['id_conductor']) ? (int)$_GET['id_conductor'] : 0;
+        $id_cliente = isset($_GET['id']) ? (int)$_GET['id'] : 0; 
+        
+        $financiamientos = null;
+        $persona = null;
+        $direccion = null;
+        
+        // Crear instancia del modelo Financiamiento
+        $financiamientoModel = new Financiamiento();
+        $productoModel = new Productov2();
+        
+        if ($id_conductor > 0) {
+            // Obtener financiamientos del conductor
+            $financiamientos = $financiamientoModel->getFinanciamientoList($id_conductor);
+            
+            // Obtener información del conductor
+            $conductorModel = new Conductor();
+            $persona = $conductorModel->getConductorFinanceList($id_conductor);
+            
+            // Obtener dirección del conductor
+            $direccionModel = new DireccionConductor();
+            $direccion = $direccionModel->obtenerDatosDireccion($id_conductor);
+            
+            // NUEVO: Procesar cada financiamiento para agregar información del plan
+            if ($financiamientos) {
                 foreach ($financiamientos as &$financiamiento) {
-                    $id_financiamiento = $financiamiento['idfinanciamiento'];
-
-                    // Obtener cuotas asociadas
-                    $financiamiento['cuotas'] = $cuotaModel->getCuotasforFinanciamientoList($id_financiamiento);
-
-                    // Obtener producto asociado
-                    $id_producto = $financiamiento['idproductosv2']; // ID del producto en el financiamiento
-                    $financiamiento['producto'] = $productoModel->getProductsList($id_producto);
+                    // Obtener información del plan
+                    $planQuery = "SELECT 
+                        p.nombre_plan,
+                        p.tipo_vehicular,
+                        p.monto_sin_interes as plan_capacidad_original,
+                        p.monto_cuota,
+                        p.cantidad_cuotas,
+                        p.fecha_inicio as plan_fecha_inicio
+                    FROM planes_financiamiento p 
+                    WHERE p.idplan_financiamiento = ?";
                     
-                    // Obtener nombre del usuario que registró el financiamiento
-                    $financiamiento['usuario_registro'] = $financiamientoModel->obtenerUsuarioRegistro($id_financiamiento);
+                    $conexion = $this->conexion; 
+                    $planStmt = $conexion->prepare($planQuery);
+                    $planStmt->bind_param("i", $financiamiento['grupo_financiamiento']);
+                    $planStmt->execute();
+                    $planResult = $planStmt->get_result();
+                    $planData = $planResult->fetch_assoc();
+                    
+                    // NUEVO: Calcular capacidad de compra actual si es vehículo
+                    // Verificar si es vehículo por tipo_vehicular O por nombre del plan
+                    $esVehiculo = ($planData && (
+                        $planData['tipo_vehicular'] === 'vehiculo' || 
+                        stripos($planData['nombre_plan'], 'vehicular') !== false
+                    ));
+                    
+                    if ($esVehiculo) {
+                        $semanasPerdidas = 0;
+                        $dineroPerdido = 0;
+                        $capacidadCompraActual = $planData['plan_capacidad_original'];
+                        
+                        if ($planData['plan_fecha_inicio'] && $financiamiento['fecha_creacion']) {
+                            $fechaInicio = new DateTime($planData['plan_fecha_inicio']);
+                            $fechaEntrada = new DateTime($financiamiento['fecha_creacion']);
+                            $diferencia = $fechaEntrada->diff($fechaInicio);
+                            $semanasPerdidas = floor($diferencia->days / 7);
+                            $dineroPerdido = $semanasPerdidas * $planData['monto_cuota'];
+                            $capacidadCompraActual = $planData['plan_capacidad_original'] - $dineroPerdido;
+                        }
+                        
+                        $financiamiento['es_vehiculo'] = true;
+                        $financiamiento['plan_capacidad_original'] = $planData['plan_capacidad_original'];
+                        $financiamiento['semanas_perdidas'] = $semanasPerdidas;
+                        $financiamiento['dinero_perdido'] = $dineroPerdido;
+                        $financiamiento['capacidad_compra_actual'] = $capacidadCompraActual;
+                    } else {
+                        $financiamiento['es_vehiculo'] = false;
+                    }
+                    
+                    $planStmt->close();
                 }
+            }
+        } elseif ($id_cliente > 0) {
+            // Obtener financiamientos del cliente
+            $financiamientos = $financiamientoModel->getFinanciamientoListCliente($id_cliente);
+            
+            // Obtener información del cliente
+            $clienteModel = new Cliente();
+            $persona = $clienteModel->getClienteList($id_cliente);
+            
+            $direccion = $clienteModel->obtenerDatosDireccionCliente($id_cliente);
+        }
+        
+        if (empty($financiamientos)) {
+            echo json_encode(['financiamientos' => null]);
+            return;
+        }        
+        
+        $cuotaModel = new CuotaFinanciamiento(); 
 
-                echo json_encode([
-                    'financiamientos' => $financiamientos,
-                    'conductor' => $persona,  // Mantenemos 'conductor' como clave para mantener compatibilidad
-                    'direccion' => $direccion
-                ]);
+        foreach ($financiamientos as &$financiamiento) {
+            $id_financiamiento = $financiamiento['idfinanciamiento'];
 
-            } catch (Exception $e) {
-                echo json_encode(['error' => 'Error al obtener cuotas: ' . $e->getMessage()]);
+            // Obtener cuotas asociadas
+            $financiamiento['cuotas'] = $cuotaModel->getCuotasforFinanciamientoList($id_financiamiento);
+
+            // Obtener producto asociado
+            $id_producto = $financiamiento['idproductosv2'];
+            $financiamiento['producto'] = $productoModel->getProductsList($id_producto);
+            
+            // Obtener nombre del usuario que registró el financiamiento
+            $financiamiento['usuario_registro'] = $financiamientoModel->obtenerUsuarioRegistro($id_financiamiento);
+            
+            // NUEVO: Asegurar que se incluya el monto_sin_interes (Monto de Compra)
+            if (!isset($financiamiento['monto_sin_interes']) || $financiamiento['monto_sin_interes'] === null) {
+                $financiamiento['monto_sin_interes'] = $financiamiento['monto_total'] ?? 0;
             }
         }
+
+        echo json_encode([
+            'financiamientos' => $financiamientos,
+            'conductor' => $persona,
+            'direccion' => $direccion
+        ]);
+
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener cuotas: ' . $e->getMessage()]);
+    }
+}
 
         private function obtenerNombreDepartamento($idDepartamento)
         {
@@ -1758,10 +1812,9 @@ class FinanciamientoController extends Controller
                     if ($tipo_persona == 'conductor') {
                         // Consulta para conductores - inscripción a flota
                         $incobrable_condition_inscripcion = $filtro == 'incobrables' ? 'AND crf.incobrable = 1' : 'AND crf.incobrable = 0';
-                        // AGREGADO: Definir también la variable para productos de conductores
                         $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
                         
-                        // Reemplazar la consulta $query1 (inscripción) por:
+                        // Consulta para inscripción a flota
                         $query1 = "
                             SELECT 
                                 DATE_FORMAT(cc.fecha_vencimiento, '%Y-%m') as mes_anio,
@@ -1770,13 +1823,15 @@ class FinanciamientoController extends Controller
                                 cc.numero_cuota,
                                 DATE_FORMAT(cc.fecha_vencimiento, '%d/%m/%Y') as fecha_vencimiento_formateada,
                                 cc.monto_cuota as monto_individual,
-                                'inscripcion' as tipo_financiamiento
+                                'S/.' as moneda,
+                                'Inscripción a Flota' as tipo_financiamiento
                             FROM conductor_cuotas cc
                             INNER JOIN conductor_regfinanciamiento crf ON cc.idconductor_Financiamiento = crf.idconductor_regfinanciamiento
                             WHERE crf.id_conductor = ? AND cc.fecha_vencimiento < CURDATE() AND cc.estado_cuota != 'pagado' $incobrable_condition_inscripcion
                             ORDER BY cc.fecha_vencimiento ASC
                         ";
 
+                        // Consulta para productos de conductores
                         $query2 = "
                             SELECT 
                                 DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
@@ -1795,28 +1850,32 @@ class FinanciamientoController extends Controller
                             ORDER BY cf.fecha_vencimiento ASC
                         ";
                     } else {
-                        // Consulta para clientes
+                        // Consulta para clientes - debe incluir campos individuales de cuotas
                         $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
                         $query2 = "
                             SELECT 
                                 DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
                                 MONTHNAME(cf.fecha_vencimiento) as mes_nombre,
                                 YEAR(cf.fecha_vencimiento) as anio,
-                                SUM(cf.monto) as total_mes,
+                                cf.numero_cuota,
+                                DATE_FORMAT(cf.fecha_vencimiento, '%d/%m/%Y') as fecha_vencimiento_formateada,
+                                cf.monto as monto_individual,
+                                p.nombre as nombre_producto,
                                 f.moneda,
                                 'productos' as tipo_financiamiento
                             FROM cuotas_financiamiento cf
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                            INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                             WHERE f.id_cliente = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso' $incobrable_condition
-                            GROUP BY DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m')
+                            ORDER BY cf.fecha_vencimiento ASC
                         ";
                     }
                     
                     // Ejecutar consultas
                     $resultado = [];
 
-                    // Procesar cuotas de inscripción
-                    if (isset($query1)) {
+                    // Procesar cuotas de inscripción (solo para conductores)
+                    if ($tipo_persona == 'conductor' && isset($query1)) {
                         $stmt1 = $this->conexion->prepare($query1);
                         $stmt1->bind_param("i", $id_persona);
                         $stmt1->execute();
@@ -1826,7 +1885,7 @@ class FinanciamientoController extends Controller
                             if (!isset($resultado[$key])) {
                                 $resultado[$key] = [
                                     'mes' => $row['mes_nombre'] . ' ' . $row['anio'],
-                                    'mes_ordenable' => $row['mes_anio'], // AGREGADO: campo para ordenamiento
+                                    'mes_ordenable' => $row['mes_anio'],
                                     'total' => 0,
                                     'cuotas' => []
                                 ];
@@ -1836,12 +1895,14 @@ class FinanciamientoController extends Controller
                                 'numero' => $row['numero_cuota'],
                                 'fecha' => $row['fecha_vencimiento_formateada'],
                                 'monto' => $row['monto_individual'],
-                                'tipo' => 'Inscripción a Flota'
+                                'moneda' => $row['moneda'],
+                                'tipo' => $row['tipo_financiamiento']
                             ];
                         }
+                        $stmt1->close();
                     }
 
-                    // Procesar cuotas de productos
+                    // Procesar cuotas de productos (para conductores y clientes)
                     $stmt2 = $this->conexion->prepare($query2);
                     $stmt2->bind_param("i", $id_persona);
                     $stmt2->execute();
@@ -1851,6 +1912,7 @@ class FinanciamientoController extends Controller
                         if (!isset($resultado[$key])) {
                             $resultado[$key] = [
                                 'mes' => $row['mes_nombre'] . ' ' . $row['anio'],
+                                'mes_ordenable' => $row['mes_anio'],
                                 'total' => 0,
                                 'cuotas' => []
                             ];
@@ -1864,11 +1926,12 @@ class FinanciamientoController extends Controller
                             'tipo' => isset($row['nombre_producto']) ? $row['nombre_producto'] : 'Producto'
                         ];
                     }
+                    $stmt2->close();
 
                     // Convertir a array indexado y ordenar por fecha (más reciente primero)
                     $detalles = array_values($resultado);
                     usort($detalles, function($a, $b) {
-                        return strcmp($b['mes'], $a['mes']); // Cambiado: $b comparado con $a para orden descendente
+                        return strcmp($b['mes_ordenable'], $a['mes_ordenable']);
                     });
                     
                     echo json_encode(['success' => true, 'data' => $detalles]);

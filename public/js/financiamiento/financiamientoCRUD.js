@@ -1136,7 +1136,7 @@ function deleteFinance() {
   // Confirmación antes de eliminar
   Swal.fire({
     title: "¿Estás seguro?",
-    text: "Esta acción moverá el financiamiento a la papelera. Podrás restaurarlo después.",
+    text: "Esta acción eliminara el financiamiento permanentemente.",
     icon: "warning",
     showCancelButton: true,
     confirmButtonColor: "#d33",

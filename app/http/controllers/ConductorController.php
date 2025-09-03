@@ -1040,7 +1040,7 @@ class ConductorController extends Controller
         }
     
         // Verificar si el usuario es administrador
-        if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 1) {
+        if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
             echo json_encode(['success' => false, 'message' => 'No tiene permisos para realizar esta acción']);
             exit;
         }
