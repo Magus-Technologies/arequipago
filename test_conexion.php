@@ -1,8 +1,10 @@
+
+<!-- backupt -->
 <?php
 require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MPDF
 
 use Mpdf\Mpdf;
-
+    
 require_once "app/models/Financiamiento.php";
 require_once "app/models/Conductor.php";
 require_once "app/models/Productov2.php";
@@ -205,7 +207,7 @@ class GenerarContratosController extends controller
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
                 // 😊 Generar contrato de Excel para vehículos
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33) {
+                if ($esVehiculo) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -232,8 +234,8 @@ class GenerarContratosController extends controller
                 }
                
                 
-                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33) {
-                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 22])) {
+                if (!$esVehiculo) {
+                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías'])) {
                         throw new Exception("No hay un modelo de contrato para este producto.");
                     }
 
@@ -248,24 +250,10 @@ class GenerarContratosController extends controller
                     );
 
                     foreach ($plantillas as $nombrePlantilla => $html) {
-                        // Condicional para márgenes
-                        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
-                            // Sin márgenes para el contrato de Motos
-                            $mpdf = new \Mpdf\Mpdf([
-                                'margin_left' => 0,
-                                'margin_right' => 0,
-                                'margin_top' => 0,
-                                'margin_bottom' => 0,
-                                'margin_header' => 0,
-                                'margin_footer' => 0
-                            ]);
-                        } else {
-                            // Márgenes por defecto para los otros contratos
-                            $mpdf = new \Mpdf\Mpdf([
-                                'margin_left' => 30, // Margen izquierdo (en milímetros)
-                                'margin_right' => 30,
-                            ]);
-                        }
+                        $mpdf = new \Mpdf\Mpdf([
+                            'margin_left' => 30, // Margen izquierdo (en milímetros)
+                            'margin_right' => 30,
+                        ]);
                         $mpdf->WriteHTML($html);
         
                         // Crear un nombre único para cada archivo
@@ -547,13 +535,7 @@ class GenerarContratosController extends controller
         $aro = ''; 
         $perfil = '';
         // Selección de la plantilla según la categoría
-        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 33) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_MotosYa.html";
-        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipPlanMovil.html";
-        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_Motos.html";
-        } elseif ($categoria === 'Llantas') {
+        if ($categoria === 'Llantas') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_llantas.html";
         } elseif ($categoria === 'Aceites') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_aceites.html";
@@ -749,24 +731,8 @@ class GenerarContratosController extends controller
             'persona' => $textoRol,
             'licencia_bloque' => $bloqueLicencia,
             'frase_afiliacion' => $fraseAfiliacion,
-            'clausula_conductor' => $clausulaConductor,
-
-            // Nuevos campos para Plan Chip Movil
-            'plan_descripcion' => '', // Default empty
-            'numero_linea' => '' // Default empty
+            'clausula_conductor' => $clausulaConductor
         ];
-
-        // Lógica para Plan Chip Movil (ID 35)
-        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
-            foreach ($caracteristicas as $caracteristica) {
-                $nombreCaracteristica = strtolower($caracteristica['nombre_caracteristicas']);
-                if ($nombreCaracteristica === 'descripcion_plan') {
-                    $reemplazos['plan_descripcion'] = $caracteristica['valor_caracteristica'];
-                } elseif ($nombreCaracteristica === 'numero_linea') {
-                    $reemplazos['numero_linea'] = $caracteristica['valor_caracteristica'];
-                }
-            }
-        }
     
         // Si es conductor, incluir licencia; si no, dejarla en blanco
         if ($tipoPersona === 'conductor') {

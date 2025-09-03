@@ -283,7 +283,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                 <th>Producto</th>
                                                 <th>Grupo</th>
                                                 <th>Cantidad</th>
-                                                <th>Monto</th>
+                                                <th>Monto de Compra</th>
+                                                <th>Monto Total</th>
                                                 <th>Categoría</th>
                                             </tr>
                                         </thead>
@@ -313,28 +314,61 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-white" style="color: #2E217A;">
-                                                    <h5><i class="fas fa-file-invoice-dollar me-2"></i>Financiamiento
-                                                    </h5>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p><i class="fas fa-hashtag me-2"></i><strong>Código Asociado:
-                                                        </strong><span id="modalFinanciamientoCodigo"></span></p>
-                                                    <p><i class="fas fa-layer-group me-2"></i><strong>Grupo de
-                                                            Financiamiento: </strong><span
-                                                            id="modalFinanciamientoGrupo"></span></p>
-                                                    <p><i class="fas fa-check-circle me-2"></i><strong>Estado:
-                                                        </strong><span id="modalFinanciamientoEstado"></span></p>
-                                                    <p><i class="fas fa-calendar-day me-2"></i><strong>Fecha Inicio:
-                                                        </strong><span id="modalFechaInicio"></span></p>
-                                                    <p><i class="fas fa-calendar-check me-2"></i><strong>Fecha Fin:
-                                                        </strong><span id="modalFechaFin"></span></p>
-                                                    <p><i class="fas fa-user-check me-2"></i><strong>Registrado por:
-                                                        </strong><span id="modalUsuarioRegistro"></span></p>
-                                                </div>
-                                            </div>
-                                        </div>
+    <div class="card mb-3">
+        <div class="card-header bg-white" style="color: #2E217A;">
+            <h5><i class="fas fa-file-invoice-dollar me-2"></i>Financiamiento</h5>
+        </div>
+        <div class="card-body">
+            <!-- NUEVO: Campo inteligente según tipo de plan -->
+            <div id="campoCapacidadCompra" style="display: none;">
+                <p><i class="fas fa-car me-2"></i><strong>Capacidad de Compra Actual:</strong> 
+                    <span id="modalFinanciamientoCapacidadCompra" class="text-success fw-bold">$0.00</span>
+                </p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Monto disponible para comprar un vehículo (considerando semanas perdidas)
+                </small>
+            </div>
+            
+            <!-- Campo normal para todos los planes -->
+            <p><i class="fas fa-dollar-sign me-2"></i><strong>Monto de Compra:</strong> 
+                <span id="modalFinanciamientoMontoCompra" class="text-primary fw-bold">$0.00</span>
+            </p>
+            
+            <p><i class="fas fa-calculator me-2"></i><strong>Monto Total:</strong> 
+                <span id="modalFinanciamientoMontoTotal" class="text-warning fw-bold">$0.00</span>
+            </p>
+            
+            <!-- NUEVO: Información adicional para vehículos -->
+            <div id="infoVehiculo" style="display: none;">
+                <hr>
+                <p><i class="fas fa-calendar-alt me-2"></i><strong>Plan Original:</strong> 
+                    <span id="modalFinanciamientoPlanOriginal" class="text-info">$0.00</span>
+                </p>
+                <p><i class="fas fa-clock me-2"></i><strong>Semanas Perdidas:</strong> 
+                    <span id="modalFinanciamientoSemanasPerdidas" class="text-danger">0</span>
+                </p>
+                <p><i class="fas fa-exclamation-triangle me-2"></i><strong>Dinero Perdido:</strong> 
+                    <span id="modalFinanciamientoDineroPerdido" class="text-danger">$0.00</span>
+                </p>
+            </div>
+            
+            <!-- Campos originales -->
+            <p><i class="fas fa-hashtag me-2"></i><strong>Código Asociado:</strong> 
+                <span id="modalFinanciamientoCodigo"></span></p>
+            <p><i class="fas fa-layer-group me-2"></i><strong>Grupo de Financiamiento: </strong><span
+                    id="modalFinanciamientoGrupo"></span></p>
+            <p><i class="fas fa-check-circle me-2"></i><strong>Estado:</strong><span
+                    id="modalFinanciamientoEstado"></span></p>
+            <p><i class="fas fa-calendar-day me-2"></i><strong>Fecha Inicio:</strong><span
+                    id="modalFechaInicio"></span></p>
+            <p><i class="fas fa-calendar-check me-2"></i><strong>Fecha Fin:</strong><span
+                    id="modalFechaFin"></span></p>
+            <p><i class="fas fa-user-check me-2"></i><strong>Registrado por:</strong><span
+                    id="modalFinanciamientoUsuarioRegistro"></span></p>
+        </div>
+    </div>
+</div>
                                     </div>
 
                                     <div class="card">
@@ -1593,5 +1627,5 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCRUD.js') ?>?v=<?= time() ?>"></script>
 
 </body>
-
+    
 </html>

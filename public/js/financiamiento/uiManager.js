@@ -103,95 +103,166 @@ function llenarTablaCuotas(financiamiento) {
 let idFinanciamientoSeleccionado = null;
 
 function seleccionarFinanciamiento(row) {
-  let financiamiento = JSON.parse(row.getAttribute("data-financiamiento"));
-  //console.log('Este es el financiamientooo: ', financiamiento);
-  idFinanciamientoSeleccionado = financiamiento.financiamiento.idfinanciamiento;
-  // Obtener el símbolo de la moneda
-  let simboloMoneda = financiamiento.financiamiento.moneda;
+  try {
+    let financiamiento = JSON.parse(row.getAttribute("data-financiamiento"));
+    idFinanciamientoSeleccionado = financiamiento.financiamiento.idfinanciamiento;
+    let simboloMoneda = financiamiento.financiamiento.moneda;
 
-  // Actualizar el "select box" con el nombre del producto seleccionado
-  document.getElementById("selectBoxDetalle").innerText =
-    financiamiento.producto.nombre || "Seleccionar un financiamiento";
+    // Actualizar el "select box" con el nombre del producto seleccionado
+    const selectBoxDetalle = document.getElementById("selectBoxDetalle");
+    if (selectBoxDetalle) {
+      selectBoxDetalle.innerText = financiamiento.producto.nombre || "Seleccionar un financiamiento";
+    }
 
-  // Mostrar el contenedor de detalles
-  let detalleContainer = document.getElementById(
-    "detalleFinanciamientoContainer"
-  );
-  detalleContainer.style.display = "block";
+    // Mostrar el contenedor de detalles
+    let detalleContainer = document.getElementById("detalleFinanciamientoContainer");
+    if (detalleContainer) {
+      detalleContainer.style.display = "block";
+    }
 
-  let documento =
-    financiamiento.conductor.nro_documento ||
-    financiamiento.conductor.n_documento ||
-    "N/A"; // MODIFICADO: Usar nro_documento o n_documento
-  document.getElementById("modalClienteDocumento").innerText = documento;
-  let nombreCompleto = `${financiamiento.conductor.nombres || ""} ${
-    financiamiento.conductor.apellido_paterno || ""
-  } ${financiamiento.conductor.apellido_materno || ""}`.trim();
-  document.getElementById("modalClienteNombres").innerText =
-    nombreCompleto || "N/A";
-  let direccionCompleta = `${financiamiento.direccion.departamento || ""}, ${
-    financiamiento.direccion.provincia || ""
-  }, ${financiamiento.direccion.distrito || ""}, ${
-    financiamiento.direccion.direccion_detalle || ""
-  }`.trim();
-  document.getElementById("modalClienteDireccion").innerText =
-    direccionCompleta || "Dirección no disponible";
-  document.getElementById("modalClienteTelefono").innerText =
-    financiamiento.conductor.telefono || "N/A";
+    // Verificar que todos los elementos existan antes de usarlos
+    const elementos = {
+      documento: document.getElementById("modalClienteDocumento"),
+      nombres: document.getElementById("modalClienteNombres"),
+      direccion: document.getElementById("modalClienteDireccion"),
+      telefono: document.getElementById("modalClienteTelefono"),
+      codigo: document.getElementById("modalFinanciamientoCodigo"),
+      grupo: document.getElementById("modalFinanciamientoGrupo"),
+      estado: document.getElementById("modalFinanciamientoEstado"),
+      fechaInicio: document.getElementById("modalFechaInicio"),
+      fechaFin: document.getElementById("modalFechaFin"),
+      usuario: document.getElementById("modalUsuarioRegistro")
+    };
 
-  // Llenar los datos del financiamiento
-  document.getElementById("modalFinanciamientoCodigo").innerText =
-    financiamiento.financiamiento.codigo_asociado || "N/A";
-  document.getElementById("modalFinanciamientoGrupo").innerText =
-    financiamiento.financiamiento.nombre_plan ||
-    financiamiento.financiamiento.grupo_financiamiento ||
-    "N/A";
-  document.getElementById("modalFinanciamientoEstado").innerText =
-    financiamiento.financiamiento.estado || "N/A";
-  document.getElementById("modalFechaInicio").innerText =
-    financiamiento.financiamiento.fecha_inicio || "N/A";
-  document.getElementById("modalFechaFin").innerText =
-    financiamiento.financiamiento.fecha_fin || "N/A";
-  document.getElementById("modalUsuarioRegistro").innerText =
-    financiamiento.financiamiento.usuario_registro || "No identificado";
+    // Llenar datos del cliente solo si los elementos existen
+    if (elementos.documento) {
+      let documento = financiamiento.conductor.nro_documento || financiamiento.conductor.n_documento || "N/A";
+      elementos.documento.innerText = documento;
+    }
 
-  // Llenar la tabla de cuotas
-  let cuotasTable = document.getElementById("modalCuotasTable");
-  cuotasTable.innerHTML = ""; // Limpiar contenido anterior
-  if (
-    financiamiento.financiamiento.cuotas &&
-    financiamiento.financiamiento.cuotas.length > 0
-  ) {
-    let tableHeader = `
-                <thead>
-                    <tr>
-                        <th>N° Cuota</th>
-                        <th>Monto</th>
-                        <th>Fecha Vencimiento</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-    let tableBody = financiamiento.financiamiento.cuotas
-      .map(
-        (cuota) => `
-                <tr>
-                    <td>${cuota.numero_cuota}</td>
-                    <td>${simboloMoneda} ${cuota.monto}</td>
-                    <td>${cuota.fecha_vencimiento}</td>
-                    <td>${cuota.estado}</td>
-                </tr>
-            `
-      )
-      .join("");
-    cuotasTable.innerHTML = tableHeader + tableBody + `</tbody>`;
-  } else {
-    cuotasTable.innerHTML =
-      "<tr><td colspan='4'>No hay cuotas disponibles</td></tr>";
+    if (elementos.nombres) {
+      let nombreCompleto = `${financiamiento.conductor.nombres || ""} ${financiamiento.conductor.apellido_paterno || ""} ${financiamiento.conductor.apellido_materno || ""}`.trim();
+      elementos.nombres.innerText = nombreCompleto || "N/A";
+    }
+
+    if (elementos.direccion) {
+      let direccionCompleta = `${financiamiento.direccion.departamento || ""}, ${financiamiento.direccion.provincia || ""}, ${financiamiento.direccion.distrito || ""}, ${financiamiento.direccion.direccion_detalle || ""}`.trim();
+      elementos.direccion.innerText = direccionCompleta || "Dirección no disponible";
+    }
+
+    if (elementos.telefono) {
+      elementos.telefono.innerText = financiamiento.conductor.telefono || "N/A";
+    }
+
+    // Llenar los datos del financiamiento solo si los elementos existen
+    if (elementos.codigo) {
+      elementos.codigo.innerText = financiamiento.financiamiento.codigo_asociado || "N/A";
+    }
+
+    if (elementos.grupo) {
+      elementos.grupo.innerText = financiamiento.financiamiento.nombre_plan || financiamiento.financiamiento.grupo_financiamiento || "N/A";
+    }
+
+    if (elementos.estado) {
+      elementos.estado.innerText = financiamiento.financiamiento.estado || "N/A";
+    }
+
+    // NUEVO: Llenar campos según tipo de plan
+    if (financiamiento.financiamiento.es_vehiculo) {
+      // Mostrar campos de vehículo
+      document.getElementById("campoCapacidadCompra").style.display = "block";
+      document.getElementById("infoVehiculo").style.display = "block";
+      
+      // Llenar capacidad de compra actual
+      const capacidadCompra = financiamiento.financiamiento.capacidad_compra_actual || 0;
+      document.getElementById("modalFinanciamientoCapacidadCompra").innerText = 
+        `${simboloMoneda} ${capacidadCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      
+      // Llenar información del plan
+      const planOriginal = financiamiento.financiamiento.plan_capacidad_original || 0;
+      document.getElementById("modalFinanciamientoPlanOriginal").innerText = 
+        `${simboloMoneda} ${planOriginal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      
+      const semanasPerdidas = financiamiento.financiamiento.semanas_perdidas || 0;
+      document.getElementById("modalFinanciamientoSemanasPerdidas").innerText = semanasPerdidas;
+      
+      const dineroPerdido = financiamiento.financiamiento.dinero_perdido || 0;
+      document.getElementById("modalFinanciamientoDineroPerdido").innerText = 
+        `${simboloMoneda} ${dineroPerdido.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      
+      // Llenar monto de compra (capacidad actual)
+      document.getElementById("modalFinanciamientoMontoCompra").innerText = 
+        `${simboloMoneda} ${capacidadCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    } else {
+      // Ocultar campos de vehículo para otros productos
+      document.getElementById("campoCapacidadCompra").style.display = "none";
+      document.getElementById("infoVehiculo").style.display = "none";
+      
+      // Llenar monto de compra normal
+      const montoCompra = financiamiento.financiamiento.monto_sin_interes || financiamiento.financiamiento.monto_total || 0;
+      document.getElementById("modalFinanciamientoMontoCompra").innerText = 
+        `${simboloMoneda} ${montoCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    }
+
+    // Llenar monto total (siempre visible)
+    const montoTotal = financiamiento.financiamiento.monto_total || 0;
+    document.getElementById("modalFinanciamientoMontoTotal").innerText = 
+      `${simboloMoneda} ${montoTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    if (elementos.fechaInicio) {
+      elementos.fechaInicio.innerText = financiamiento.financiamiento.fecha_inicio || "N/A";
+    }
+
+    if (elementos.fechaFin) {
+      elementos.fechaFin.innerText = financiamiento.financiamiento.fecha_fin || "N/A";
+    }
+
+    if (elementos.usuario) {
+      elementos.usuario.innerText = financiamiento.financiamiento.usuario_registro || "No identificado";
+    }
+
+    // Llenar la tabla de cuotas solo si el elemento existe
+    let cuotasTable = document.getElementById("modalCuotasTable");
+    if (cuotasTable) {
+      cuotasTable.innerHTML = ""; // Limpiar contenido anterior
+      if (financiamiento.financiamiento.cuotas && financiamiento.financiamiento.cuotas.length > 0) {
+        let tableHeader = `
+                    <thead>
+                        <tr>
+                            <th>N° Cuota</th>
+                            <th>Monto</th>
+                            <th>Fecha Vencimiento</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        let tableBody = financiamiento.financiamiento.cuotas
+          .map(
+            (cuota) => `
+                        <tr>
+                            <td>${cuota.numero_cuota}</td>
+                            <td>${simboloMoneda} ${cuota.monto}</td>
+                            <td>${cuota.fecha_vencimiento}</td>
+                            <td>${cuota.estado}</td>
+                        </tr>
+                    `
+          )
+          .join("");
+        cuotasTable.innerHTML = tableHeader + tableBody + `</tbody>`;
+      } else {
+        cuotasTable.innerHTML = "<tr><td colspan='4'>No hay cuotas disponibles</td></tr>";
+      }
+    } else {
+      console.error("❌ Elemento 'modalCuotasTable' no encontrado");
+    }
+
+    // Ocultar la tabla de selección después de elegir un financiamiento
+    $("#detalleSelect").hide();
+
+  } catch (error) {
+    console.error("❌ Error en seleccionarFinanciamiento:", error);
+    console.error("Datos del financiamiento:", row.getAttribute("data-financiamiento"));
   }
-
-  // Ocultar la tabla de selección después de elegir un financiamiento
-  $("#detalleSelect").hide();
 }
 // Variable para almacenar el tooltip activo
 let activeTooltip;

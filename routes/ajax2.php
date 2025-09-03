@@ -1,40 +1,5 @@
 <?php
 
-// Obtiene la URI actual
-$currentUri = $_SERVER['REQUEST_URI'];
-
-// Verifica si la URL contiene "/arequipago/"
-if (strpos($currentUri, '/arequipago/') === 0) {
-    // Obtiene el método de la solicitud
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    // Elimina el prefijo '/arequipago' manteniendo el resto de la ruta
-    $newPath = substr($currentUri, strlen('/arequipago'));
-    
-    // Construye la nueva URL
-    $newUrl = 'https://arequipago-ventas.pe' . $newPath;
-    
-    // Para solicitudes POST
-    if ($method === 'POST') {
-        // Configura los headers para mantener el método POST
-        header('HTTP/1.1 307 Temporary Redirect');
-        header('Location: ' . $newUrl);
-    } else {
-        // Para solicitudes GET
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $newUrl);
-    }
-    
-    // Asegura que la redirección se ejecute
-    exit();
-}
-
-// Si no hay redirección, continúa con el procesamiento normal
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Maneja las solicitudes GET aquí
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Maneja las solicitudes POST aquí
-}
 
 
 Route::get("/data/cotizaciones/lista/ss","ConsultaDelcontroller@getDataCotizacionSS")->Middleware([ValidarTokenMiddleware::class]);

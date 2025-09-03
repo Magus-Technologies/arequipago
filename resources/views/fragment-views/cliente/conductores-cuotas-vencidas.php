@@ -105,111 +105,87 @@ while ($row = $result->fetch_assoc()) {
 
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conductores con Cuotas Vencidas</title>
-    <style>
-        
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: white; /* Fondo blanco */
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Sombra elegante */
-            border-radius: 8px; /* Esquinas ligeramente redondeadas */
-            overflow: hidden; /* Para que el border-radius afecte a toda la tabla */
-        }
+<!-- Título de la página -->
+<div class="page-title-box" style="padding: 12px 0;">
+    <div class="row align-items-center">
+        <div class="col-md-12">
+            <h6 class="page-title text-center">CONDUCTORES Y CLIENTES CON CUOTAS VENCIDAS</h6>
+        </div>
+    </div>
+</div>
 
-        table, th, td {
-            border: 1px solid #ddd;
-        }
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Botones de filtro -->
+                        <div class="d-flex justify-content-start mb-3">
+                            <button type="button" class="btn me-2" id="btnPendientes" style="background-color: #38a4f8; color: white;">
+                                Pendientes
+                            </button>
+                            <button type="button" class="btn" id="btnIncobrables" style="background-color: #02a499; color: white;">
+                                Incobrables
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-end">
+                            <button id="btnDescargar" class="btn" onclick="downloadData()" style="background-color: #02a499; color: white;"> 
+                                Descargar Reporte <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="card-title-desc">
+                    <div class="table-responsive">
+                        <table id="tabla_cuotas_vencidas" class="table table-bordered dt-responsive nowrap text-center table-sm dataTable no-footer">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Nombre</th>
+                                    <th>Nº Unidad</th>
+                                    <th>N° Cuotas</th>
+                                    <th>Deuda Total</th>
+                                    <th>Tipo de Financiamiento</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        th {
-            background-color: #fcf34b;
-            color: #333;
-            font-weight: bold;
-            padding: 12px;
-            text-align: center;
-        }
-
-        td {
-            padding: 10px;
-            text-align: center;
-        }
-
-        /* Bordes superiores e inferiores más definidos */
-        th:first-child {
-            border-top-left-radius: 8px;
-        }
-        th:last-child {
-            border-top-right-radius: 8px;
-        }
-
+<style>
         .deuda {
             font-weight: bold;
             color: #FF5630;
         }
-        .volver-btn {
-            position: fixed; /* Para que siempre esté visible */
-            right: 40px; /* Lo pegamos al costado derecho */
-            bottom: 20px; /* Lo pegamos abajo */
-            width: 70px; /* Hacemos que sea más compacto */
-            height: 70px; /* Para que sea un círculo */
-            display: flex; /* Para centrar el texto o icono */
-            align-items: center;
-            justify-content: center;
-            background-color: #eed8fc; /* Mantenemos su color */
-            color: black;
-            font-weight: bold;
-            font-size: 16px;
-            border-radius: 50%; /* Lo hacemos completamente redondo */
-            text-decoration: none;
-            transition: 0.3s;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Sombra elegante */
-        }
 
-        .volver-btn:hover {
-            background-color: #d6b8f2; /* Efecto hover más oscuro */
-        }
 
-        #contenedor-cuotas-vencidas {
-        text-align: center;
-        margin-top: 20px;
-        }
-
-        #titulo-cuotas-vencidas {
-            font-family: "Inter", sans-serif;
-            font-size: 20px;
-            font-weight: 400;
-            color: #333;
-            letter-spacing: 0.3px;
-        }
-
-        /* MODIFICADO: Estilo para el botón de WhatsApp */
         .btn-whatsapp {
             background-color: #38a4f8;
             border: none;
             color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
+            padding: 6px 10px;
+            border-radius: 4px;
             cursor: pointer;
         }
         .btn-whatsapp:hover {
             background-color: #0d6efd;
         }
 
-        /* MODIFICADO: Estilos con colores corporativos */
-    .modal-header {
-        background-color: #8b8c64; /* Color institucional */
-        color: white;
-    }
+        .modal-header {
+            background-color: #8b8c64;
+            color: white;
+        }
 
     .phone-option {
         padding: 10px;
@@ -245,11 +221,6 @@ while ($row = $result->fetch_assoc()) {
         color: white;
     }
 
-    #searchInput {
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
 
     .table-detalle {
         width: 100%;
@@ -376,113 +347,82 @@ while ($row = $result->fetch_assoc()) {
             background-color: #0d6efd;
         }
 
+        /* Estilos para la columna fija de acciones */
+        .dtfc-fixed-right {
+            background-color: white !important;
+            border-left: 2px solid #dee2e6 !important;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1) !important;
+        }
+        
+        .dtfc-fixed-right table.dataTable thead th,
+        .dtfc-fixed-right table.dataTable tbody td {
+            background-color: white !important;
+        }
+        
+        /* Mejorar la apariencia de los botones en la columna fija */
+        .dtfc-fixed-right .btn-group {
+            white-space: nowrap;
+        }
+
+        /* Estilos para texto truncado */
+        .truncated-text {
+            cursor: help;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        /* Mejora del tooltip nativo del browser */
+        .truncated-text:hover {
+            position: relative;
+            color: #0066cc;
+            text-decoration: underline;
+        }
+        
+        /* Forzar ancho máximo en las celdas de tipo_financiamiento */
+        #tabla_cuotas_vencidas td:nth-child(6) {
+            max-width: 200px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Corregir espacios laterales en DataTable */
+        .dataTables_wrapper {
+            width: 100% !important;
+        }
+        
+        .dataTables_scroll {
+            width: 100% !important;
+        }
+        
+        .dataTables_scrollHead, 
+        .dataTables_scrollBody {
+            width: 100% !important;
+        }
+        
+        #tabla_cuotas_vencidas {
+            width: 100% !important;
+            table-layout: fixed;
+        }
+        
+        /* Ajustar contenedor de tabla responsive */
+        .table-responsive {
+            overflow-x: visible !important;
+        }
+        
+        /* Eliminar margen y padding extra */
+        .dtfc-fixed-right {
+            right: 0 !important;
+        }
+
     </style>
-</head>
-<body>
-
-<div class="container">
-    <!-- Loader overlay -->
-    <div class="page-loader" id="pageLoader" style="display: none;">
-        <div class="loader-spinner"></div>
-    </div>
-    <div id="contenedor-cuotas-vencidas">
-        <h3 id="titulo-cuotas-vencidas">Conductores y Clientes con Cuotas Vencidas</h3>
- 
-        <!-- Botones de filtro -->
-        <div class="d-flex justify-content-center mb-3">
-            <button type="button" class="btn me-2" id="btnPendientes" style="background-color: #38a4f8; color: white;">
-                Pendientes
-            </button>
-            <button type="button" class="btn" id="btnIncobrables" style="background-color: #02a499; color: white;">
-                Incobrables
-            </button>
-        </div>
-
-        <!-- Spinner de carga -->
-        <div id="loadingSpinner" class="text-center" style="display: none;">
-            <div class="spinner-border" role="status" style="color: #38a4f8;">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-        </div>
-    </div>
-
-     <!-- Agregado: Contenedor para búsqueda y botón de descarga -->
-     <div class="d-flex justify-content-between mb-3"> <!-- Agregado -->
-        <input type="text" id="searchInput" class="form-control w-50" placeholder="Buscar por financiamiento, unidad o nombres..."> <!-- Agregado -->
-        <button id="btnDescargar" class="btn" onclick="downloadData()"> <!-- Agregado -->
-            Descargar Reporte <i class="fas fa-download"></i>
-        </button>
-    </div>
-
-    <?php if (empty($conductores_vencidos)): ?>
-        <p style="text-align: center; color: #8b8c64;">No hay conductores ni clientes con cuotas vencidas actualmente.</p> <!-- コード: Mensaje actualizado -->
-    <?php else: ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Nº Unidad</th>
-                    <th>N° Cuotas</th>
-                    <th>Deuda Total (S/)</th>
-                    <th>Tipo de Financiamiento</th>
-                    <th>Estado</th> <!-- MODIFICADO: Nueva columna "Estado" -->
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($conductores_vencidos as $index => $conductor): ?>
-                <tr>
-                    <td><?= $index + 1 ?></td>
-                    <td><?= $conductor['nombre_completo'] ?></td>
-                    <!-- コード: Mostrar Nº Unidad solo para conductores -->
-                    <td><?= $conductor['tipo_persona'] == 'conductor' ? $conductor['numUnidad'] : '-' ?></td>
-                    <td><?= $conductor['num_cuotas'] ?></td>
-                    <td class="deuda"><?= number_format($conductor['deuda_total'], 2, '.', ',') ?></td>
-                    <td><?= $conductor['tipo_financiamiento'] ?></td>
-                    <!-- コード: Estado solo aplica para conductores -->
-                    <td><?= $conductor['tipo_persona'] == 'conductor' ? ($conductor['desvinculado'] == 0 ? 'Activo' : 'Desvinculado') : 'Activo' ?></td>
-                    <!-- MODIFICADO: Botón con atributos data para almacenar información del conductor -->
-                    <td class="acciones-container">
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                            <button class="whatsapp-pendientes open-whatsapp-modal" 
-                                    data-nombre="<?= $conductor['nombre_completo'] ?>" 
-                                    data-telefono="<?= $conductor['telefono'] ?>"
-                                    data-cuotas="<?= $conductor['num_cuotas'] ?>"
-                                    data-deuda="<?= number_format($conductor['deuda_total'], 2, '.', ',') ?>"
-                                    data-financiamiento="<?= $conductor['tipo_financiamiento'] ?>"
-                                    data-moneda="<?= $conductor['moneda'] ?>"
-                                    data-tipo="<?= $conductor['tipo_persona'] ?>">
-                                <i class="fab fa-whatsapp"></i>
-                            </button>
-                            
-                            <div style="display: flex; flex-direction: column; gap: 5px;">
-                                <?php if ($id_rol == 3): ?>
-                                <button class="btn btn-sm marcar-incobrable-btn" 
-                                        style="background-color: #626ed4; color: white; border: none;"
-                                        data-id="<?= $conductor['id_conductor'] ?>"
-                                        data-tipo="<?= $conductor['tipo_persona'] ?>"
-                                        data-nombre="<?= $conductor['nombre_completo'] ?>">
-                                    Marcar Incobrable
-                                </button>
-                                <?php endif; ?>
-                                
-                                <button class="btn btn-sm ver-detalle-btn" 
-                                        style="background-color: #02a499; color: white; border: none;"
-                                        data-id="<?= $conductor['id_conductor'] ?>"
-                                        data-tipo="<?= $conductor['tipo_persona'] ?>"
-                                        data-nombre="<?= $conductor['nombre_completo'] ?>">
-                                    Ver Detalle
-                                </button>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
-    <a href="<?= URL::to("/") ?>" class="volver-btn">Volver</a>
+<!-- Loader overlay -->
+<div class="page-loader" id="pageLoader" style="display: none;">
+    <div class="loader-spinner"></div>
 </div>
 
 <!-- MODIFICADO: Modal de WhatsApp -->
@@ -573,9 +513,165 @@ $(document).ready(function() {
     let modalWhatsappInstance;
     let currentConductorData = {};
     let filtroActual = 'pendientes';
-    let busquedaActiva = '';
+    let tabla_cuotas_vencidas;
 
-    // Inicialización
+    // Inicialización de DataTable
+    tabla_cuotas_vencidas = $("#tabla_cuotas_vencidas").DataTable({
+        paging: true,
+        bFilter: true,
+        ordering: true,
+        searching: true,
+        destroy: true,
+        scrollX: "100%", // Usar todo el ancho disponible
+        scrollCollapse: true, // Colapsar scroll cuando no es necesario
+        autoWidth: false, // Desactivar ancho automático
+        fixedColumns: {
+            rightColumns: 1 // Fijar la última columna (Acciones) a la derecha
+        },
+        columnDefs: [
+            { 
+                targets: [0], // Item
+                width: "60px"
+            },
+            { 
+                targets: [1], // Nombre
+                width: "25%"
+            },
+            { 
+                targets: [2], // Nº Unidad
+                width: "80px"
+            },
+            { 
+                targets: [3], // N° Cuotas
+                width: "80px"
+            },
+            { 
+                targets: [4], // Deuda Total
+                width: "120px"
+            },
+            { 
+                targets: [5], // Columna de tipo_financiamiento (índice 5)
+                width: "200px",
+                className: "text-truncate"
+            },
+            { 
+                targets: [6], // Estado
+                width: "100px"
+            },
+            { 
+                targets: [7], // Columna de acciones (índice 7)
+                width: "150px",
+                orderable: false
+            }
+        ],
+        ajax: {
+            url: "/arequipago/obtenerCuotasVencidasFiltradas",
+            method: "POST",
+            data: function(d) {
+                d.filtro = filtroActual;
+            },
+            dataSrc: function(json) {
+                return json.success ? json.data : [];
+            }
+        },
+        language: {
+            url: "ServerSide/Spanish.json",
+        },
+        columns: [
+            {
+                data: null,
+                class: "text-center",
+                render: function (data, type, row, meta) {
+                    return meta.row + 1;
+                }
+            },
+            {
+                data: "nombre_completo",
+                class: "text-center",
+            },
+            {
+                data: null,
+                class: "text-center",
+                render: function(data, type, row) {
+                    return row.tipo_persona == 'conductor' ? row.numUnidad : '-';
+                }
+            },
+            {
+                data: "num_cuotas",
+                class: "text-center",
+            },
+            {
+                data: null,
+                class: "text-center deuda",
+                render: function(data, type, row) {
+                    const deudaFormateada = parseFloat(row.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+                    return `<strong>${row.moneda} ${deudaFormateada}</strong>`;
+                }
+            },
+            {
+                data: "tipo_financiamiento",
+                class: "text-center",
+                render: function(data, type, row) {
+                    if (type === 'display' && data && data.length > 30) {
+                        return `<span title="${data}" class="truncated-text">${data.substring(0, 30)}...</span>`;
+                    }
+                    return data || '';
+                }
+            },
+            {
+                data: null,
+                class: "text-center",
+                render: function(data, type, row) {
+                    return row.tipo_persona == 'conductor' ? (row.desvinculado == 0 ? 'Activo' : 'Desvinculado') : 'Activo';
+                }
+            },
+            {
+                data: null,
+                class: "text-center",
+                render: function(data, type, row) {
+                    const deudaFormateada = parseFloat(row.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+                    const rolUsuario = <?php echo json_encode($id_rol); ?>;
+                    
+                    let botones = `
+                        <div class="btn-group btn-sm" role="group">
+                            <button class="btn btn-sm btn-info open-whatsapp-modal" 
+                                    data-nombre="${row.nombre_completo}" 
+                                    data-telefono="${row.telefono}"
+                                    data-cuotas="${row.num_cuotas}"
+                                    data-deuda="${deudaFormateada}"
+                                    data-financiamiento="${row.tipo_financiamiento}"
+                                    data-moneda="${row.moneda}"
+                                    data-tipo="${row.tipo_persona}"
+                                    title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success ver-detalle-btn" 
+                                    data-id="${row.id_conductor}"
+                                    data-tipo="${row.tipo_persona}"
+                                    data-nombre="${row.nombre_completo}"
+                                    title="Ver Detalle">
+                                <i class="fas fa-eye"></i>
+                            </button>`;
+                    
+                    if (filtroActual === 'pendientes' && rolUsuario == 3) {
+                        botones += `
+                            <button class="btn btn-sm btn-warning marcar-incobrable-btn" 
+                                    data-id="${row.id_conductor}"
+                                    data-tipo="${row.tipo_persona}"
+                                    data-nombre="${row.nombre_completo}"
+                                    title="Marcar Incobrable">
+                                <i class="fas fa-ban"></i>
+                            </button>`;
+                    }
+                    
+                    botones += '</div>';
+                    return botones;
+                }
+            }
+        ]
+    });
+
+    // Inicialización de modales
     modalDetalleInstance = new bootstrap.Modal(document.getElementById('detalleModal'));
     modalWhatsappInstance = new bootstrap.Modal(document.getElementById('whatsappModal'));
 
@@ -638,132 +734,15 @@ $(document).ready(function() {
 
     function cambiarFiltroPrincipal(filtro) {
         filtroActual = filtro;
-        $('#pageLoader').show(); // Mostrar loader
+        $('#pageLoader').show();
         actualizarEstadoBotones(filtro);
         
-        $.ajax({
-            url: "/arequipago/obtenerCuotasVencidasFiltradas",
-            method: 'POST',
-            data: { filtro: filtro },
-            dataType: 'json',
-            success: function(data) {
-            // Agregar delay de 800ms para que se vea mejor el loader
-            setTimeout(function() {
-                $('#pageLoader').hide();
-                if (data.success) {
-                    actualizarTabla(data.data);
-                    // Aplicar filtro de búsqueda si hay uno activo
-                    if (busquedaActiva) {
-                        filtrarTabla();
-                    }
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error al cargar los datos: ' + data.message
-                    });
-                }
-                }, 400);
-            },
-            error: function() {
-                // Agregar delay también en caso de error
-                setTimeout(function() {
-                    $('#pageLoader').hide();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error de conexión'
-                    });
-                }, 400); // AGREGADO: cierre del setTimeout
-            }
+        // Recargar DataTable con nuevo filtro
+        tabla_cuotas_vencidas.ajax.reload(function() {
+            $('#pageLoader').hide();
         });
     }
 
-    function actualizarTabla(datos) {
-        const tbody = $('tbody');
-        const rolUsuario = <?php echo json_encode($id_rol); ?>; // Pasar rol a JavaScript
-        
-        if (datos.length === 0) {
-            tbody.html('<tr><td colspan="8" style="text-align: center; color: #8b8c64;">No hay registros para mostrar</td></tr>');
-            return;
-        }
-        
-        let html = '';
-        
-        datos.forEach((conductor, index) => {
-            const deudaFormateada = parseFloat(conductor.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
-            html += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${conductor.nombre_completo}</td>
-                    <td>${conductor.tipo_persona == 'conductor' ? conductor.numUnidad : '-'}</td>
-                    <td>${conductor.num_cuotas}</td>
-                    <td class="deuda">${deudaFormateada}</td>
-                    <td>${conductor.tipo_financiamiento}</td>
-                    <td>${conductor.tipo_persona == 'conductor' ? (conductor.desvinculado == 0 ? 'Activo' : 'Desvinculado') : 'Activo'}</td>
-                    <td class="acciones-container">
-                        ${filtroActual === 'pendientes' ? `
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                <button class="whatsapp-pendientes open-whatsapp-modal"
-                                        data-nombre="${conductor.nombre_completo}" 
-                                        data-telefono="${conductor.telefono}"
-                                        data-cuotas="${conductor.num_cuotas}"
-                                        data-deuda="${deudaFormateada}"
-                                        data-financiamiento="${conductor.tipo_financiamiento}"
-                                        data-moneda="${conductor.moneda}"
-                                        data-tipo="${conductor.tipo_persona}">
-                                    <i class="fab fa-whatsapp"></i>
-                                </button>
-                                
-                                <div style="display: flex; flex-direction: column; gap: 5px;">
-                                    ${rolUsuario == 3 ? `
-                                    <button class="btn btn-sm marcar-incobrable-btn" 
-                                            style="background-color: #626ed4; color: white; border: none;"
-                                            data-id="${conductor.id_conductor}"
-                                            data-tipo="${conductor.tipo_persona}"
-                                            data-nombre="${conductor.nombre_completo}">
-                                        Marcar Incobrable
-                                    </button>
-                                    ` : ''}
-                                    
-                                    <button class="btn btn-sm ver-detalle-btn" 
-                                            style="background-color: #02a499; color: white; border: none;"
-                                            data-id="${conductor.id_conductor}"
-                                            data-tipo="${conductor.tipo_persona}"
-                                            data-nombre="${conductor.nombre_completo}">
-                                        Ver Detalle
-                                    </button>
-                                </div>
-                            </div>
-                        ` : `
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <button class="whatsapp-incobrables open-whatsapp-modal" 
-                                        data-nombre="${conductor.nombre_completo}" 
-                                        data-telefono="${conductor.telefono}"
-                                        data-cuotas="${conductor.num_cuotas}"
-                                        data-deuda="${deudaFormateada}"
-                                        data-financiamiento="${conductor.tipo_financiamiento}"
-                                        data-moneda="${conductor.moneda}"
-                                        data-tipo="${conductor.tipo_persona}">
-                                    <i class="fab fa-whatsapp"></i>
-                                </button>
-                                <button class="btn btn-sm ver-detalle-btn" 
-                                        style="background-color: #02a499; color: white; border: none;"
-                                        data-id="${conductor.id_conductor}"
-                                        data-tipo="${conductor.tipo_persona}"
-                                        data-nombre="${conductor.nombre_completo}">
-                                    Ver Detalle
-                                </button>
-                            </div>
-                        `}
-                    </td>
-                </tr>
-            `;
-        });
-        
-        tbody.html(html);
-        configurarEventosWhatsApp();
-    }
 
     function marcarComoIncobrable(button) {
         const $btn = $(button);
@@ -796,7 +775,7 @@ $(document).ready(function() {
                                 title: '¡Éxito!',
                                 text: 'Marcado como incobrable exitosamente'
                             });
-                            cambiarFiltroPrincipal(filtroActual);
+                            tabla_cuotas_vencidas.ajax.reload();
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -1053,39 +1032,51 @@ Gracias por su atención.`;
         modalWhatsappInstance.hide();
     }
 
-    function filtrarTabla() {
-        const filas = $('tbody tr');
-        
-        filas.each(function() {
-            const $fila = $(this);
-            const financiamiento = $fila.find('td:nth-child(6)').text().toLowerCase();
-            const unidad = $fila.find('td:nth-child(3)').text().toLowerCase();
-            const nombre = $fila.find('td:nth-child(2)').text().toLowerCase();
-            
-            if (financiamiento.includes(busquedaActiva) || 
-                unidad.includes(busquedaActiva) || 
-                nombre.includes(busquedaActiva)) {
-                $fila.show();
-            } else {
-                $fila.hide();
-            }
-        });
-    }
 
     // Función global para descarga
     window.downloadData = function() {
-        const originalTable = $('table')[0];
+        // Obtener datos actuales de la tabla
+        const data = tabla_cuotas_vencidas.data().toArray();
         
-        if (!originalTable) {
+        if (data.length === 0) {
             alert('No hay datos para descargar');
             return;
         }
         
-        const tableClone = originalTable.cloneNode(true);
+        // Crear tabla HTML para exportar
+        let tableHTML = `
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Nombre</th>
+                        <th>Nº Unidad</th>
+                        <th>N° Cuotas</th>
+                        <th>Deuda Total</th>
+                        <th>Tipo de Financiamiento</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>`;
         
-        for (let row of tableClone.rows) {
-            row.deleteCell(-1);
-        }
+        data.forEach((row, index) => {
+            const deudaFormateada = parseFloat(row.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+            const unidad = row.tipo_persona == 'conductor' ? row.numUnidad : '-';
+            const estado = row.tipo_persona == 'conductor' ? (row.desvinculado == 0 ? 'Activo' : 'Desvinculado') : 'Activo';
+            
+            tableHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${row.nombre_completo}</td>
+                    <td>${unidad}</td>
+                    <td>${row.num_cuotas}</td>
+                    <td>${row.moneda} ${deudaFormateada}</td>
+                    <td>${row.tipo_financiamiento}</td>
+                    <td>${estado}</td>
+                </tr>`;
+        });
+        
+        tableHTML += '</tbody></table>';
         
         const excelHTML = `
             <html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -1104,7 +1095,7 @@ Gracias por su atención.`;
                     }
                 </style>
             </head>
-            <body>${tableClone.outerHTML}</body>
+            <body>${tableHTML}</body>
             </html>`;
         
         const blob = new Blob([excelHTML], {
@@ -1118,5 +1109,3 @@ Gracias por su atención.`;
     };
 });
 </script>
-</body>
-</html>

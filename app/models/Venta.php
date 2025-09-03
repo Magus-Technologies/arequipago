@@ -472,19 +472,30 @@ class Venta
         if ($row = $this->conectar->query($sql)->fetch_assoc()) {
             $totalVenta = 0;
             $row["detalles"] = [];
-            $sql = "SELECT productos_ventas.*,p.descripcion,p.codigo FROM productos_ventas join productos p on p.id_producto = productos_ventas.id_producto WHERE id_venta=" . $this->id_venta;
+            
+            // CORREGIDO: Buscar en productosv2 en lugar de productos
+            $sql = "SELECT productos_ventas.*, p.nombre as descripcion, p.codigo 
+                    FROM productos_ventas 
+                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto 
+                    WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
-            foreach ($result as $depro) {
-                $totalVenta += $depro['cantidad'] * $depro['precio'];
-                $row["detalles"][] = $depro;
+            if ($result) {
+                foreach ($result as $depro) {
+                    $totalVenta += $depro['cantidad'] * $depro['precio'];
+                    $row["detalles"][] = $depro;
+                }
             }
+            
             $sql = "SELECT *,'' as codigo FROM ventas_servicios WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
-            foreach ($result as $depro) {
-                $depro['precio'] = $depro['monto'];
-                $totalVenta += $depro['cantidad'] * $depro['monto'];
-                $row["detalles"][] = $depro;
+            if ($result) {
+                foreach ($result as $depro) {
+                    $depro['precio'] = $depro['monto'];
+                    $totalVenta += $depro['cantidad'] * $depro['monto'];
+                    $row["detalles"][] = $depro;
+                }
             }
+            
             $row["montoTotal"] = number_format($totalVenta, 2, '.', '');
             $respuesta['res'] = true;
             $respuesta['data'] = $row;
@@ -500,19 +511,30 @@ class Venta
         if ($row = $this->conectar->query($sql)->fetch_assoc()) {
             $totalVenta = 0;
             $row["detalles"] = [];
-            $sql = "SELECT productos_ventas.*,p.descripcion FROM productos_ventas join productos p on p.id_producto = productos_ventas.id_producto WHERE id_venta=" . $this->id_venta;
+            
+            // CORREGIDO: Buscar en productosv2 en lugar de productos
+            $sql = "SELECT productos_ventas.*, p.nombre as descripcion 
+                    FROM productos_ventas 
+                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto 
+                    WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
-            foreach ($result as $depro) {
-                $totalVenta += $depro['cantidad'] * $depro['precio'];
-                $row["detalles"][] = $depro;
+            if ($result) {
+                foreach ($result as $depro) {
+                    $totalVenta += $depro['cantidad'] * $depro['precio'];
+                    $row["detalles"][] = $depro;
+                }
             }
+            
             $sql = "SELECT * FROM ventas_servicios WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
-            foreach ($result as $depro) {
-                $depro['precio'] = $depro['monto'];
-                $totalVenta += $depro['cantidad'] * $depro['monto'];
-                $row["detalles"][] = $depro;
+            if ($result) {
+                foreach ($result as $depro) {
+                    $depro['precio'] = $depro['monto'];
+                    $totalVenta += $depro['cantidad'] * $depro['monto'];
+                    $row["detalles"][] = $depro;
+                }
             }
+            
             $row["montoTotal"] = number_format($totalVenta, 2, '.', '');
             $respuesta['res'] = true;
             $respuesta['data'] = $row;

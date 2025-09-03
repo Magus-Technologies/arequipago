@@ -251,6 +251,7 @@ public function obtenerNumDocFiltrado($searchTerm = '')
                     MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
                 FROM conductores c
                 INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
+                WHERE f.estado_eliminado = 0
                 GROUP BY c.id_conductor, c.nombres, c.apellido_paterno, c.apellido_materno";
         
         // 🔴 Aplicar ordenamiento si se proporciona
@@ -300,6 +301,7 @@ public function obtenerNumDocFiltrado($searchTerm = '')
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento  
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
+        WHERE f.estado_eliminado = 0
         GROUP BY cl.id, cl.nombres, cl.apellido_paterno, cl.apellido_materno";
         
         // 🔴 Aplicar ordenamiento a la consulta de clientes
@@ -400,7 +402,7 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM conductores c
         INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
-        WHERE ";
+        WHERE f.estado_eliminado = 0 AND ";
 
         // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
     if ($grupo_id) {
@@ -410,11 +412,11 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
         $queryConductores .= "f.grupo_financiamiento = 'notGrupo' ";
     } else {
         // 🐱 Mantenemos la lógica original de búsqueda
-        $queryConductores .= "c.nombres LIKE ? 
+        $queryConductores .= "(c.nombres LIKE ? 
            OR c.apellido_paterno LIKE ? 
            OR c.apellido_materno LIKE ?
            OR f.codigo_asociado LIKE ?
-           OR c.numUnidad LIKE ? "; // 🐱 Agregado: Búsqueda por número de unidad
+           OR c.numUnidad LIKE ?) "; // 🐱 Agregado: Búsqueda por número de unidad
     }
         
     // 🔴 Aplicar ordenamiento a conductores
@@ -477,7 +479,7 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
-        WHERE ";
+        WHERE f.estado_eliminado = 0 AND ";
     
     // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
     if ($grupo_id) {
@@ -487,10 +489,10 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
         $queryClientes .= "f.grupo_financiamiento = 'notGrupo' ";
     } else {
         // 🐱 Mantenemos la lógica original de búsqueda
-        $queryClientes .= "cl.nombres LIKE ? 
+        $queryClientes .= "(cl.nombres LIKE ? 
            OR cl.apellido_paterno LIKE ? 
            OR cl.apellido_materno LIKE ?
-           OR f.codigo_asociado LIKE ? ";
+           OR f.codigo_asociado LIKE ?) ";
     }
     
     $queryClientes .= " GROUP BY cl.id "; // ☁️ Añadido GROUP BY que faltaba
@@ -617,11 +619,8 @@ private function normalizeString($string) {
         try {
             $searchTermLike = "%$searchTerm%";
             
-            // ☁️ Eliminado el código inicial que usa variables no definidas
-            // ☁️ Añadida inicialización de la variable $grupo_id
-            $grupo_id = null; // ☁️ Inicializamos $grupo_id
+            $grupo_id = null;
             
-            // ☁️ Agregado código para buscar si el término coincide con algún nombre de plan
             if ($searchTerm) {
                 $queryGrupo = "SELECT idplan_financiamiento FROM planes_financiamiento WHERE nombre_plan = ?";
                 $stmtGrupo = $this->conectar->prepare($queryGrupo);
@@ -635,7 +634,6 @@ private function normalizeString($string) {
                 }
                 $stmtGrupo->close();
     
-                // También verificar si coincide con un nombre parcial (LIKE)
                 if (!$grupo_id) {
                     $queryGrupoLike = "SELECT idplan_financiamiento FROM planes_financiamiento WHERE nombre_plan LIKE ?";
                     $stmtGrupoLike = $this->conectar->prepare($queryGrupoLike);
@@ -651,27 +649,22 @@ private function normalizeString($string) {
                 }
             }
             
-            // ☁️ Eliminado todo el código inicial redundante que utilizaba variables no definidas
-                
-            // Contar conductores con al menos un financiamiento
-            // CAMBIO: Añadido GROUP BY y HAVING para contar solo conductores con financiamientos
             $sqlConductores = "SELECT COUNT(*) AS total FROM (
                     SELECT c.id_conductor
                     FROM conductores c
                     LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                    WHERE ";
+                    WHERE f.estado_eliminado = 0 AND ";
     
-            // 🐱 Modificado: Diferentes condiciones según el tipo de búsqueda
             if ($grupo_id) {
                 $sqlConductores .= "f.grupo_financiamiento = ? ";
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
                 $sqlConductores .= "f.grupo_financiamiento = 'notGrupo' ";
             } else {
-                $sqlConductores .= "c.nombres LIKE ? 
+                $sqlConductores .= "(c.nombres LIKE ? 
                     OR c.apellido_paterno LIKE ? 
                     OR c.apellido_materno LIKE ? 
                     OR f.codigo_asociado LIKE ?
-                    OR c.numUnidad LIKE ? "; // 🐱 Agregado: Búsqueda por número de unidad
+                    OR c.numUnidad LIKE ?) ";
             }
             
             $sqlConductores .= "GROUP BY c.id_conductor
@@ -680,7 +673,6 @@ private function normalizeString($string) {
             
             $stmtConductores = $this->conectar->prepare($sqlConductores);
             
-            // 🐱 Modificado: Diferentes bind_param según el tipo de búsqueda
             if ($grupo_id) {
                 $stmtConductores->bind_param("s", $grupo_id);
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
@@ -694,32 +686,29 @@ private function normalizeString($string) {
             $rowConductores = $resultConductores->fetch_assoc();
             $totalConductores = $rowConductores['total'] ?? 0;
             
-            // Contar clientes con al menos un financiamiento
             $sqlClientes = "SELECT COUNT(*) AS total FROM (
                     SELECT cl.id
                     FROM clientes_financiar cl
                     LEFT JOIN financiamiento f ON cl.id = f.id_cliente
-                    WHERE ";
+                    WHERE f.estado_eliminado = 0 AND ";
             
-            // 🐱 Modificado: Diferentes condiciones según el tipo de búsqueda
             if ($grupo_id) {
                 $sqlClientes .= "f.grupo_financiamiento = ? ";
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
                 $sqlClientes .= "f.grupo_financiamiento = 'notGrupo' ";
             } else {
-                $sqlClientes .= "cl.nombres LIKE ? 
+                $sqlClientes .= "(cl.nombres LIKE ? 
                     OR cl.apellido_paterno LIKE ? 
                     OR cl.apellido_materno LIKE ? 
-                    OR f.codigo_asociado LIKE ? ";
+                    OR f.codigo_asociado LIKE ?) ";
             }
             
             $sqlClientes .= "GROUP BY cl.id
                     HAVING COUNT(f.idfinanciamiento) > 0
                 ) AS clientes_con_financiamiento";
             
-            $stmtClientes = $this->conectar->prepare($sqlClientes); // ☁️ Ya no usa una variable no definida
+            $stmtClientes = $this->conectar->prepare($sqlClientes);
             
-            // 🐱 Modificado: Diferentes bind_param según el tipo de búsqueda
             if ($grupo_id) {
                 $stmtClientes->bind_param("s", $grupo_id);
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
@@ -733,7 +722,6 @@ private function normalizeString($string) {
             $rowClientes = $resultClientes->fetch_assoc();
             $totalClientes = $rowClientes['total'] ?? 0;
             
-            // Retornar la suma
             return $totalConductores + $totalClientes;
         } catch (Exception $e) {
             error_log("Error en Conductor::obtenerTotalClientesBusqueda(): " . $e->getMessage());

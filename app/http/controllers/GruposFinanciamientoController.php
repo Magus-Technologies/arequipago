@@ -113,18 +113,8 @@ class GruposFinanciamientoController extends Controller
             $tasaInteres = $_POST['tasa_interes'] !== null ? $_POST['tasa_interes'] : null;
             $fechaInicio = $_POST['fecha_inicio'] !== null ? $_POST['fecha_inicio'] : null;
             $fechaFin = $_POST['fecha_fin'] !== null ? $_POST['fecha_fin'] : null;
-            // NUEVO: Capturar tipo vehicular del formulario
-            $tipoVehicular = null;
-            if (isset($_POST['tipo_vehicular'])) {
-                $tipoVehicular = $_POST['tipo_vehicular'];
-            } else {
-                // Determinar tipo vehicular basado en los checkboxes (para compatibilidad)
-                if (isset($_POST['checkAuto']) || (isset($_POST['tipo_vehiculo']) && $_POST['tipo_vehiculo'] === 'auto')) {
-                    $tipoVehicular = 'vehiculo'; // Mapear 'auto' a 'vehiculo' según tu enum
-                } elseif (isset($_POST['checkMoto']) || (isset($_POST['tipo_vehiculo']) && $_POST['tipo_vehiculo'] === 'moto')) {
-                    $tipoVehicular = 'moto';
-                }
-            }
+            // Capturar tipo vehicular del formulario
+            $tipoVehicular = $_POST['tipo_vehiculo'] ?? null;
 
             try {
                 $modelo = new GrupoFinanciamientoModel();  // Instanciar correctamente el modelo antes de usarlo (EDITADO)
