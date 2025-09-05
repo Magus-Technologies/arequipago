@@ -1,3 +1,4 @@
+<!-- resources\views\fragment-views\cliente\cotizaciones.php -->
 <div class="page-title-box">
     <div class="row align-items-center">
         <!-- <div class="col-md-8">
@@ -35,7 +36,7 @@
                     <a href="/cotizaciones/add" id="folder_btn_nuevo_folder" class="btn btn-primary button-link">
                         <i class="fa fa-plus "></i> Nueva Cotización
                     </a>
-                    <?php if ($_SESSION["rol"] == 1): ?>
+                    <?php if (isset($_SESSION["rol"]) && $_SESSION["rol"] == 1): ?>
                         <button id="ventas-reporte" class="btn btn-info"><i class="fa fa-file-pdf-o"></i> Exportar Reporte de Vendedores</button>
                     <?php endif; ?>
                 </div>

@@ -230,6 +230,12 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
                         <?php if ($id_rol == 1 || $id_rol == 3): ?>
                             <li class="nav-item">
+                                <a class="nav-link" onclick=""href="/arequipago/cotizaciones">
+                                    <i class="fas fa-piggy-bank"></i>
+                                    COTIZACIONES
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" onclick=""href="/arequipago/grupo-financiamiento">
                                     <i class="fas fa-piggy-bank"></i>
                                     GRUPOS FINANCIAMIENTO
