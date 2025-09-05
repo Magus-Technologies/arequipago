@@ -9,6 +9,8 @@ require_once "app/models/Kit.php";
 require_once "app/models/PagoInscripcion.php";
 require_once "app/models/Observacion.php";
 require_once "app/models/DireccionConductor.php";
+require_once "app/models/Productov2.php";
+require_once "app/models/Reportes.php";
 
 class RegistrarConductorController extends Controller
 {
@@ -73,6 +75,12 @@ class RegistrarConductorController extends Controller
                     $this->enviarRespuesta(false, 'Error al registrar la observación.');
                     return;
                 }
+            }
+
+            // 9. Procesar Logo YANGO si fue solicitado
+            if (!$this->procesarLogoYango($id_conductor)) {
+                $this->enviarRespuesta(false, 'Error al procesar Logo YANGO.');
+                return;
             }
 
             $this->enviarRespuesta(true, 'Registro completado con éxito.', ['id_conductor' => $id_conductor]);
@@ -527,6 +535,81 @@ public function buscarConductor()
             // Si no es GET, devolver error
             header('HTTP/1.1 405 Method Not Allowed');
             echo json_encode(['error' => 'Método no permitido']);
+        }
+    }
+    
+    private function procesarLogoYango($id_conductor)
+    {
+        try {
+            // Verificar si se solicitó Logo YANGO
+            if (!isset($_POST['logo_yango']) || $_POST['logo_yango'] !== '1') {
+                return true; // No se solicitó, continuar normalmente
+            }
+
+            $usuario_id = $_SESSION['usuario_id'] ?? null;
+            if (!$usuario_id) {
+                throw new Exception('No se pudo obtener el ID del usuario.');
+            }
+
+            // Obtener información del producto Logo YANGO
+            $producto = new Productov2();
+            $logoYango = $producto->getProductsList(27); // ID fijo del Logo YANGO
+
+            if (!$logoYango) {
+                throw new Exception('Producto Logo YANGO no encontrado.');
+            }
+
+            if ($logoYango['cantidad'] > 0) {
+                // HAY STOCK: Descontar y asignar código
+                $nuevo_stock = $logoYango['cantidad'] - 1;
+                
+                // Actualizar stock
+                $sql_update_stock = "UPDATE productosv2 SET cantidad = ? WHERE idproductosv2 = 27";
+                $stmt = $this->conectar->prepare($sql_update_stock);
+                $stmt->bind_param("i", $nuevo_stock);
+                
+                if (!$stmt->execute()) {
+                    throw new Exception('Error al actualizar stock del Logo YANGO.');
+                }
+
+                // Asignar código al conductor
+                $codigo_logo = $logoYango['codigo'];
+                $sql_update_conductor = "UPDATE conductores SET logo_yango_asignado_cod = ? WHERE id_conductor = ?";
+                $stmt = $this->conectar->prepare($sql_update_conductor);
+                $stmt->bind_param("si", $codigo_logo, $id_conductor);
+                
+                if (!$stmt->execute()) {
+                    throw new Exception('Error al asignar código de Logo YANGO al conductor.');
+                }
+
+                // Registrar movimiento de salida
+                $reportes = new Reportes();
+                $reportes->registrarMovimiento(
+                    $usuario_id,
+                    27, // id_producto
+                    $logoYango['codigo'], // codigo_producto
+                    $logoYango['nombre'], // nombre_producto
+                    'Salida', // tipo_movimiento
+                    'Asignación Automática', // subtipo_movimiento (nuevo subtipo)
+                    1, // cantidad_producto
+                    'Sistema - Registro Conductor' // razon_social/proveedor
+                );
+
+                // Mensaje de éxito para el frontend
+                $_SESSION['logo_yango_message'] = "✅ Logo YANGO asignado automáticamente - Código: " . $codigo_logo;
+                $_SESSION['logo_yango_type'] = 'success';
+
+            } else {
+                // NO HAY STOCK: Solo marcar como solicitado (logo_yango_asignado_cod queda NULL)
+                $_SESSION['logo_yango_message'] = "⚠️ Logo YANGO solicitado pero sin stock disponible - Coordinar una venta para la entrega manual";
+                $_SESSION['logo_yango_type'] = 'warning';
+            }
+
+            return true;
+
+        } catch (Exception $e) {
+            error_log("Error en procesarLogoYango: " . $e->getMessage());
+            throw new Exception('Error al procesar Logo YANGO: ' . $e->getMessage());
         }
     }
 }

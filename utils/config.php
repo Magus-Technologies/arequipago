@@ -6,8 +6,8 @@
  * IMPORTANTE: Usar los valores correctos del servidor de producci�n
  */
 define("HOST_SS", "localhost");
-define("DATABASE_SS", "db_are");      // ? Confirmado
-define("USER_SS", "magusqao_maguado");           // ? Usuario creado
+define("DATABASE_SS", "magusqao_arequipa");      // ? Confirmado
+define("USER_SS", "root");           // ? Usuario creado
 define("PASSWORD_SS", "");          // ? Contrase�a definida
 
 /**

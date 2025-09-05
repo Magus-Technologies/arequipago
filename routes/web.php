@@ -363,3 +363,5 @@ Route::post('deleteFinanceRechazado', 'FinanciamientoController@deleteFinanciami
 Route::get('contarFinanciamientosRechazados', 'FinanciamientoController@contarFinanciamientosRechazados');
 Route::post('/verificarCodigoAsociado', 'FinanciamientoController@verificarCodigoAsociado');
 Route::post('/toggleDesvincularConductor', 'ConductorController@toggleDesvincularConductor');
+
+Route::post('verificar-stock-logo', 'ProductosController@verificarStockLogo');
