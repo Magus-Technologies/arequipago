@@ -20,7 +20,7 @@ class ConsultaDelcontroller extends Controller
     public function getDataCotizacionSS(){
         $table_data = new TableData();
         
-        $user_id = ($_SESSION['rol'] == 1) ? "" : "where usuario = '{$_SESSION['usuario_fac']}' and sucursal = '{$_SESSION['sucursal']}'";
+        $user_id = (isset($_SESSION['rol']) && $_SESSION['rol'] == 1) ? "" : "where usuario = '" . (isset($_SESSION['usuario_fac']) ? $_SESSION['usuario_fac'] : '') . "' and sucursal = '" . (isset($_SESSION['sucursal']) ? $_SESSION['sucursal'] : '') . "'";
         $table_data->get("view_cotizaciones", "cotizacion_id", [
             "numero",
             "fecha",

@@ -63,17 +63,16 @@ class Consultas
 
     function buscarProductoCoti($id_empresa, $term)
     {
-        $sql = "select * from productos 
-        where id_empresa = '$id_empresa' and (descripcion like '%$term%' OR codigo like '%$term%') and sucursal='{$_SESSION['sucursal']}' and estado='1'
-        order by descripcion asc";
+        $sql = "select * from productosv2 
+        where (nombre like '%$term%' OR codigo like '%$term%') and estado='1'
+        order by nombre asc";
         return $this->conectar->query($sql);
     }
     function buscarProducto($id_empresa, $term, $alma)
     {
-        $sql = "SELECT * from productos 
-        where id_empresa = '$id_empresa' 
-          and (descripcion like '%$term%' OR codigo like '%$term%') and sucursal='{$_SESSION['sucursal']}' 
-          AND almacen = '$alma' and estado='1' order by descripcion asc limit 500";
+        $sql = "SELECT * from productosv2 
+        where (nombre like '%$term%' OR codigo like '%$term%') 
+          AND estado='1' order by nombre asc limit 500";
         //echo $sql;
 
         return $this->conectar->query($sql);
