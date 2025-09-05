@@ -855,6 +855,7 @@ class GenerarContratosController extends controller
                 // Crear el array de datos para este conductor
                 $datos = [
                     'id_conductor' => $idConductor, // Almacenar el id del conductor
+                    'tipo_doc' => $datosConductor['tipo_doc'] ?? 'DNI', // Agregar el tipo de documento
                     'telefono' => $datosConductor['telefono'] ?? 'No registrado',
                     'apellido_paterno' => $datosConductor['apellido_paterno'] ?? 'No registrado',
                     'apellido_materno' => $datosConductor['apellido_materno'] ?? 'No registrado',
@@ -1129,6 +1130,9 @@ class GenerarContratosController extends controller
         // Reemplazar los valores de los spans con los datos del conductor
         $html = str_replace('<span id="nombre_afiliado">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_afiliado">', $datos['dni'], $html);
+        // Reemplazar el tipo de documento en todas las ocurrencias
+        $html = str_replace('DNI N°', $datos['tipo_doc'] . ' N°', $html);
+        $html = str_replace('DNI:', $datos['tipo_doc'] . ':', $html);
         $html = str_replace('<span id="domicilio_afiliado">', $datos['direccion_completa'], $html);
         $html = str_replace('<span id="placa_vehiculo">', $datos['placa'], $html);
         $html = str_replace('<span id="marca_vehiculo">', $datos['marca'], $html);
