@@ -47,7 +47,7 @@ class ConsultasController extends Controller
 
     public function buscarProdId()
     {
-        $sql = "SELECT * from productos where id_empresa = '{$_SESSION['id_empresa']}' and sucursal = '{$_SESSION['sucursal']}' and estado = '1' AND  id_producto ='{$_POST['index']}' order by id_producto DESC";
+        $sql = "SELECT * from productosv2 where estado = '1' AND  idproductosv2 ='{$_POST['index']}' order by idproductosv2 DESC";
 
         $result =  $this->consulta->exeSQL($sql)->fetch_assoc();
         echo json_encode($result);
@@ -608,24 +608,28 @@ id_notas_electronicas='$idNotaElectronica',
     function buscarProducto($almacen)
     {
         $searchTerm = filter_input(INPUT_GET, 'term');
-        $resultados = $this->consulta->buscarProducto($_SESSION['id_empresa'], $searchTerm, $almacen);
+        $resultados = $this->consulta->buscarProducto((isset($_SESSION['id_empresa']) ? $_SESSION['id_empresa'] : ''), $searchTerm, $almacen);
         /*   echo 'asdasd';
         die(); */
         $array_resultado = array();
-        foreach ($resultados as $value) {
-            $fila = array();
-            $fila['value'] = $value['codigo'] .' | '. $value['descripcion'] . " | P.Venta S/ : " . $value['precio'] . " | Stock: " . $value['cantidad'];
-            $fila['codigo'] = $value['id_producto'];
-            $fila['codigo_pp'] = $value['codigo'];
-            $fila['descripcion'] = $value['descripcion'];
-            $fila['precio'] = $value['precio'];
-            $fila['cnt'] = $value['cantidad'];
-            $fila['costo'] = $value['costo'];
-            $fila['precio2'] = $value['precio2'];
-            $fila['precio3'] = $value['precio3'];
-            $fila['precio4'] = $value['precio4'];
-            $fila['precio_unidad'] = $value['precio_unidad'];
-            array_push($array_resultado, $fila);
+        
+        // Verificar que $resultados sea válido antes del foreach
+        if ($resultados && $resultados->num_rows > 0) {
+            foreach ($resultados as $value) {
+                $fila = array();
+                $fila['value'] = $value['codigo'] .' | '. $value['nombre'] . " | P.Venta S/ : " . $value['precio_venta'] . " | Stock: " . $value['cantidad'];
+                $fila['codigo'] = $value['idproductosv2'];
+                $fila['codigo_pp'] = $value['codigo'];
+                $fila['descripcion'] = $value['nombre'];
+                $fila['precio'] = $value['precio_venta'];
+                $fila['cnt'] = $value['cantidad'];
+                $fila['costo'] = $value['precio'];
+                $fila['precio2'] = $value['precio_venta'];
+                $fila['precio3'] = $value['precio_venta'];
+                $fila['precio4'] = $value['precio_venta'];
+                $fila['precio_unidad'] = $value['precio_venta'];
+                array_push($array_resultado, $fila);
+            }
         }
 
         return json_encode($array_resultado);
@@ -637,7 +641,7 @@ id_notas_electronicas='$idNotaElectronica',
         $producto = $_POST["producto"];
 
         /*  where  */
-        $sql = "SELECT * FROM productos WHERE id_producto = $producto AND almacen =$almacen AND id_empresa = '{$_SESSION['id_empresa']}' AND sucursal='{$_SESSION['sucursal']}'";
+        $sql = "SELECT * FROM productosv2 WHERE idproductosv2 = $producto AND estado='1'";
 
         $datos = $this->consulta->exeSQL($sql)->fetch_assoc();
         echo json_encode($datos);
@@ -645,25 +649,29 @@ id_notas_electronicas='$idNotaElectronica',
     function buscarProductoCoti()
     {
         $searchTerm = filter_input(INPUT_GET, 'term');
-        $resultados = $this->consulta->buscarProductoCoti($_SESSION['id_empresa'], $searchTerm);
+        $resultados = $this->consulta->buscarProductoCoti((isset($_SESSION['id_empresa']) ? $_SESSION['id_empresa'] : ''), $searchTerm);
         /*   echo 'asdasd';
         die(); */
         $array_resultado = array();
-        foreach ($resultados as $value) {
-            $fila = array();
-            $fila['value'] = $value['codigo'] .' | '. $value['descripcion'] . " | P.Venta S/ : " . $value['precio'] . " | Stock: " . $value['cantidad'] . " - Almacen "  . $value['almacen'];
-            $fila['codigo'] = $value['id_producto'];
-            $fila['codigo_pp'] = $value['codigo'];
-            $fila['descripcion'] = $value['descripcion'];
-            $fila['precio'] = $value['precio'];
-            $fila['cnt'] = $value['cantidad'];
-            $fila['costo'] = $value['costo'];
-            $fila['precio2'] = $value['precio2'];
-            $fila['precio3'] = $value['precio3'];
-            $fila['almacen'] = $value['almacen'];
-            $fila['precio4'] = $value['precio4'];
-            $fila['precio_unidad'] = $value['precio_unidad'];
-            array_push($array_resultado, $fila);
+        
+        // Verificar que $resultados sea válido antes del foreach
+        if ($resultados && $resultados->num_rows > 0) {
+            foreach ($resultados as $value) {
+                $fila = array();
+                $fila['value'] = $value['codigo'] .' | '. $value['nombre'] . " | P.Venta S/ : " . $value['precio_venta'] . " | Stock: " . $value['cantidad'];
+                $fila['codigo'] = $value['idproductosv2'];
+                $fila['codigo_pp'] = $value['codigo'];
+                $fila['descripcion'] = $value['nombre'];
+                $fila['precio'] = $value['precio_venta'];
+                $fila['cnt'] = $value['cantidad'];
+                $fila['costo'] = $value['precio'];
+                $fila['precio2'] = $value['precio_venta'];
+                $fila['precio3'] = $value['precio_venta'];
+                $fila['almacen'] = '1'; // Valor por defecto ya que no hay campo almacen en productosv2
+                $fila['precio4'] = $value['precio_venta'];
+                $fila['precio_unidad'] = $value['precio_venta'];
+                array_push($array_resultado, $fila);
+            }
         }
 
         return json_encode($array_resultado);
@@ -671,7 +679,7 @@ id_notas_electronicas='$idNotaElectronica',
 
     function cargarPreciosProd()
     {
-        $sql = "SELECT * from productos where id_empresa = '{$_SESSION['id_empresa']}' and sucursal = '{$_SESSION['sucursal']}' and estado = '1' AND id_producto='{$_POST['cod']}' order by id_producto DESC";
+        $sql = "SELECT * from productosv2 where estado = '1' AND idproductosv2='{$_POST['cod']}' order by idproductosv2 DESC";
 
         $result =  $this->consulta->exeSQL($sql)->fetch_assoc();
         echo json_encode($result);

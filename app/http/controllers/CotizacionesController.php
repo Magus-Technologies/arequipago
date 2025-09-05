@@ -31,7 +31,7 @@ class CotizacionesController extends Controller
             datos='{$_POST['nom_cli']}',
             direccion='{$_POST['dir_cli']}',
             direccion2='{$_POST['dir2_cli']}',
-            id_empresa='{$_SESSION['id_empresa']}'";
+            id_empresa='" . (isset($_SESSION['id_empresa']) ? $_SESSION['id_empresa'] : '') . "'";
             $this->conexion->query($sql);
             $idCli = $this->conexion->insert_id;
         }
@@ -42,7 +42,8 @@ class CotizacionesController extends Controller
   direccion='{$_POST['dir_pos']}',
   id_cliente='$idCli',
   usar_precio='{$_POST['usar_precio']}',
-  total='{$_POST['total']}' where cotizacion_id='{$_POST['cotiId']}'";
+  total='{$_POST['total']}',
+  id_usuario='" . (isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : '1') . "' where cotizacion_id='{$_POST['cotiId']}'";
 
         if ($this->conexion->query($sql)) {
             $respuesta['res'] = true;
@@ -61,14 +62,20 @@ class CotizacionesController extends Controller
                 $sql = "insert into cuotas_cotizacion set monto='{$cuota['monto']}',fecha='{$cuota['fecha']}',id_coti='{$_POST['cotiId']}'";
                 $this->conexion->query($sql);
             }
-            foreach ($productos as $prod) {
-                $sql = "insert into productos_cotis set id_coti='{$_POST['cotiId']}',
-              id_producto='{$prod['productoid']}',
-              cantidad='{$prod['cantidad']}',
-              precio='{$prod['precioVenta']}',
-              costo='{$prod['costo']}'";
-                $this->conexion->query($sql);
-            }
+                         foreach ($productos as $prod) {
+                 // Verificar si el producto existe en productosv2
+                 $sql_check = "SELECT idproductosv2 FROM productosv2 WHERE idproductosv2 = '{$prod['productoid']}'";
+                 $check_result = $this->conexion->query($sql_check);
+                 
+                 if ($check_result && $check_result->num_rows > 0) {
+                     $sql = "insert into productos_cotis set id_coti='{$_POST['cotiId']}',
+                   id_producto='{$prod['productoid']}',
+                   cantidad='{$prod['cantidad']}',
+                   precio='{$prod['precioVenta']}',
+                   costo='{$prod['costo']}'";
+                     $this->conexion->query($sql);
+                 }
+             }
         }
 
         return json_encode($respuesta);
@@ -103,9 +110,9 @@ class CotizacionesController extends Controller
         $data["cliente_dir2"] = $clienteR['direccion2'] ? $clienteR['direccion2'] : '';
 
         $data["productos"] = [];
-        $sql = "SELECT p.codigo,pc.id_producto,pc.cantidad,p.descripcion,p.codsunat,p.precio,p.precio2,p.precio3,p.costo,pc.precio AS precioVenta,p.precio4,p.precio_unidad
+        $sql = "SELECT p.codigo,pc.id_producto,pc.cantidad,p.nombre as descripcion,p.codigo as codsunat,p.precio_venta as precio,p.precio_venta as precio2,p.precio_venta as precio3,p.precio as costo,pc.precio AS precioVenta,p.precio_venta as precio4,p.precio_venta as precio_unidad
         FROM productos_cotis pc
-        JOIN productos p ON p.id_producto = pc.id_producto
+        JOIN productosv2 p ON p.idproductosv2 = pc.id_producto
         WHERE pc.id_coti = '$cotizacion'";
         $productosR = $this->conexion->query($sql);
 
@@ -148,11 +155,11 @@ class CotizacionesController extends Controller
             datos='{$_POST['nom_cli']}',
             direccion='{$_POST['dir_cli']}',
             direccion2='{$_POST['dir2_cli']}',
-            id_empresa='{$_SESSION['id_empresa']}'";
+            id_empresa='12'";
             $this->conexion->query($sql);
             $idCli = $this->conexion->insert_id;
         }
-        $sql = "select * from cotizaciones where id_empresa='{$_SESSION['id_empresa']}' order by numero desc limit 1";
+        $sql = "select * from cotizaciones where id_empresa='12' order by numero desc limit 1";
 
         $numCoti = 1;
 
@@ -160,7 +167,13 @@ class CotizacionesController extends Controller
             $numCoti = $roTemp["numero"] + 1;
         }
 
-        $sql = "insert into cotizaciones set id_tido='{$_POST['tipo_doc']}',
+        // Obtener el siguiente ID de cotización
+        $sql_id = "select max(cotizacion_id) as max_id from cotizaciones";
+        $result_id = $this->conexion->query($sql_id)->fetch_assoc();
+        $next_id = ($result_id['max_id'] ?? 0) + 1;
+
+        $sql = "insert into cotizaciones set cotizacion_id='$next_id',
+  id_tido='{$_POST['tipo_doc']}',
   moneda='{$_POST['moneda']}',
   cm_tc='{$_POST['tc']}',
   id_tipo_pago='{$_POST['tipo_pago']}',
@@ -172,11 +185,12 @@ class CotizacionesController extends Controller
     numero='$numCoti',
   estado='0',
   usar_precio='{$_POST['usar_precio']}',
-   sucursal='{$_SESSION['sucursal']}',
-  id_empresa='{$_SESSION['id_empresa']}'";
+   sucursal='1',
+  id_empresa='12',
+  id_usuario='1'";
 
-        if ($this->conexion->query($sql)) {
-            $idCoti = $this->conexion->insert_id;
+                if ($this->conexion->query($sql)) {
+            $idCoti = $next_id; // Usar el ID que generamos manualmente
 
             $listaCuotas = json_decode($_POST['dias_lista'], true);
             $listaProd = json_decode($_POST['listaPro'], true);
@@ -188,16 +202,31 @@ class CotizacionesController extends Controller
                 $this->conexion->query($sql);
             }
             foreach ($listaProd as $prod) {
-                $sql = "insert into productos_cotis set id_coti='$idCoti',
-              id_producto='{$prod['productoid']}',
-              cantidad='{$prod['cantidad']}',
-              precio='{$prod['precioVenta']}',
-              costo='{$prod['costo']}'";
-                $this->conexion->query($sql);
+                // Verificar si el producto existe en productosv2
+                $sql_check = "SELECT idproductosv2 FROM productosv2 WHERE idproductosv2 = '{$prod['productoid']}'";
+                $check_result = $this->conexion->query($sql_check);
+                
+                if ($check_result && $check_result->num_rows > 0) {
+                    $sql = "insert into productos_cotis set id_coti='$idCoti',
+                  id_producto='{$prod['productoid']}',
+                  cantidad='{$prod['cantidad']}',
+                  precio='{$prod['precioVenta']}',
+                  costo='{$prod['costo']}'";
+                    $insert_result = $this->conexion->query($sql);
+                    if (!$insert_result) {
+                        $respuesta['error'] = "Error al insertar producto: " . $this->conexion->error;
+                        return json_encode($respuesta);
+                    }
+                } else {
+                    $respuesta['error'] = "Producto con ID {$prod['productoid']} no encontrado en productosv2";
+                    return json_encode($respuesta);
+                }
             }
 
 
             $respuesta['res'] = true;
+        } else {
+            $respuesta['error'] = "Error al insertar cotización: " . $this->conexion->error;
         }
         return json_encode($respuesta);
     }
@@ -209,7 +238,7 @@ class CotizacionesController extends Controller
         from cotizaciones as v
             LEFT JOIN documentos_sunat ds on v.id_tido = ds.id_tido
             LEFT JOIN clientes c on v.id_cliente = c.id_cliente
-        where v.id_empresa = '12'  and v.sucursal ='{$_SESSION['sucursal']}' and v.estado<>'2'
+        where v.id_empresa = '12'  and v.sucursal ='1' and v.estado<>'2'
         order by v.fecha asc ";
         //echo $sql;
 
