@@ -390,6 +390,23 @@ while ($row = $result->fetch_assoc()) {
             text-overflow: ellipsis;
         }
 
+        /* Solución para nombres largos en columna 2 (Nombre) */
+        #tabla_cuotas_vencidas td:nth-child(2) {
+            max-width: 200px !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-wrap: break-word;
+        }
+
+        /* Tooltip para mostrar nombre completo al hacer hover */
+        #tabla_cuotas_vencidas td:nth-child(2):hover {
+            position: relative;
+            overflow: visible;
+            white-space: normal;
+            z-index: 1000;
+        }
+
         /* Corregir espacios laterales en DataTable */
         .dataTables_wrapper {
             width: 100% !important;
@@ -534,8 +551,9 @@ $(document).ready(function() {
                 width: "60px"
             },
             { 
-                targets: [1], // Nombre
-                width: "25%"
+                targets: [1], // Nombre - MODIFICADO para controlar overflow
+                width: "200px",  // Cambiado de "25%" a ancho fijo
+                className: "text-truncate"
             },
             { 
                 targets: [2], // Nº Unidad
@@ -588,6 +606,12 @@ $(document).ready(function() {
             {
                 data: "nombre_completo",
                 class: "text-center",
+                render: function(data, type, row) {
+                    if (type === 'display' && data && data.length > 25) {
+                        return `<span title="${data}" class="truncated-text">${data.substring(0, 25)}...</span>`;
+                    }
+                    return data || '';
+                }
             },
             {
                 data: null,
