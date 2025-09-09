@@ -38,6 +38,7 @@ class GruposFinanciamientoController extends Controller
             $fechaInicio = $_POST["fecha_inicio"] ?? null; // 🔹 Recibir fecha de inicio
             $fechaFin = $_POST["fecha_fin"] ?? null;
             $tipoVehicular = $_POST["tipo_vehicular"] ?? null;
+            $estado = $_POST["estado"] ?? "activo";
 
             if (empty($nombrePlan) || empty($frecuenciaPago) || empty($moneda)) { 
                 echo json_encode(["success" => false, "message" => "Todos los campos son obligatorios excepto la cuota inicial, monto de cuota y cantidad de cuotas."]);
@@ -45,7 +46,7 @@ class GruposFinanciamientoController extends Controller
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
-            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular);
+            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado);
 
            if ($idPlan) {
                 // Verificar si hay variantes para guardar
@@ -115,13 +116,14 @@ class GruposFinanciamientoController extends Controller
             $fechaFin = $_POST['fecha_fin'] !== null ? $_POST['fecha_fin'] : null;
             // Capturar tipo vehicular del formulario
             $tipoVehicular = $_POST['tipo_vehiculo'] ?? null;
+            $estado = $_POST['estado'] ?? 'activo';
 
             try {
                 $modelo = new GrupoFinanciamientoModel();  // Instanciar correctamente el modelo antes de usarlo (EDITADO)
 
                 $modelo->editarGrupo(  
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
-                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular
+                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes
@@ -167,6 +169,26 @@ class GruposFinanciamientoController extends Controller
         }
     }
 
+    public function obtenerEstadoPlan() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $idPlan = $_POST['idplan_financiamiento'] ?? null;
+            
+            if (!$idPlan) {
+                echo json_encode(['status' => 'error', 'message' => 'ID de plan requerido']);
+                return;
+            }
+            
+            try {
+                $modelo = new GrupoFinanciamientoModel();
+                $estado = $modelo->obtenerEstadoPlan($idPlan);
+                
+                echo json_encode(['status' => 'success', 'estado' => $estado]);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+        }
+    }
+    
     public function obtenerVariantesGrupo() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idPlan = isset($_POST['idplan_financiamiento']) ? $_POST['idplan_financiamiento'] : null;

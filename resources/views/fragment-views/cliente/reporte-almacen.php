@@ -179,6 +179,7 @@
                 subtipoSelect.innerHTML += "<option value='Venta'>Venta</option>";
                 subtipoSelect.innerHTML += "<option value='Financiamiento'>Financiamiento</option>";
                 subtipoSelect.innerHTML += "<option value='Ajuste'>Ajuste de Inventario</option>";
+                subtipoSelect.innerHTML += "<option value='Asignación Automática'>Asignación Automática</option>";
             }
         }
 

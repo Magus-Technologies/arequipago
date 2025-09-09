@@ -52,9 +52,11 @@ class ReportesMovimientosController extends Controller
         $buscarProducto = $_GET['buscarProducto'] ?? null;
         $filtroUsuario = $_GET['filtroUsuario'] ?? null;
     
-        // Ajuste para la nueva opción "Ajuste de Inventario"
+        // Ajuste para opciones que tienen nombres diferentes en el frontend vs backend
         if ($subtipoMovimiento === "Ajuste de Inventario") { 
             $subtipoMovimiento = "Ajuste"; // Cambiar para que coincida con la base de datos
+        } elseif ($subtipoMovimiento === "Asignación Automática") {
+            $subtipoMovimiento = "Asignación Automática"; // Mantener el nombre tal como está en la BD
         }
     
         // Inicializar resultados

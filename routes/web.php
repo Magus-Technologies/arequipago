@@ -1,6 +1,5 @@
 <?php
 
-
 Route::get('/login',"ViewController@login");
 Route::get('/logout',"UsuarioController@logout");
 Route::get('/ge/bar/code',"ConsultaDelcontroller@generarBarCode");
@@ -292,7 +291,8 @@ Route::post('/exportarComisiones', 'ComisionesController@exportarComisiones');
 Route::post('/obtenerDetalleComision', 'ComisionesController@obtenerDetalleComision');
 Route::get('/chargedUsuarios', 'ComisionesController@chargedUsuarios'); 
 Route::get('/numUnidadLima', 'RegistrarConductorController@obtenerNumeroLibreLima');
-
+Route::post('/cambiarEstadoComision', 'ComisionesController@cambiarEstadoComision');
+Route::post('eliminarComision', 'ComisionController@eliminarComision');
 
 
 
@@ -365,3 +365,7 @@ Route::post('/verificarCodigoAsociado', 'FinanciamientoController@verificarCodig
 Route::post('/toggleDesvincularConductor', 'ConductorController@toggleDesvincularConductor');
 
 Route::post('verificar-stock-logo', 'ProductosController@verificarStockLogo');
+Route::post('/validar-conductor-logo-yango', 'VentasController@validarConductorLogoYango');
+
+Route::post('/getEstadoPlan', 'GruposFinanciamientoController@obtenerEstadoPlan');
+Route::post('/guardarPago', 'ClientesController@guardarPago');

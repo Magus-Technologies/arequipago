@@ -297,7 +297,9 @@ class GenerarContratosController extends controller
       private function generarContratoExcelVehiculo($financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas, $nombrePersona, $requisitosModel)
       {
       
-          ini_set('memory_limit', '512M');
+          // 😊 Aumentar límite de memoria y optimizar configuración para Excel
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', 300); // 5 minutos
 
           $GrupoFinanciamientoModel = new GrupoFinanciamientoModel();
           // Ruta al archivo Excel de plantilla
@@ -327,8 +329,13 @@ class GenerarContratosController extends controller
           }
           
           // Obtener datos del grupo de financiamiento
-          $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
-          // Llenar el Excel con los datos
+            $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
+
+            // 😊 Obtener tipo vehicular para determinar la moneda correcta
+            $idGrupoFinanciamiento = $financiamiento['grupo_financiamiento'];
+            $tipoVehicular = $GrupoFinanciamientoModel->getTipoVehicular($idGrupoFinanciamiento);
+
+            // Llenar el Excel con los datos
           
           // 1. Número de teléfono - Celda H6
           $worksheet->setCellValue('H6', $persona['telefono'] ?? '');
@@ -400,10 +407,21 @@ class GenerarContratosController extends controller
           // 19. Monto de inscripción - Celda I27
           $worksheet->setCellValue('I27', $financiamiento['monto_inscrip'] ?? '0.00');
           
-          // 20. Marcar documentos según estados
+          // 😊 20. Configurar moneda en celda H27 según tipo vehicular con alineación
+            if ($tipoVehicular === 'moto') {
+                // Para motos usar soles (S/)
+                $worksheet->setCellValue('H27', 'S/');
+                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+            } else {
+                // Para vehículos usar dólares (US$)
+                $worksheet->setCellValue('H27', 'US$');
+                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+            }
+
+          // 21. Marcar documentos según estados
           $this->marcarDocumentosEnExcel($worksheet, $estadosRequisitos, $tipoPersona);
 
-          // 21. Fecha actual con formato personalizado - Celda C44
+          // 22. Fecha actual con formato personalizado - Celda C44
             setlocale(LC_TIME, 'es_ES.UTF-8'); // Para sistemas que soportan UTF-8 (Linux/macOS)
             $fechaFormateada = strftime('%d de %B del %Y', strtotime(date('Y-m-d')));
 

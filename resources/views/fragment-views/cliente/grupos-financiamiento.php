@@ -309,6 +309,22 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Checkbox Visibilidad del Grupo -->
+                                <div class="mb-3">
+                                    <div class="form-check form-switch d-flex align-items-center">
+                                        <input class="form-check-input me-3" type="checkbox" id="estadoActivo" name="estado" checked>
+                                        <label class="form-check-label d-flex align-items-center" for="estadoActivo">
+                                            <i class="fas fa-eye me-2" id="estadoIcon" style="color: #28a745;"></i>
+                                            <span id="estadoTexto" style="font-weight: 500; color: #28a745;">Grupo Visible</span>
+                                        </label>
+                                    </div>
+                                    <div style="height: 7px;"></div>
+                                    <small class="form-text text-muted ms-4" style="font-size: 0.83rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Las variantes heredarán esta visibilidad automáticamente
+                                    </small>
+                                </div>
                             </div>
                         </div>
 
@@ -428,6 +444,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                                         id="detalle-monto-sin-interes"></span></p>
                                                 <p><strong>Tipo Vehicular:</strong> <span
                                                         id="detalle-tipo-vehicular"></span></p>
+                                                <p><strong>Visibilidad:</strong> <span id="detalle-estado"></span></p>
                                             </div>
                                         </div>
                                         <div class="row">
@@ -481,22 +498,52 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
         }
 
         // Nueva lógica para el checkbox vehicular
-        document.addEventListener('DOMContentLoaded', function() {
-            const esVehicularCheckbox = document.getElementById('esVehicularCheckbox');
-            if (esVehicularCheckbox) {
-                esVehicularCheckbox.addEventListener('change', function() {
-                    const isChecked = this.checked;
-                    const radioAuto = document.getElementById('radioAuto');
-                    const radioMoto = document.getElementById('radioMoto');
+        $(document).ready(function() {
+            const esVehicularCheckbox = $('#esVehicularCheckbox');
+            
+            if (esVehicularCheckbox.length) {
+                esVehicularCheckbox.on('change', function() {
+                    const isChecked = $(this).prop('checked');
+                    const radioAuto = $('#radioAuto');
+                    const radioMoto = $('#radioMoto');
+                    
+                    console.log('Checkbox marcado:', isChecked);
+                    console.log('radioAuto encontrado:', radioAuto.length);
+                    console.log('radioMoto encontrado:', radioMoto.length);
 
-                    radioAuto.disabled = !isChecked;
-                    radioMoto.disabled = !isChecked;
+                    if (radioAuto.length && radioMoto.length) {
+                        // Habilitar/deshabilitar los radio buttons
+                        radioAuto.prop('disabled', !isChecked);
+                        radioMoto.prop('disabled', !isChecked);
+                        
+                        console.log('radioAuto disabled:', radioAuto.prop('disabled'));
+                        console.log('radioMoto disabled:', radioMoto.prop('disabled'));
 
-                    if (!isChecked) {
-                        radioAuto.checked = false;
-                        radioMoto.checked = false;
+                        if (!isChecked) {
+                            // Si se desmarca el checkbox, limpiar las selecciones
+                            radioAuto.prop('checked', false);
+                            radioMoto.prop('checked', false);
+                        }
+                        
+                        // Mostrar u ocultar las fechas según el estado del checkbox
+                        const fechasDiv = $('#fechasVehicular');
+                        if (isChecked) {
+                            fechasDiv.css('display', 'flex');
+                        } else {
+                            fechasDiv.css('display', 'none');
+                        }
+                    } else {
+                        console.error('No se encontraron los radio buttons');
                     }
                 });
+            } else {
+                console.error('No se encontró el checkbox vehicular');
+            }
+
+            // Manejar cambio de estado
+            const estadoCheckbox = $('#estadoActivo');
+            if (estadoCheckbox.length) {
+                estadoCheckbox.on('change', toggleEstadoGrupo);
             }
         });
 
@@ -520,6 +567,31 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
             }
 
             return null; // Ninguno está seleccionado
+        }
+
+        // Función para manejar el cambio de visibilidad del grupo
+        function toggleEstadoGrupo() {
+            const checkbox = document.getElementById('estadoActivo');
+            const icon = document.getElementById('estadoIcon');
+            const texto = document.getElementById('estadoTexto');
+            
+            // Verificar que todos los elementos existen antes de modificarlos
+            if (!checkbox || !icon || !texto) {
+                console.error('No se encontraron todos los elementos del estado del grupo');
+                return;
+            }
+            
+            if (checkbox.checked) {
+                icon.className = 'fas fa-eye me-2';
+                icon.style.color = '#28a745';
+                texto.textContent = 'Grupo Visible';
+                texto.style.color = '#28a745';
+            } else {
+                icon.className = 'fas fa-eye-slash me-2';
+                icon.style.color = '#dc3545';
+                texto.textContent = 'Grupo Oculto';
+                texto.style.color = '#dc3545';
+            }
         }
 
 
@@ -649,6 +721,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
             $('#detalle-monto').text(plan.monto ? `${plan.moneda} ${plan.monto}` : 'N/A');
             $('#detalle-monto-sin-interes').text(plan.monto_sin_interes ? `${plan.moneda} ${plan.monto_sin_interes}` : 'N/A');
             $('#detalle-tipo-vehicular').text(plan.tipo_vehicular || 'No especificado');
+            $('#detalle-estado').text(plan.estado === 'activo' ? 'Visible' : 'Oculto');
             $('#detalle-fecha-inicio').text(plan.fecha_inicio || 'No especificado');
             $('#detalle-fecha-fin').text(plan.fecha_fin || 'No especificado');
 
@@ -1051,6 +1124,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 let tipoVehicular = getTipoVehicular();
                 let fechaInicio = document.querySelector('input[name="fecha_inicio"]').value;
                 let fechaFin = document.querySelector('input[name="fecha_fin"]').value;
+                let estado = document.querySelector('input[name="estado"]').checked ? 'activo' : 'inactivo';
 
                 let formData = new FormData();
                 formData.append("nombre_plan", nombrePlan);
@@ -1069,6 +1143,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     formData.append("fecha_inicio", fechaInicio);
                     formData.append("fecha_fin", fechaFin);
                 }
+                formData.append("estado", estado);
 
                 // Agregar variantes al formData si existen
                 if (variantes.length > 0) {
@@ -1117,6 +1192,9 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                     mostrarVariantes();
                                     $('#variantesContainer').empty(); // Limpia las tarjetas de variantes
                                     currentVariantes = []; // Limpia la variable local de variantes
+                                    // Resetear estado a activo
+                                    document.getElementById("estadoActivo").checked = true;
+                                    toggleEstadoGrupo();
                                 } else {
                                     Swal.fire({
                                         icon: "error",
@@ -1244,6 +1322,24 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
 
                 $('#fecha_inicio').val(fechaInicio !== "No especificado" ? fechaInicio : '');
                 $('#fecha_fin').val(fechaFin !== "No especificado" ? fechaFin : '');
+
+                // Obtener y establecer el estado del plan
+                $.ajax({
+                    url: '/arequipago/getEstadoPlan',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    success: function (result) {
+                        const estadoCheckbox = $('#estadoActivo');
+                        if (result.status === 'success') {
+                            estadoCheckbox.prop('checked', result.estado === 'activo');
+                            toggleEstadoGrupo();
+                        }
+                    },
+                    error: function () {
+                        console.error("Error al obtener estado del plan.");
+                    }
+                });
 
                 // Lógica para manejar el estado del plan vehicular al editar
                 $.ajax({
@@ -1611,6 +1707,9 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 $('#btnAgregarVariante').show();
                 $("#tituloEdicion").remove();
                 $("#tituloRegistro").show();
+                // Resetear estado a activo
+                document.getElementById("estadoActivo").checked = true;
+                toggleEstadoGrupo();
 
                 // Limpiar mensajes de error
                 $(".error-message").hide();
@@ -1663,6 +1762,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     fecha_inicio: $('#fecha_inicio').val() || null,
                     fecha_fin: $('#fecha_fin').val() || null,
                     tipo_vehicular: getTipoVehicular() === 'auto' ? 'vehiculo' : getTipoVehicular(), // Mapear 'auto' a 'vehiculo'
+                    estado: $('#estadoActivo').is(':checked') ? 'activo' : 'inactivo',
                     variantes: currentVariantes,
                     nuevas_variantes: currentVariantes.filter(v => v.es_nueva === true)
 
@@ -1696,6 +1796,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                     // Añade esta línea para limpiar las variantes mostradas
                                     $('#variantesContainer').empty(); // Limpia las tarjetas de variantes visibles
                                     currentVariantes = []; // Limpia la variable local de variantes
+                                    toggleEstadoGrupo();
                                     selectedVarianteId = null;
                                     selectedPlanId = null;
 
