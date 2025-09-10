@@ -46,104 +46,104 @@ class Productov2
     }
 
         
- public function insertar(
-        $nombre, 
-        $codigo, 
-        $cantidad, 
-        $categoria, 
-        $ruc, 
-        $razon_social, 
-        $fecha_vencimiento = null, 
-        $fecha_registro = null,
-        $tipo_producto, 
-        $cantidad_unidad = null, 
-        $unidad_medida = null,
-        $precio = null,
-        $guia_remision = null,
-        $codigo_barra = null,
-        $precio_venta = null
-    ) {
-        try {
-            // Si ambos est�n vac�os, dejarlos en NULL
-        if (empty($codigo) && empty($codigo_barra)) {
-            $codigo = null;
-            $codigo_barra = null;
-        } 
-        // Si $codigo tiene un valor, $codigo_barra se vuelve NULL
-        elseif (!empty($codigo)) {
-            $codigo_barra = null;
-        } 
-        // Si $codigo est� vac�o pero $codigo_barra tiene valor, $codigo se vuelve NULL
-        else {
-            $codigo = null;
-        }
-
-        // ?? NUEVO: Convertir '' en NULL para fecha_vencimiento
-        if ($fecha_vencimiento === '') { // ? L�nea agregada
-            $fecha_vencimiento = null;    // ? L�nea agregada
-        }
-
-        // ?? NUEVO: Convertir '' en NULL para fecha_registro
-        if ($fecha_registro === '') {    // ? L�nea agregada
-            $fecha_registro = null;      // ? L�nea agregada
-        }
-
-         // ?? NUEVO: Convertir '' en NULL para cantidad_unidad
-        if ($cantidad_unidad === '' || $cantidad_unidad === 'null') {   // ? L�nea agregada
-            $cantidad_unidad = null;                                    // ? L�nea agregada
-        }
-
-        // ?? NUEVO: Convertir '' en NULL para precio
-        if ($precio === '' || $precio === 'null') {     // ? L�nea agregada
-            $precio = null;                             // ? L�nea agregada
-        }
-
-        // ?? NUEVO: Convertir '' en NULL para precio_venta
-        if ($precio_venta === '' || $precio_venta === 'null') { // ? L�nea agregada
-            $precio_venta = null;                                // ? L�nea agregada
-        }
-
-            // Modificaci�n en la consulta SQL: Se incluyen todos los campos
-            $sql = "INSERT INTO productosv2 (nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
-    
-            // Preparar la consulta
-            $stmt = $this->conectar->prepare($sql);
-    
-            // Enlazar par�metros en el orden correcto
-            $stmt->bind_param(
-                "ssissssssssssss",
-                
-
-                $nombre, 
-                $codigo, 
-                $cantidad, 
-                $categoria, 
-                $ruc, 
-                $razon_social, 
-                $fecha_vencimiento, 
-                $tipo_producto, 
-                $cantidad_unidad, 
-                $unidad_medida,
-                $precio,
-                $fecha_registro,
-                $guia_remision,
-                $codigo_barra,
-                $precio_venta
-            );
-    
-            // Ejecutar la consulta
-            if (!$stmt->execute()) {
-                throw new Exception("Error al insertar el producto: " . $stmt->error); // Mantener el manejo de errores
+    public function insertar(
+            $nombre, 
+            $codigo, 
+            $cantidad, 
+            $categoria, 
+            $ruc, 
+            $razon_social, 
+            $fecha_vencimiento = null, 
+            $fecha_registro = null,
+            $tipo_producto, 
+            $cantidad_unidad = null, 
+            $unidad_medida = null,
+            $precio = null,
+            $guia_remision = null,
+            $codigo_barra = null,
+            $precio_venta = null
+        ) {
+            try {
+                // Si ambos est�n vac�os, dejarlos en NULL
+            if (empty($codigo) && empty($codigo_barra)) {
+                $codigo = null;
+                $codigo_barra = null;
+            } 
+            // Si $codigo tiene un valor, $codigo_barra se vuelve NULL
+            elseif (!empty($codigo)) {
+                $codigo_barra = null;
+            } 
+            // Si $codigo est� vac�o pero $codigo_barra tiene valor, $codigo se vuelve NULL
+            else {
+                $codigo = null;
             }
-    
-            return $this->conectar->insert_id; 
-    
-        } catch (Exception $e) {
-            error_log("Error en Producto::insertar(): " . $e->getMessage()); // Loguear el error
-            throw $e; // Re-lanzar la excepci�n para manejo en el controlador
-        }
-    }  
+
+            // ?? NUEVO: Convertir '' en NULL para fecha_vencimiento
+            if ($fecha_vencimiento === '') { // ? L�nea agregada
+                $fecha_vencimiento = null;    // ? L�nea agregada
+            }
+
+            // ?? NUEVO: Convertir '' en NULL para fecha_registro
+            if ($fecha_registro === '') {    // ? L�nea agregada
+                $fecha_registro = null;      // ? L�nea agregada
+            }
+
+            // ?? NUEVO: Convertir '' en NULL para cantidad_unidad
+            if ($cantidad_unidad === '' || $cantidad_unidad === 'null') {   // ? L�nea agregada
+                $cantidad_unidad = null;                                    // ? L�nea agregada
+            }
+
+            // ?? NUEVO: Convertir '' en NULL para precio
+            if ($precio === '' || $precio === 'null') {     // ? L�nea agregada
+                $precio = null;                             // ? L�nea agregada
+            }
+
+            // ?? NUEVO: Convertir '' en NULL para precio_venta
+            if ($precio_venta === '' || $precio_venta === 'null') { // ? L�nea agregada
+                $precio_venta = null;                                // ? L�nea agregada
+            }
+
+                // Modificaci�n en la consulta SQL: Se incluyen todos los campos
+                $sql = "INSERT INTO productosv2 (nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, estado) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
+        
+                // Preparar la consulta
+                $stmt = $this->conectar->prepare($sql);
+        
+                // Enlazar par�metros en el orden correcto
+                $stmt->bind_param(
+                    "ssissssssssssss",
+                    
+
+                    $nombre, 
+                    $codigo, 
+                    $cantidad, 
+                    $categoria, 
+                    $ruc, 
+                    $razon_social, 
+                    $fecha_vencimiento, 
+                    $tipo_producto, 
+                    $cantidad_unidad, 
+                    $unidad_medida,
+                    $precio,
+                    $fecha_registro,
+                    $guia_remision,
+                    $codigo_barra,
+                    $precio_venta
+                );
+        
+                // Ejecutar la consulta
+                if (!$stmt->execute()) {
+                    throw new Exception("Error al insertar el producto: " . $stmt->error); // Mantener el manejo de errores
+                }
+        
+                return $this->conectar->insert_id; 
+        
+            } catch (Exception $e) {
+                error_log("Error en Producto::insertar(): " . $e->getMessage()); // Loguear el error
+                throw $e; // Re-lanzar la excepci�n para manejo en el controlador
+            }
+        }  
  
         public function existeCodigoBarras($codigo)
         {
@@ -168,7 +168,7 @@ class Productov2
             return $row['total'] > 0;
         }              
 
-    public function obtenerProductos($pagina = 1, $productosPorPagina = 5)
+        public function obtenerProductos($pagina = 1, $productosPorPagina = 5)
         {
             try {
                 // Calcular el offset para la paginación
@@ -226,341 +226,341 @@ class Productov2
             }
         }
 
-    //Usado para el módulo Financiamiento y ventas.
-    public function buscarProductosPorNombreOCodigo($searchTerm) {
-        try {
+        //Usado para el módulo Financiamiento y ventas.
+        public function buscarProductosPorNombreOCodigo($searchTerm) {
+            try {
 
+                $productos = [];
+            
+                $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra
+                    FROM productosv2
+                    WHERE (nombre LIKE ? OR codigo LIKE ? OR codigo_barra LIKE ?)
+                    AND estado != '0'";
+
+                $stmt = $this->conectar->prepare($sql);
+                $likeTerm = "%" . $searchTerm . "%";
+                $stmt->bind_param("sss", $likeTerm, $likeTerm, $likeTerm);
+        
+                $stmt->execute();
+                $result = $stmt->get_result();
+        
+                while ($row = $result->fetch_assoc()) {
+                    $productos[] = $row;
+                }
+
+                // Nueva lógica para buscar por IMEI en la tabla caracteristicas_producto
+                $sqlIMEI = "SELECT idproductosv2 FROM caracteristicas_producto 
+                WHERE nombre_caracteristicas = 'Nro IMEI' 
+                AND valor_caracteristica LIKE ?";// Buscar IMEI exacto
+
+                $stmtIMEI = $this->conectar->prepare($sqlIMEI);
+                $stmtIMEI->bind_param("s", $likeTerm); // Usar LIKE para búsqueda 
+                $stmtIMEI->execute();
+                $resultIMEI = $stmtIMEI->get_result();
+
+                while ($rowIMEI = $resultIMEI->fetch_assoc()) {
+                $idProducto = $rowIMEI['idproductosv2'];
+
+                // Obtener el producto con el ID encontrado
+                $sqlProducto = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra 
+                                FROM productosv2 WHERE idproductosv2 = ?";
+
+                $stmtProducto = $this->conectar->prepare($sqlProducto);
+                $stmtProducto->bind_param("i", $idProducto);
+                $stmtProducto->execute();
+                $resultProducto = $stmtProducto->get_result();
+
+                if ($rowProducto = $resultProducto->fetch_assoc()) {
+                    $productos[] = $rowProducto;
+                }
+                }
+
+                $caracteristicaModel = new CaracteristicaProducto();
+                // Iterar sobre los productos para añadir las características "aro" y "perfil"
+                foreach ($productos as &$producto) { // Usamos referencia (&) para modificar directamente el array
+                    $caracteristicas = $caracteristicaModel->obtenerCaracteristicas($producto['idproductosv2']); // Obtener características por producto
+                    //var_dump(['caracteristicas' => $caracteristicas]);
+
+                    foreach ($caracteristicas as $caracteristica) {
+                        if ($caracteristica['nombre_caracteristicas'] === 'aro') {
+                            $producto['aro'] = $caracteristica['valor_caracteristica']; // Añadido: Asignar aro
+                        }
+                        if ($caracteristica['nombre_caracteristicas'] === 'perfil') {
+                            $producto['perfil'] = $caracteristica['valor_caracteristica']; // Añadido: Asignar perfil
+                        }
+                    }
+                }
+        
+                return $productos;
+            } catch (Exception $e) {
+                error_log("Error en ProductoV2::buscarProductosPorNombreOCodigo(): " . $e->getMessage());
+                throw $e;
+            }
+        }
+
+        public function obtenerTipoProductoPorId($idProducto)
+        {
+            $query = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
+            $stmt = $this->conectar->prepare($query);
+            $stmt->bind_param("i", $idProducto);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                return $row['categoria'];
+            }
+
+            return null;
+        }
+
+        public function getPlanesMensuales() {  // Cambié el método a no ser estático para usar la conexión de la clase
+            // Consulta SQL para obtener los productos con sus características
+            $query = "
+                SELECT p.idproductosv2, p.precio, 
+                    MAX(CASE WHEN c.nombre_caracteristicas = 'operadora' THEN c.valor_caracteristica END) AS operadora,
+                    MAX(CASE WHEN c.nombre_caracteristicas = 'plan_mensual' THEN c.valor_caracteristica END) AS plan_mensual
+                FROM productosv2 p
+                LEFT JOIN caracteristicas_producto c ON p.idproductosv2 = c.idproductosv2
+                WHERE p.categoria = 'Chip (Linea corporativa)'
+                GROUP BY p.idproductosv2, p.precio
+            ";
+
+            
+            // Ejecutamos la consulta
+            $result = $this->conectar->query($query);  // Usamos $this->conectar para la conexión
+
+            
+
+            
+
+
+            // Verificamos si hay resultados
             $productos = [];
-        
-            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra
-                FROM productosv2
-                WHERE (nombre LIKE ? OR codigo LIKE ? OR codigo_barra LIKE ?)
-                AND estado != '0'";
-
-            $stmt = $this->conectar->prepare($sql);
-            $likeTerm = "%" . $searchTerm . "%";
-            $stmt->bind_param("sss", $likeTerm, $likeTerm, $likeTerm);
-    
-            $stmt->execute();
-            $result = $stmt->get_result();
-    
-            while ($row = $result->fetch_assoc()) {
-                $productos[] = $row;
-            }
-
-            // Nueva lógica para buscar por IMEI en la tabla caracteristicas_producto
-            $sqlIMEI = "SELECT idproductosv2 FROM caracteristicas_producto 
-            WHERE nombre_caracteristicas = 'Nro IMEI' 
-            AND valor_caracteristica LIKE ?";// Buscar IMEI exacto
-
-            $stmtIMEI = $this->conectar->prepare($sqlIMEI);
-            $stmtIMEI->bind_param("s", $likeTerm); // Usar LIKE para búsqueda 
-            $stmtIMEI->execute();
-            $resultIMEI = $stmtIMEI->get_result();
-
-            while ($rowIMEI = $resultIMEI->fetch_assoc()) {
-            $idProducto = $rowIMEI['idproductosv2'];
-
-            // Obtener el producto con el ID encontrado
-            $sqlProducto = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra 
-                            FROM productosv2 WHERE idproductosv2 = ?";
-
-            $stmtProducto = $this->conectar->prepare($sqlProducto);
-            $stmtProducto->bind_param("i", $idProducto);
-            $stmtProducto->execute();
-            $resultProducto = $stmtProducto->get_result();
-
-            if ($rowProducto = $resultProducto->fetch_assoc()) {
-                $productos[] = $rowProducto;
-            }
-            }
-
-            $caracteristicaModel = new CaracteristicaProducto();
-            // Iterar sobre los productos para añadir las características "aro" y "perfil"
-            foreach ($productos as &$producto) { // Usamos referencia (&) para modificar directamente el array
-                $caracteristicas = $caracteristicaModel->obtenerCaracteristicas($producto['idproductosv2']); // Obtener características por producto
-                //var_dump(['caracteristicas' => $caracteristicas]);
-
-                foreach ($caracteristicas as $caracteristica) {
-                    if ($caracteristica['nombre_caracteristicas'] === 'aro') {
-                        $producto['aro'] = $caracteristica['valor_caracteristica']; // Añadido: Asignar aro
-                    }
-                    if ($caracteristica['nombre_caracteristicas'] === 'perfil') {
-                        $producto['perfil'] = $caracteristica['valor_caracteristica']; // Añadido: Asignar perfil
-                    }
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $productos[] = [
+                        'idproductosv2' => $row['idproductosv2'],
+                        'precio' => $row['precio'],
+                        'operadora' => $row['operadora'],
+                        'plan_mensual' => $row['plan_mensual']
+                    ];
                 }
-            }
-    
+            } 
+        
+            // Devolvemos los productos con sus características
             return $productos;
-        } catch (Exception $e) {
-            error_log("Error en ProductoV2::buscarProductosPorNombreOCodigo(): " . $e->getMessage());
-            throw $e;
-        }
-    }
-
-    public function obtenerTipoProductoPorId($idProducto)
-    {
-        $query = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
-        $stmt = $this->conectar->prepare($query);
-        $stmt->bind_param("i", $idProducto);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($row = $result->fetch_assoc()) {
-            return $row['categoria'];
         }
 
-        return null;
-    }
-
-    public function getPlanesMensuales() {  // Cambié el método a no ser estático para usar la conexión de la clase
-        // Consulta SQL para obtener los productos con sus características
-        $query = "
-            SELECT p.idproductosv2, p.precio, 
-                   MAX(CASE WHEN c.nombre_caracteristicas = 'operadora' THEN c.valor_caracteristica END) AS operadora,
-                   MAX(CASE WHEN c.nombre_caracteristicas = 'plan_mensual' THEN c.valor_caracteristica END) AS plan_mensual
-            FROM productosv2 p
-            LEFT JOIN caracteristicas_producto c ON p.idproductosv2 = c.idproductosv2
-            WHERE p.categoria = 'Chip (Linea corporativa)'
-            GROUP BY p.idproductosv2, p.precio
-        ";
-
-        
-        // Ejecutamos la consulta
-        $result = $this->conectar->query($query);  // Usamos $this->conectar para la conexión
-
-        
-
-        
-
-
-        // Verificamos si hay resultados
-        $productos = [];
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $productos[] = [
-                    'idproductosv2' => $row['idproductosv2'],
-                    'precio' => $row['precio'],
-                    'operadora' => $row['operadora'],
-                    'plan_mensual' => $row['plan_mensual']
-                ];
+        public function guardarProductosMasivos(array $productos)
+        {
+            try {
+                $this->conectar->begin_transaction();
+                
+                $idsProductos = []; // Inicializar array para almacenar IDs
+                
+                foreach ($productos as $producto) {
+                    
+                    //var_dump("Producto recibido:", $producto);
+                    
+                    // Configurar valores predeterminados para campos opcionales
+                    $producto['nombre'] = $producto['nombre'] ?? '';
+                    $producto['codigo'] = $producto['codigo'] ?? null;
+                    $producto['cantidad'] = $producto['cantidad'] ?? 0;
+                    $producto['cantidad_unidad'] = $producto['cantidad_unidad'] ?? 0;
+                    $producto['unidad_medida'] = $producto['unidad_medida'] ?? '';
+                    $producto['tipo_producto'] = $producto['tipo_producto'] ?? '';
+                    $producto['categoria'] = $producto['categoria'] ?? '';
+                    $producto['precio_venta'] = $producto['precio_venta'] ?? 0.0;
+                    $producto['precio'] = $producto['precio'] ?? 0.0;
+                    $producto['estado'] = 1;
+                    
+                    if (!empty($producto['fecha_vencimiento'])) {
+                        $baseDate = new DateTime('1900-01-01');
+                        $baseDate->modify("+{$producto['fecha_vencimiento']} days");
+                        $producto['fecha_vencimiento'] = $baseDate->format('Y-m-d');
+                    } else {
+                        $producto['fecha_vencimiento'] = null;
+                    }
+                    
+                    $producto['ruc'] = $producto['ruc'] ?? '';
+                    $producto['razon_social'] = $producto['razon_social'] ?? '';
+                    
+                    if (!empty($producto['fecha_registro'])) {
+                        $baseDate = new DateTime('1900-01-01');
+                        $baseDate->modify("+{$producto['fecha_registro']} days");
+                        $producto['fecha_registro'] = $baseDate->format('Y-m-d');
+                    } else {
+                        $producto['fecha_registro'] = date('Y-m-d');
+                    }
+                    
+                    $producto['guia_remision'] = $producto['guia_remision'] ?? '';
+                    
+                    // Generar código de barras si no hay código
+                    if (is_null($producto['codigo'])) { // Si no hay código, generar código de barras
+                        $producto['codigo_barra'] = $this->generarCodigoBarrasUnico();
+                    } else {
+                        $producto['codigo_barra'] = null; // No se usa si hay código
+                    }
+                    
+                    //var_dump("Código de barras generado:", $producto['codigo_barra']);
+                    
+                    $stmt = $this->conectar->prepare(
+                        "INSERT INTO productosv2 
+                        (nombre, codigo, cantidad, cantidad_unidad, unidad_medida, tipo_producto, categoria, fecha_vencimiento, ruc, razon_social, precio_venta, precio, fecha_registro, guia_remision, codigo_barra, estado) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    );
+                    
+                    if (!$stmt) {
+                        throw new \Exception("Error en la preparación de la consulta: " . $this->conectar->error);
+                    }
+                    
+                    //var_dump("Statement preparado con éxito");
+                    
+                    $stmt->bind_param(
+                        'ssddssssssddssss',
+                        $producto['nombre'],
+                        $producto['codigo'],
+                        $producto['cantidad'],
+                        $producto['cantidad_unidad'],
+                        $producto['unidad_medida'],
+                        $producto['tipo_producto'],
+                        $producto['categoria'],
+                        $producto['fecha_vencimiento'],
+                        $producto['ruc'],
+                        $producto['razon_social'],
+                        $producto['precio_venta'],
+                        $producto['precio'],
+                        $producto['fecha_registro'],
+                        $producto['guia_remision'],
+                        $producto['codigo_barra'],
+                        $producto['estado']
+                    );
+                    
+                    if (!$stmt->execute()) {
+                        //var_dump("Error en execute():", $stmt->error);
+                        $this->conectar->rollback();
+                        throw new \Exception("Error al insertar producto: " . $stmt->error);
+                    }
+                    
+                    // Usar código si existe, de lo contrario, código de barras
+                    $clave = !empty($producto['codigo']) ? $producto['codigo'] : $producto['codigo_barra']; // Cambio aquí
+                    $idsProductos[$clave] = $stmt->insert_id; // Guardar ID asociado a clave
+                    
+                    //var_dump("Producto insertado:", $clave, "ID:", $stmt->insert_id);
+                }
+                
+                $this->conectar->commit();
+                return $idsProductos;
+                
+            } catch (\Exception $e) {
+                $this->conectar->rollback();
+                //var_dump("Error capturado:", $e->getMessage());
+                return false;
             }
-        } 
-    
-        // Devolvemos los productos con sus características
-        return $productos;
-    }
+        }
 
-    public function guardarProductosMasivos(array $productos)
-    {
-        try {
-            $this->conectar->begin_transaction();
+        private function generarCodigoBarrasUnico()
+        {
+            do {
+                $codigo = rand(100000000000, 999999999999); // Generar un número aleatorio de 12 dígitos
+                $productoModel = new Productov2();
+            } while ($productoModel->existeCodigoBarras($codigo)); // Verificar si el código ya existe en la BD
             
-            $idsProductos = []; // Inicializar array para almacenar IDs
-            
-            foreach ($productos as $producto) {
-                
-                //var_dump("Producto recibido:", $producto);
-                
-                // Configurar valores predeterminados para campos opcionales
-                $producto['nombre'] = $producto['nombre'] ?? '';
-                $producto['codigo'] = $producto['codigo'] ?? null;
-                $producto['cantidad'] = $producto['cantidad'] ?? 0;
-                $producto['cantidad_unidad'] = $producto['cantidad_unidad'] ?? 0;
-                $producto['unidad_medida'] = $producto['unidad_medida'] ?? '';
-                $producto['tipo_producto'] = $producto['tipo_producto'] ?? '';
-                $producto['categoria'] = $producto['categoria'] ?? '';
-                $producto['precio_venta'] = $producto['precio_venta'] ?? 0.0;
-                $producto['precio'] = $producto['precio'] ?? 0.0;
-                $producto['estado'] = 1;
-                
-                if (!empty($producto['fecha_vencimiento'])) {
-                    $baseDate = new DateTime('1900-01-01');
-                    $baseDate->modify("+{$producto['fecha_vencimiento']} days");
-                    $producto['fecha_vencimiento'] = $baseDate->format('Y-m-d');
-                } else {
-                    $producto['fecha_vencimiento'] = null;
-                }
-                
-                $producto['ruc'] = $producto['ruc'] ?? '';
-                $producto['razon_social'] = $producto['razon_social'] ?? '';
-                
-                if (!empty($producto['fecha_registro'])) {
-                    $baseDate = new DateTime('1900-01-01');
-                    $baseDate->modify("+{$producto['fecha_registro']} days");
-                    $producto['fecha_registro'] = $baseDate->format('Y-m-d');
-                } else {
-                    $producto['fecha_registro'] = date('Y-m-d');
-                }
-                
-                $producto['guia_remision'] = $producto['guia_remision'] ?? '';
-                
-                // Generar código de barras si no hay código
-                if (is_null($producto['codigo'])) { // Si no hay código, generar código de barras
-                    $producto['codigo_barra'] = $this->generarCodigoBarrasUnico();
-                } else {
-                    $producto['codigo_barra'] = null; // No se usa si hay código
-                }
-                
-                //var_dump("Código de barras generado:", $producto['codigo_barra']);
-                
-                $stmt = $this->conectar->prepare(
-                    "INSERT INTO productosv2 
-                    (nombre, codigo, cantidad, cantidad_unidad, unidad_medida, tipo_producto, categoria, fecha_vencimiento, ruc, razon_social, precio_venta, precio, fecha_registro, guia_remision, codigo_barra, estado) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                );
-                
+            return $codigo;
+        }
+    
+
+        public function reporteProducts()
+        {
+            // Preparar la consulta SQL para obtener todos los datos de la tabla productosv2
+            $sql = "SELECT 
+                        idproductosv2, 
+                        nombre, 
+                        codigo, 
+                        cantidad, 
+                        cantidad_unidad, 
+                        unidad_medida, 
+                        tipo_producto, 
+                        categoria, 
+                        fecha_vencimiento, 
+                        ruc, 
+                        razon_social, 
+                        precio, 
+                        precio_venta,
+                        fecha_registro, 
+                        guia_remision
+                    FROM productosv2
+                    WHERE estado != '0'";
+
+            $resultado = $this->conectar->query($sql);
+
+            // Verificar si la consulta fue exitosa
+            if ($resultado === false) {
+                throw new Exception("Error al ejecutar la consulta: " . $this->conectar->error);
+            }
+
+            // Arreglo para almacenar los productos
+            $productos = [];
+
+            // Recorrer los resultados y calcular el precio total
+            while ($fila = $resultado->fetch_assoc()) {
+                $fila['precio_total'] = $fila['precio'] * $fila['cantidad']; // Calcular el precio total
+                $fila['texto_cabecera'] = ''; // Dejar "Texto de Cabecera" vacío
+                $productos[] = $fila; // Agregar al arreglo de productos
+            }
+
+            // Liberar el resultado
+            $resultado->free();
+
+            // Devolver los datos
+            return $productos;
+        }
+
+        public function buscarPorTermino($termino)
+        {
+            try {
+                $sql = "SELECT * FROM productosv2 
+                        WHERE nombre LIKE ? 
+                        OR codigo LIKE ? 
+                        OR razon_social LIKE ? 
+                        OR categoria LIKE ? 
+                        OR tipo_producto LIKE ?
+                        OR codigo_barra LIKE ?";
+
+                $stmt = $this->conectar->prepare($sql);
                 if (!$stmt) {
-                    throw new \Exception("Error en la preparación de la consulta: " . $this->conectar->error);
+                    //var_dump("Error en prepare(): " . $this->conectar->error); // Cambio de error_log() a var_dump()
+                    return [];
                 }
+                $param = "%{$termino}%";
+                $stmt->bind_param("ssssss", $param, $param, $param, $param, $param, $param); // Cambiado a 6 parámetros debido al nuevo campo codigo_ba
+                $stmt->execute();
                 
-                //var_dump("Statement preparado con éxito");
-                
-                $stmt->bind_param(
-                    'ssddssssssddssss',
-                    $producto['nombre'],
-                    $producto['codigo'],
-                    $producto['cantidad'],
-                    $producto['cantidad_unidad'],
-                    $producto['unidad_medida'],
-                    $producto['tipo_producto'],
-                    $producto['categoria'],
-                    $producto['fecha_vencimiento'],
-                    $producto['ruc'],
-                    $producto['razon_social'],
-                    $producto['precio_venta'],
-                    $producto['precio'],
-                    $producto['fecha_registro'],
-                    $producto['guia_remision'],
-                    $producto['codigo_barra'],
-                    $producto['estado']
-                );
-                
-                if (!$stmt->execute()) {
-                    //var_dump("Error en execute():", $stmt->error);
-                    $this->conectar->rollback();
-                    throw new \Exception("Error al insertar producto: " . $stmt->error);
+                $result = $stmt->get_result();
+
+                if (!$result) {
+                    //var_dump("Error en execute(): " . $stmt->error); // Cambio de error_log() a var_dump()
+                    return [];
                 }
-                
-                // Usar código si existe, de lo contrario, código de barras
-                $clave = !empty($producto['codigo']) ? $producto['codigo'] : $producto['codigo_barra']; // Cambio aquí
-                $idsProductos[$clave] = $stmt->insert_id; // Guardar ID asociado a clave
-                
-                //var_dump("Producto insertado:", $clave, "ID:", $stmt->insert_id);
+
+                $productos = $result->fetch_all(MYSQLI_ASSOC);
+
+                //var_dump("Productos encontrados:", $productos); 
+                return $productos;
+            } catch (Exception $e) {
+                //var_dump("Excepción: " . $e->getMessage());
+                return [];
             }
-            
-            $this->conectar->commit();
-            return $idsProductos;
-            
-        } catch (\Exception $e) {
-            $this->conectar->rollback();
-            //var_dump("Error capturado:", $e->getMessage());
-            return false;
-        }
-    }
-
-    private function generarCodigoBarrasUnico()
-    {
-        do {
-            $codigo = rand(100000000000, 999999999999); // Generar un número aleatorio de 12 dígitos
-            $productoModel = new Productov2();
-        } while ($productoModel->existeCodigoBarras($codigo)); // Verificar si el código ya existe en la BD
-        
-        return $codigo;
-    }
-    
-
-    public function reporteProducts()
-    {
-        // Preparar la consulta SQL para obtener todos los datos de la tabla productosv2
-        $sql = "SELECT 
-                    idproductosv2, 
-                    nombre, 
-                    codigo, 
-                    cantidad, 
-                    cantidad_unidad, 
-                    unidad_medida, 
-                    tipo_producto, 
-                    categoria, 
-                    fecha_vencimiento, 
-                    ruc, 
-                    razon_social, 
-                    precio, 
-                    precio_venta,
-                    fecha_registro, 
-                    guia_remision
-                FROM productosv2
-                WHERE estado != '0'";
-
-        $resultado = $this->conectar->query($sql);
-
-        // Verificar si la consulta fue exitosa
-        if ($resultado === false) {
-            throw new Exception("Error al ejecutar la consulta: " . $this->conectar->error);
         }
 
-        // Arreglo para almacenar los productos
-        $productos = [];
-
-        // Recorrer los resultados y calcular el precio total
-        while ($fila = $resultado->fetch_assoc()) {
-            $fila['precio_total'] = $fila['precio'] * $fila['cantidad']; // Calcular el precio total
-            $fila['texto_cabecera'] = ''; // Dejar "Texto de Cabecera" vacío
-            $productos[] = $fila; // Agregar al arreglo de productos
-        }
-
-        // Liberar el resultado
-        $resultado->free();
-
-        // Devolver los datos
-        return $productos;
-    }
-
-    public function buscarPorTermino($termino)
-    {
-        try {
-            $sql = "SELECT * FROM productosv2 
-                    WHERE nombre LIKE ? 
-                    OR codigo LIKE ? 
-                    OR razon_social LIKE ? 
-                    OR categoria LIKE ? 
-                    OR tipo_producto LIKE ?
-                    OR codigo_barra LIKE ?";
-
+        public function getProductsList($id_producto) {
+            $sql = "SELECT * FROM productosv2 WHERE idproductosv2 = ?"; 
             $stmt = $this->conectar->prepare($sql);
-            if (!$stmt) {
-                //var_dump("Error en prepare(): " . $this->conectar->error); // Cambio de error_log() a var_dump()
-                return [];
-            }
-            $param = "%{$termino}%";
-            $stmt->bind_param("ssssss", $param, $param, $param, $param, $param, $param); // Cambiado a 6 parámetros debido al nuevo campo codigo_ba
+            $stmt->bind_param('i', $id_producto);
             $stmt->execute();
-            
             $result = $stmt->get_result();
-
-            if (!$result) {
-                //var_dump("Error en execute(): " . $stmt->error); // Cambio de error_log() a var_dump()
-                return [];
-            }
-
-            $productos = $result->fetch_all(MYSQLI_ASSOC);
-
-            //var_dump("Productos encontrados:", $productos); 
-            return $productos;
-        } catch (Exception $e) {
-            //var_dump("Excepción: " . $e->getMessage());
-            return [];
+            return $result->fetch_assoc(); // Retorna un solo producto
         }
-    }
-
-    public function getProductsList($id_producto) {
-        $sql = "SELECT * FROM productosv2 WHERE idproductosv2 = ?"; 
-        $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param('i', $id_producto);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        return $result->fetch_assoc(); // Retorna un solo producto
-    }
 
     public function getCodeBar($id_producto)
     {

@@ -2372,5 +2372,74 @@ $("#input_buscar_productos").autocomplete({
             event.preventDefault();
         }
     }
+
+    // NUEVO: Validación Logo YANGO
+    document.addEventListener("DOMContentLoaded", () => {
+        iniciarValidacionLogoYango();
+    });
+
+    function iniciarValidacionLogoYango() {
+        // Interceptar el evento de guardar venta
+        const btnGuardar = document.getElementById("btn_finalizar_pedido");
+        if (btnGuardar) {
+            btnGuardar.addEventListener("click", validarLogoYangoAntesDeProcesar);
+        }
+    }
+
+    function validarLogoYangoAntesDeProcesar(event) {
+        // Verificar si hay productos Logo YANGO en la lista
+        const tieneLogoYango = app.productos.some(producto => producto.productoid === '27');
+        
+        if (tieneLogoYango) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const documentoCliente = app.venta.num_doc.trim();
+            
+            if (documentoCliente) {
+                validarConductorLogoYango(documentoCliente);
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Documento requerido',
+                    text: 'Debe ingresar el documento del cliente para validar Logo YANGO'
+                });
+            }
+        }
+    }
+
+    function validarConductorLogoYango(documento) {
+        $.ajax({
+            url: '/arequipago/validar-conductor-logo-yango',
+            type: 'POST',
+            data: { documento: documento },
+            success: function(response) {
+                if (response.res) {
+                    if (response.tiene_logo) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Logo YANGO ya asignado',
+                            text: `Conductor ya tiene Logo YANGO asignado: ${response.codigo_logo}`,
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        // Continuar con la venta normal
+                        app.guardarVenta();
+                    }
+                } else {
+                    // Si no es conductor, continuar con la venta normal
+                    app.guardarVenta();
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al validar conductor. Intente nuevamente.'
+                });
+            }
+        });
+    }
+
 </script>
 

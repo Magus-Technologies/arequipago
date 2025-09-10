@@ -260,25 +260,49 @@ class Comision {
             LEFT JOIN planes_financiamiento pf ON gv.idplan_financiamiento = pf.idplan_financiamiento
             WHERE c.id_comision = ?";
     
-    // Si no es director, solo puede ver sus propias comisiones
-    if ($rol_usuario != 3) {
-        $sql .= " AND c.usuario_id = ?";
+        // Si no es director, solo puede ver sus propias comisiones
+        if ($rol_usuario != 3) {
+            $sql .= " AND c.usuario_id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("ii", $id_comision, $usuario_id);
+        } else {
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("i", $id_comision);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            return $row;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Cambia el estado de una comisión
+     */
+    public function cambiarEstadoComision($id_comision, $nuevo_estado)
+    {
+        $sql = "UPDATE comisiones SET estado_comision = ? WHERE id_comision = ?";
         $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param("ii", $id_comision, $usuario_id);
-    } else {
+        $stmt->bind_param("si", $nuevo_estado, $id_comision);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Elimina definitivamente una comisión
+     */
+    public function eliminarComision($id_comision)
+    {
+        $sql = "DELETE FROM comisiones WHERE id_comision = ?";
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param("i", $id_comision);
+        
+        return $stmt->execute();
     }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        return $row;
-    }
-    
-    return null;
-}
 }
 
 

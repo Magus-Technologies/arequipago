@@ -332,11 +332,78 @@ require_once "app/models/Distrito.php";
             border: 2px solid #6c757d !important; /* Borde gris también */
         }
 
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+        }
+
+        .notification {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid #28a745;
+            background: #f8fff9;
+        }
+
+        .notification.warning {
+            border-left: 4px solid #ffc107;
+            background: #fffef8;
+        }
+
+        .notification-content {
+            flex: 1;
+            color: #495057;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #6c757d;
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-close:hover {
+            color: #495057;
+        }
+
     </style>
 </head>
 
 <body>
   
+    <div class="notification-container" id="notificationContainer"></div>
+
     <div class="container mt-5">
         <!-- Pestañas (Tabs) -->
         <ul class="nav nav-tabs" id="formTabs" role="tablist">
@@ -803,7 +870,7 @@ require_once "app/models/Distrito.php";
                             <!-- Checkbox + Input -->
                             <div class="col-md-2">
                                 <label>
-                                    <input type="checkbox" name="logo_yango" id="logo_yango" value="1"> Logo YANGO
+                                   <input type="checkbox" name="logo_yango" id="logo_yango" value="1" onchange="verificarStockLogoYango()"> Logo YANGO
                                 </label>
                             </div>
 
@@ -1722,7 +1789,65 @@ require_once "app/models/Distrito.php";
             actualizarNumeroUnidadConDepartamento();
         }
 
-       
+       // Funciones para manejo de notificaciones
+        function mostrarNotificacion(mensaje, tipo = 'success') {
+            const container = document.getElementById('notificationContainer');
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${tipo}`;
+            notification.innerHTML = `
+                <div class="notification-content">${mensaje}</div>
+                <button class="notification-close" onclick="cerrarNotificacion(this)">&times;</button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Trigger animation
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Auto remove after 8 seconds
+            setTimeout(() => {
+                cerrarNotificacion(notification.querySelector('.notification-close'));
+            }, 10000);
+        }
+
+        function cerrarNotificacion(button) {
+            const notification = button.closest('.notification');
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+
+        // Función para verificar stock de Logo YANGO
+        function verificarStockLogoYango() {
+            const checkbox = document.getElementById('logo_yango');
+            
+            if (!checkbox.checked) {
+                return; // Si se desmarca el checkbox, no hacer nada
+            }
+            
+            $.ajax({
+                url: '/arequipago/verificar-stock-logo',
+                type: 'POST',
+                data: { id_producto: 27 },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        if (response.tiene_stock) {
+                            mostrarNotificacion('✅ Stock disponible para Logo YANGO - Se asignará automáticamente al guardar', 'success');
+                        } else {
+                            mostrarNotificacion('⚠️ Sin stock de Logo YANGO - Debe coordinarse entrega mediante venta', 'warning');
+                        }
+                    }
+                },
+                error: function() {
+                    mostrarNotificacion('Error al verificar stock de Logo YANGO', 'warning');
+                }
+            });
+        }
 
 
             $(document).ready(function () {
