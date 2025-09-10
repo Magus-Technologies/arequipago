@@ -84,6 +84,47 @@
             color: #ffc107 !important; /* Amarillo suave en hover */
             cursor: pointer !important;
         }
+
+        /* Estilos para el modal de pago */
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #02a398;
+            box-shadow: 0 0 0 0.2rem rgba(2, 163, 152, 0.25);
+        }
+
+        .is-invalid {
+            border-color: #ec4561 !important;
+            background-color: rgba(236, 69, 97, 0.1) !important;
+        }
+
+        #btnConfirmarPago:hover {
+            background-color: #01877c !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(2, 163, 152, 0.4);
+        }
+
+        .alert-info {
+            background-color: rgba(56, 164, 248, 0.1);
+            border-color: rgba(56, 164, 248, 0.3);
+            border-radius: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -577,7 +618,7 @@ function UploadDepartamentos() {
                 
                 // Preparar datos para envío
                 const formData = new FormData(this);
-                
+
                 // Enviar datos mediante AJAX
                 $.ajax({
                     url: '/arequipago/guardarCliente',
@@ -588,18 +629,30 @@ function UploadDepartamentos() {
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Registro exitoso!',
-                                text: 'Cliente registrado correctamente.',
-                                confirmButtonColor: '#4caf50'
-                            }).then(() => {
-                                // Resetear formulario
-                                $("#formRegistroCliente")[0].reset();
-                                
-                                // Eliminar clases de validación
-                                $(".is-invalid").removeClass("is-invalid");
-                            });
+                            // Almacenar el ID del cliente para el pago
+                            $('#clienteIdPago').val(response.cliente_id);
+
+                            // Verificar que el ID se almacenó correctamente
+                            console.log('ID del cliente almacenado:', response.cliente_id);
+                            if (!response.cliente_id) {
+                                console.error('No se recibió ID del cliente del servidor');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No se pudo obtener el ID del cliente. Intente nuevamente.',
+                                    confirmButtonColor: '#ec4561'
+                                });
+                                return;
+                            }
+                            
+                            // Cargar métodos de pago y mostrar modal
+                            cargarMetodosPago();
+                            mostrarModalPago();
+                            
+                            // Resetear formulario de registro
+                            $("#formRegistroCliente")[0].reset();
+                            $(".is-invalid").removeClass("is-invalid");
+                            
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -662,7 +715,301 @@ function UploadDepartamentos() {
                 });
             }
         });
+
+        // Funciones para manejo del modal de pago
+        function cargarMetodosPago() {
+            _ajax("/ajs/consulta/metodo/pago", "POST", {}, function(resp) {
+                const select = document.getElementById("metodo_pago");
+                select.innerHTML = '<option value="">Seleccione un método de pago</option>';
+                
+                if (Array.isArray(resp)) {
+                    resp.forEach(function(metodo) {
+                        if (metodo.estado === '1') {
+                            const option = document.createElement("option");
+                            option.value = metodo.id_metodo_pago;
+                            option.text = metodo.nombre;
+                            select.appendChild(option);
+                        }
+                    });
+                }
+            });
+        }
+
+        function mostrarModalPago() {
+            // Mostrar fecha actual
+            const ahora = new Date();
+            const fechaFormateada = ahora.toLocaleString('es-PE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('fechaActual').textContent = fechaFormateada;
+            
+            // Prellenar monto pagado con 100.00
+            document.getElementById('monto_pagado').value = '100.00';
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('modalPago'));
+            modal.show();
+            
+            // Configurar eventos después de mostrar el modal
+            setTimeout(() => {
+                iniciarEventosPago();
+            }, 300);
+        }
+
+        function validarMontoPago() {
+            const metodoPagoId = document.getElementById('metodo_pago').value;
+            const montoPagado = parseFloat(document.getElementById('monto_pagado').value) || 0;
+            const montoTotal = 100.00;
+            
+            // Limpiar mensajes de error previos
+            document.getElementById('monto_pagado').classList.remove('is-invalid');
+            
+            // Si es efectivo (ID 12), permitir vuelto
+            if (metodoPagoId === '12') {
+                document.getElementById('vueltoContainer').style.display = 'block';
+                
+                if (montoPagado >= montoTotal) {
+                    const vuelto = (montoPagado - montoTotal).toFixed(2);
+                    document.getElementById('vuelto').value = vuelto;
+                    return true;
+                } else {
+                    document.getElementById('monto_pagado').classList.add('is-invalid');
+                    alertAdvertencia('Para efectivo, el monto pagado debe ser mayor o igual a S/ 100.00');
+                    return false;
+                }
+            } else {
+                // Para otros métodos, debe ser exactamente 100.00
+                document.getElementById('vueltoContainer').style.display = 'none';
+                document.getElementById('vuelto').value = '0.00';
+                
+                if (montoPagado === montoTotal) {
+                    return true;
+                } else {
+                    document.getElementById('monto_pagado').classList.add('is-invalid');
+                    alertAdvertencia('Para este método de pago, el monto debe ser exactamente S/ 100.00');
+                    return false;
+                }
+            }
+        }
+
+        function procesarPago() {
+            if (!validarFormularioPago()) {
+                return;
+            }
+            
+            if (!validarMontoPago()) {
+                return;
+            }
+            
+            const formData = new FormData(document.getElementById('formPago'));
+
+            // Asegurar que el cliente_id se envíe correctamente
+            const clienteId = document.getElementById('clienteIdPago').value;
+            if (!clienteId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se encontró el ID del cliente. Recargue la página e intente nuevamente.',
+                    confirmButtonColor: '#ec4561'
+                });
+                return;
+            }
+            formData.set('cliente_id', clienteId);
+
+            // Debug: Verificar datos que se envían
+            console.log('Datos del pago a enviar:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+            
+            $.ajax({
+                url: '/arequipago/guardarPago',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Cerrar modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
+                        modal.hide();
+                        
+                        // Mostrar confirmación
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Pago registrado!',
+                            text: 'El pago se ha registrado correctamente.',
+                            confirmButtonColor: '#02a398'
+                        }).then(() => {
+                            // Resetear formulario de pago
+                            document.getElementById('formPago').reset();
+                            document.getElementById('vueltoContainer').style.display = 'none';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Error al registrar el pago.',
+                            confirmButtonColor: '#ec4561'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error de conexión. Intente nuevamente.',
+                        confirmButtonColor: '#ec4561'
+                    });
+                }
+            });
+        }
+
+        function validarFormularioPago() {
+            let esValido = true;
+            
+            // Verificar cliente_id primero
+            const clienteId = document.getElementById('clienteIdPago').value;
+            if (!clienteId) {
+                alertAdvertencia('Error: No se encontró el ID del cliente.');
+                return false;
+            }
+            
+            const campos = ['metodo_pago', 'monto_pagado'];
+            campos.forEach(function(campo) {
+                const elemento = document.getElementById(campo);
+                if (!elemento.value) {
+                    elemento.classList.add('is-invalid');
+                    esValido = false;
+                } else {
+                    elemento.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!esValido) {
+                alertAdvertencia('Complete todos los campos obligatorios del pago.');
+            }
+            
+            return esValido;
+        }
+
+        function iniciarEventosPago() {
+            // Verificar que los elementos existan antes de agregar eventos
+            const metodoPagoSelect = document.getElementById('metodo_pago');
+            const montoPagadoInput = document.getElementById('monto_pagado');
+            const btnConfirmarPago = document.getElementById('btnConfirmarPago');
+            
+            if (!metodoPagoSelect || !montoPagadoInput || !btnConfirmarPago) {
+                console.log('Elementos del modal no encontrados, esperando...');
+                return;
+            }
+            
+            // Evento para cambio de método de pago
+            metodoPagoSelect.addEventListener('change', function() {
+                const montoPagado = document.getElementById('monto_pagado');
+                if (this.value === '12') { // Efectivo
+                    montoPagado.min = '100';
+                    montoPagado.value = '100.00'; // Prellenar con 100
+                    document.getElementById('vueltoContainer').style.display = 'block';
+                } else {
+                    montoPagado.value = '100.00';
+                    montoPagado.min = '100';
+                    montoPagado.max = '100';
+                    document.getElementById('vueltoContainer').style.display = 'none';
+                }
+            });
+            
+            // Evento para cambio de monto pagado
+            montoPagadoInput.addEventListener('input', function() {
+                const metodoPagoId = document.getElementById('metodo_pago').value;
+                if (metodoPagoId === '12') {
+                    const montoPagado = parseFloat(this.value) || 0;
+                    const vuelto = Math.max(0, montoPagado - 100).toFixed(2);
+                    document.getElementById('vuelto').value = vuelto;
+                }
+            });
+            
+            // Evento para confirmar pago
+            btnConfirmarPago.addEventListener('click', procesarPago);
+            
+            console.log('Event listeners del modal configurados correctamente');
+        }
     </script>
+
+    <!-- Modal de Registro de Pago -->
+    <div class="modal fade" id="modalPago" tabindex="-1" aria-labelledby="modalPagoLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #02a398 0%, #38a4f8 100%); color: white;">
+                    <h5 class="modal-title" id="modalPagoLabel">
+                        <i class="fas fa-credit-card me-2"></i>Registro de Pago Obligatorio
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                        <i class="fas fa-info-circle me-3" style="color: #2e217a; font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>¡Registro exitoso!</strong> Proceder con el pago obligatorio de <strong>S/ 100.00</strong>
+                        </div>
+                    </div>
+                    
+                    <form id="formPago">
+                        <input type="hidden" id="clienteIdPago" name="cliente_id">
+                        <input type="hidden" name="monto_total" value="100.00">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="metodo_pago" class="form-label">
+                                    <i class="fas fa-money-check-alt me-2" style="color: #2e217a;"></i>Método de Pago *
+                                </label>
+                                <select class="form-select" id="metodo_pago" name="metodo_pago_id" required>
+                                    <option value="">Seleccione un método de pago</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="monto_pagado" class="form-label">
+                                    <i class="fas fa-coins me-2" style="color: #2e217a;"></i>Monto Pagado (S/) *
+                                </label>
+                                <input type="number" class="form-control" id="monto_pagado" name="monto_pagado" 
+                                    min="100" step="0.01" required placeholder="100.00">
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="vueltoContainer" style="display: none;">
+                            <div class="col-md-6 mb-3">
+                                <label for="vuelto" class="form-label">
+                                    <i class="fas fa-exchange-alt me-2" style="color: #2e217a;"></i>Vuelto (S/)
+                                </label>
+                                <input type="text" class="form-control" id="vuelto" name="vuelto" readonly 
+                                    style="background-color: #f8f9fa; font-weight: bold;">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>Fecha y hora: <span id="fechaActual"></span>
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f8fa;">
+                    <button type="button" class="btn" id="btnConfirmarPago" 
+                            style="background-color: #02a398; color: white; padding: 0.5rem 2rem;">
+                        <i class="fas fa-check me-2"></i>Confirmar Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -474,9 +474,6 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <script>
         // Variables globales
@@ -629,9 +626,12 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 </td>
                 <td>${estadoBadge}</td>
                 <td>
-                    <button class="btn btn-action btn-sm" onclick="verDetalleComision(${comision.id_comision})">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <div class="d-flex gap-1 align-items-center">
+                        <button class="btn btn-action btn-sm" onclick="verDetalleComision(${comision.id_comision})" title="Ver detalle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${rolUsuario == 3 ? generarBotonesAdicionales(comision) : ''}
+                    </div>
                 </td>
             `;
             
@@ -868,6 +868,193 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         function mostrarError(mensaje) {
             alert(mensaje); // Reemplazar con una notificación más elegante si es necesario
         }
+
+        // Renombrar generarBotonesDirector() a generarBotonesAdicionales()
+        function generarBotonesAdicionales(comision) {
+            let botones = '';
+            
+            if (comision.estado_comision === 'pendiente') {
+                botones = `
+                    <button class="btn btn-action btn-sm" 
+                            style="background: #02a499; border: none; color: white;" 
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pagada')" 
+                            title="Marcar como pagada">
+                        <i class="fas fa-dollar-sign"></i>
+                    </button>
+                    <button class="btn btn-action btn-sm" 
+                            style="background: #ec4561; border: none; color: white;" 
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'cancelada')" 
+                            title="Cancelar comisión">
+                        <i class="fas fa-times"></i>
+                    </button>`;
+            } else if (comision.estado_comision === 'cancelada') {
+                botones = `
+                    <button class="btn btn-action btn-sm" 
+                            style="background: #38a4f8; border: none; color: white;" 
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pendiente')" 
+                            title="Reactivar comisión">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="btn btn-action btn-sm" 
+                            style="background: #6c757d; border: none; color: white;" 
+                            onclick="eliminarComision(${comision.id_comision})" 
+                            title="Eliminar definitivamente">
+                        <i class="fas fa-trash"></i>
+                    </button>`;
+            }
+            
+            return botones;
+        }
+
+        function cambiarEstadoComision(idComision, nuevoEstado) {
+            let titulo, texto, textoConfirm;
+            
+            switch (nuevoEstado) {
+                case 'pagada':
+                    titulo = '¿Marcar como pagada?';
+                    texto = '¿Está seguro de que desea marcar esta comisión como pagada?';
+                    textoConfirm = 'Sí, marcar como pagada';
+                    break;
+                case 'cancelada':
+                    titulo = '¿Cancelar comisión?';
+                    texto = '¿Está seguro de que desea cancelar esta comisión?';
+                    textoConfirm = 'Sí, cancelar';
+                    break;
+                case 'pendiente':
+                    titulo = '¿Reactivar comisión?';
+                    texto = '¿Está seguro de que desea reactivar esta comisión?';
+                    textoConfirm = 'Sí, reactivar';
+                    break;
+            }
+            
+            Swal.fire({
+                title: titulo,
+                text: texto,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#02a499',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: textoConfirm,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    ejecutarCambioEstado(idComision, nuevoEstado);
+                }
+            });
+        }
+
+        function eliminarComision(idComision) {
+            Swal.fire({
+                title: '¿Eliminar definitivamente?',
+                text: 'Esta acción no se puede deshacer. La comisión será eliminada permanentemente.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ec4561',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    ejecutarEliminacion(idComision);
+                }
+            });
+        }
+
+        function ejecutarCambioEstado(idComision, nuevoEstado) {
+            $.ajax({
+                url: '/arequipago/cambiarEstadoComision',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id_comision: idComision,
+                    nuevo_estado: nuevoEstado
+                },
+                beforeSend: function() {
+                    Swal.fire({
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: response.message,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        // Recargar la tabla para reflejar los cambios
+                        cargarComisiones();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message,
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error de conexión. Inténtelo nuevamente.',
+                        icon: 'error'
+                    });
+                }
+            });
+        }
+
+        function ejecutarEliminacion(idComision) {
+            $.ajax({
+                url: '/arequipago/eliminarComision',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    id_comision: idComision
+                },
+                beforeSend: function() {
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Eliminada!',
+                            text: response.message,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        // Recargar la tabla para reflejar los cambios
+                        cargarComisiones();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message,
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error de conexión. Inténtelo nuevamente.',
+                        icon: 'error'
+                    });
+                }
+            });
+        }
+
     </script>
 </body>
 </html>

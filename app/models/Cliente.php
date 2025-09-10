@@ -583,72 +583,86 @@ public function documentoExistente($numeroDocumento)
  * @param array $datos Datos del cliente a guardar
  * @return bool Retorna true si se guardó correctamente, false en caso contrario
  */
+
 public function guardarCliente($datos) 
-{ 
-   try { 
-       // Iniciar transacción 
-       $this->conectar->begin_transaction(); 
+{
+    try {
+        // Iniciar transacción
+        $this->conectar->begin_transaction();
         
-       // Insertar datos personales y dirección 
-       $query = "INSERT INTO clientes_financiar ( 
-           tipo_doc, n_documento, nombres, apellido_paterno, apellido_materno,  
-           num_cod_finan, nacionalidad, fecha_nacimiento, telefono, correo,  
-           departamento, provincia, distrito, direccion_detallada,  
-           emergencia_nombre, emergencia_telefono, emergencia_parentesco, 
-           laboral_nombre, laboral_telefono, laboral_puesto, laboral_empresa, 
-           recibo_servicios, doc_identidad, otro_doc_1, otro_doc_2, otro_doc_3, 
-           comentarios, fecha_registro, password 
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)"; 
+        // Insertar datos personales y dirección
+        $query = "INSERT INTO clientes_financiar (
+            tipo_doc, n_documento, nombres, apellido_paterno, apellido_materno, 
+            num_cod_finan, nacionalidad, fecha_nacimiento, telefono, correo, 
+            departamento, provincia, distrito, direccion_detallada, 
+            emergencia_nombre, emergencia_telefono, emergencia_parentesco,
+            laboral_nombre, laboral_telefono, laboral_puesto, laboral_empresa,
+            recibo_servicios, doc_identidad, otro_doc_1, otro_doc_2, otro_doc_3,
+            comentarios, fecha_registro, password
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
         
-       $stmt = $this->conectar->prepare($query); 
-       $passwordDefault = null; // MODIFICADO: cambiar de password_hash a null 
-       $stmt->bind_param( 
-           "ssssssssssssssssssssssssssss", 
-           $datos['tipo_doc'], 
-           $datos['n_documento'], 
-           $datos['nombres'], 
-           $datos['apellido_paterno'], 
-           $datos['apellido_materno'], 
-           $datos['num_cod_finan'], 
-           $datos['nacionalidad'], 
-           $datos['fecha_nacimiento'], 
-           $datos['telefono'], 
-           $datos['correo'], 
-           $datos['departamento'], 
-           $datos['provincia'], 
-           $datos['distrito'], 
-           $datos['direccion_detallada'], 
-           $datos['emergencia_nombre'], 
-           $datos['emergencia_telefono'], 
-           $datos['emergencia_parentesco'], 
-           $datos['laboral_nombre'], 
-           $datos['laboral_telefono'], 
-           $datos['laboral_puesto'], 
-           $datos['laboral_empresa'], 
-           $datos['recibo_servicios'], 
-           $datos['doc_identidad'], 
-           $datos['otro_doc_1'], 
-           $datos['otro_doc_2'], 
-           $datos['otro_doc_3'], 
-           $datos['comentarios'], 
-           $passwordDefault 
-       ); 
+        $stmt = $this->conectar->prepare($query);
+        if (!$stmt) {
+            return false;
+        }
         
-       $stmt->execute(); 
+        $passwordDefault = null;
         
-       // Confirmar transacción 
-       $this->conectar->commit(); 
+        $bindResult = $stmt->bind_param(
+            "ssssssssssssssssssssssssssss",
+            $datos['tipo_doc'],
+            $datos['n_documento'],
+            $datos['nombres'],
+            $datos['apellido_paterno'],
+            $datos['apellido_materno'],
+            $datos['num_cod_finan'],
+            $datos['nacionalidad'],
+            $datos['fecha_nacimiento'],
+            $datos['telefono'],
+            $datos['correo'],
+            $datos['departamento'],
+            $datos['provincia'],
+            $datos['distrito'],
+            $datos['direccion_detallada'],
+            $datos['emergencia_nombre'],
+            $datos['emergencia_telefono'],
+            $datos['emergencia_parentesco'],
+            $datos['laboral_nombre'],
+            $datos['laboral_telefono'],
+            $datos['laboral_puesto'],
+            $datos['laboral_empresa'],
+            $datos['recibo_servicios'],
+            $datos['doc_identidad'],
+            $datos['otro_doc_1'],
+            $datos['otro_doc_2'],
+            $datos['otro_doc_3'],
+            $datos['comentarios'],
+            $passwordDefault
+        );
         
-       return true; 
-   } catch (Exception $e) { 
-       // Revertir transacción en caso de error 
-       $this->conectar->rollback(); 
+        if (!$bindResult) {
+            return false;
+        }
         
-       // Registrar error en logs 
-       error_log("Error al guardar cliente: " . $e->getMessage()); 
+        $executeResult = $stmt->execute();
+        if (!$executeResult) {
+            return false;
+        }
         
-       return false; 
-   } 
+        // Obtener el ID insertado antes del commit
+        $insertId = $this->conectar->insert_id;
+        
+        // Confirmar transacción
+        $this->conectar->commit();
+        
+        return $insertId;
+        
+    } catch (Exception $e) {
+        // Revertir transacción en caso de error
+        $this->conectar->rollback();
+        
+        return false;
+    }
 }
 
 
@@ -1088,4 +1102,45 @@ public function obtenerDepartamentos()
         return $result;
     }
     
+    public function guardarPago($datos)
+    {
+        try {
+            // Iniciar transacción
+            $this->conectar->begin_transaction();
+            
+            // Insertar el recibo de pago
+            $query = "INSERT INTO cliente_pago (
+                cliente_id, monto_total, metodo_pago_id, monto_pagado, 
+                vuelto, fecha_pago, usuario_id, estado
+            ) VALUES (?, ?, ?, ?, ?, NOW(), ?, '1')";
+            
+            $stmt = $this->conectar->prepare($query);
+            $stmt->bind_param(
+                "iidddi",
+                $datos['cliente_id'],
+                $datos['monto_total'],
+                $datos['metodo_pago_id'],
+                $datos['monto_pagado'],
+                $datos['vuelto'],
+                $datos['usuario_id']
+            );
+            
+            $stmt->execute();
+            
+            // Confirmar transacción
+            $this->conectar->commit();
+            
+            return true;
+            
+        } catch (Exception $e) {
+            // Revertir transacción en caso de error
+            $this->conectar->rollback();
+            
+            // Registrar error en logs
+            error_log("Error al guardar pago: " . $e->getMessage());
+            
+            return false;
+        }
+    }
+
 }

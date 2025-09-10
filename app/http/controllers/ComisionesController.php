@@ -384,4 +384,119 @@ class ComisionesController extends Controller
             ]);
         }
     }
+
+    /**
+     * Cambia el estado de una comisión (pagar, cancelar, reactivar)
+     */
+    public function cambiarEstadoComision()
+    {
+        try {
+            $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+            
+            // Solo directores pueden cambiar estados
+            if ($rol_usuario != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No tiene permisos para realizar esta acción'
+                ]);
+                return;
+            }
+            
+            $id_comision = isset($_POST['id_comision']) ? intval($_POST['id_comision']) : 0;
+            $nuevo_estado = isset($_POST['nuevo_estado']) ? $_POST['nuevo_estado'] : '';
+            
+            if ($id_comision <= 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de comisión inválido'
+                ]);
+                return;
+            }
+            
+            // Validar estados permitidos
+            $estados_permitidos = ['pendiente', 'pagada', 'cancelada'];
+            if (!in_array($nuevo_estado, $estados_permitidos)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Estado inválido'
+                ]);
+                return;
+            }
+            
+            $resultado = $this->comision->cambiarEstadoComision($id_comision, $nuevo_estado);
+            
+            if ($resultado) {
+                $mensajes = [
+                    'pagada' => 'Comisión marcada como pagada exitosamente',
+                    'cancelada' => 'Comisión cancelada exitosamente', 
+                    'pendiente' => 'Comisión reactivada exitosamente'
+                ];
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => $mensajes[$nuevo_estado]
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al cambiar el estado de la comisión'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    /**
+     * Elimina definitivamente una comisión
+     */
+    public function eliminarComision()
+    {
+        try {
+            $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+            
+            // Solo directores pueden eliminar
+            if ($rol_usuario != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No tiene permisos para realizar esta acción'
+                ]);
+                return;
+            }
+            
+            $id_comision = isset($_POST['id_comision']) ? intval($_POST['id_comision']) : 0;
+            
+            if ($id_comision <= 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de comisión inválido'
+                ]);
+                return;
+            }
+            
+            $resultado = $this->comision->eliminarComision($id_comision);
+            
+            if ($resultado) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Comisión eliminada definitivamente'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al eliminar la comisión'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }
