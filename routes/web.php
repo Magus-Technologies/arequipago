@@ -168,7 +168,8 @@ Route::postBase("/financiamientosAprobar", "FragmentController@financimientosApr
 
 Route::postBase("/comisiones", "FragmentController@comisiones");
 
-Route::post("/addUser","ConsultasController@saveUser");
+Route::post("/addUser","UsuariosController@addUser");
+Route::post("/reactivarUsuario","UsuariosController@reactivarUsuario");
 Route::get("/getBarCode", "ProductosController@getBarCode");
 Route::get("/generateBarcode", "ProductosController@generateBarCode");
 Route::post("/deleteProducts", "ProductosController@deleteProducts");

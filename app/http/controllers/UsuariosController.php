@@ -31,7 +31,8 @@ class UsuariosController extends Controller
                     END AS rotativo 
                 FROM
                     usuarios u
-                INNER JOIN roles r ON r.rol_id = u.id_rol";
+                INNER JOIN roles r ON r.rol_id = u.id_rol
+                WHERE u.estado = 1";  
         $fila = mysqli_query($this->conectar, $sql);
         $respuesta = mysqli_fetch_all($fila, MYSQLI_ASSOC);
         return json_encode($respuesta);
@@ -79,8 +80,22 @@ class UsuariosController extends Controller
 
     public function borrar()
     {
-        $sql = "DELETE FROM usuarios WHERE usuario_id = {$_POST["value"]}";
-        mysqli_query($this->conectar, $sql);
+        var_dump($_POST);
+        var_dump($_POST["value"]);
+        
+        // Cambiar DELETE por UPDATE para desactivar
+        $sql = "UPDATE usuarios SET estado = '0' WHERE usuario_id = {$_POST["value"]}";
+        var_dump($sql);
+        
+        $resultado = mysqli_query($this->conectar, $sql);
+        var_dump($resultado);
+        var_dump($this->conectar);
+        
+        if ($resultado) {
+            $filas_afectadas = mysqli_affected_rows($this->conectar);
+            var_dump($filas_afectadas);
+        }
+        
         return true;
     }
 
@@ -141,4 +156,69 @@ class UsuariosController extends Controller
         // Devolver la respuesta
         echo json_encode($resultado);
     }
+
+    public function addUser() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $rol = $_POST['rol'];
+            $ndoc = $_POST['ndoc'];
+            $usuario_nombre = $_POST['usuario'];
+            $clave = sha1($_POST['clave']);
+            $email = $_POST['email'];
+            $nombres = $_POST['nombres'];
+            $rotativo = $_POST['rotativo'];
+
+            $usuarioModel = new Usuario();
+            
+            // Verificar si existe un usuario con el mismo num_doc
+            $usuarioExistente = $usuarioModel->verificarUsuarioExistente($ndoc);
+            
+            if ($usuarioExistente) {
+                if ($usuarioExistente['estado'] == '1') {
+                    // Usuario activo ya existe
+                    echo json_encode(['success' => false, 'message' => 'Ya existe un usuario activo con este número de documento']);
+                    return;
+                } else {
+                    // Usuario inactivo existe, devolver datos para reactivación
+                    echo json_encode([
+                        'success' => false,
+                        'reactivar' => true,
+                        'usuario_existente' => $usuarioExistente,
+                        'message' => 'Ya existe un usuario eliminado con este documento. ¿Desea reactivarlo?'
+                    ]);
+                    return;
+                }
+            }
+            
+            // No existe usuario con ese documento, proceder normalmente
+            $resultado = $usuarioModel->addNewUser($rol, $ndoc, $usuario_nombre, $clave, $email, $nombres, 1, $rotativo);
+            
+            if ($resultado) {
+                echo json_encode(['success' => true, 'message' => 'Usuario creado correctamente']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al crear el usuario']);
+            }
+        }
+    }
+
+    public function reactivarUsuario() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $usuario_id = $_POST['usuario_id'];
+            $rol = $_POST['rol'];
+            $usuario_nombre = $_POST['usuario'];
+            $clave = sha1($_POST['clave']);
+            $email = $_POST['email'];
+            $nombres = $_POST['nombres'];
+            $rotativo = $_POST['rotativo'];
+
+            $usuarioModel = new Usuario();
+            $resultado = $usuarioModel->reactivarUsuario($usuario_id, $rol, $usuario_nombre, $clave, $email, $nombres, $rotativo);
+            
+            if ($resultado) {
+                echo json_encode(['success' => true, 'message' => 'Usuario reactivado correctamente']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al reactivar el usuario']);
+            }
+        }
+    }
+ // <-- Cierre final de la clase
 }

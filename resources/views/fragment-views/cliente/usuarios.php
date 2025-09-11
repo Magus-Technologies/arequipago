@@ -276,7 +276,6 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
 <script>
 
     function saveUser() {
-        // Obtener valores del formulario
         let rol = document.getElementById("rol").value;
         let ndoc = document.getElementById("ndoc").value.trim();
         let usuario = document.getElementById("usuario").value.trim();
@@ -285,7 +284,7 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
         let nombres = document.getElementById("nombres").value.trim();
         let rotativo = 0;
 
-        // Validaciones
+        // Validaciones existentes
         if (!/^\d+$/.test(ndoc)) {
             Swal.fire("Error", "El número de documento debe contener solo números.", "error");
             return;
@@ -295,7 +294,6 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
             return;
         }
 
-        // Crear objeto FormData para enviar los datos
         let formData = new FormData();
         formData.append("rol", rol);
         formData.append("ndoc", ndoc);
@@ -305,7 +303,6 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
         formData.append("nombres", nombres);
         formData.append("rotativo", rotativo);
 
-        // Enviar datos al controlador con fetch()
         fetch("/arequipago/addUser", {
             method: "POST",
             body: formData
@@ -315,19 +312,12 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
             if (data.success) {
                 Swal.fire("Éxito", "Usuario creado correctamente.", "success").then(() => {
                     tabla_clientes.ajax.reload(null, true);
-
-                    // Limpiar los campos del modal 🌍
-                    document.getElementById("rol").value = ""; // 🌍 Limpiar campo
-                    document.getElementById("ndoc").value = ""; // 🌍 Limpiar campo
-                    document.getElementById("usuario").value = ""; // 🌍 Limpiar campo
-                    document.getElementById("clave").value = ""; // 🌍 Limpiar campo
-                    document.getElementById("email").value = ""; // 🌍 Limpiar campo
-                    document.getElementById("nombres").value = ""; // 🌍 Limpiar campo
-
-                    // Cerrar el modal 🌍
-                    $('#usuario-add-bs').modal('hide'); // 🌍 Cerrar modal
-                    
+                    limpiarModalRegistro();
+                    $('#usuario-add-bs').modal('hide');
                 });
+            } else if (data.reactivar) {
+                // Mostrar confirmación para reactivar
+                mostrarConfirmacionReactivar(data.usuario_existente);
             } else {
                 Swal.fire("Error", data.message || "Hubo un problema al crear el usuario.", "error");
             }
@@ -336,6 +326,98 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
             console.error("Error:", error);
             Swal.fire("Error", "No se pudo conectar con el servidor.", "error");
         });
+    }
+
+    function mostrarConfirmacionReactivar(usuarioExistente) {
+        Swal.fire({
+            title: '¿Usuario eliminado encontrado!',
+            text: `Ya existe un usuario eliminado con este documento: ${usuarioExistente.nombres}. ¿Desea reactivarlo?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, reactivar',
+            cancelButtonText: 'No, cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                cargarDatosParaReactivar(usuarioExistente);
+            } else {
+                Swal.fire('Información', 'No se puede registrar. Este documento ya pertenece a otro usuario en el sistema.', 'info');
+            }
+        });
+    }
+
+    function cargarDatosParaReactivar(usuarioExistente) {
+        // Cargar datos existentes en el modal
+        document.getElementById("nombres").value = usuarioExistente.nombres;
+        document.getElementById("usuario").value = usuarioExistente.usuario;
+        document.getElementById("email").value = usuarioExistente.email;
+        document.getElementById("clave").value = ""; // Dejar vacío para nueva contraseña
+        
+        // Cambiar el botón y función
+        document.getElementById("submitButton").innerText = "Reactivar Usuario";
+        document.getElementById("submitButton").setAttribute("onclick", `confirmarReactivacion(${usuarioExistente.usuario_id})`);
+        
+        Swal.fire('Información', 'Los datos del usuario han sido cargados. Modifique lo que necesite y asigne una nueva contraseña.', 'info');
+    }
+
+    function confirmarReactivacion(usuarioId) {
+        let rol = document.getElementById("rol").value;
+        let ndoc = document.getElementById("ndoc").value.trim();
+        let usuario = document.getElementById("usuario").value.trim();
+        let clave = document.getElementById("clave").value.trim();
+        let email = document.getElementById("email").value.trim();
+        let nombres = document.getElementById("nombres").value.trim();
+        let rotativo = 0;
+
+        // Validaciones
+        if (usuario === "" || clave === "" || nombres === "") {
+            Swal.fire("Error", "Usuario, clave y nombres son obligatorios.", "error");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("usuario_id", usuarioId);
+        formData.append("rol", rol);
+        formData.append("usuario", usuario);
+        formData.append("clave", clave);
+        formData.append("email", email);
+        formData.append("nombres", nombres);
+        formData.append("rotativo", rotativo);
+
+        fetch("/arequipago/reactivarUsuario", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire("Éxito", "Usuario reactivado correctamente.", "success").then(() => {
+                    tabla_clientes.ajax.reload(null, true);
+                    limpiarModalRegistro();
+                    $('#usuario-add-bs').modal('hide');
+                });
+            } else {
+                Swal.fire("Error", data.message || "Hubo un problema al reactivar el usuario.", "error");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            Swal.fire("Error", "No se pudo conectar con el servidor.", "error");
+        });
+    }
+
+    function limpiarModalRegistro() {
+        document.getElementById("rol").value = "";
+        document.getElementById("ndoc").value = "";
+        document.getElementById("usuario").value = "";
+        document.getElementById("clave").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("nombres").value = "";
+        
+        // Restaurar botón original
+        document.getElementById("submitButton").innerText = "Crear";
+        document.getElementById("submitButton").setAttribute("onclick", "saveUser()");
     }
 
     $(document).ready(function() {
@@ -519,6 +601,7 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
                     });
                     $('#rol').html(options);
                     $('#rol2').html(options);
+                    limpiarModalRegistro(); 
                     $('#usuario-add-bs').modal('show');
                 },
                 error: function(response) {

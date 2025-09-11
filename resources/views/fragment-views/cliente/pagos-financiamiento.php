@@ -1878,7 +1878,7 @@ function enviarPDFPorWhatsApp() {
         pagos.forEach(pago => {
             const cliente = pago.conductor || pago.cliente || 'Sin nombre';
             const fecha = new Date(pago.fecha_pago).toLocaleString();
-            const monedaSimbol = pago.moneda === 'USD' ? '$' : 'S/';
+            const monedaSimbol = pago.moneda_pago || pago.moneda || 'S/.';
             const montoFormateado = `${monedaSimbol} ${parseFloat(pago.monto).toFixed(2)}`;
 
             // ✅ Creamos el contenido HTML de los botones fuera del row
@@ -1936,7 +1936,7 @@ function enviarPDFPorWhatsApp() {
             const fecha = new Date(pago.fecha_pago).toLocaleString();
             
             // Formatear monto con prefijo de moneda
-            const monedaSimbol = pago.moneda === 'USD' ? '$' : 'S/';
+            const monedaSimbol = pago.moneda_pago || pago.moneda || 'S/.';
             const montoFormateado = `${monedaSimbol} ${parseFloat(pago.monto).toFixed(2)}`;
             
             let botonesHTML = `
@@ -2038,7 +2038,7 @@ function enviarPDFPorWhatsApp() {
         if (datos.cuotas && datos.cuotas.length > 0) {
             datos.cuotas.forEach(cuota => {
                 // Formatear monto con prefijo de moneda
-                const monedaSimbol = datos.moneda === 'USD' ? '$' : 'S/';
+                const monedaSimbol = datos.moneda || 'S/.';
                 let contenidoItem = `
                     <li id="itemCuota_${cuota.idCuota}" class="list-group-item d-flex justify-content-between align-items-center">
                         <div>

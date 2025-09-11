@@ -358,4 +358,29 @@ class Usuario
         }
     }
 
+    // Método para verificar si existe un usuario con el mismo num_doc
+    public function verificarUsuarioExistente($num_doc, $excluir_id = null) {
+        $sql = "SELECT usuario_id, nombres, usuario, email, estado FROM usuarios WHERE num_doc = '$num_doc'";
+        if ($excluir_id) {
+            $sql .= " AND usuario_id != $excluir_id";
+        }
+        $resultado = $this->conectar->query($sql);
+        return $resultado->fetch_assoc();
+    }
+
+    // Método para reactivar usuario existente
+    public function reactivarUsuario($usuario_id, $rol, $usuario, $clave, $email, $nombres, $rotativo) {
+        $sql = "UPDATE usuarios SET 
+                id_rol = '$rol',
+                usuario = '$usuario',
+                clave = '$clave',
+                email = '$email',
+                nombres = '$nombres',
+                rotativo = '$rotativo',
+                estado = '1'
+                WHERE usuario_id = $usuario_id";
+        
+        return $this->conectar->query($sql);
+    }
+
 }

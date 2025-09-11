@@ -57,7 +57,7 @@ class PagosController extends Controller
         echo json_encode($result);
     }
 
-   public function pagarCuotaVentas()
+    public function pagarCuotaVentas()
     {
         $sql = "UPDATE dias_ventas set estado = '1' where dias_venta_id='{$_POST['id']}'";
         $result = $this->conectar->query($sql);
@@ -98,15 +98,15 @@ class PagosController extends Controller
         
         try {
             // Consulta base para obtener pagos pendientes (estado = 0)
-            $query = "SELECT p.*, 
-                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
-                    CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS asesor,
-                    c.numUnidad AS numUnidad 
-                FROM pagos_financiamiento p
-                LEFT JOIN conductores c ON p.id_conductor = c.id_conductor
-                LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
-                LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
-                WHERE p.estado = 0";
+            $query = "SELECT p.*, p.moneda as moneda_pago,
+                CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
+                CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS asesor,
+                c.numUnidad AS numUnidad 
+            FROM pagos_financiamiento p
+            LEFT JOIN conductores c ON p.id_conductor = c.id_conductor
+            LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
+            LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
+            WHERE p.estado = 0";
                 
             // Verificamos si hay clientes (no conductores)
             $query .= " ORDER BY p.fecha_pago DESC";
@@ -182,7 +182,7 @@ class PagosController extends Controller
             // Consulta base para obtener pagos rechazados (estado = 2)
             $query = "SELECT p.*, 
                     CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
-                    CONCAT(u.nombres, ' ', u.apellidos) AS asesor,
+                    CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS asesor,
                     c.numUnidad AS numUnidad 
                 FROM pagos_financiamiento p
                 LEFT JOIN conductores c ON p.id_conductor = c.id_conductor
@@ -330,10 +330,10 @@ class PagosController extends Controller
             foreach ($cuotasSeleccionadas as $cuota) {
                 $idCuota = $cuota['idCuota'];
                 
-                $queryCuota = "SELECT cf.*, f.idproductosv2, f.id_variante, f.grupo_financiamiento 
-                               FROM cuotas_financiamiento cf
-                               INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento 
-                               WHERE cf.idcuotas_financiamiento = ?";
+                $queryCuota = "SELECT cf.*, f.idproductosv2, f.id_variante, f.grupo_financiamiento, f.moneda as moneda_financiamiento
+                    FROM cuotas_financiamiento cf
+                    INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento 
+                    WHERE cf.idcuotas_financiamiento = ?";
                 
                 $stmtCuota = mysqli_prepare($this->conectar, $queryCuota);
                 mysqli_stmt_bind_param($stmtCuota, "i", $idCuota);
@@ -358,6 +358,8 @@ class PagosController extends Controller
                         'grupo_financiamiento' => $cuotaInfo['grupo_financiamiento']
                     ];
                     
+                    // Guardamos la moneda del financiamiento
+                    $monedaFinanciamiento = $cuotaInfo['moneda_financiamiento'] ?? 'S/.';
                     // Guardamos los IDs para buscar producto y grupo de financiamiento
                     $idProducto = $cuotaInfo['idproductosv2'];
                     $idVariante = $cuotaInfo['id_variante'];
@@ -433,7 +435,7 @@ class PagosController extends Controller
                     'producto' => $nombreProducto,
                     'grupo' => $nombreGrupo,
                     'cuotas' => $infoCuotas,
-                    'moneda' => $pago['moneda']
+                    'moneda' => $monedaFinanciamiento ?? $pago['moneda']
                 ]
             ];
             

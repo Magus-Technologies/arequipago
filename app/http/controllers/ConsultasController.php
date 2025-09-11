@@ -717,33 +717,5 @@ id_notas_electronicas='$idNotaElectronica',
         }
         return json_encode($lista);
     }
-    public function saveUser()
-    {
-        $rol = $_POST["rol"]; // Obtener el rol desde el formulario
-        $ndoc = !empty($_POST["ndoc"]) ? $_POST["ndoc"] : 'NULL'; // Modificado: Asignar 'NULL' si está vacío
-        $usuario = $_POST["usuario"]; // Obtener el nombre de usuario
-        $clave = sha1($_POST["clave"]); // Encriptar la clave con sha1 antes de guardarla
-        $email = !empty($_POST["email"]) ? $_POST["email"] : 'NULL'; // Modificado: Asignar 'NULL' si está vacío
-        $nombres = !empty($_POST["nombres"]) ? $_POST["nombres"] : 'NULL'; // Modificado: Asignar 'NULL' si está vacío
-        $rotativo = isset($_POST["rotativo"]) && $_POST["rotativo"] !== "" ? $_POST["rotativo"] : '0'; // Valor por defecto 0
         
-        // Asignar valores fijos para id_empresa y sucursal
-        $id_empresa = 12; // Valor fijo para id_empresa
-        $sucursal = 1;    // Valor fijo para sucursal
-    
-        // Instanciar el modelo Usuario
-        $usuarioModel = new Usuario(); // Nuevo: Crear una instancia del modelo
-    
-        // Llamar al método addNewUser del modelo y pasar los datos como parámetro
-        // Incluimos id_empresa como nuevo parámetro
-        $resultado = $usuarioModel->addNewUser($rol, $ndoc, $usuario, $clave, $email, $nombres, $sucursal, $rotativo, $id_empresa); 
-    
-        // Enviar respuesta en formato JSON
-        if ($resultado) { // Modificado: Evaluar la respuesta del modelo
-            echo json_encode(['success' => true]); // Modificado: Enviar respuesta de éxito
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Error al crear el usuario']); // Modificado: Enviar respuesta de error
-        }  
-    }
-    
 }

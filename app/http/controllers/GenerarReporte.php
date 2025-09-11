@@ -3909,11 +3909,10 @@ class GenerarReporte extends Controller
         // Agregar totales en la parte superior
         $sheet->setCellValue('A1', '💰 Total en soles (PEN): S/ ' . $data['total_soles']);
         $sheet->setCellValue('A2', '💵 Total en dólares (USD): $' . $data['total_dolares']);
-        $sheet->mergeCells('A1:J1');
-        $sheet->mergeCells('A2:J2');
-        $sheet->getStyle('A1:J2')->getFont()->setBold(true);
+        $sheet->mergeCells('A1:K1');
+        $sheet->mergeCells('A2:K2');
+        $sheet->getStyle('A1:K2')->getFont()->setBold(true);
 
-        // Definir encabezados en la fila 4
         $headers = [
             'CATEGORÍA',
             'PRODUCTO',
@@ -3924,6 +3923,7 @@ class GenerarReporte extends Controller
             'MONEDA',
             'GRUPO/VARIANTE',
             'FECHA EMISIÓN',
+            'CLIENTE', // Nueva columna
             'VENDEDOR'
         ];
 
@@ -3933,9 +3933,8 @@ class GenerarReporte extends Controller
             $col++;
         }
 
-        // Estilo para encabezados
-        $sheet->getStyle('A4:J4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:J4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        $sheet->getStyle('A4:K4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:K4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('f8f8fa');
 
         // Agrupar datos por categoría
@@ -3952,9 +3951,9 @@ class GenerarReporte extends Controller
         foreach ($categorias as $categoria => $productos) {
             // Fila de categoría
             $sheet->setCellValue('A' . $row, $categoria);
-            $sheet->mergeCells('A' . $row . ':J' . $row);
-            $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
-            $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            $sheet->mergeCells('A' . $row . ':K' . $row);
+            $sheet->getStyle('A' . $row . ':K' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('e9ecef');
             $row++;
 
@@ -3973,6 +3972,7 @@ class GenerarReporte extends Controller
                 $sheet->setCellValue($col++ . $row, $producto['moneda']);
                 $sheet->setCellValue($col++ . $row, $producto['grupo_variante']);
                 $sheet->setCellValue($col++ . $row, date('d/m/Y', strtotime($producto['fecha_emision'])));
+                $sheet->setCellValue($col++ . $row, $producto['cliente']);
                 $sheet->setCellValue($col++ . $row, $producto['nombre_vendedor']);
 
                 // Sumar totales por categoría
@@ -3988,9 +3988,9 @@ class GenerarReporte extends Controller
             // Subtotal por categoría
             $sheet->setCellValue('A' . $row, 'Subtotal ' . $categoria);
             $sheet->setCellValue('F' . $row, 'S/ ' . number_format($totalCategoriaSoles, 2) . ' | $ ' . number_format($totalCategoriaDolares, 2));
-            $sheet->mergeCells('A' . $row . ':E' . $row);
-            $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
-            $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            $sheet->mergeCells('A' . $row . ':I' . $row);
+            $sheet->getStyle('A' . $row . ':K' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setRGB('d1ecf1');
             $row++;
 
@@ -4001,14 +4001,13 @@ class GenerarReporte extends Controller
         // Total general
         $sheet->setCellValue('A' . $row, 'TOTAL GENERAL');
         $sheet->setCellValue('F' . $row, 'S/ ' . $data['total_soles'] . ' | $ ' . $data['total_dolares']);
-        $sheet->mergeCells('A' . $row . ':E' . $row);
-        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('A' . $row . ':J' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        $sheet->mergeCells('A' . $row . ':I' . $row);
+        $sheet->getStyle('A' . $row . ':K' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('A' . $row . ':K' . $row)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
             ->getStartColor()->setRGB('343a40');
-        $sheet->getStyle('A' . $row . ':J' . $row)->getFont()->getColor()->setRGB('ffffff');
+        $sheet->getStyle('A' . $row . ':K' . $row)->getFont()->getColor()->setRGB('ffffff');
 
-        // Ajustar anchos de columna
-        foreach (range('A', 'J') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }
@@ -4055,8 +4054,9 @@ class GenerarReporte extends Controller
                 <th>MONEDA</th>
               <th>GRUPO/VARIANTE</th>
 <th>FECHA EMISIÓN</th>
-<th>VENDEDOR</th>
-            </tr>';
+                <th>CLIENTE</th>
+                <th>VENDEDOR</th>
+                            </tr>';
 
         // Agrupar por categoría
         $categorias = [];
@@ -4072,7 +4072,7 @@ class GenerarReporte extends Controller
             // Fila de categoría
             $html .= '
             <tr class="categoria-row">
-                <td colspan="8">' . $categoria . '</td>
+                <td colspan="10">' . $categoria . '</td>
             </tr>';
 
             $totalCategoriaSoles = 0;
@@ -4091,6 +4091,7 @@ class GenerarReporte extends Controller
                     <td>' . $producto['moneda'] . '</td>
                    <td>' . ($producto['grupo_variante'] ?: '') . '</td>
 <td>' . date('d/m/Y', strtotime($producto['fecha_emision'])) . '</td>
+<td>' . $producto['cliente'] . '</td>
 <td>' . $producto['nombre_vendedor'] . '</td>
                 </tr>';
 
@@ -4108,9 +4109,9 @@ class GenerarReporte extends Controller
             <tr class="subtotal-row">
                 <td colspan="5">Subtotal ' . $categoria . '</td>
                 <td>S/ ' . number_format($totalCategoriaSoles, 2) . ' | $ ' . number_format($totalCategoriaDolares, 2) . '</td>
-                <td colspan="2"></td>
+                <td colspan="4"></td>
             </tr>
-            <tr><td colspan="8">&nbsp;</td></tr>';
+            <tr><td colspan="10">&nbsp;</td></tr>';
         }
 
         // Total general
@@ -4118,7 +4119,7 @@ class GenerarReporte extends Controller
         <tr class="total-row">
             <td colspan="5">TOTAL GENERAL</td>
             <td>S/ ' . $data['total_soles'] . ' | $ ' . $data['total_dolares'] . '</td>
-            <td colspan="2"></td>
+            <td colspan="4"></td>
         </tr>';
 
         $html .= '</table>';
@@ -4350,32 +4351,34 @@ class GenerarReporte extends Controller
                 $condicionProductos = " AND p.idproductosv2 IN (" . implode(',', $productosEscapados) . ")";
             }
 
-            // Consulta principal para ventas normales
             $query = "SELECT 
-            v.id_venta,
-            v.fecha_emision,
-            v.total as total_venta,
-            pv.id_producto,
-            pv.cantidad,
-            pv.precio,
-            p.nombre as producto_nombre,
-            p.categoria,
-            p.precio_venta,
-            u.usuario as nombre_vendedor
-        FROM 
-            ventas v
-       JOIN 
-            productos_ventas pv ON v.id_venta = pv.id_venta
+                v.id_venta,
+                v.fecha_emision,
+                v.total as total_venta,
+                pv.id_producto,
+                pv.cantidad,
+                pv.precio,
+                p.nombre as producto_nombre,
+                p.categoria,
+                p.precio_venta,
+                c.datos as nombre_cliente,
+                CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) as nombre_vendedor
+            FROM 
+                ventas v
         JOIN 
-            productosv2 p ON pv.id_producto = p.idproductosv2
-        JOIN 
-            usuarios u ON v.id_vendedor =u.usuario_id
-        WHERE 
-            v.fecha_emision BETWEEN '$fechaInicio' AND '$fechaFin'
-            $condicionCategorias
-            $condicionProductos
-       ORDER BY 
-            p.categoria, p.nombre";
+                productos_ventas pv ON v.id_venta = pv.id_venta
+            JOIN 
+                productosv2 p ON pv.id_producto = p.idproductosv2
+            JOIN 
+                usuarios u ON v.id_vendedor = u.usuario_id
+            LEFT JOIN
+                clientes c ON v.id_cliente = c.id_cliente
+            WHERE 
+                v.fecha_emision BETWEEN '$fechaInicio' AND '$fechaFin'
+                $condicionCategorias
+                $condicionProductos
+        ORDER BY 
+                p.categoria, p.nombre";
 
             $resultado = $this->conexion->query($query);
 
@@ -4403,6 +4406,7 @@ class GenerarReporte extends Controller
                     'moneda' => 'S/.',
                     'grupo_variante' => '',
                     'fecha_emision' => $fila['fecha_emision'],
+                    'cliente' => $fila['nombre_cliente'] ?? 'No registrado',
                     'nombre_vendedor' => $fila['nombre_vendedor'] ?? 'No asignado'
                 ];
 
@@ -4463,18 +4467,27 @@ class GenerarReporte extends Controller
                          f.grupo_financiamiento,
                          f.id_variante,
                          f.moneda,
+                         f.id_conductor,
+                         f.id_cliente,
                          p.nombre as producto_nombre,
                          p.categoria,
                          p.precio_venta,
-                         u.usuario as nombre_vendedor
+                         CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) as nombre_vendedor,
+                         CASE 
+                             WHEN f.id_conductor IS NOT NULL THEN CONCAT(COALESCE(cond.nombres, ''), ' ', COALESCE(cond.apellido_paterno, ''), ' ', COALESCE(cond.apellido_materno, ''))
+                             WHEN f.id_cliente IS NOT NULL THEN CONCAT(COALESCE(cf.nombres, ''), ' ', COALESCE(cf.apellido_paterno, ''), ' ', COALESCE(cf.apellido_materno, ''))
+                             ELSE 'No registrado'
+                         END as nombre_cliente
                      FROM
                          financiamiento f
                      JOIN
                          productosv2 p ON f.idproductosv2 = p.idproductosv2
                      LEFT JOIN
-                         pagos_financiamiento pf ON f.idfinanciamiento = pf.id_financiamiento
+                         usuarios u ON f.usuario_id = u.usuario_id
                      LEFT JOIN
-                         usuarios u ON pf.id_asesor = u.usuario_id
+                         conductores cond ON f.id_conductor = cond.id_conductor
+                     LEFT JOIN
+                         clientes_financiar cf ON f.id_cliente = cf.id
                      WHERE
                          DATE(f.fecha_creacion) BETWEEN '$fechaInicio' AND '$fechaFin'
                          $condicionCategorias
@@ -4521,6 +4534,7 @@ class GenerarReporte extends Controller
                     'moneda' => $monedaFinanciamiento,
                     'grupo_variante' => $grupoVariante,
                     'fecha_emision' => $fila['fecha_creacion'],
+                    'cliente' => $fila['nombre_cliente'],
                     'nombre_vendedor' => $fila['nombre_vendedor'] ?? 'No asignado'
                 ];
 

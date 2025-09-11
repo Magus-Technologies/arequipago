@@ -1519,8 +1519,9 @@ function renderVentasPorCategoriaTable(data) {
                     <th>MONEDA</th>
                     <th>GRUPO/VARIANTE</th>
                     <th>FECHA EMISIÓN</th>
+                    <th>CLIENTE</th>
                     <th>VENDEDOR</th>
-                </tr>
+                                    </tr>
     `;
     
     // Agrupar por categoría
@@ -1537,7 +1538,7 @@ function renderVentasPorCategoriaTable(data) {
         // Fila de categoría
         html += `
             <tr class="table-secondary">
-                <td colspan="10"><strong>${categoria}</strong></td>
+                <td colspan="11"><strong>${categoria}</strong></td>
             </tr>
         `;
         
@@ -1557,6 +1558,7 @@ function renderVentasPorCategoriaTable(data) {
                     <td>${producto.moneda}</td>
                     <td>${producto.grupo_variante || ''}</td>
                     <td>${new Date(producto.fecha_emision).toLocaleDateString('es-ES')}</td>
+                    <td>${producto.cliente}</td>
                     <td>${producto.nombre_vendedor}</td>
                 </tr>
             `;
@@ -1574,9 +1576,9 @@ function renderVentasPorCategoriaTable(data) {
             <tr class="table-info">
                 <td colspan="7"><strong>Subtotal ${categoria}</strong></td>
                 <td><strong>S/ ${totalCategoriaSoles.toFixed(2)} | $ ${totalCategoriaDolares.toFixed(2)}</strong></td>
-                <td colspan="2"></td>
+                <td colspan="3"></td>
             </tr>
-            <tr><td colspan="10">&nbsp;</td></tr>
+            <tr><td colspan="11">&nbsp;</td></tr>
         `;
     });
     
@@ -1585,7 +1587,7 @@ function renderVentasPorCategoriaTable(data) {
         <tr class="table-dark">
             <td colspan="7"><strong>TOTAL GENERAL</strong></td>
             <td><strong>S/ ${data.total_soles} | $ ${data.total_dolares}</strong></td>
-            <td colspan="2"></td>
+            <td colspan="3"></td>
         </tr>
     `;
     
