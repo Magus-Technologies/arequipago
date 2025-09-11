@@ -1,18 +1,18 @@
 <?php
-// Configuración para PRODUCCIÓN - No usar valores locales
+// Configuraciï¿½n para PRODUCCIï¿½N - No usar valores locales
 
 /**
  * DATABASE_CONFIG
- * IMPORTANTE: Usar los valores correctos del servidor de producción
+ * IMPORTANTE: Usar los valores correctos del servidor de producciï¿½n
  */
 define("HOST_SS", "localhost");
 define("DATABASE_SS", "magusqao_arequipa");      // ? Confirmado
-define("USER_SS", "magusqao_maguado");           // ? Usuario creado
-define("PASSWORD_SS", "magus72nK3XqL");          // ? Contraseña definida
+define("USER_SS", "root");           // ? Usuario creado
+define("PASSWORD_SS", "");          // ? Contraseï¿½a definida
 
 /**
  * EMAILS_CONFIG
- * Configuración de correo para producción
+ * Configuraciï¿½n de correo para producciï¿½n
  */
 define("HOST_SMTP", "matrixsistem.com");
 define("USER_SMTP", "informes@matrixsistem.com");
@@ -23,16 +23,16 @@ define("PUERTO_SMTP", "465");
  * SERVER GEN XML SUNAT
  */
 //define("ENDPOINT", "production"); // Cambiar a production para servidor real
-//define("URL_GEN_XML_SUNAT", "http://genxml.production"); // URL de producción
+//define("URL_GEN_XML_SUNAT", "http://genxml.production"); // URL de producciï¿½n
 
 define("KEY_ENCRYPT", "matrixsistem_key");
 
 /**
  * SESSION_CONFIG
  */
-define("INACTIVITY_TIMEOUT_SECONDS", 7200); // 2 horas para producción
+define("INACTIVITY_TIMEOUT_SECONDS", 7200); // 2 horas para producciï¿½n
 
-// Función para probar la conexión (opcional - remover después de probar)
+// Funciï¿½n para probar la conexiï¿½n (opcional - remover despuï¿½s de probar)
 function testDatabaseConnection() {
     try {
         $pdo = new PDO(
@@ -41,14 +41,14 @@ function testDatabaseConnection() {
             PASSWORD_SS,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        echo "? Conexión exitosa a la base de datos\n";
+        echo "? Conexiï¿½n exitosa a la base de datos\n";
         return true;
     } catch (PDOException $e) {
-        echo "? Error de conexión: " . $e->getMessage() . "\n";
+        echo "? Error de conexiï¿½n: " . $e->getMessage() . "\n";
         return false;
     }
 }
 
-// Descomentar la siguiente línea para probar la conexión
+// Descomentar la siguiente lï¿½nea para probar la conexiï¿½n
 // testDatabaseConnection();
 ?>

@@ -7,17 +7,6 @@ class GrupoFinanciamientoModel {
         $this->conectar = (new Conexion())->getConexion();
     }
 
-    public function guardarGrupoFinanciamiento($nombre) {
-        $sql = "INSERT INTO grupovehicular_financiamiento (nombre) VALUES (?)";
-        $stmt = $this->conectar->prepare($sql);
-
-        if ($stmt) {
-            $stmt->bind_param("s", $nombre); // "s" para tipo string
-            return $stmt->execute(); // Ejecutar la consulta
-        }
-        return false;
-    }
-
     public function getUltimoIdInsertado() {
         return $this->conectar->insert_id; // Obtener el último ID insertado
     }
@@ -36,45 +25,47 @@ class GrupoFinanciamientoModel {
     }
 
     
-    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular)
+    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo')
     {
         // 🔹 Convertir valores vacíos a null para evitar errores
-        $cuotaInicial = $cuotaInicial !== "" ? $cuotaInicial : null;  // 🔹 Si cuotaInicial llega vacía, asigno null
-        $montoCuota = $montoCuota !== "" ? $montoCuota : null;  // 🔹 Si llega vacío, convertir a null
-        $cantidadCuotas = $cantidadCuotas !== "" ? $cantidadCuotas : null;  // 🔹 Si llega vacío, convertir a null
-        $tasaInteres = $tasaInteres !== "" ? $tasaInteres : null;  // 🔹 Si llega vacío, convertir a null
-        $monto = $monto !== "" ? $monto : null;  // 🔹 Si llega vacío, convertir a null
+        $cuotaInicial = $cuotaInicial !== "" ? $cuotaInicial : null;
+        $montoCuota = $montoCuota !== "" ? $montoCuota : null;
+        $cantidadCuotas = $cantidadCuotas !== "" ? $cantidadCuotas : null;
+        $tasaInteres = $tasaInteres !== "" ? $tasaInteres : null;
+        $monto = $monto !== "" ? $monto : null;
         $montoSinInteres = $montoSinInteres !== "" ? $montoSinInteres : null;
-        $fechaInicio = $fechaInicio !== "" ? $fechaInicio : null;  // 🔹 Si llega vacío, convertir a null
-        $fechaFin = $fechaFin !== "" ? $fechaFin : null;  // 🔹 Si llega vacío, convertir a null
+        $fechaInicio = $fechaInicio !== "" ? $fechaInicio : null;
+        $fechaFin = $fechaFin !== "" ? $fechaFin : null;
 
         if ($tipoVehicular === 'auto') {
             $tipoVehicular = 'vehiculo';
         }
 
         $sql = "INSERT INTO planes_financiamiento
-        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conectar->prepare($sql);
 
-        if (!$stmt) { // 🔹 Verifico si la preparación falló
+        if (!$stmt) {
             die("Error en la preparación de la consulta: " . $this->conectar->error);
         }
 
-        $stmt->bind_param("sddissddssss",
-            $nombrePlan,
-            $cuotaInicial,
-            $montoCuota,
-            $cantidadCuotas,
-            $frecuenciaPago,
-            $moneda,
-            $tasaInteres,
-            $monto,
-            $montoSinInteres,
-            $fechaInicio,
-            $fechaFin,
-            $tipoVehicular
+        // ✅ CORREGIDO: 13 tipos para 13 parámetros (todos como string ya que llegan como string)
+        $stmt->bind_param("sssssssssssss",
+            $nombrePlan,        // s - string
+            $cuotaInicial,      // s - string (era d)
+            $montoCuota,        // s - string (era d) 
+            $cantidadCuotas,    // s - string (era i)
+            $frecuenciaPago,    // s - string
+            $moneda,            // s - string
+            $tasaInteres,       // s - string (era d)
+            $monto,             // s - string (era d)
+            $montoSinInteres,   // s - string (era s)
+            $fechaInicio,       // s - string
+            $fechaFin,          // s - string
+            $tipoVehicular,     // s - string
+            $estado             // s - string
         );
 
         // 🔹 Ejecutar la consulta y verificar si fue exitosa
@@ -181,7 +172,7 @@ class GrupoFinanciamientoModel {
 
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, 
                             $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres, 
-                            $fechaInicio, $fechaFin, $tipoVehicular = null) {
+                            $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo') {
         
         // ✅ Validar y limpiar tipoVehicular
         if ($tipoVehicular === '' || $tipoVehicular === 'null' || $tipoVehicular === null) {
@@ -189,8 +180,6 @@ class GrupoFinanciamientoModel {
         } elseif ($tipoVehicular === 'auto') {
             $tipoVehicular = 'vehiculo';
         } elseif (!in_array($tipoVehicular, ['moto', 'vehiculo'])) {
-            // ✅ Debug: registrar valor inválido
-            error_log("Tipo vehicular inválido recibido: '$tipoVehicular'");
             throw new Exception("Tipo vehicular inválido: '$tipoVehicular'");
         }
 
@@ -206,49 +195,49 @@ class GrupoFinanciamientoModel {
             tasa_interes = ?,  
             fecha_inicio = ?,  
             fecha_fin = ?,
-            tipo_vehicular = ?
+            tipo_vehicular = ?,
+            estado = ?
         WHERE idplan_financiamiento = ?";
 
-
-        $stmt = $this->conectar->prepare($sql);  // Preparar la consulta para evitar SQL Injection
+        $stmt = $this->conectar->prepare($sql);
 
         if (!$stmt) {  
             throw new Exception("Error en la preparación de la consulta: " . $this->conectar->error);  
         }  
 
         // Convertir valores vacíos a NULL para evitar problemas en bind_param
-        $cuotaInicial = ($cuotaInicial !== null && $cuotaInicial !== '') ? $cuotaInicial : null; // Editado
-        $montoCuota = ($montoCuota !== null && $montoCuota !== '') ? $montoCuota : null; // Editado
-        $cantidadCuotas = ($cantidadCuotas !== null && $cantidadCuotas !== '') ? $cantidadCuotas : null; // Editado
-        $monto = ($monto !== null && $monto !== '') ? $monto : null; // Editado
-        $montoSinInteres = ($montoSinInteres !== null && $montoSinInteres !== '') ? $montoSinInteres : null; // Editado
-        $tasaInteres = ($tasaInteres !== null && $tasaInteres !== '') ? $tasaInteres : null; // Editado
-        $fechaInicio = ($fechaInicio !== null && $fechaInicio !== '') ? $fechaInicio : null; // Editado
-        $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null; // Editado
-        $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null; // Editado
+        $cuotaInicial = ($cuotaInicial !== null && $cuotaInicial !== '') ? $cuotaInicial : null;
+        $montoCuota = ($montoCuota !== null && $montoCuota !== '') ? $montoCuota : null;
+        $cantidadCuotas = ($cantidadCuotas !== null && $cantidadCuotas !== '') ? $cantidadCuotas : null;
+        $monto = ($monto !== null && $monto !== '') ? $monto : null;
+        $montoSinInteres = ($montoSinInteres !== null && $montoSinInteres !== '') ? $montoSinInteres : null;
+        $tasaInteres = ($tasaInteres !== null && $tasaInteres !== '') ? $tasaInteres : null;
+        $fechaInicio = ($fechaInicio !== null && $fechaInicio !== '') ? $fechaInicio : null;
+        $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
+        $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
 
-            $stmt->bind_param("sddissddssssi", 
-            $nombrePlan,  
-            $cuotaInicial,  
-            $montoCuota,  
-            $cantidadCuotas,  
-            $frecuenciaPago,
-            $moneda,  
-            $monto,  
-            $montoSinInteres,  
-            $tasaInteres,  
-            $fechaInicio,  
-            $fechaFin,
-            $tipoVehicular,
-            $id  
-        );  
+        $stmt->bind_param("sssssssssssssi", 
+            $nombrePlan,           
+            $cuotaInicial,         
+            $montoCuota,           
+            $cantidadCuotas,       
+            $frecuenciaPago,       
+            $moneda,               
+            $monto,                
+            $montoSinInteres,      
+            $tasaInteres,          
+            $fechaInicio,          
+            $fechaFin,             
+            $tipoVehicular,        
+            $estado,               
+            $id                    
+        );
 
         if (!$stmt->execute()) {  
             throw new Exception("Error en la ejecución: " . $stmt->error);  
         }  
 
-        $stmt->close(); // Cerrar statement para liberar recursos
-
+        $stmt->close();
         return true;
     }
 
@@ -426,20 +415,21 @@ class GrupoFinanciamientoModel {
     
 
     public function getGroupById($id) {
-        $sql = "SELECT 
-                    idplan_financiamiento,
-                    nombre_plan,
-                    cuota_inicial,
-                    monto_cuota,
-                    cantidad_cuotas,
-                    penalizacion_mora,
-                    frecuencia_pago,
-                    moneda,
-                    tasa_interes,
-                    monto,
-                    monto_sin_interes,
-                    fecha_inicio,
-                    fecha_fin
+        $sql = "SELECT                     
+             idplan_financiamiento,
+             nombre_plan,
+             cuota_inicial,
+             monto_cuota,
+             cantidad_cuotas,
+             penalizacion_mora,
+             frecuencia_pago,
+             moneda,
+             tasa_interes,
+             monto,
+             monto_sin_interes,
+             fecha_inicio,
+             fecha_fin,
+             estado
                 FROM planes_financiamiento 
                 WHERE idplan_financiamiento = ?";
                 
@@ -467,7 +457,8 @@ class GrupoFinanciamientoModel {
                 'monto' => 0,
                 'monto_sin_interes' => 0,
                 'fecha_inicio' => null,
-                'fecha_fin' => null
+                'fecha_fin' => null,
+                'estado' => 'activo'
             ];
         }
         
@@ -499,6 +490,25 @@ class GrupoFinanciamientoModel {
         $stmt->close();
         
         return $tipoVehicular;
+    }
+
+    public function obtenerEstadoPlan($idPlan) {
+        $sql = "SELECT estado FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+        $stmt = $this->conectar->prepare($sql);
+        
+        if (!$stmt) {
+            throw new Exception("Error en la preparación de la consulta");
+        }
+        
+        $stmt->bind_param("i", $idPlan);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            return $row['estado'];
+        }
+        
+        throw new Exception("Plan no encontrado");
     }
 
 }

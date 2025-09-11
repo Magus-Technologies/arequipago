@@ -13,8 +13,7 @@ function getAllPlanes() {
         // select.append('<option value="notGrupo">Sin grupo</option>'); // COMENTADO: Ocultar opción "Sin grupo"
         response.planes.forEach((plan) => {
           // CAMBIO: antes filtraba != 9 && != 12, ahora solo filtrará != 9 para que el 12 sí cargue
-          if (plan.idplan_financiamiento != 9) {
-            // CAMBIO
+          if (plan.estado === 'activo') { // CAMBIO: Solo filtrar por estado activo desde BD
             let option = `<option value="${plan.idplan_financiamiento}">${plan.nombre_plan}</option>`;
             select.append(option);
           }

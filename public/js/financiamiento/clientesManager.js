@@ -366,7 +366,7 @@ function configurarOrdenamiento() {
                         let tbody = $("#detalleSelect tbody");
                         tbody.empty();
 
-                        data.financiamientos.forEach(function (financiamiento) {
+                                                data.financiamientos.forEach(function (financiamiento) {
                             let producto = financiamiento.producto || {};
                             let conductor = data.conductor || {}; // Tomarlo desde data
                             let direccion = data.direccion || {};
@@ -381,14 +381,20 @@ function configurarOrdenamiento() {
                                 direccion// Agregar la dirección del conductor
                             };
 
+                            // NUEVO: Obtener el monto de compra (sin intereses) y el monto total
+                            const montoCompra = financiamiento.monto_sin_interes || financiamiento.monto_total || 0;
+                            const montoTotal = financiamiento.monto_total || 0;
+                            const moneda = financiamiento.moneda || "S/.";
+
                             let row = `<tr onclick="seleccionarFinanciamiento(this)" 
                                     data-financiamiento='${JSON.stringify(financiamientoData)}'>
-                            <td>${producto.nombre || 'Sin nombre'}</td>
-                            <td>${financiamiento.nombre_plan ? financiamiento.nombre_plan : (financiamiento.grupo_financiamiento === 'notGrupo' ? 'Sin Grupo' : 'N/A')}</td>
-                            <td>${financiamiento.cantidad_producto || '0'}</td>
-                            <td>${financiamiento.monto_total || '0.00'}</td>
-                            <td>${producto.categoria || 'Sin categoría'}</td>
-                        </tr>`;
+                                <td>${producto.nombre || 'Sin nombre'}</td>
+                                <td>${financiamiento.nombre_plan ? financiamiento.nombre_plan : (financiamiento.grupo_financiamiento === 'notGrupo' ? 'Sin Grupo' : 'N/A')}</td>
+                                <td>${financiamiento.cantidad_producto || '0'}</td>
+                                <td>${moneda} ${parseFloat(montoCompra).toLocaleString('es-PE', {minimumFractionDigits: 2})}</td>
+                                <td>${moneda} ${parseFloat(montoTotal).toLocaleString('es-PE', {minimumFractionDigits: 2})}</td>
+                                <td>${producto.categoria || 'Sin categoría'}</td>
+                            </tr>`;
                             tbody.append(row); // Agregar la fila a la tabla correcta
                         });
 

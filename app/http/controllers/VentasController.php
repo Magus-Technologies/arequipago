@@ -1055,6 +1055,36 @@ class VentasController extends Controller
                 // Procesar productos
                 $array_detalle = json_decode($_POST['listaPro'], true);
     
+                // NUEVO: Validación para Logo YANGO usando código del producto
+                foreach ($array_detalle as $fila) {
+                    // Buscar el ID real del producto usando el código
+                    $sql_producto = "SELECT idproductosv2 FROM productosv2 WHERE codigo = '" . $fila['productoid'] . "' OR codigo_barra = '" . $fila['productoid'] . "'";
+                    $resultado_producto = $this->venta->exeSQL($sql_producto);
+                    
+                    if ($resultado_producto && $resultado_producto->num_rows > 0) {
+                        $producto_data = $resultado_producto->fetch_assoc();
+                        $id_producto_real = $producto_data['idproductosv2'];
+                        
+                        if ($id_producto_real == '27') { // ID del producto LOGO YANGO
+                            $documento_cliente = trim($this->venta->exeSQL("SELECT documento FROM clientes WHERE id_cliente = '{$c_cliente->getIdCliente()}'")->fetch_assoc()['documento']);
+                            
+                            if (!empty($documento_cliente)) {
+                                $sql_conductor = "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = '" . trim($documento_cliente) . "'";
+                                
+                                $resultado_conductor = $this->venta->exeSQL($sql_conductor);
+                                
+                                if ($resultado_conductor && $resultado_conductor->num_rows > 0) {
+                                    $conductor_data = $resultado_conductor->fetch_assoc();
+                                    
+                                    if (!is_null($conductor_data['logo_yango_asignado_cod']) && !empty($conductor_data['logo_yango_asignado_cod'])) {
+                                        throw new Exception("Conductor ya tiene Logo YANGO asignado: " . $conductor_data['logo_yango_asignado_cod']);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if ($tipoventa == 1) {
                     // Venta de productos
                     foreach ($array_detalle as $fila) {
@@ -1386,6 +1416,46 @@ class VentasController extends Controller
             // Manejo de errores
             echo json_encode(["error" => "Ocurrió un error al buscar productos."]);
         }
+    }
+
+    public function validarConductorLogoYango()
+    {
+        $respuesta = ['res' => false, 'tiene_logo' => false, 'codigo_logo' => ''];
+        
+        try {
+            if (!isset($_POST['documento']) || empty(trim($_POST['documento']))) {
+                echo json_encode($respuesta);
+                return;
+            }
+            
+            $documento = trim($_POST['documento']);
+            
+            $sql = "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = ?";
+            $stmt = $this->conexion->prepare($sql);
+            
+            if ($stmt) {
+                $stmt->bind_param("s", $documento);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result && $result->num_rows > 0) {
+                    $conductor = $result->fetch_assoc();
+                    $respuesta['res'] = true;
+                    
+                    if (!is_null($conductor['logo_yango_asignado_cod']) && !empty($conductor['logo_yango_asignado_cod'])) {
+                        $respuesta['tiene_logo'] = true;
+                        $respuesta['codigo_logo'] = $conductor['logo_yango_asignado_cod'];
+                    }
+                }
+                
+                $stmt->close();
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error en validarConductorLogoYango: " . $e->getMessage());
+        }
+        
+        echo json_encode($respuesta);
     }
 
 }

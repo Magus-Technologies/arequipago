@@ -2162,43 +2162,74 @@ private function esCategoríaCelular($categoriaNormalizada) {
         }
     }
     public function obtenerDetallesProducto()
-{
-    try {
-        // Obtener el ID del producto de la solicitud GET
-        $idProducto = isset($_GET['id']) ? intval($_GET['id']) : 0;
-        
-        if ($idProducto <= 0) {
-            throw new Exception('ID de producto no válido');
+    {
+        try {
+            // Obtener el ID del producto de la solicitud GET
+            $idProducto = isset($_GET['id']) ? intval($_GET['id']) : 0;
+            
+            if ($idProducto <= 0) {
+                throw new Exception('ID de producto no válido');
+            }
+
+            // Instanciar el modelo
+            $productoModel = new Productov2();
+            
+            // Obtener los detalles del producto
+            $producto = $productoModel->obtenerProductoDetallado($idProducto);
+            
+            if (!$producto) {
+                throw new Exception('Producto no encontrado');
+            }
+
+            // MODIFICACIÓN: ASEGURAR QUE LOS DATOS ESTÉN CORRECTAMENTE FORMATEADOS
+            // Para vehículos o celulares que pueden tener formato especial
+            if (!isset($producto['caracteristicas'])) {
+                $producto['caracteristicas'] = [];
+            }
+
+            // Devolver la respuesta en formato JSON
+            echo json_encode([
+                'success' => true,
+                'producto' => $producto
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerDetallesProducto: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
         }
-
-        // Instanciar el modelo
-        $productoModel = new Productov2();
-        
-        // Obtener los detalles del producto
-        $producto = $productoModel->obtenerProductoDetallado($idProducto);
-        
-        if (!$producto) {
-            throw new Exception('Producto no encontrado');
-        }
-
-        // MODIFICACIÓN: ASEGURAR QUE LOS DATOS ESTÉN CORRECTAMENTE FORMATEADOS
-        // Para vehículos o celulares que pueden tener formato especial
-        if (!isset($producto['caracteristicas'])) {
-            $producto['caracteristicas'] = [];
-        }
-
-        // Devolver la respuesta en formato JSON
-        echo json_encode([
-            'success' => true,
-            'producto' => $producto
-        ]);
-
-    } catch (Exception $e) {
-        error_log("Error en obtenerDetallesProducto: " . $e->getMessage());
-        echo json_encode([
-            'success' => false,
-            'message' => $e->getMessage()
-        ]);
     }
-}
+
+    public function verificarStockLogo()
+    {
+        try {
+            $id_producto = $_POST['id_producto'] ?? 27;
+            
+            $producto = new Productov2();
+            $logoYango = $producto->getProductsList($id_producto);
+            
+            if ($logoYango) {
+                $tiene_stock = $logoYango['cantidad'] > 0;
+                
+                echo json_encode([
+                    'success' => true,
+                    'tiene_stock' => $tiene_stock,
+                    'cantidad' => $logoYango['cantidad']
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Producto no encontrado'
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 }

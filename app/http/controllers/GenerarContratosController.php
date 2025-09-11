@@ -205,7 +205,7 @@ class GenerarContratosController extends controller
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
                 // 😊 Generar contrato de Excel para vehículos
-                if ($esVehiculo) {
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -232,8 +232,8 @@ class GenerarContratosController extends controller
                 }
                
                 
-                if (!$esVehiculo) {
-                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías'])) {
+                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33) {
+                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 22])) {
                         throw new Exception("No hay un modelo de contrato para este producto.");
                     }
 
@@ -248,10 +248,24 @@ class GenerarContratosController extends controller
                     );
 
                     foreach ($plantillas as $nombrePlantilla => $html) {
-                        $mpdf = new \Mpdf\Mpdf([
-                            'margin_left' => 30, // Margen izquierdo (en milímetros)
-                            'margin_right' => 30,
-                        ]);
+                        // Condicional para márgenes
+                        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
+                            // Sin márgenes para el contrato de Motos
+                            $mpdf = new \Mpdf\Mpdf([
+                                'margin_left' => 0,
+                                'margin_right' => 0,
+                                'margin_top' => 0,
+                                'margin_bottom' => 0,
+                                'margin_header' => 0,
+                                'margin_footer' => 0
+                            ]);
+                        } else {
+                            // Márgenes por defecto para los otros contratos
+                            $mpdf = new \Mpdf\Mpdf([
+                                'margin_left' => 30, // Margen izquierdo (en milímetros)
+                                'margin_right' => 30,
+                            ]);
+                        }
                         $mpdf->WriteHTML($html);
         
                         // Crear un nombre único para cada archivo
@@ -283,7 +297,9 @@ class GenerarContratosController extends controller
       private function generarContratoExcelVehiculo($financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas, $nombrePersona, $requisitosModel)
       {
       
-          ini_set('memory_limit', '512M');
+          // 😊 Aumentar límite de memoria y optimizar configuración para Excel
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', 300); // 5 minutos
 
           $GrupoFinanciamientoModel = new GrupoFinanciamientoModel();
           // Ruta al archivo Excel de plantilla
@@ -313,8 +329,13 @@ class GenerarContratosController extends controller
           }
           
           // Obtener datos del grupo de financiamiento
-          $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
-          // Llenar el Excel con los datos
+            $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
+
+            // 😊 Obtener tipo vehicular para determinar la moneda correcta
+            $idGrupoFinanciamiento = $financiamiento['grupo_financiamiento'];
+            $tipoVehicular = $GrupoFinanciamientoModel->getTipoVehicular($idGrupoFinanciamiento);
+
+            // Llenar el Excel con los datos
           
           // 1. Número de teléfono - Celda H6
           $worksheet->setCellValue('H6', $persona['telefono'] ?? '');
@@ -386,10 +407,21 @@ class GenerarContratosController extends controller
           // 19. Monto de inscripción - Celda I27
           $worksheet->setCellValue('I27', $financiamiento['monto_inscrip'] ?? '0.00');
           
-          // 20. Marcar documentos según estados
+          // 😊 20. Configurar moneda en celda H27 según tipo vehicular con alineación
+            if ($tipoVehicular === 'moto') {
+                // Para motos usar soles (S/)
+                $worksheet->setCellValue('H27', 'S/');
+                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+            } else {
+                // Para vehículos usar dólares (US$)
+                $worksheet->setCellValue('H27', 'US$');
+                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+            }
+
+          // 21. Marcar documentos según estados
           $this->marcarDocumentosEnExcel($worksheet, $estadosRequisitos, $tipoPersona);
 
-          // 21. Fecha actual con formato personalizado - Celda C44
+          // 22. Fecha actual con formato personalizado - Celda C44
             setlocale(LC_TIME, 'es_ES.UTF-8'); // Para sistemas que soportan UTF-8 (Linux/macOS)
             $fechaFormateada = strftime('%d de %B del %Y', strtotime(date('Y-m-d')));
 
@@ -533,7 +565,13 @@ class GenerarContratosController extends controller
         $aro = ''; 
         $perfil = '';
         // Selección de la plantilla según la categoría
-        if ($categoria === 'Llantas') {
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 33) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_MotosYa.html";
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipPlanMovil.html";
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_Motos.html";
+        } elseif ($categoria === 'Llantas') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_llantas.html";
         } elseif ($categoria === 'Aceites') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_aceites.html";
@@ -729,8 +767,24 @@ class GenerarContratosController extends controller
             'persona' => $textoRol,
             'licencia_bloque' => $bloqueLicencia,
             'frase_afiliacion' => $fraseAfiliacion,
-            'clausula_conductor' => $clausulaConductor
+            'clausula_conductor' => $clausulaConductor,
+
+            // Nuevos campos para Plan Chip Movil
+            'plan_descripcion' => '', // Default empty
+            'numero_linea' => '' // Default empty
         ];
+
+        // Lógica para Plan Chip Movil (ID 35)
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
+            foreach ($caracteristicas as $caracteristica) {
+                $nombreCaracteristica = strtolower($caracteristica['nombre_caracteristicas']);
+                if ($nombreCaracteristica === 'descripcion_plan') {
+                    $reemplazos['plan_descripcion'] = $caracteristica['valor_caracteristica'];
+                } elseif ($nombreCaracteristica === 'numero_linea') {
+                    $reemplazos['numero_linea'] = $caracteristica['valor_caracteristica'];
+                }
+            }
+        }
     
         // Si es conductor, incluir licencia; si no, dejarla en blanco
         if ($tipoPersona === 'conductor') {
@@ -819,6 +873,7 @@ class GenerarContratosController extends controller
                 // Crear el array de datos para este conductor
                 $datos = [
                     'id_conductor' => $idConductor, // Almacenar el id del conductor
+                    'tipo_doc' => $datosConductor['tipo_doc'] ?? 'DNI', // Agregar el tipo de documento
                     'telefono' => $datosConductor['telefono'] ?? 'No registrado',
                     'apellido_paterno' => $datosConductor['apellido_paterno'] ?? 'No registrado',
                     'apellido_materno' => $datosConductor['apellido_materno'] ?? 'No registrado',
@@ -1093,6 +1148,9 @@ class GenerarContratosController extends controller
         // Reemplazar los valores de los spans con los datos del conductor
         $html = str_replace('<span id="nombre_afiliado">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_afiliado">', $datos['dni'], $html);
+        // Reemplazar el tipo de documento en todas las ocurrencias
+        $html = str_replace('DNI N°', $datos['tipo_doc'] . ' N°', $html);
+        $html = str_replace('DNI:', $datos['tipo_doc'] . ':', $html);
         $html = str_replace('<span id="domicilio_afiliado">', $datos['direccion_completa'], $html);
         $html = str_replace('<span id="placa_vehiculo">', $datos['placa'], $html);
         $html = str_replace('<span id="marca_vehiculo">', $datos['marca'], $html);

@@ -1,41 +1,5 @@
 <?php
 
-// Obtiene la URI actual
-$currentUri = $_SERVER['REQUEST_URI'];
-
-// Verifica si la URL contiene "/arequipago/"
-if (strpos($currentUri, '/arequipago/') === 0) {
-    // Obtiene el mÃ©todo de la solicitud
-    $method = $_SERVER['REQUEST_METHOD'];
-    
-    // Elimina el prefijo '/arequipago' manteniendo el resto de la ruta
-    $newPath = substr($currentUri, strlen('/arequipago'));
-    
-    // Construye la nueva URL
-    $newUrl = 'https://arequipago-ventas.pe' . $newPath;
-    
-    // Para solicitudes POST
-    if ($method === 'POST') {
-        // Configura los headers para mantener el mÃ©todo POST
-        header('HTTP/1.1 307 Temporary Redirect');
-        header('Location: ' . $newUrl);
-    } else {
-        // Para solicitudes GET
-        header('HTTP/1.1 301 Moved Permanently');
-        header('Location: ' . $newUrl);
-    }
-    
-    // Asegura que la redirecciÃ³n se ejecute
-    exit();
-}
-
-// Si no hay redirecciÃ³n, continÃºa con el procesamiento normal
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Maneja las solicitudes GET aquÃ­
-} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Maneja las solicitudes POST aquÃ­
-}
-
 
 
 
@@ -136,7 +100,7 @@ Route::post("/ajs/ingresos/egresos/render","VentasController@ingresosEgresosRend
 
 Route::get("/ajs/server/sider/productos","ProductosController@listaProductoServerSide");
 
-// API DNI
+// RUTAS DE 
 
 Route::post('/ajs/conductor/doc/cliente',"ConductorController@buscarDocInfo")->Middleware([ValidarTokenMiddleware::class]);
 // Cambiar esta ruta de POST a GET
