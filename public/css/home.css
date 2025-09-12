@@ -1,0 +1,196 @@
+
+    @media (min-width: 1200px) { /* Solo afecta a pantallas grandes */
+        .custom-conductor-box {
+            margin-top: 35px; /* Baja el cuadro 50px */
+        }
+    }
+
+    .cantidad-conductores {
+        margin-left: 29px; /* Ajusta el valor según necesites */
+    }
+
+    /* Fondo general del gráfico    iNVERSION
+    .card {
+        background: #f0f2f7 !important; 
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+*/
+    /* Título del gráfico */
+    .card-title {
+        color: #333; /* Color oscuro para mejor contraste */
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    /* Estilización del botón de cambio de periodo */
+    .form-check-label {
+        color: #333;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    /* Estilos para el gráfico */
+    canvas#chart-estadisticas {
+        background-color: rgba(10, 10, 20, 0.95); /* Fondo blanco para mejor visibilidad */
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+
+    /* Colores para las barras del gráfico */
+    .chart-bar-1 {
+        background-color: rgba(75, 192, 192, 0.5) !important;
+        border-color: rgba(75, 192, 192, 1) !important;
+    }
+
+    .chart-bar-2 {
+        background-color: rgba(255, 159, 64, 0.5) !important;
+        border-color: rgba(255, 159, 64, 1) !important;
+    }
+
+    #chart-estadisticas {
+    font-size: 14px !important;
+    color: black !important;
+    }
+
+    #chart-estadisticas * {
+        font-size: 14px !important;
+        color: black !important;
+    }
+
+    .mini-stat-img {
+        width: 65px !important;
+        height: 40% !important; /* Reduce la altura */
+    }
+
+    .text-end{
+        margin-right: -18px;
+    }
+
+    .form-switch .form-check-input {
+        background-color: #eed8fc;
+    }
+
+    .form-switch .form-check-input {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%237852a2'/%3e%3c/svg%3e") !important;
+    }
+
+    /* Estilos para el componente de cumpleaños */
+    .cumpleanos-lista {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    
+    .cumpleanos-lista::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .cumpleanos-lista::-webkit-scrollbar-thumb {
+        background-color: #eed8fc;
+        border-radius: 10px;
+    }
+    
+    .cumpleanos-lista::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    /* Actualizar los estilos del componente de cumpleaños */
+    .cumpleanos-lista {
+        scrollbar-width: thin;
+        scrollbar-color: #eed8fc #f1f1f1;
+    }
+
+    .cumpleanos-lista::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .cumpleanos-lista::-webkit-scrollbar-thumb {
+        background-color: #eed8fc;
+        border-radius: 4px;
+    }
+
+    .cumpleanos-lista::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .filtro-calendario-container .card {
+        background-color: white !important; /* Color de fondo */
+    }
+
+    .alert-info{
+        margin-top: -30px !important;
+        margin-bottom: 45px !important;
+    }
+
+    .card {
+        background: white !important; 
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #layout-wrapper{
+        background-color:  #f0f2f7;
+    }
+
+    .form-check-input, /* Radios */
+    .form-control, /* Inputs */
+    .form-select { /* Selects */
+        border: 1.5px solid rgba(197, 156, 209, 0.8); /* Borde más suave con opacidad */
+        border-radius: 4px; /* Bordes más suavizados */
+        outline: none; /* Quita el borde azul predeterminado */
+        transition: all 0.3s ease-in-out; /* Transición suave */
+    }
+
+    .form-check-input:focus, 
+    .form-control:focus, 
+    .form-select:focus {
+        border-color: rgba(164, 120, 182, 0.9) !important; /* Color de foco más claro */
+        box-shadow: 0 0 4px rgba(197, 156, 209, 0.4); /* Suaviza el brillo */
+    }
+
+    /*  inversion
+    #layout-wrapper{
+        background-color: white;
+    }
+    */
+
+/* 🔹 Estilos específicos para los botones flotantes */
+#btnPrev, #btnNext {
+    position: absolute; /* 📌 Hace que floten sobre el gráfico */
+    top: 50%; /* 📌 Los posiciona verticalmente en el centro */
+    transform: translateY(-50%); /* 📌 Ajuste fino para centrar */
+    background: rgba(0, 0, 0, 0.5); /* 📌 Fondo semi-transparente */
+    width: 48px; /* 🔹 Aumentado el ancho para que no sea tan pequeño */
+    height: 120px; /* 🔹 Aumentado el alto para que sea más alargado */
+    border: none; /* 📌 Quita los bordes */
+    cursor: pointer; /* 📌 Cursor de puntero */
+    transition: background 0.3s ease; /* 📌 Efecto de transición */
+    z-index: 10; /* 📌 Asegura que estén por encima del gráfico */
+    clip-path: polygon(100% 50%, 0% 100%, 0% 0%); /* 🔹 Convierte en triángulo */
+}
+
+/* 🔹 Posición de cada botón (más sobre el gráfico) */
+#btnPrev {
+    left: 10px; /* 🔹 Ahora está más dentro del gráfico */
+    transform: translateY(-50%) rotate(180deg); /* 🔹 Rota el triángulo para apuntar a la izquierda */
+}
+
+#btnNext {
+    right: 10px; /* 🔹 Ahora está más dentro del gráfico */
+}
+
+/* 🔹 Efecto al pasar el mouse */
+#btnPrev:hover, #btnNext:hover {
+    background: rgba(0, 0, 0, 0.8); /* 📌 Hace el fondo más oscuro */
+}
+
+
+
+

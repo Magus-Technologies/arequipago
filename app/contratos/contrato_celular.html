@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acta de Entrega de Equipo Celular</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2.5cm 3cm;
+            line-height: 1.5;
+            font-size: 12pt;
+            text-align: justify;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 16pt;
+            text-decoration: underline;
+        }
+        p {
+            line-height: 1.6;
+            text-align: justify;
+        }
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            text-align: center;
+            width: 45%;
+        }
+        .signature-box span {
+            display: block;
+            margin-top: 20px;
+            border-top: 1px solid #000;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .espacio-importante { 
+            margin-bottom: 1.5cm; /* Cambié el margen inferior para aumentar el espacio */
+        }
+
+        span.oculte:empty {
+            visibility: hidden; /* Oculta el elemento solo si está vacío */
+        }
+
+        table {
+            width: 100%;
+            border: none;
+            margin-top: 2cm;
+        }
+        td {
+            text-align: center;
+            padding: 10px;
+            width: 52%; /* Asegura que las celdas no se estiren demasiado */
+        }
+        
+        .linea {
+            border-top: 1px solid black;
+            height: 0;
+        }
+
+        .nueva-pagina { 
+            page-break-before: always; /* 🆕 Esta propiedad hace que "IMPORTANTE" inicie en una nueva página */
+        }
+
+    </style>
+</head>
+<body>
+   
+        <h1>ACTA DE ENTREGA DE EQUIPO CELULAR</h1>
+        <p>Siendo las: <span id="hora"></span> horas del día <span id="dia"></span> del mes <span id="mes"></span> del año <span id="anio"></span>, la empresa <strong>Arequipa Go</strong> hace entrega al <span id="persona"></span> <span id="conductor"></span>, identificado con N° DNI <span id="dni"></span><span id="licencia_bloque"></span>.</p>
+        <p>El <span id="persona"></span><span id="frase_afiliacion"></span>, se le hace entrega de <span id="producto"></span> (<span id="cantidad"></span>) equipo(s): (nuevo) con las siguientes características:</p>
+        <ul>
+            <li>CHIP DE LA LÍNEA: <span id="chip_linea"></span></li>
+            <li>MARCA DE EQUIPO: <span id="marca_equipo"></span></li>
+            <li>MODELO: <span id="modelo"></span></li>
+            <li>N° IMEI: <span id="imei"></span></li>
+            <li>N° IMEI 2: <span id="serie"></span></li>
+            <li>COLOR: <span id="color"></span></li>
+            <li>CARGADOR: <span id="cargador"></span></li>
+            <li>CABLE USB: <span id="cable_usb"></span></li>
+            <li>MANUAL DEL USUARIO: <span id="manual_usuario"></span></li>
+            <li>CAJA/ESTUCHE: <span id="caja_estuche"></span></li>
+        </ul>
+        <p>El cual será pagado con cuota inicial de S/. <span id="cuota_inicial"></span>, comprometiéndose a pagar en <span id="cuotas"></span> cuotas mensuales de S/. <span id="cuota_mensual"></span>.</p>
+        <p>Los pagos serán realizados todos los 30 de cada mes.</p>
+        <p>El receptor declara conocer y asume la responsabilidad del adecuado uso del equipo en mención.</p>
+        <p>En caso de extravío, pérdida o sustracción del equipo, el usuario será el único responsable y tendrá que hacer la cancelación total del celular.</p>
+       
+        <div class="nueva-pagina"> 
+            <p class="espacio-importante"></p>
+
+            <!-- Sección agregada: Cláusula de descuento automático por morosidad -->
+            <h2>IMPORTANTE:</h2>
+            <h3>CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</h3>
+            <p>Si cancelan después de la fecha pactada se le cobrará una mora diaria de s/ 10.00 soles.</p>
+            <span id="clausula_conductor"></span>
+            <!-- Fin de la sección agregada -->
+
+            <p class="espacio-importante"></p>
+            
+            <table>
+                <tr>
+                    <td>
+                        <div class="linea"></div> <!-- Línea de firma del conductor -->
+                        <p>____________________________</p>
+                        <p>Nombres y Apellidos: <span id="nombre_conductor"></span></p> <!-- Nombre del conductor -->
+                        <p>DNI: <span id="dni"></span></p>
+                    </td>
+                    <td>
+                        <div class="linea"></div> <!-- Línea de firma de la empresa -->
+                        <p>____________________________</p>
+                        <p>La Empresa</p> <!-- Nombre de la empresa -->
+                        <p>. </p><!--Espacio vacío-->
+                    </td>
+                </tr>
+            </table>
+        </div> 
+</body>
+</html>

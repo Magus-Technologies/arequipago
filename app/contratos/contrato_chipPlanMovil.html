@@ -1,0 +1,135 @@
+<!-- app\contratos\contrato_chipPlanMovil.html -->
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acta de Entrega de Chip Más Plan Móvil</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            line-height: 1.4;
+            margin: 40px 60px;
+            color: #000;
+            background-color: #fff;
+        }
+        
+        .titulo {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-decoration: underline;
+        }
+        
+        .parrafo {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        .importante {
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .clausula-titulo {
+            font-weight: bold;
+        }
+
+        .plan-detalles {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .plan-detalles ul {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        
+        @media print {
+            body {
+                margin: 20px 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="titulo">
+        ACTA DE ENTREGA DE CHIP MAS PLAN MOVIL
+    </div>
+
+    <div class="parrafo">
+        Siendo las <span id="hora"></span> Horas del día <span id="dia"></span> del Mes <span id="mes"></span> del Año <span id="anio"></span> la empresa <strong>Arequipa Go</strong> hace entrega al <span id="nombre_conductor"></span> Identificado con N° <strong>DNI</strong>: <span id="dni"></span>, N° licencia <span id="licencia"></span>.
+    </div>
+
+    <div class="parrafo">
+        El <span id="persona"></span>, afiliado a la empresa <strong>AREQUIPA GO</strong> donde actualmente labora se le hace entrega de 01 (un) <strong>CHIP</strong> (nuevo), de la empresa <strong>AREQUIPA GO</strong> con las siguientes características:
+    </div>
+
+    <div class="parrafo">
+        <strong>PLAN:</strong> <span id="producto"></span>
+    </div>
+
+    <div class="parrafo">
+        El receptor declara conocer y asume la responsabilidad del adecuado uso del CHIP más <strong>PLAN MENSUAL</strong>, el cual es de S/ <span id="monto_cuota"></span> mensuales.
+    </div>
+
+    <div class="plan-detalles">
+        <ul>
+            <li>Cuota mensual: S/ <span id="monto_cuota"></span></li>
+            <li>Descripción: <span id="plan_descripcion"></span></li>
+            <li>N° de Línea: <span id="numero_linea"></span></li>
+        </ul>
+    </div>
+
+    <div class="parrafo">
+        En caso de extravío, perdida o sustracción del equipo con la línea corporativa, el usuario será el único responsable y tendrá que hacer la cancelación total de la línea.
+    </div>
+
+    <div class="importante">
+        <strong>IMPORTANTE:</strong>
+    </div>
+
+    <div class="parrafo">
+        <span class="clausula-titulo">CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</span>
+    </div>
+
+    <div class="parrafo">
+        Si cancelan después de la fecha pactada se le cobrara una mora diaria de s/ 10.00 soles.
+    </div>
+
+    <div class="parrafo">
+        En caso de que <strong>EL CONDUCTOR</strong> incurra en morosidad respecto a las obligaciones económicas adquiridas con <strong>LA EMPRESA AREQUIPA GO</strong>, <strong>EL CONDUCTOR</strong> autoriza expresamente a la empresa a realizar un descuento automático de la cantidad adeudada de su bono semanal, con el fin de saldar el monto correspondiente. Dicho descuento se efectuará sin necesidad de notificación adicional, y será aplicado a la mayor brevedad posible para regularizar la deuda.
+    </div>
+
+    <div class="parrafo">
+        <strong>EL CONDUCTOR</strong> reconoce que esta autorización se otorga como parte de las condiciones contractuales y que, en caso de no contar con fondos suficientes, la empresa podrá tomar las medidas legales necesarias para recuperar la deuda.
+    </div>
+
+    <div class="firmas">
+        <table style="width: 100%; border: none; margin-top: 60px;">
+            <tr>
+                <td style="text-align: center; padding: 10px; width: 50%;">
+                    <p>_________________________________</p>
+                    <div style="text-align: left; margin-top: 5px;">
+                        <div><strong>Nombres y Apellidos:</strong> <span id="nombre_conductor"></span></div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                        <div><strong>DNI:</strong> <span id="dni"></span></div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
+                    </div>
+                </td>
+                <td style="text-align: center; padding: 10px; width: 50%;">
+                    <p>_________________________________</p>
+                    <div style="text-align: left; margin-top: 5px;">
+                        <div><strong>La Empresa</strong></div>
+                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 25px; margin-bottom: 15px;"></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    
+</body>
+</html>
