@@ -369,22 +369,7 @@ public function modificar($documento, $datos, $id_cliente)
         $this->total_venta = $fila['total_venta'];
     }
 
-    // public function verificarDocumento()
-    // {
-    //     $sql = "select *
-    //     from clientes 
-    //     where documento = '$this->documento' and id_empresa = '$this->id_empresa'";
-    //     $result = $this->conectar->query($sql);
-    //     if ($row = $result->fetch_assoc()) {
-    //         $this->id_cliente = $row['id_cliente'];
-    //         $this->datos = $row['datos'];
-    //         $this->documento = $row['documento'];
-    //         $this->email = $row['email'];
-    //         $this->telefono = $row['telefono'];
-    //         return true;
-    //     }
-    //     return false;
-    // }
+   
     public function verificarDocumento()
 {
     $this->sql = "SELECT * FROM clientes 
