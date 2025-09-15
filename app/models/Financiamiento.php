@@ -1321,21 +1321,29 @@ public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $gr
     // Función para obtener financiamientos eliminados (papelera)
 public function getFinanciamientosEliminados() {
     try {
-        $sql = "SELECT f.*, 
-                       COALESCE(c.nombre, cf.nombre) as nombre_cliente,
-                       COALESCE(c.apellido, cf.apellido) as apellido_cliente,
-                       COALESCE(c.documento_identidad, cf.dni) as documento_cliente
+        $sql = "SELECT f.*,
+                       COALESCE(c.nombres, cf.nombres) as nombre_cliente,
+                       COALESCE(c.apellido_paterno, cf.apellido_paterno) as apellido_cliente,
+                       COALESCE(c.nro_documento, cf.n_documento) as documento_cliente
                 FROM financiamiento f
                 LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
                 LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
                 WHERE f.estado_eliminado = 1
                 ORDER BY f.fecha_creacion DESC";
-        
+
         $stmt = $this->conectar->prepare($sql);
-        $stmt->execute();
+        if ($stmt === false) {
+            throw new Exception("Error en prepare: " . $this->conectar->error);
+        }
+
+        if (!$stmt->execute()) {
+            throw new Exception("Error en execute: " . $stmt->error);
+        }
+
         $result = $stmt->get_result();
         return $result->fetch_all(MYSQLI_ASSOC);
     } catch (Exception $e) {
+        error_log("Error en getFinanciamientosEliminados: " . $e->getMessage());
         return [];
     }
 }
@@ -1344,24 +1352,134 @@ public function getFinanciamientosEliminados() {
 public function restaurarFinanciamiento($id_financiamiento) {
     try {
         $this->conectar->begin_transaction();
-        
+
         // Restaurar financiamiento
         $sql = "UPDATE financiamiento SET estado_eliminado = 0 WHERE idfinanciamiento = ?";
         $stmt = $this->conectar->prepare($sql);
+        if ($stmt === false) {
+            throw new Exception("Error en prepare financiamiento: " . $this->conectar->error);
+        }
+
         $stmt->bind_param("i", $id_financiamiento);
-        $stmt->execute();
-        
+        if (!$stmt->execute()) {
+            throw new Exception("Error en execute financiamiento: " . $stmt->error);
+        }
+
         // Restaurar cuotas
         $sqlCuotas = "UPDATE cuotas_financiamiento SET estado_eliminado = 0 WHERE id_financiamiento = ?";
         $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+        if ($stmtCuotas === false) {
+            throw new Exception("Error en prepare cuotas: " . $this->conectar->error);
+        }
+
         $stmtCuotas->bind_param("i", $id_financiamiento);
-        $stmtCuotas->execute();
-        
+        if (!$stmtCuotas->execute()) {
+            throw new Exception("Error en execute cuotas: " . $stmtCuotas->error);
+        }
+
         $this->conectar->commit();
         return true;
     } catch (Exception $e) {
         $this->conectar->rollback();
+        error_log("Error en restaurarFinanciamiento: " . $e->getMessage());
         return false;
+    }
+}
+
+// Función para eliminar permanentemente un financiamiento
+public function eliminarPermanentemente($id_financiamiento) {
+    try {
+        $this->conectar->begin_transaction();
+
+        // Eliminar detalles de pago del financiamiento
+        $sqlDetalles = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+        $stmtDetalles = $this->conectar->prepare($sqlDetalles);
+        if ($stmtDetalles === false) {
+            throw new Exception("Error en prepare detalle_pago: " . $this->conectar->error);
+        }
+        $stmtDetalles->bind_param("i", $id_financiamiento);
+        $stmtDetalles->execute();
+
+        // Eliminar cuotas del financiamiento
+        $sqlCuotas = "DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?";
+        $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+        if ($stmtCuotas === false) {
+            throw new Exception("Error en prepare cuotas: " . $this->conectar->error);
+        }
+        $stmtCuotas->bind_param("i", $id_financiamiento);
+        $stmtCuotas->execute();
+
+        // Eliminar el financiamiento
+        $sqlFinanciamiento = "DELETE FROM financiamiento WHERE idfinanciamiento = ?";
+        $stmtFinanciamiento = $this->conectar->prepare($sqlFinanciamiento);
+        if ($stmtFinanciamiento === false) {
+            throw new Exception("Error en prepare financiamiento: " . $this->conectar->error);
+        }
+        $stmtFinanciamiento->bind_param("i", $id_financiamiento);
+        $stmtFinanciamiento->execute();
+
+        $this->conectar->commit();
+        return true;
+    } catch (Exception $e) {
+        $this->conectar->rollback();
+        error_log("Error en eliminarPermanentemente: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función para vaciar toda la papelera
+public function vaciarPapelera() {
+    try {
+        $this->conectar->begin_transaction();
+
+        // Obtener todos los financiamientos eliminados
+        $sqlObtener = "SELECT idfinanciamiento FROM financiamiento WHERE estado_eliminado = 1";
+        $stmtObtener = $this->conectar->prepare($sqlObtener);
+        if ($stmtObtener === false) {
+            throw new Exception("Error en prepare obtener eliminados: " . $this->conectar->error);
+        }
+
+        $stmtObtener->execute();
+        $result = $stmtObtener->get_result();
+        $financiamientos = $result->fetch_all(MYSQLI_ASSOC);
+
+        $eliminados = 0;
+        foreach ($financiamientos as $financiamiento) {
+            $id_financiamiento = $financiamiento['idfinanciamiento'];
+
+            // Eliminar detalles de pago
+            $sqlDetalles = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+            $stmtDetalles = $this->conectar->prepare($sqlDetalles);
+            if ($stmtDetalles) {
+                $stmtDetalles->bind_param("i", $id_financiamiento);
+                $stmtDetalles->execute();
+            }
+
+            // Eliminar cuotas
+            $sqlCuotas = "DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?";
+            $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+            if ($stmtCuotas) {
+                $stmtCuotas->bind_param("i", $id_financiamiento);
+                $stmtCuotas->execute();
+            }
+
+            $eliminados++;
+        }
+
+        // Eliminar todos los financiamientos de la papelera
+        $sqlFinanciamientos = "DELETE FROM financiamiento WHERE estado_eliminado = 1";
+        $stmtFinanciamientos = $this->conectar->prepare($sqlFinanciamientos);
+        if ($stmtFinanciamientos === false) {
+            throw new Exception("Error en prepare eliminar financiamientos: " . $this->conectar->error);
+        }
+        $stmtFinanciamientos->execute();
+
+        $this->conectar->commit();
+        return ['success' => true, 'eliminados' => $eliminados];
+    } catch (Exception $e) {
+        $this->conectar->rollback();
+        error_log("Error en vaciarPapelera: " . $e->getMessage());
+        return ['success' => false, 'error' => $e->getMessage()];
     }
 }
 }

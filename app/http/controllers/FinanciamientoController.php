@@ -21,6 +21,11 @@ require_once "app/models/Comision.php";
 class FinanciamientoController extends Controller
 {
     private $conexion;
+    private $financiamientoModel;
+    private $conductorModel;
+    private $clienteModel;
+    private $productoModel;
+    private $reportesModel;
 
     public function __construct()
     {
@@ -2003,6 +2008,7 @@ class FinanciamientoController extends Controller
                         WHERE 
                             cf.fecha_vencimiento < '$fecha_actual' 
                             AND cf.estado = 'En Progreso'
+                             AND f.estado_eliminado = 0
                             $incobrable_condition
                         GROUP BY 
                             c.id_conductor, p.nombre
@@ -2032,6 +2038,7 @@ class FinanciamientoController extends Controller
                             cf.fecha_vencimiento < '$fecha_actual' 
                             AND cf.estado = 'En Progreso' 
                             AND f.id_cliente IS NOT NULL
+                             AND f.estado_eliminado = 0
                             $incobrable_condition
                         GROUP BY 
                             cl.id, p.nombre 
@@ -2043,10 +2050,68 @@ class FinanciamientoController extends Controller
                     }
                     
                     echo json_encode(['success' => true, 'data' => $conductores_vencidos]);
-                    
+
                 } catch (Exception $e) {
                     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
                 }
             }
         }
+
+        public function getFinanciamientosEliminadosPapelera()
+        {
+            try {
+                $financiamientosEliminados = $this->financiamientoModel->getFinanciamientosEliminados();
+                echo json_encode(['success' => true, 'data' => $financiamientosEliminados]);
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error al obtener los financiamientos eliminados: ' . $e->getMessage()]);
+            }
+        }
+
+        public function restaurarFinanciamiento()
+        {
+            if (isset($_POST['id_financiamiento'])) {
+                $id_financiamiento = $_POST['id_financiamiento'];
+                $resultado = $this->financiamientoModel->restaurarFinanciamiento($id_financiamiento);
+                if ($resultado) {
+                    echo json_encode(['success' => true, 'message' => 'Financiamiento restaurado con éxito.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se pudo restaurar el financiamiento.']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'ID de financiamiento no proporcionado.']);
+            }
+        }
+
+        public function eliminarPermanentemente()
+        {
+            if (isset($_POST['id_financiamiento'])) {
+                $id_financiamiento = $_POST['id_financiamiento'];
+                $resultado = $this->financiamientoModel->eliminarPermanentemente($id_financiamiento);
+                if ($resultado) {
+                    echo json_encode(['success' => true, 'message' => 'Financiamiento eliminado permanentemente.']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se pudo eliminar el financiamiento permanentemente.']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'ID de financiamiento no proporcionado.']);
+            }
+        }
+
+        public function vaciarPapelera()
+        {
+            try {
+                $resultado = $this->financiamientoModel->vaciarPapelera();
+                if ($resultado['success']) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => "Se eliminaron permanentemente {$resultado['eliminados']} financiamientos."
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al vaciar la papelera: ' . $resultado['error']]);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error al vaciar la papelera: ' . $e->getMessage()]);
+            }
+        }
     }
+    
