@@ -98,6 +98,9 @@ class Beneficio
     public function getProveedor() { return $this->proveedor; }
     public function setProveedor($proveedor) { $this->proveedor = $proveedor; }
 
+    public function getConexion() { 
+    return $this->conectar; 
+}
     // ============ MÉTODOS PRINCIPALES ============
 
     /**
@@ -106,6 +109,20 @@ class Beneficio
     public function crear($datos)
     {
         try {
+            // Debug: Log de datos recibidos (comentado tras resolver el problema)
+            // error_log('Beneficio::crear() - Datos recibidos: ' . json_encode($datos));
+
+            // Validar campos obligatorios
+            if (empty($datos['nombre'])) {
+                throw new Exception('El nombre es obligatorio');
+            }
+            if (!isset($datos['categoria']) || $datos['categoria'] <= 0) {
+                throw new Exception('La categoría es obligatoria');
+            }
+            if (!isset($datos['precio_contado']) || $datos['precio_contado'] <= 0) {
+                throw new Exception('El precio al contado es obligatorio');
+            }
+
             $sql = "INSERT INTO beneficios (
                         nombre, categoria, descripcion, precio_contado, precio_financiado, 
                         cuotas_disponibles, tasa_interes, requisitos, imagen_principal, 
@@ -119,28 +136,50 @@ class Beneficio
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
 
+            // Limpiar valores vacíos y convertir a NULL o valores por defecto
+            $nombre = $datos['nombre'];
+            $categoria = $datos['categoria'];
+            $descripcion = empty($datos['descripcion']) ? null : $datos['descripcion'];
+            $precio_contado = $datos['precio_contado'];
+            $precio_financiado = empty($datos['precio_financiado']) ? null : $datos['precio_financiado'];
+            $cuotas_disponibles = empty($datos['cuotas_disponibles']) ? null : $datos['cuotas_disponibles'];
+            $tasa_interes = empty($datos['tasa_interes']) ? null : $datos['tasa_interes'];
+            $requisitos = empty($datos['requisitos']) ? null : $datos['requisitos'];
+            $imagen_principal = empty($datos['imagen_principal']) ? null : $datos['imagen_principal'];
+            $stock_disponible = empty($datos['stock_disponible']) ? 0 : $datos['stock_disponible']; // Valor por defecto 0
+            $disponible = $datos['disponible'];
+            $activo = $datos['activo'];
+            $codigo_producto = empty($datos['codigo_producto']) ? null : $datos['codigo_producto'];
+            $marca = empty($datos['marca']) ? null : $datos['marca'];
+            $modelo = empty($datos['modelo']) ? null : $datos['modelo'];
+            $especificaciones = empty($datos['especificaciones']) ? null : $datos['especificaciones'];
+            $peso = empty($datos['peso']) ? null : $datos['peso'];
+            $dimensiones = empty($datos['dimensiones']) ? null : $datos['dimensiones'];
+            $garantia_meses = empty($datos['garantia_meses']) ? null : $datos['garantia_meses'];
+            $proveedor = empty($datos['proveedor']) ? null : $datos['proveedor'];
+
             $stmt->bind_param(
-                'sssddsdssiiiassssds',
-                $datos['nombre'],
-                $datos['categoria'],
-                $datos['descripcion'],
-                $datos['precio_contado'],
-                $datos['precio_financiado'],
-                $datos['cuotas_disponibles'],
-                $datos['tasa_interes'],
-                $datos['requisitos'],
-                $datos['imagen_principal'],
-                $datos['stock_disponible'],
-                $datos['disponible'],
-                $datos['activo'],
-                $datos['codigo_producto'],
-                $datos['marca'],
-                $datos['modelo'],
-                $datos['especificaciones'],
-                $datos['peso'],
-                $datos['dimensiones'],
-                $datos['garantia_meses'],
-                $datos['proveedor']
+                'sisddsdssiissssdsiss',
+                $nombre,
+                $categoria,
+                $descripcion,
+                $precio_contado,
+                $precio_financiado,
+                $cuotas_disponibles,
+                $tasa_interes,
+                $requisitos,
+                $imagen_principal,
+                $stock_disponible,
+                $disponible,
+                $activo,
+                $codigo_producto,
+                $marca,
+                $modelo,
+                $especificaciones,
+                $peso,
+                $dimensiones,
+                $garantia_meses,
+                $proveedor
             );
 
             if (!$stmt->execute()) {
@@ -284,27 +323,48 @@ class Beneficio
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
 
+            // Limpiar valores vacíos y convertir a NULL o valores por defecto
+            $nombre = $datos['nombre'];
+            $categoria = $datos['categoria'];
+            $descripcion = empty($datos['descripcion']) ? null : $datos['descripcion'];
+            $precio_contado = $datos['precio_contado'];
+            $precio_financiado = empty($datos['precio_financiado']) ? null : $datos['precio_financiado'];
+            $cuotas_disponibles = empty($datos['cuotas_disponibles']) ? null : $datos['cuotas_disponibles'];
+            $tasa_interes = empty($datos['tasa_interes']) ? null : $datos['tasa_interes'];
+            $requisitos = empty($datos['requisitos']) ? null : $datos['requisitos'];
+            $imagen_principal = empty($datos['imagen_principal']) ? null : $datos['imagen_principal'];
+            $stock_disponible = empty($datos['stock_disponible']) ? 0 : $datos['stock_disponible']; // Valor por defecto 0
+            $disponible = $datos['disponible'];
+            $codigo_producto = empty($datos['codigo_producto']) ? null : $datos['codigo_producto'];
+            $marca = empty($datos['marca']) ? null : $datos['marca'];
+            $modelo = empty($datos['modelo']) ? null : $datos['modelo'];
+            $especificaciones = empty($datos['especificaciones']) ? null : $datos['especificaciones'];
+            $peso = empty($datos['peso']) ? null : $datos['peso'];
+            $dimensiones = empty($datos['dimensiones']) ? null : $datos['dimensiones'];
+            $garantia_meses = empty($datos['garantia_meses']) ? null : $datos['garantia_meses'];
+            $proveedor = empty($datos['proveedor']) ? null : $datos['proveedor'];
+
             $stmt->bind_param(
-                'sssddsdssiissssdsis',
-                $datos['nombre'],
-                $datos['categoria'],
-                $datos['descripcion'],
-                $datos['precio_contado'],
-                $datos['precio_financiado'],
-                $datos['cuotas_disponibles'],
-                $datos['tasa_interes'],
-                $datos['requisitos'],
-                $datos['imagen_principal'],
-                $datos['stock_disponible'],
-                $datos['disponible'],
-                $datos['codigo_producto'],
-                $datos['marca'],
-                $datos['modelo'],
-                $datos['especificaciones'],
-                $datos['peso'],
-                $datos['dimensiones'],
-                $datos['garantia_meses'],
-                $datos['proveedor'],
+                'sisddsdssiissssdsisi',
+                $nombre,
+                $categoria,
+                $descripcion,
+                $precio_contado,
+                $precio_financiado,
+                $cuotas_disponibles,
+                $tasa_interes,
+                $requisitos,
+                $imagen_principal,
+                $stock_disponible,
+                $disponible,
+                $codigo_producto,
+                $marca,
+                $modelo,
+                $especificaciones,
+                $peso,
+                $dimensiones,
+                $garantia_meses,
+                $proveedor,
                 $id
             );
 
@@ -444,39 +504,42 @@ class Beneficio
     /**
      * Obtener categorías disponibles
      */
-    public function obtenerCategorias()
-    {
-        try {
-            $sql = "SELECT DISTINCT categoria, COUNT(*) as total 
-                    FROM beneficios 
-                    WHERE activo = 1 AND disponible = 1 
-                    GROUP BY categoria 
-                    ORDER BY categoria";
+public function obtenerCategorias()
+{
+    try {
+        $sql = "SELECT cp.idcategoria_producto, cp.nombre, 
+                       COUNT(b.id) as total_productos
+                FROM categoria_producto cp
+                LEFT JOIN beneficios b ON b.categoria = cp.idcategoria_producto 
+                                        AND b.activo = 1 AND b.disponible = 1
+                GROUP BY cp.idcategoria_producto, cp.nombre
+                ORDER BY cp.nombre";
 
-            $stmt = $this->conectar->prepare($sql);
+        $stmt = $this->conectar->prepare($sql);
 
-            if (!$stmt) {
-                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
-            }
-
-            if (!$stmt->execute()) {
-                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
-            }
-
-            $result = $stmt->get_result();
-            $categorias = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $categorias[] = $row;
-            }
-
-            $stmt->close();
-            return $categorias;
-        } catch (Exception $e) {
-            error_log('Error en Beneficio::obtenerCategorias(): ' . $e->getMessage());
-            return [];
+        if (!$stmt) {
+            throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
         }
+
+        if (!$stmt->execute()) {
+            throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+        }
+
+        $result = $stmt->get_result();
+        $categorias = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $categorias[] = $row;
+        }
+
+        $stmt->close();
+        return $categorias;
+    } catch (Exception $e) {
+        error_log('Error en Beneficio::obtenerCategorias(): ' . $e->getMessage());
+        return [];
     }
+}
+
 
     /**
      * Verificar si existe un código de producto
@@ -516,4 +579,5 @@ class Beneficio
             return false;
         }
     }
+    
 }

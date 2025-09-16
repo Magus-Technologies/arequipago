@@ -5,6 +5,7 @@ class BeneficioController
 {
     private $request;
     private $beneficioModel;
+    
 
     public function __construct()
     {
@@ -85,12 +86,12 @@ class BeneficioController
                 return;
             }
 
-            // Validar categoría
-            $categoriasPermitidas = ['llantas', 'baterias', 'aceites', 'celulares', 'vehiculos'];
-            if (!in_array($_POST['categoria'], $categoriasPermitidas)) {
-                echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
-                return;
-            }
+          // Validar categoría contra la base de datos
+if (!$this->validarCategoriaExiste($_POST['categoria'])) {
+    echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
+    return;
+}
+
 
             // Validar código de producto único (si se proporciona)
             if (!empty($_POST['codigo_producto'])) {
@@ -110,28 +111,31 @@ class BeneficioController
                 }
             }
 
+            // Debug: Log de datos POST recibidos (comentado tras resolver el problema)
+            // error_log('BeneficioController::crearBeneficio() - POST data: ' . print_r($_POST, true));
+
             // Preparar datos
             $datos = [
                 'nombre' => trim($_POST['nombre']),
-                'categoria' => $_POST['categoria'],
-                'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : null,
+                'categoria' => (int)$_POST['categoria'],
+                'descripcion' => isset($_POST['descripcion']) && !empty($_POST['descripcion']) ? trim($_POST['descripcion']) : null,
                 'precio_contado' => (float)$_POST['precio_contado'],
-                'precio_financiado' => isset($_POST['precio_financiado']) && $_POST['precio_financiado'] > 0 ? (float)$_POST['precio_financiado'] : null,
-                'cuotas_disponibles' => isset($_POST['cuotas_disponibles']) ? trim($_POST['cuotas_disponibles']) : null,
-                'tasa_interes' => isset($_POST['tasa_interes']) && $_POST['tasa_interes'] > 0 ? (float)$_POST['tasa_interes'] : null,
-                'requisitos' => isset($_POST['requisitos']) ? trim($_POST['requisitos']) : null,
+                'precio_financiado' => isset($_POST['precio_financiado']) && !empty($_POST['precio_financiado']) && $_POST['precio_financiado'] > 0 ? (float)$_POST['precio_financiado'] : null,
+                'cuotas_disponibles' => isset($_POST['cuotas_disponibles']) && !empty($_POST['cuotas_disponibles']) ? trim($_POST['cuotas_disponibles']) : null,
+                'tasa_interes' => isset($_POST['tasa_interes']) && !empty($_POST['tasa_interes']) && $_POST['tasa_interes'] > 0 ? (float)$_POST['tasa_interes'] : null,
+                'requisitos' => isset($_POST['requisitos']) && !empty($_POST['requisitos']) ? trim($_POST['requisitos']) : null,
                 'imagen_principal' => $imagenPrincipal,
-                'stock_disponible' => isset($_POST['stock_disponible']) && $_POST['stock_disponible'] > 0 ? (int)$_POST['stock_disponible'] : null,
+                'stock_disponible' => isset($_POST['stock_disponible']) && !empty($_POST['stock_disponible']) && $_POST['stock_disponible'] > 0 ? (int)$_POST['stock_disponible'] : null,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
                 'activo' => isset($_POST['activo']) ? (int)$_POST['activo'] : 1,
-                'codigo_producto' => isset($_POST['codigo_producto']) ? trim($_POST['codigo_producto']) : null,
-                'marca' => isset($_POST['marca']) ? trim($_POST['marca']) : null,
-                'modelo' => isset($_POST['modelo']) ? trim($_POST['modelo']) : null,
-                'especificaciones' => isset($_POST['especificaciones']) ? $_POST['especificaciones'] : null,
-                'peso' => isset($_POST['peso']) && $_POST['peso'] > 0 ? (float)$_POST['peso'] : null,
-                'dimensiones' => isset($_POST['dimensiones']) ? trim($_POST['dimensiones']) : null,
-                'garantia_meses' => isset($_POST['garantia_meses']) && $_POST['garantia_meses'] > 0 ? (int)$_POST['garantia_meses'] : null,
-                'proveedor' => isset($_POST['proveedor']) ? trim($_POST['proveedor']) : null,
+                'codigo_producto' => isset($_POST['codigo_producto']) && !empty($_POST['codigo_producto']) ? trim($_POST['codigo_producto']) : null,
+                'marca' => isset($_POST['marca']) && !empty($_POST['marca']) ? trim($_POST['marca']) : null,
+                'modelo' => isset($_POST['modelo']) && !empty($_POST['modelo']) ? trim($_POST['modelo']) : null,
+                'especificaciones' => isset($_POST['especificaciones']) && !empty($_POST['especificaciones']) ? $_POST['especificaciones'] : null,
+                'peso' => isset($_POST['peso']) && !empty($_POST['peso']) && $_POST['peso'] > 0 ? (float)$_POST['peso'] : null,
+                'dimensiones' => isset($_POST['dimensiones']) && !empty($_POST['dimensiones']) ? trim($_POST['dimensiones']) : null,
+                'garantia_meses' => isset($_POST['garantia_meses']) && !empty($_POST['garantia_meses']) && $_POST['garantia_meses'] > 0 ? (int)$_POST['garantia_meses'] : null,
+                'proveedor' => isset($_POST['proveedor']) && !empty($_POST['proveedor']) ? trim($_POST['proveedor']) : null,
             ];
 
             $idBeneficio = $this->beneficioModel->crear($datos);
@@ -235,9 +239,8 @@ class BeneficioController
                 return;
             }
 
-            // Validar categoría
-            $categoriasPermitidas = ['llantas', 'baterias', 'aceites', 'celulares', 'vehiculos'];
-            if (!in_array($_POST['categoria'], $categoriasPermitidas)) {
+            // Validar categoría contra la base de datos
+            if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
                 return;
             }
@@ -266,7 +269,7 @@ class BeneficioController
             // Preparar datos
             $datos = [
                 'nombre' => trim($_POST['nombre']),
-                'categoria' => $_POST['categoria'],
+                'categoria' => (int)$_POST['categoria'],
                 'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : null,
                 'precio_contado' => (float)$_POST['precio_contado'],
                 'precio_financiado' => isset($_POST['precio_financiado']) && $_POST['precio_financiado'] > 0 ? (float)$_POST['precio_financiado'] : null,
@@ -510,26 +513,81 @@ class BeneficioController
     }
 
     /**
-     * Registrar solicitud de beneficio (para futuras funcionalidades)
+     * FUNCIONALIDAD ELIMINADA: Los beneficios son automáticos para todos los usuarios
+     * No requieren solicitud según especificaciones del cliente (hola.md)
      */
+    /*
     public function solicitarBeneficio()
     {
         try {
-            // Esta funcionalidad se puede implementar más adelante
-            // Por ahora solo retornamos un mensaje informativo
-            
+            // OBSOLETO: Los beneficios son automáticos para todos los usuarios
+            // No requieren proceso de solicitud
+
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
-                'message' => 'Solicitud recibida. Nos pondremos en contacto contigo pronto.',
-                'info' => 'Funcionalidad de solicitudes en desarrollo.'
+                'message' => 'Los beneficios están disponibles automáticamente en la app móvil.',
+                'info' => 'No se requiere solicitud para acceder a los beneficios.'
             ]);
         } catch (Exception $e) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,
-                'error' => 'Error al procesar solicitud: ' . $e->getMessage()
+                'error' => 'Error: ' . $e->getMessage()
             ]);
         }
     }
+    */
+    /**
+ * Validar que una categoría existe en la base de datos
+ */
+private function validarCategoriaExiste($idCategoria)
+{
+    try {
+        $sql = "SELECT COUNT(*) as total FROM categoria_producto WHERE idcategoria_producto = ?";
+        $stmt = $this->beneficioModel->getConexion()->prepare($sql);
+        $stmt->bind_param('i', $idCategoria);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+        
+        return $row['total'] > 0;
+    } catch (Exception $e) {
+        error_log('Error al validar categoría: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Obtener categorías desde categoria_producto
+ */
+public function obtenerCategoriasProducto()
+{
+    try {
+        $sql = "SELECT idcategoria_producto, nombre FROM categoria_producto ORDER BY nombre";
+      $stmt = $this->beneficioModel->getConexion()->prepare($sql);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $categorias = [];
+        while ($row = $result->fetch_assoc()) {
+            $categorias[] = $row;
+        }
+        $stmt->close();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'data' => $categorias
+        ]);
+    } catch (Exception $e) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener categorías: ' . $e->getMessage()
+        ]);
+    }
+}
+
 }

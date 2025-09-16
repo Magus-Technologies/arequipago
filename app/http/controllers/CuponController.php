@@ -101,8 +101,9 @@ class CuponController
                 }
             }
 
+            // CORREGIDO: Permitir múltiples cupones por usuario - comentando verificación restrictiva
             // Verificar usuarios con cupones activos
-            $cuponModel = new Cupon();
+            /* $cuponModel = new Cupon();
             $usuariosConCupones = $cuponModel->verificarUsuariosConCuponesActivos($usuariosParaVerificar);
 
             if (!empty($usuariosConCupones)) {
@@ -125,7 +126,9 @@ class CuponController
                     'message' => 'Los siguientes usuarios ya tienen cupones activos: ' . implode(', ', $nombresConCupones)
                 ]);
                 return;
-            }
+            } */
+
+            $cuponModel = new Cupon();
 
             // Procesar imagen banner
             $imagenBanner = null;
@@ -629,6 +632,243 @@ $response = [
         } catch (Exception $e) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Error al usar cupón: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Eliminar cupón y su imagen asociada
+     */
+    public function eliminarCupon()
+    {
+        try {
+            $idCupon = $_POST['id_cupon'] ?? '';
+
+            if (empty($idCupon)) {
+                echo json_encode(['success' => false, 'message' => 'ID de cupón requerido']);
+                return;
+            }
+
+            $cuponModel = new Cupon();
+            
+            // Obtener información del cupón antes de eliminarlo (para eliminar la imagen)
+            $cuponInfo = $cuponModel->obtenerCuponPorId($idCupon);
+            if (!$cuponInfo) {
+                echo json_encode(['success' => false, 'message' => 'Cupón no encontrado']);
+                return;
+            }
+
+            // Verificar si el cupón tiene usos registrados
+            $estadisticas = $cuponModel->obtenerEstadisticasUso($idCupon);
+            if (!empty($estadisticas['usos']) && $estadisticas['usos'] > 0) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'No se puede eliminar un cupón que ya ha sido usado. Total de usos: ' . $estadisticas['usos']
+                ]);
+                return;
+            }
+
+            // Eliminar cupón de la base de datos
+            $eliminado = $cuponModel->eliminar($idCupon);
+
+            if ($eliminado) {
+                // Eliminar imagen si existe
+                if (!empty($cuponInfo['imagen_banner'])) {
+                    $rutaImagen = 'public/' . $cuponInfo['imagen_banner'];
+                    if (file_exists($rutaImagen)) {
+                        unlink($rutaImagen);
+                    }
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Cupón eliminado correctamente'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al eliminar el cupón de la base de datos'
+                ]);
+            }
+
+        } catch (Exception $e) {
+            error_log('Error en CuponController::eliminarCupon(): ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener cupón para edición
+     */
+    public function obtenerCupon()
+    {
+        try {
+            $idCupon = $_POST['id_cupon'] ?? '';
+
+            if (empty($idCupon)) {
+                echo json_encode(['success' => false, 'message' => 'ID de cupón requerido']);
+                return;
+            }
+
+            $cuponModel = new Cupon();
+            $cupon = $cuponModel->obtenerCuponPorId($idCupon);
+
+            if (!$cupon) {
+                echo json_encode(['success' => false, 'message' => 'Cupón no encontrado']);
+                return;
+            }
+
+            // Obtener conductores asignados
+            $conductores = $cuponModel->obtenerConductoresPorCupon($idCupon);
+
+            // Obtener clientes asignados
+            $clientes = $cuponModel->obtenerClientesPorCupon($idCupon);
+
+            $response = [
+                'success' => true,
+                'cupon' => $cupon,
+                'conductores' => $conductores,
+                'clientes' => $clientes
+            ];
+
+            header('Content-Type: application/json');
+            echo json_encode($response);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Error al obtener cupón: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Actualizar cupón existente
+     */
+    public function actualizarCupon()
+    {
+        try {
+            $idCupon = $_POST['id_cupon'] ?? '';
+
+            if (empty($idCupon)) {
+                echo json_encode(['success' => false, 'message' => 'ID de cupón requerido']);
+                return;
+            }
+
+            // Validaciones básicas
+            if (empty($_POST['titulo']) || empty($_POST['tipoDescuento']) || empty($_POST['valor'])) {
+                echo json_encode(['success' => false, 'message' => 'Faltan campos obligatorios.']);
+                return;
+            }
+
+            if (empty($_POST['fechaInicio']) || empty($_POST['fechaFin'])) {
+                echo json_encode(['success' => false, 'message' => 'Las fechas de inicio y fin son obligatorias.']);
+                return;
+            }
+
+            // Validar fechas
+            $fechaInicio = new DateTime($_POST['fechaInicio']);
+            $fechaFin = new DateTime($_POST['fechaFin']);
+
+            if ($fechaFin <= $fechaInicio) {
+                echo json_encode(['success' => false, 'message' => 'La fecha de fin debe ser posterior a la fecha de inicio.']);
+                return;
+            }
+
+            $cuponModel = new Cupon();
+
+            // Verificar si el cupón existe
+            $cuponExistente = $cuponModel->obtenerCuponPorId($idCupon);
+            if (!$cuponExistente) {
+                echo json_encode(['success' => false, 'message' => 'Cupón no encontrado']);
+                return;
+            }
+
+            // Procesar imagen banner si se subió una nueva
+            $imagenBanner = $cuponExistente['imagen_banner']; // Mantener la existente por defecto
+
+            if (isset($_FILES['banner']) && $_FILES['banner']['error'] == 0) {
+                $nuevaImagen = $this->procesarImagenBanner($_FILES['banner']);
+                if ($nuevaImagen) {
+                    // Eliminar imagen anterior si existe
+                    if ($imagenBanner && file_exists('public/' . $imagenBanner)) {
+                        unlink('public/' . $imagenBanner);
+                    }
+                    $imagenBanner = $nuevaImagen;
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al procesar la imagen del banner.']);
+                    return;
+                }
+            }
+
+            // Preparar datos del cupón
+            $datosCupon = [
+                'titulo' => trim($_POST['titulo']),
+                'descripcion' => trim($_POST['descripcion'] ?? ''),
+                'tipo_descuento' => $_POST['tipoDescuento'],
+                'valor' => floatval($_POST['valor']),
+                'imagen_banner' => $imagenBanner,
+                'fecha_inicio' => $_POST['fechaInicio'],
+                'fecha_fin' => $_POST['fechaFin'],
+                'limite_usos_conductor' => !empty($_POST['limitePorConductor']) ? intval($_POST['limitePorConductor']) : 1,
+                'limite_usos_total' => !empty($_POST['limiteTotal']) ? intval($_POST['limiteTotal']) : null,
+                'activo' => isset($_POST['activo']) ? 1 : 0,
+            ];
+
+            // Actualizar cupón
+            $actualizado = $cuponModel->actualizarCupon($idCupon, $datosCupon);
+
+            if ($actualizado) {
+                // Procesar usuarios (conductores y/o clientes)
+                $conductoresJson = $_POST['conductores'] ?? '[]';
+                $idConductores = json_decode($conductoresJson, true);
+
+                $clientesJson = $_POST['clientes'] ?? '[]';
+                $idClientes = json_decode($clientesJson, true);
+
+                $usuarios = [];
+
+                // Procesar conductores si existen
+                if (!empty($idConductores)) {
+                    foreach ($idConductores as $idConductor) {
+                        $usuarios[] = [
+                            'tipo' => 'conductor',
+                            'id' => $idConductor
+                        ];
+                    }
+                }
+
+                // Procesar clientes si existen
+                if (!empty($idClientes)) {
+                    foreach ($idClientes as $idCliente) {
+                        $usuarios[] = [
+                            'tipo' => 'cliente',
+                            'id' => $idCliente
+                        ];
+                    }
+                }
+
+                // Actualizar asignaciones de usuarios
+                $resultadoAsignaciones = $cuponModel->actualizarAsignacionesUsuarios($idCupon, $usuarios);
+
+                if ($resultadoAsignaciones) {
+                    $totalConductores = count($idConductores);
+                    $totalClientes = count($idClientes);
+                    $mensaje = "Cupón actualizado correctamente y asignado a {$totalConductores} conductor(es) y {$totalClientes} cliente(s).";
+
+                    echo json_encode([
+                        'success' => true,
+                        'message' => $mensaje,
+                        'cupon_id' => $idCupon
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Cupón actualizado pero error al asignar usuarios.']);
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al actualizar el cupón.']);
+            }
+        } catch (Exception $e) {
+            error_log('Error en CuponController::actualizarCupon(): ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Error interno del servidor: ' . $e->getMessage()]);
         }
     }
 
