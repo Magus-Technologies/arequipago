@@ -208,44 +208,30 @@
                 </button>
             </div>
         </div>
-
-        <!-- Filtros por Categoría -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-secondary filter-badge" 
-                          :class="{ active: categoriaSeleccionada === '' }"
-                          @click="filtrarPorCategoria('')">
-                        <i class="bi bi-grid me-1"></i>Todos
-                    </span>
-                    <span class="badge bg-primary filter-badge categoria-llantas" 
-                          :class="{ active: categoriaSeleccionada === 'llantas' }"
-                          @click="filtrarPorCategoria('llantas')">
-                        <i class="bi bi-circle me-1"></i>Llantas
-                    </span>
-                    <span class="badge bg-info filter-badge categoria-baterias" 
-                          :class="{ active: categoriaSeleccionada === 'baterias' }"
-                          @click="filtrarPorCategoria('baterias')">
-                        <i class="bi bi-battery-charging me-1"></i>Baterías
-                    </span>
-                    <span class="badge bg-warning filter-badge categoria-aceites" 
-                          :class="{ active: categoriaSeleccionada === 'aceites' }"
-                          @click="filtrarPorCategoria('aceites')">
-                        <i class="bi bi-droplet me-1"></i>Aceites
-                    </span>
-                    <span class="badge bg-success filter-badge categoria-celulares" 
-                          :class="{ active: categoriaSeleccionada === 'celulares' }"
-                          @click="filtrarPorCategoria('celulares')">
-                        <i class="bi bi-phone me-1"></i>Celulares
-                    </span>
-                    <span class="badge bg-danger filter-badge categoria-vehiculos" 
-                          :class="{ active: categoriaSeleccionada === 'vehiculos' }"
-                          @click="filtrarPorCategoria('vehiculos')">
-                        <i class="bi bi-car-front me-1"></i>Vehículos
-                    </span>
-                </div>
-            </div>
+<!-- Filtros por Categoría -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div v-if="cargandoCategorias" class="text-center">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">Cargando categorías...</span>
         </div>
+        <div v-else class="d-flex flex-wrap gap-2">
+            <span class="badge bg-secondary filter-badge" 
+                  :class="{ active: categoriaSeleccionada === '' }"
+                  @click="filtrarPorCategoria('')">
+                <i class="bi bi-grid me-1"></i>Todos
+            </span>
+            <span v-for="categoria in categorias" 
+                  :key="categoria.idcategoria_producto"
+                  class="badge bg-primary filter-badge" 
+                  :class="{ active: categoriaSeleccionada === categoria.idcategoria_producto }"
+                  @click="filtrarPorCategoria(categoria.idcategoria_producto)">
+                <i class="bi bi-tag me-1"></i>{{ categoria.nombre }}
+            </span>
+        </div>
+    </div>
+</div>
+
 
         <!-- Estadísticas -->
         <div class="row mb-4">
@@ -363,27 +349,27 @@
                         <!-- Botones de Acción -->
                         <div class="mt-auto">
                             <div class="row g-2">
-                                <div class="col-8">
-                                    <button class="btn btn-solicitar w-100" @click="solicitarBeneficio(beneficio)">
-                                        <i class="bi bi-credit-card me-1"></i>
-                                        Solicitar
+                                <div class="col-7">
+                                    <button class="btn btn-solicitar w-100" @click="verDetallesBeneficio(beneficio)">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Información
                                     </button>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-5">
                                     <div class="dropdown">
-                                        <button class="btn btn-outline-secondary w-100" type="button" 
+                                        <button class="btn btn-secondary w-100" type="button"
                                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="bi bi-three-dots-vertical"></i>
+                                            <i class="bi bi-gear-fill me-1"></i>Opciones
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#" @click="verDetalles(beneficio)">
+                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="verDetalles(beneficio)">
                                                 <i class="bi bi-eye me-2"></i>Ver Detalles
                                             </a></li>
-                                            <li><a class="dropdown-item" href="#" @click="editarBeneficio(beneficio)">
+                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="editarBeneficio(beneficio)">
                                                 <i class="bi bi-pencil me-2"></i>Editar
                                             </a></li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="#" @click="eliminarBeneficio(beneficio)">
+                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="eliminarBeneficio(beneficio)">
                                                 <i class="bi bi-trash me-2"></i>Eliminar
                                             </a></li>
                                         </ul>
@@ -441,14 +427,15 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Categoría *</label>
-                                        <select class="form-select" v-model="formData.categoria" required>
-                                            <option value="">Seleccionar...</option>
-                                            <option value="llantas">Llantas</option>
-                                            <option value="baterias">Baterías</option>
-                                            <option value="aceites">Aceites</option>
-                                            <option value="celulares">Celulares</option>
-                                            <option value="vehiculos">Vehículos</option>
-                                        </select>
+                                     <select class="form-select" v-model="formData.categoria" required>
+    <option value="">Seleccionar...</option>
+    <option v-for="categoria in categorias" 
+            :key="categoria.idcategoria_producto"
+            :value="categoria.idcategoria_producto">
+        {{ categoria.nombre }}
+    </option>
+</select>
+
                                         <div v-if="errores.categoria" class="error-message">{{ errores.categoria }}</div>
                                     </div>
                                 </div>
@@ -585,14 +572,10 @@
                         },
                         errores: {},
 
-                        // CATEGORÍAS
-                        categorias: [
-                            { id: 'llantas', nombre: 'Llantas' },
-                            { id: 'baterias', nombre: 'Baterías' },
-                            { id: 'aceites', nombre: 'Aceites' },
-                            { id: 'celulares', nombre: 'Celulares' },
-                            { id: 'vehiculos', nombre: 'Vehículos' }
-                        ]
+                      // CATEGORÍAS (se cargarán desde la base de datos)
+categorias: [],
+cargandoCategorias: false
+
                     }
                 },
                 computed: {
@@ -600,10 +583,12 @@
                         return Math.ceil(this.beneficiosFiltrados.length / this.itemsPorPagina);
                     }
                 },
-                mounted: function () {
-                    this.cargarBeneficios();
-                    this.modal = new bootstrap.Modal(document.getElementById('modalProducto'));
-                },
+             mounted: function () {
+    this.cargarCategorias(); // Cargar categorías primero
+    this.cargarBeneficios();
+    this.modal = new bootstrap.Modal(document.getElementById('modalProducto'));
+},
+
                 methods: {
                     // ============ CARGAR DATOS ============
                     cargarBeneficios: function () {
@@ -637,6 +622,34 @@
                                 self.cargandoBeneficios = false;
                             });
                     },
+                    // ============ CARGAR CATEGORÍAS ============
+cargarCategorias: function () {
+    var self = this;
+    self.cargandoCategorias = true;
+
+    fetch('/arequipago/cargarcategoriaproductos')
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                self.categorias = data;
+            } else {
+                console.error('Error: Formato de categorías no válido');
+                self.categorias = [];
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar categorías:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudieron cargar las categorías'
+            });
+        })
+        .finally(() => {
+            self.cargandoCategorias = false;
+        });
+},
+
 
                     // ============ FILTROS Y BÚSQUEDA ============
                     filtrarBeneficios: function () {
@@ -686,10 +699,11 @@
                     },
 
                     // ============ UTILIDADES ============
-                    obtenerNombreCategoria: function (categoria) {
-                        var cat = this.categorias.find(c => c.id === categoria);
-                        return cat ? cat.nombre : categoria;
-                    },
+                obtenerNombreCategoria: function (categoria) {
+    var cat = this.categorias.find(c => c.idcategoria_producto == categoria);
+    return cat ? cat.nombre : categoria;
+},
+
 
                     obtenerIconoCategoria: function (categoria) {
                         var iconos = {
@@ -741,49 +755,53 @@
                             cuotas_disponibles: beneficio.cuotas_disponibles,
                             disponible: beneficio.disponible
                         };
-                        this.imagenPreview = beneficio.imagen;
+                        // Configurar preview de imagen existente
+                        if (beneficio.imagen_principal) {
+                            this.imagenPreview = '/arequipago/public/' + beneficio.imagen_principal;
+                        } else {
+                            this.imagenPreview = null;
+                        }
                         this.modal.show();
                     },
 
-                    solicitarBeneficio: function (beneficio) {
+                    verDetallesBeneficio: function (beneficio) {
                         Swal.fire({
                             icon: 'info',
-                            title: 'Solicitud de Financiamiento',
+                            title: 'Detalles del Beneficio',
                             html: `
                                 <div class="text-start">
                                     <h6><strong>${beneficio.nombre}</strong></h6>
-                                    <p class="text-muted mb-2">${beneficio.descripcion}</p>
+                                    <p class="text-muted mb-2">${beneficio.descripcion || 'Producto disponible para financiamiento'}</p>
                                     <hr>
                                     <div class="row">
                                         <div class="col-6">
                                             <small class="text-muted">Precio contado:</small><br>
                                             <strong>S/ ${beneficio.precio_contado}</strong>
                                         </div>
+                                        ${beneficio.precio_financiado ? `
                                         <div class="col-6">
                                             <small class="text-muted">Precio financiado:</small><br>
                                             <strong class="text-success">S/ ${beneficio.precio_financiado}</strong>
-                                        </div>
+                                        </div>` : ''}
                                     </div>
+                                    ${beneficio.cuotas_disponibles ? `
                                     <div class="mt-2">
                                         <small class="text-muted">Cuotas disponibles:</small><br>
                                         <span class="badge bg-primary">${beneficio.cuotas_disponibles} meses</span>
+                                    </div>` : ''}
+                                    <div class="mt-3 p-3 bg-light rounded">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-info-circle text-primary me-2"></i>
+                                            <div>
+                                                <strong>Información del Beneficio</strong><br>
+                                                <small class="text-muted">Este producto estará disponible para financiamiento. Próximamente en la aplicación móvil ArequiPago.</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             `,
-                            showCancelButton: true,
-                            confirmButtonText: 'Solicitar Ahora',
-                            cancelButtonText: 'Cancelar',
+                            confirmButtonText: 'Entendido',
                             confirmButtonColor: '#6f42c1'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: '¡Solicitud Enviada!',
-                                    text: 'Tu solicitud de financiamiento ha sido enviada. Nos pondremos en contacto contigo pronto.',
-                                    timer: 3000,
-                                    showConfirmButton: false
-                                });
-                            }
                         });
                     },
 
