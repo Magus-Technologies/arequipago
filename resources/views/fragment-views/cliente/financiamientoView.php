@@ -177,6 +177,12 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                     </span>
                                 </button>
                             </div>
+                              <div class="card-body text-center pt-0">
+                                   <button id="btnPapelera" class="btn btn-secondary">
+                                        <i class="fas fa-trash-alt me-2"></i> Ver Papelera
+                                    </button>
+                                </div>
+
                         </div>
 
                     </div>
@@ -483,6 +489,39 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Papelera de Financiamientos -->
+            <div id="papeleraContainer" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-trash-alt me-2"></i>Papelera de Financiamientos</h5>
+                    <div>
+                        <button class="btn btn-danger me-2" id="btnVaciarPapelera">
+                            <i class="fas fa-trash-alt me-2"></i>Vaciar Papelera
+                        </button>
+                        <button class="btn btn-primary" id="btnVolverLista">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista de Clientes
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Documento</th>
+                                <th>Fecha Creación</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPapelera">
+                            <!-- Los datos se llenarán aquí -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1644,6 +1683,231 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
         // Variables globales para validación de código de asociado
         let timeoutCodigoAsociado = null;
         let codigoAsociadoValido = true;
+
+        // Funcionalidad de papelera
+        $(document).ready(function() {
+            // Evento para el botón de la papelera
+            $('#btnPapelera').on('click', function() {
+                $('#listaClientes').hide();
+                $('#papeleraContainer').show();
+                cargarFinanciamientosEliminados();
+            });
+
+            // Evento para el botón de volver
+            $('#btnVolverLista').on('click', function() {
+                $('#papeleraContainer').hide();
+                $('#listaClientes').show();
+            });
+
+            // Función para cargar los datos en la tabla de la papelera
+            function cargarFinanciamientosEliminados() {
+                $.ajax({
+                    url: '/arequipago/get-financiamientos-eliminados',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            const tabla = $('#tablaPapelera');
+                            tabla.empty();
+                            if (response.data.length > 0) {
+                                response.data.forEach(function(item) {
+                                    let nombreCliente = item.nombre_cliente ? item.nombre_cliente + ' ' + (item.apellido_cliente || '') : 'No disponible';
+                                    let fila = `
+                                        <tr>
+                                            <td>${item.idfinanciamiento}</td>
+                                            <td>${nombreCliente}</td>
+                                            <td>${item.documento_cliente || 'N/A'}</td>
+                                            <td>${item.fecha_creacion}</td>
+                                            <td>${item.moneda} ${item.monto_total}</td>
+                                            <td><span class="badge bg-danger">Eliminado</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info me-1" onclick="restaurarFinanciamiento(${item.idfinanciamiento})">
+                                                    <i class="fas fa-undo"></i> Restaurar
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="eliminarPermanentemente(${item.idfinanciamiento})">
+                                                    <i class="fas fa-trash"></i> Eliminar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                    tabla.append(fila);
+                                });
+                            } else {
+                                tabla.append('<tr><td colspan="7" class="text-center">La papelera está vacía.</td></tr>');
+                            }
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: response.message,
+                                icon: 'error',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Error al conectar con el servidor.',
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
+                    }
+                });
+            }
+
+            // Evento para el botón de vaciar papelera
+            $('#btnVaciarPapelera').on('click', function() {
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: 'Esta acción eliminará PERMANENTEMENTE todos los financiamientos de la papelera y NO se podrán recuperar.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, vaciar papelera',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/arequipago/financiamientos/vaciar-papelera',
+                            type: 'POST',
+                            dataType: 'json',
+                            beforeSend: function() {
+                                $('#btnVaciarPapelera').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Vaciando...');
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: '¡Éxito!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonColor: '#3085d6'
+                                    });
+                                    cargarFinanciamientosEliminados();
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: response.message,
+                                        icon: 'error',
+                                        confirmButtonColor: '#d33'
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Error al conectar con el servidor.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#d33'
+                                });
+                            },
+                            complete: function() {
+                                $('#btnVaciarPapelera').prop('disabled', false).html('<i class="fas fa-trash-alt me-2"></i>Vaciar Papelera');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Función para el botón de restaurar
+            window.restaurarFinanciamiento = function(id) {
+                Swal.fire({
+                    title: '¿Restaurar financiamiento?',
+                    text: '¿Estás seguro de que deseas restaurar este financiamiento?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, restaurar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/arequipago/financiamientos/restaurar',
+                            type: 'POST',
+                            data: { id_financiamiento: id },
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: '¡Restaurado!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonColor: '#28a745'
+                                    });
+                                    cargarFinanciamientosEliminados();
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: response.message,
+                                        icon: 'error',
+                                        confirmButtonColor: '#d33'
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Error al conectar con el servidor.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#d33'
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Función para eliminar permanentemente un financiamiento
+            window.eliminarPermanentemente = function(id) {
+                Swal.fire({
+                    title: '¡PELIGRO!',
+                    text: '¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE este financiamiento? Esta acción NO se puede deshacer.',
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar permanentemente',
+                    cancelButtonText: 'Cancelar',
+                    dangerMode: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/arequipago/financiamientos/eliminar-permanentemente',
+                            type: 'POST',
+                            data: { id_financiamiento: id },
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: '¡Eliminado!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonColor: '#28a745'
+                                    });
+                                    cargarFinanciamientosEliminados();
+                                } else {
+                                    Swal.fire({
+                                        title: 'Error',
+                                        text: response.message,
+                                        icon: 'error',
+                                        confirmButtonColor: '#d33'
+                                    });
+                                }
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: 'Error al conectar con el servidor.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#d33'
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
     </script>
     <!-- En tu financiamientoView.php -->
     <script src="<?= URL::to('public/js/financiamiento/utilsManager.js') ?>?v=<?= time() ?>"></script>

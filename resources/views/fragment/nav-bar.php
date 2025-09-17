@@ -205,11 +205,19 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/cupones">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="navbarDropdownPromociones" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="ti-gift"></i>
-                                CUPONES
+                                PROMOCIONES
                             </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPromociones">
+                                <li><a class="dropdown-item" href="/arequipago/cupones">
+                                    <i class="ti-ticket me-2"></i>Cupones
+                                </a></li>
+                                <li><a class="dropdown-item" href="/arequipago/beneficios">
+                                    <i class="ti-star me-2"></i>Beneficios
+                                </a></li>
+                            </ul>
                         </li>
 
                         <?php if ($id_rol == 3): ?>
@@ -229,12 +237,6 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                         </li>
 
                         <?php if ($id_rol == 1 || $id_rol == 3): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" onclick=""href="/arequipago/cotizaciones">
-                                    <i class="fas fa-piggy-bank"></i>
-                                    COTIZACIONES
-                                </a>
-                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" onclick=""href="/arequipago/grupo-financiamiento">
                                     <i class="fas fa-piggy-bank"></i>

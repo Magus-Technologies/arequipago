@@ -45,9 +45,12 @@
             top: 10px;
             right: 10px;
             z-index: 15;
-            background: linear-gradient(45deg, #fd7e14, #f8ad0a);
+            background: linear-gradient(45deg, #fd7e14, #f8ad0a) !important;
+            color: white !important;
             border: 2px solid white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-weight: 600;
+            font-size: 0.75rem;
         }
 
         .foto-usuario {
@@ -207,6 +210,39 @@
             margin-right: 0.25rem;
         }
 
+        /* Estilos para avatar con iniciales */
+        .avatar-iniciales {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
+
+        .avatar-iniciales-small {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
         /* NUEVOS ESTILOS PARA LAS PESTAÑAS */
         .nav-tabs .nav-link {
             color: #6c757d;
@@ -319,6 +355,93 @@
                 </div>
             </div>
 
+            <!-- NUEVO: Panel de usuarios seleccionados - MOVIDO AQUÍ PARA MAYOR VISIBILIDAD -->
+            <div class="row mb-4" v-if="totalUsuariosSeleccionados > 0">
+                <div class="col-12">
+                    <div class="card shadow-sm border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title fw-semibold mb-0">
+                                <i class="bi bi-person-check me-2"></i>Usuarios Seleccionados ({{ totalUsuariosSeleccionados }})
+                                <span class="float-end">
+                                    <button class="btn btn-sm btn-light" @click="limpiarTodasSelecciones">
+                                        <i class="bi bi-x-circle me-1"></i>Limpiar Todo
+                                    </button>
+                                </span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="usuarios-seleccionados">
+                                <div>
+                                    <!-- Conductores seleccionados -->
+                                    <div v-if="conductoresSeleccionados.length > 0" class="mb-3">
+                                        <h6 class="text-primary mb-2">
+                                            <i class="bi bi-car-front me-1"></i>
+                                            Conductores ({{ conductoresSeleccionados.length }})
+                                        </h6>
+                                        <div class="row g-2">
+                                            <div v-for="conductor in conductoresSeleccionados" :key="'sel-conductor-' + conductor.id_conductor"
+                                                class="col-md-6">
+                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-2">
+                                                            <img :src="conductor.foto"
+                                                                class="usuario-foto-small rounded-circle" :alt="conductor.nombres">
+                                                        </div>
+                                                        <div v-else class="avatar-iniciales-small me-2">
+                                                            {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
+                                                        </div>
+                                                        <div>
+                                                            <small class="fw-semibold">{{ conductor.nombres }} {{
+                                                                conductor.apellido_paterno }}</small>
+                                                            <br>
+                                                            <small class="text-muted">{{ conductor.nro_documento }}</small>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn-close"
+                                                        @click="toggleSeleccionConductor(conductor)"
+                                                        title="Quitar conductor"
+                                                        aria-label="Quitar conductor"></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Clientes seleccionados -->
+                                    <div v-if="clientesSeleccionados.length > 0">
+                                        <h6 class="text-success mb-2">
+                                            <i class="bi bi-person me-1"></i>
+                                            Clientes ({{ clientesSeleccionados.length }})
+                                        </h6>
+                                        <div class="row g-2">
+                                            <div v-for="cliente in clientesSeleccionados" :key="'sel-cliente-' + cliente.id"
+                                                class="col-md-6">
+                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-iniciales-small me-2">
+                                                            {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
+                                                        </div>
+                                                        <div>
+                                                            <small class="fw-semibold">{{ cliente.nombres }} {{
+                                                                cliente.apellido_paterno }}</small>
+                                                            <br>
+                                                            <small class="text-muted">{{ cliente.n_documento }}</small>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn-close"
+                                                        @click="toggleSeleccionCliente(cliente)"
+                                                        title="Quitar cliente"
+                                                        aria-label="Quitar cliente"></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- NUEVO: Pestañas para Conductores y Clientes -->
             <div class="row mb-4">
                 <div class="col-12">
@@ -372,14 +495,21 @@
                                             <label class="form-label fw-semibold">
                                                 <i class="bi bi-check-all me-1"></i>Acciones
                                             </label>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-outline-primary btn-sm w-100"
-                                                    @click="seleccionarTodosConductores">
-                                                    Seleccionar
-                                                </button>
-                                                <button class="btn btn-outline-secondary btn-sm w-100"
-                                                    @click="limpiarSeleccionConductores">
-                                                    Limpiar
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-outline-primary btn-sm flex-fill"
+                                                        @click="seleccionarTodosConductores">
+                                                        <i class="bi bi-check-all me-1"></i>Seleccionar Todos
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm flex-fill"
+                                                        @click="limpiarSeleccionConductores">
+                                                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                                                    </button>
+                                                </div>
+                                                <button class="btn btn-primary btn-sm w-100"
+                                                    @click="seleccionarTodosConductoresCompleto"
+                                                    :disabled="buscandoConductor">
+                                                    <i class="bi bi-check-all me-1"></i>Todos ({{ totalConductores }})
                                                 </button>
                                             </div>
                                         </div>
@@ -405,27 +535,33 @@
                                              :key="'conductor-' + conductor.id_conductor"
                                              class="col-xl-3 col-lg-4 col-md-6">
                                             <div class="card conductor-card h-100 position-relative"
-                                                :class="{ 
+                                                :class="{
                                                     selected: estaSeleccionadoConductor(conductor.id_conductor),
                                                     'tiene-cupones': conductor.tiene_cupones
                                                 }"
                                                 @click="toggleSeleccionConductor(conductor)">
-                                                
+
                                                 <!-- Badge de tipo -->
                                                 <span class="badge bg-primary tipo-usuario-badge">
                                                     <i class="bi bi-car-front me-1"></i>Conductor
                                                 </span>
 
-                                                <!-- NUEVO: Badge de cupones existentes -->
+                                                <!-- Badge de cupones existentes -->
                                                 <span v-if="conductor.tiene_cupones" class="badge badge-cupones-existentes">
-                                                    <i class="bi bi-exclamation-triangle me-1"></i>{{ conductor.total_cupones }} cupón(es)
+                                                    <i class="bi bi-ticket-perforated me-1"></i>{{ conductor.total_cupones }} cupón{{ conductor.total_cupones > 1 ? 'es' : '' }}
                                                 </span>
+
 
                                                 <div class="card-body p-3">
                                                     <div class="d-flex align-items-start mb-3">
-                                                        <img :src="obtenerFotoConductor(conductor)"
-                                                            class="foto-usuario rounded-circle me-3"
-                                                            :alt="conductor.nombres">
+                                                        <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-3">
+                                                            <img :src="conductor.foto"
+                                                                class="foto-usuario rounded-circle"
+                                                                :alt="conductor.nombres">
+                                                        </div>
+                                                        <div v-else class="avatar-iniciales me-3">
+                                                            {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
+                                                        </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="card-title mb-1 fw-bold">
                                                                 {{ conductor.nombres }} {{ conductor.apellido_paterno }}
@@ -493,14 +629,21 @@
                                             <label class="form-label fw-semibold">
                                                 <i class="bi bi-check-all me-1"></i>Acciones
                                             </label>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-outline-success btn-sm w-100"
-                                                    @click="seleccionarTodosClientes">
-                                                    Seleccionar
-                                                </button>
-                                                <button class="btn btn-outline-secondary btn-sm w-100"
-                                                    @click="limpiarSeleccionClientes">
-                                                    Limpiar
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-outline-success btn-sm flex-fill"
+                                                        @click="seleccionarTodosClientes">
+                                                        <i class="bi bi-check-all me-1"></i>Seleccionar Todos
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm flex-fill"
+                                                        @click="limpiarSeleccionClientes">
+                                                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                                                    </button>
+                                                </div>
+                                                <button class="btn btn-success btn-sm w-100"
+                                                    @click="seleccionarTodosClientesCompleto"
+                                                    :disabled="buscandoCliente">
+                                                    <i class="bi bi-check-all me-1"></i>Todos ({{ totalClientes }})
                                                 </button>
                                             </div>
                                         </div>
@@ -526,27 +669,28 @@
                                              :key="'cliente-' + cliente.id"
                                              class="col-xl-3 col-lg-4 col-md-6">
                                             <div class="card cliente-card h-100 position-relative"
-                                                :class="{ 
+                                                :class="{
                                                     selected: estaSeleccionadoCliente(cliente.id),
                                                     'tiene-cupones': cliente.tiene_cupones
                                                 }"
                                                 @click="toggleSeleccionCliente(cliente)">
-                                                
+
                                                 <!-- Badge de tipo -->
                                                 <span class="badge bg-success tipo-usuario-badge">
                                                     <i class="bi bi-person me-1"></i>Cliente
                                                 </span>
 
-                                                <!-- NUEVO: Badge de cupones existentes -->
+                                                <!-- Badge de cupones existentes -->
                                                 <span v-if="cliente.tiene_cupones" class="badge badge-cupones-existentes">
-                                                    <i class="bi bi-exclamation-triangle me-1"></i>{{ cliente.total_cupones }} cupón(es)
+                                                    <i class="bi bi-ticket-perforated me-1"></i>{{ cliente.total_cupones }} cupón{{ cliente.total_cupones > 1 ? 'es' : '' }}
                                                 </span>
+
 
                                                 <div class="card-body p-3">
                                                     <div class="d-flex align-items-start mb-3">
-                                                        <img :src="obtenerFotoCliente(cliente)"
-                                                            class="foto-usuario rounded-circle me-3"
-                                                            :alt="cliente.nombres">
+                                                        <div class="avatar-iniciales me-3">
+                                                            {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
+                                                        </div>
                                                         <div class="flex-grow-1">
                                                             <h6 class="card-title mb-1 fw-bold">
                                                                 {{ cliente.nombres }} {{ cliente.apellido_paterno }}
@@ -599,89 +743,6 @@
                 </div>
             </div>
 
-            <!-- NUEVO: Panel de usuarios seleccionados -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="card-title fw-semibold mb-3">
-                                <i class="bi bi-person-check me-2"></i>Usuarios Seleccionados
-                            </h6>
-                            <div class="usuarios-seleccionados">
-                                <div v-if="totalUsuariosSeleccionados === 0" class="text-center text-muted py-3">
-                                    <i class="bi bi-inbox display-6"></i>
-                                    <p class="mt-2 mb-0">No hay usuarios seleccionados</p>
-                                </div>
-                                <div v-else>
-                                    <!-- Conductores seleccionados -->
-                                    <div v-if="conductoresSeleccionados.length > 0" class="mb-3">
-                                        <h6 class="text-primary mb-2">
-                                            <i class="bi bi-car-front me-1"></i>
-                                            Conductores ({{ conductoresSeleccionados.length }})
-                                        </h6>
-                                        <div class="row g-2">
-                                            <div v-for="conductor in conductoresSeleccionados" :key="'sel-conductor-' + conductor.id_conductor"
-                                                class="col-md-6">
-                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <img :src="obtenerFotoConductor(conductor)"
-                                                            class="usuario-foto-small me-2" :alt="conductor.nombres">
-                                                        <div>
-                                                            <small class="fw-semibold">{{ conductor.nombres }} {{
-                                                                conductor.apellido_paterno }}</small>
-                                                            <br>
-                                                            <small class="text-muted">{{ conductor.nro_documento }}</small>
-                                                            <span v-if="conductor.tiene_cupones" class="badge bg-warning text-dark ms-2">
-                                                                {{ conductor.total_cupones }} cupón(es)
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <button class="btn btn-sm btn-outline-danger"
-                                                        @click="toggleSeleccionConductor(conductor)">
-                                                        <i class="bi bi-x"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Clientes seleccionados -->
-                                    <div v-if="clientesSeleccionados.length > 0">
-                                        <h6 class="text-success mb-2">
-                                            <i class="bi bi-person me-1"></i>
-                                            Clientes ({{ clientesSeleccionados.length }})
-                                        </h6>
-                                        <div class="row g-2">
-                                            <div v-for="cliente in clientesSeleccionados" :key="'sel-cliente-' + cliente.id"
-                                                class="col-md-6">
-                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <img :src="obtenerFotoCliente(cliente)"
-                                                            class="usuario-foto-small me-2" :alt="cliente.nombres">
-                                                        <div>
-                                                            <small class="fw-semibold">{{ cliente.nombres }} {{
-                                                                cliente.apellido_paterno }}</small>
-                                                            <br>
-                                                            <small class="text-muted">{{ cliente.n_documento }}</small>
-                                                            <span v-if="cliente.tiene_cupones" class="badge bg-warning text-dark ms-2">
-                                                                {{ cliente.total_cupones }} cupón(es)
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <button class="btn btn-sm btn-outline-danger"
-                                                        @click="toggleSeleccionCliente(cliente)">
-                                                        <i class="bi bi-x"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Vista de Cupones (sin cambios) -->
@@ -689,8 +750,8 @@
             <!-- Header Simple de Cupones -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold text-secondary mb-1">
-                        <i class="bi bi-ticket-perforated me-2"></i>Cupones Activos
+                    <h3 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-ticket-perforated me-2 text-primary"></i>Cupones Activos
                     </h3>
                     <p class="text-muted mb-0">Todos los cupones creados en el sistema</p>
                 </div>
@@ -756,9 +817,21 @@
                                     <small class="text-muted d-block">
                                         <i class="bi bi-people me-1"></i>
                                         <span class="usuarios-link" @click="verUsuariosCupon(cupon.id)">
-                                            {{ cupon.usuarios_asignados || cupon.conductores_asignados }} usuario(s)
+                                            Ver {{ cupon.usuarios_asignados || cupon.conductores_asignados }} usuario(s)
                                         </span>
                                     </small>
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary flex-fill"
+                                                @click="editarCupon(cupon)"
+                                                title="Editar cupón">
+                                            <i class="bi bi-pencil-square me-1"></i>Editar
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger flex-fill"
+                                                @click="eliminarCupon(cupon)"
+                                                title="Eliminar cupón">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -805,14 +878,14 @@
             </div>
         </div>
 
-        <!-- Modal Crear Cupón (actualizado) -->
+        <!-- Modal Crear/Editar Cupón -->
         <div class="modal fade" id="modalCrearCupon" tabindex="-1">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title">
                             <i class="bi bi-ticket-perforated me-2"></i>
-                            Crear Nuevo Cupón
+                            {{ modoEdicion ? 'Editar Cupón' : 'Crear Nuevo Cupón' }}
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -993,10 +1066,10 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-2"></i>Cancelar
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="creandoCupon || totalUsuariosSeleccionados === 0" @click="crearCupon">
+                        <button type="submit" class="btn btn-primary" :disabled="creandoCupon || totalUsuariosSeleccionados === 0" @click="modoEdicion ? actualizarCupon() : crearCupon()">
                             <span v-if="creandoCupon" class="spinner-border spinner-border-sm me-2"></span>
                             <i v-if="!creandoCupon" class="bi bi-check-circle me-2"></i>
-                            {{ creandoCupon ? 'Creando...' : 'Crear Cupón' }}
+                            {{ creandoCupon ? (modoEdicion ? 'Actualizando...' : 'Creando...') : (modoEdicion ? 'Actualizar Cupón' : 'Crear Cupón') }}
                         </button>
                     </div>
                 </div>
@@ -1029,18 +1102,23 @@
                             <div class="mb-3">
                                 <h6 class="text-muted">Total: {{ usuariosCupon.length }} usuario(s)</h6>
                             </div>
-                           <div class="usuario-item" v-for="usuario in usuariosCupon"
+                           <div class="usuario-item d-flex align-items-center" v-for="usuario in usuariosCupon"
      :key="usuario.tipo_usuario + '-' + (usuario.id_conductor || usuario.id_cliente)">
 
                                 <!-- Badge de tipo -->
-                               <span class="badge me-2" 
-      :class="usuario.tipo_usuario === 'conductor' ? 'bg-primary' : 'bg-success'">
-    <i class="bi" :class="usuario.tipo_usuario === 'conductor' ? 'bi-car-front' : 'bi-person'"></i>
-    {{ usuario.tipo_usuario === 'conductor' ? 'Conductor' : 'Cliente' }}
-</span>
+                                <span class="badge me-2" 
+                                      :class="usuario.tipo_usuario === 'conductor' ? 'bg-primary' : 'bg-success'">
+                                    <i class="bi" :class="usuario.tipo_usuario === 'conductor' ? 'bi-car-front' : 'bi-person'"></i>
+                                    {{ usuario.tipo_usuario === 'conductor' ? 'Conductor' : 'Cliente' }}
+                                </span>
 
-
-                                <img :src="usuario.foto" class="usuario-foto-small" :alt="usuario.nombres">
+                                <!-- Avatar/Foto -->
+                                <div v-if="usuario.tipo_usuario === 'conductor' && usuario.foto && usuario.foto.trim() !== ''" class="me-3">
+                                    <img :src="usuario.foto" class="usuario-foto-small rounded-circle" :alt="usuario.nombres">
+                                </div>
+                                <div v-else class="avatar-iniciales-small me-3">
+                                    {{ obtenerIniciales(usuario.nombres, usuario.apellido_paterno) }}
+                                </div>
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
                                         <h6 class="mb-0">{{ usuario.nombres }} {{ usuario.apellido_paterno }}</h6>
@@ -1145,6 +1223,8 @@
                         creandoCupon: false,
                         modal: null,
                         modalUsuarios: null,
+                        modoEdicion: false,
+                        cuponEditando: null,
                         formData: {
                             titulo: '',
                             descripcion: '',
@@ -1204,6 +1284,12 @@
                                 if (data.error) {
                                     throw new Error(data.error);
                                 }
+                                // CORREGIDO: NO filtrar conductores con cupones - permitir múltiples asignaciones
+                                // Asegurar que los datos de cupones están presentes
+                                data.forEach(conductor => {
+                                    conductor.tiene_cupones = conductor.tiene_cupones || false;
+                                    conductor.total_cupones = conductor.total_cupones || 0;
+                                });
                                 self.conductores = data;
                                 self.conductoresFiltrados = data;
                                 self.totalConductores = data.length;
@@ -1235,6 +1321,12 @@
                                     if (data.error) {
                                         throw new Error(data.error);
                                     }
+                                    // CORREGIDO: NO filtrar conductores con cupones - permitir múltiples asignaciones
+                                    // Asegurar que los datos de cupones están presentes
+                                    data.forEach(conductor => {
+                                        conductor.tiene_cupones = conductor.tiene_cupones || false;
+                                        conductor.total_cupones = conductor.total_cupones || 0;
+                                    });
                                     self.conductoresFiltrados = data;
                                     self.paginaActualConductores = 1;
                                     self.buscandoConductor = false;
@@ -1246,11 +1338,17 @@
                         }, 350);
                     },
 
-                    obtenerFotoConductor: function (conductor) {
-                        if (conductor.foto && conductor.foto.trim() !== '') {
-                            return conductor.foto;
+                    obtenerIniciales: function (nombres, apellido) {
+                        var iniciales = '';
+                        if (nombres && nombres.trim() !== '') {
+                            iniciales += nombres.trim().charAt(0).toUpperCase();
                         }
-                        return '/arequipago/public/img/default-user.png';
+                        if (apellido && apellido.trim() !== '') {
+                            iniciales += apellido.trim().charAt(0).toUpperCase();
+                        }
+                        var resultado = iniciales || 'NN';
+                        console.log('Iniciales para:', nombres, apellido, '→', resultado); // Debug temporal
+                        return resultado;
                     },
 
                     estaSeleccionadoConductor: function (id) {
@@ -1285,6 +1383,16 @@
                         this.conductoresSeleccionados = [];
                     },
 
+                    seleccionarTodosConductoresCompleto: function () {
+                        var self = this;
+                        this.conductores.forEach(conductor => {
+                            var index = self.conductoresSeleccionados.findIndex(c => c.id_conductor === conductor.id_conductor);
+                            if (index === -1) {
+                                self.conductoresSeleccionados.push(conductor);
+                            }
+                        });
+                    },
+
                     // Paginación conductores
                     cambiarPaginaConductores: function(pagina) {
                         this.paginaActualConductores = pagina;
@@ -1314,6 +1422,12 @@
                                 if (data.error) {
                                     throw new Error(data.error);
                                 }
+                                // CORREGIDO: NO filtrar clientes con cupones - permitir múltiples asignaciones
+                                // Asegurar que los datos de cupones están presentes
+                                data.forEach(cliente => {
+                                    cliente.tiene_cupones = cliente.tiene_cupones || false;
+                                    cliente.total_cupones = cliente.total_cupones || 0;
+                                });
                                 self.clientes = data;
                                 self.clientesFiltrados = data;
                                 self.totalClientes = data.length;
@@ -1345,6 +1459,12 @@
                                     if (data.error) {
                                         throw new Error(data.error);
                                     }
+                                    // CORREGIDO: NO filtrar clientes con cupones - permitir múltiples asignaciones
+                                    // Asegurar que los datos de cupones están presentes
+                                    data.forEach(cliente => {
+                                        cliente.tiene_cupones = cliente.tiene_cupones || false;
+                                        cliente.total_cupones = cliente.total_cupones || 0;
+                                    });
                                     self.clientesFiltrados = data;
                                     self.paginaActualClientes = 1;
                                     self.buscandoCliente = false;
@@ -1356,9 +1476,6 @@
                         }, 350);
                     },
 
-                    obtenerFotoCliente: function (cliente) {
-                        return '/arequipago/public/img/default-user.png';
-                    },
 
                     estaSeleccionadoCliente: function (id) {
                         return this.clientesSeleccionados.some(c => c.id === id);
@@ -1389,6 +1506,21 @@
                     },
 
                     limpiarSeleccionClientes: function () {
+                        this.clientesSeleccionados = [];
+                    },
+
+                    seleccionarTodosClientesCompleto: function () {
+                        var self = this;
+                        this.clientes.forEach(cliente => {
+                            var index = self.clientesSeleccionados.findIndex(c => c.id === cliente.id);
+                            if (index === -1) {
+                                self.clientesSeleccionados.push(cliente);
+                            }
+                        });
+                    },
+
+                    limpiarTodasSelecciones: function () {
+                        this.conductoresSeleccionados = [];
                         this.clientesSeleccionados = [];
                     },
 
@@ -1462,6 +1594,7 @@
                                 if (data.error) {
                                     throw new Error(data.error);
                                 }
+                                console.log('Datos de usuarios del cupón:', data); // Debug temporal
                                 self.usuariosCupon = data;
                                 self.cargandoUsuariosCupon = false;
                             })
@@ -1478,6 +1611,8 @@
                     },
 
                     limpiarFormulario: function() {
+                        this.modoEdicion = false;
+                        this.cuponEditando = null;
                         this.formData = {
                             titulo: '',
                             descripcion: '',
@@ -1491,7 +1626,7 @@
                         };
                         this.errores = {};
                         this.bannerPreview = null;
-                        
+
                         if (this.$refs.bannerInput) {
                             this.$refs.bannerInput.value = '';
                         }
@@ -1673,6 +1808,217 @@
                         } catch (error) {
                             return fecha;
                         }
+                    },
+
+                    eliminarCupon: function(cupon) {
+                        var self = this;
+                        
+                        Swal.fire({
+                            title: '¿Eliminar cupón?',
+                            text: `¿Estás seguro de eliminar el cupón "${cupon.titulo}"? Esta acción no se puede deshacer.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Sí, eliminar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                self.eliminarCuponConfirmado(cupon);
+                            }
+                        });
+                    },
+
+                    eliminarCuponConfirmado: function(cupon) {
+                        var self = this;
+
+                        fetch(_URL + '/ajs/cupones/eliminar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'id_cupon=' + encodeURIComponent(cupon.id)
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Cupón eliminado!',
+                                    text: result.message,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                // Eliminar el cupón de la lista local
+                                var index = self.cupones.findIndex(c => c.id === cupon.id);
+                                if (index > -1) {
+                                    self.cupones.splice(index, 1);
+                                }
+
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al eliminar',
+                                    text: result.message || 'No se pudo eliminar el cupón'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al eliminar cupón:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error inesperado',
+                                text: 'Ocurrió un error al eliminar el cupón: ' + error.message
+                            });
+                        });
+                    },
+
+                    // ============ MÉTODOS DE EDICIÓN ============
+                    editarCupon: function(cupon) {
+                        var self = this;
+
+                        // Obtener datos completos del cupón
+                        fetch(_URL + '/ajs/cupones/obtener', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'id_cupon=' + encodeURIComponent(cupon.id)
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) {
+                                self.modoEdicion = true;
+                                self.cuponEditando = result.cupon;
+
+                                // Llenar formulario con datos del cupón
+                                self.formData = {
+                                    titulo: result.cupon.titulo,
+                                    descripcion: result.cupon.descripcion || '',
+                                    tipoDescuento: result.cupon.tipo_descuento,
+                                    valor: result.cupon.valor,
+                                    fechaInicio: result.cupon.fecha_inicio,
+                                    fechaFin: result.cupon.fecha_fin,
+                                    limitePorConductor: result.cupon.limite_usos_conductor || '',
+                                    limiteTotal: result.cupon.limite_usos_total || '',
+                                    activo: result.cupon.activo == 1
+                                };
+
+                                // Configurar banner si existe
+                                if (result.cupon.imagen_banner) {
+                                    self.bannerPreview = '/arequipago/public/' + result.cupon.imagen_banner;
+                                }
+
+                                // Preseleccionar usuarios asignados
+                                self.conductoresSeleccionados = result.conductores || [];
+                                self.clientesSeleccionados = result.clientes || [];
+
+                                // Cargar usuarios si es necesario
+                                if (self.conductores.length === 0) {
+                                    self.cargarConductores();
+                                }
+                                if (self.clientes.length === 0) {
+                                    self.cargarClientes();
+                                }
+
+                                self.modal.show();
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: result.message || 'No se pudo cargar el cupón para edición'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar cupón:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error inesperado',
+                                text: 'Ocurrió un error al cargar el cupón: ' + error.message
+                            });
+                        });
+                    },
+
+                    actualizarCupon: function() {
+                        if (!this.validarFormulario()) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Formulario incompleto',
+                                text: 'Por favor corrige los errores en el formulario'
+                            });
+                            return;
+                        }
+
+                        var self = this;
+                        self.creandoCupon = true;
+
+                        var form = document.getElementById('formCrearCupon');
+                        var formData = new FormData(form);
+
+                        // Agregar ID del cupón
+                        formData.set('id_cupon', this.cuponEditando.id);
+
+                        // Agregar datos del formulario Vue
+                        formData.set('titulo', this.formData.titulo);
+                        formData.set('descripcion', this.formData.descripcion);
+                        formData.set('tipoDescuento', this.formData.tipoDescuento);
+                        formData.set('valor', this.formData.valor);
+                        formData.set('fechaInicio', this.formData.fechaInicio);
+                        formData.set('fechaFin', this.formData.fechaFin);
+                        formData.set('limitePorConductor', this.formData.limitePorConductor);
+                        formData.set('limiteTotal', this.formData.limiteTotal);
+                        formData.set('activo', this.formData.activo ? '1' : '0');
+
+                        // Agregar conductores y clientes
+                        var conductoresIds = this.conductoresSeleccionados.map(c => c.id_conductor);
+                        var clientesIds = this.clientesSeleccionados.map(c => c.id);
+
+                        formData.append('conductores', JSON.stringify(conductoresIds));
+                        formData.append('clientes', JSON.stringify(clientesIds));
+
+                        fetch(_URL + '/ajs/cupones/actualizar', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            self.creandoCupon = false;
+
+                            if (result.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Éxito!',
+                                    text: result.message,
+                                    timer: 3000,
+                                    showConfirmButton: false
+                                });
+
+                                self.modal.hide();
+                                self.limpiarFormulario();
+                                self.conductoresSeleccionados = [];
+                                self.clientesSeleccionados = [];
+
+                                // Si estamos en la vista de cupones, recargar
+                                if (self.vistaActual === 'cupones') {
+                                    self.cargarCupones();
+                                }
+                                self.cupones = [];
+
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: result.message || 'Error al actualizar el cupón'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al actualizar el cupón:', error);
+                            self.creandoCupon = false;
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error inesperado',
+                                text: 'Ocurrió un error inesperado: ' + error.message
+                            });
+                        });
                     }
                 }
             });

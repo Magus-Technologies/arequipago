@@ -59,7 +59,7 @@ class Cupon
             return $insertId;
         } catch (Exception $e) {
             error_log('Error en Cupon::crear(): ' . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 
@@ -813,6 +813,73 @@ class Cupon
         }
     }
 
+    /**
+     * Eliminar cupón y sus asignaciones
+     */
+    public function eliminar($idCupon)
+    {
+        try {
+            $this->conectar->autocommit(false);
+
+            // Primero eliminar las asignaciones del cupón
+            $sqlAsignaciones = "DELETE FROM cupones_asignados WHERE id_cupon = ?";
+            $stmt1 = $this->conectar->prepare($sqlAsignaciones);
+            if (!$stmt1) {
+                throw new Exception('Error al preparar la consulta de asignaciones: ' . $this->conectar->error);
+            }
+
+            $stmt1->bind_param('i', $idCupon);
+            if (!$stmt1->execute()) {
+                throw new Exception('Error al eliminar asignaciones: ' . $stmt1->error);
+            }
+            $stmt1->close();
+
+            // Eliminar registros de uso del cupón
+            $sqlUso = "DELETE FROM cupones_uso_tracking WHERE id_cupon = ?";
+            $stmt2 = $this->conectar->prepare($sqlUso);
+            if (!$stmt2) {
+                throw new Exception('Error al preparar la consulta de usos: ' . $this->conectar->error);
+            }
+
+            $stmt2->bind_param('i', $idCupon);
+            if (!$stmt2->execute()) {
+                throw new Exception('Error al eliminar usos: ' . $stmt2->error);
+            }
+            $stmt2->close();
+
+            // Finalmente eliminar el cupón
+            $sqlCupon = "DELETE FROM cupones WHERE id = ?";
+            $stmt3 = $this->conectar->prepare($sqlCupon);
+            if (!$stmt3) {
+                throw new Exception('Error al preparar la consulta del cupón: ' . $this->conectar->error);
+            }
+
+            $stmt3->bind_param('i', $idCupon);
+            if (!$stmt3->execute()) {
+                throw new Exception('Error al eliminar cupón: ' . $stmt3->error);
+            }
+
+            $filasAfectadas = $stmt3->affected_rows;
+            $stmt3->close();
+
+            if ($filasAfectadas > 0) {
+                $this->conectar->commit();
+                $this->conectar->autocommit(true);
+                return true;
+            } else {
+                $this->conectar->rollback();
+                $this->conectar->autocommit(true);
+                return false;
+            }
+
+        } catch (Exception $e) {
+            $this->conectar->rollback();
+            $this->conectar->autocommit(true);
+            error_log('Error en Cupon::eliminar(): ' . $e->getMessage());
+            return false;
+        }
+    }
+
     // Getters y Setters
     public function getId()
     {
@@ -1006,6 +1073,186 @@ class Cupon
         } catch (Exception $e) {
             error_log('Error en obtenerPorCodigo: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Obtener conductores asignados a un cupón específico
+     */
+    public function obtenerConductoresPorCupon($idCupon)
+    {
+        try {
+            $sql = "SELECT c.id_conductor, c.nombres, c.apellido_paterno, c.apellido_materno, c.nro_documento, c.foto, v.placa
+                    FROM cupones_asignados ca
+                    INNER JOIN conductores c ON ca.id_usuario = c.id_conductor
+                    LEFT JOIN vehiculos v ON c.id_conductor = v.id_conductor
+                    WHERE ca.id_cupon = ? AND ca.tipo_usuario = 'conductor' AND ca.activo = 1";
+
+            $stmt = $this->conectar->prepare($sql);
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            $stmt->bind_param('i', $idCupon);
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $conductores = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $conductores[] = $row;
+            }
+
+            $stmt->close();
+            return $conductores;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::obtenerConductoresPorCupon(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtener clientes asignados a un cupón específico
+     */
+    public function obtenerClientesPorCupon($idCupon)
+    {
+        try {
+            $sql = "SELECT cl.id, cl.nombres, cl.apellido_paterno, cl.apellido_materno, cl.n_documento, cl.telefono
+                    FROM cupones_asignados ca
+                    INNER JOIN clientes_financiar cl ON ca.id_usuario = cl.id
+                    WHERE ca.id_cupon = ? AND ca.tipo_usuario = 'cliente' AND ca.activo = 1";
+
+            $stmt = $this->conectar->prepare($sql);
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            $stmt->bind_param('i', $idCupon);
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $clientes = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $clientes[] = $row;
+            }
+
+            $stmt->close();
+            return $clientes;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::obtenerClientesPorCupon(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Actualizar cupón existente
+     */
+    public function actualizarCupon($idCupon, $datos)
+    {
+        try {
+            $sql = "UPDATE cupones SET
+                    titulo = ?,
+                    descripcion = ?,
+                    tipo_descuento = ?,
+                    valor = ?,
+                    imagen_banner = ?,
+                    fecha_inicio = ?,
+                    fecha_fin = ?,
+                    limite_usos_conductor = ?,
+                    limite_usos_total = ?,
+                    activo = ?
+                    WHERE id = ?";
+
+            $stmt = $this->conectar->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            $stmt->bind_param(
+                'sssdsssiisi',
+                $datos['titulo'],
+                $datos['descripcion'],
+                $datos['tipo_descuento'],
+                $datos['valor'],
+                $datos['imagen_banner'],
+                $datos['fecha_inicio'],
+                $datos['fecha_fin'],
+                $datos['limite_usos_conductor'],
+                $datos['limite_usos_total'],
+                $datos['activo'],
+                $idCupon
+            );
+
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $filasAfectadas = $stmt->affected_rows;
+            $stmt->close();
+
+            return $filasAfectadas > 0;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::actualizarCupon(): ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Actualizar asignaciones de usuarios a un cupón
+     */
+    public function actualizarAsignacionesUsuarios($idCupon, $usuarios)
+    {
+        try {
+            $this->conectar->autocommit(false);
+
+            // Eliminar asignaciones existentes
+            $sqlEliminar = "DELETE FROM cupones_asignados WHERE id_cupon = ?";
+            $stmtEliminar = $this->conectar->prepare($sqlEliminar);
+            if (!$stmtEliminar) {
+                throw new Exception('Error al preparar la consulta de eliminación: ' . $this->conectar->error);
+            }
+
+            $stmtEliminar->bind_param('i', $idCupon);
+            if (!$stmtEliminar->execute()) {
+                throw new Exception('Error al eliminar asignaciones existentes: ' . $stmtEliminar->error);
+            }
+            $stmtEliminar->close();
+
+            // Insertar nuevas asignaciones
+            if (!empty($usuarios)) {
+                $sql = "INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)";
+                $stmt = $this->conectar->prepare($sql);
+
+                if (!$stmt) {
+                    throw new Exception('Error al preparar la consulta de inserción: ' . $this->conectar->error);
+                }
+
+                foreach ($usuarios as $usuario) {
+                    $stmt->bind_param('isi', $idCupon, $usuario['tipo'], $usuario['id']);
+                    if (!$stmt->execute()) {
+                        $this->conectar->rollback();
+                        $stmt->close();
+                        throw new Exception('Error al asignar cupón: ' . $stmt->error);
+                    }
+                }
+                $stmt->close();
+            }
+
+            $this->conectar->commit();
+            $this->conectar->autocommit(true);
+
+            return true;
+        } catch (Exception $e) {
+            $this->conectar->rollback();
+            $this->conectar->autocommit(true);
+            error_log('Error en Cupon::actualizarAsignacionesUsuarios(): ' . $e->getMessage());
+            return false;
         }
     }
 }
