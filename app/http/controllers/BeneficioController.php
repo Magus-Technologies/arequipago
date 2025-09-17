@@ -81,8 +81,18 @@ class BeneficioController
                 return;
             }
 
-            if (empty($_POST['precio_contado']) || $_POST['precio_contado'] <= 0) {
-                echo json_encode(['success' => false, 'message' => 'El precio al contado es obligatorio y debe ser mayor a 0.']);
+            if (!isset($_POST['cuota_inicial']) || $_POST['cuota_inicial'] === '' || $_POST['cuota_inicial'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota inicial es obligatoria y debe ser mayor a 0.']);
+                return;
+            }
+
+            if (!isset($_POST['cantidad_cuotas']) || $_POST['cantidad_cuotas'] === '' || $_POST['cantidad_cuotas'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cantidad de cuotas es obligatoria y debe ser mayor a 0.']);
+                return;
+            }
+
+            if (!isset($_POST['cuota_mensual']) || $_POST['cuota_mensual'] === '' || $_POST['cuota_mensual'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota mensual es obligatoria y debe ser mayor a 0.']);
                 return;
             }
 
@@ -111,31 +121,21 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 }
             }
 
-            // Debug: Log de datos POST recibidos (comentado tras resolver el problema)
-            // error_log('BeneficioController::crearBeneficio() - POST data: ' . print_r($_POST, true));
+            // Debug: Log de datos POST recibidos
+            error_log('BeneficioController::crearBeneficio() - POST data: ' . print_r($_POST, true));
+            error_log('BeneficioController::crearBeneficio() - FILES data: ' . print_r($_FILES, true));
+            error_log('BeneficioController::crearBeneficio() - imagenPrincipal: ' . ($imagenPrincipal ?? 'NULL'));
 
-            // Preparar datos
+            // Preparar datos esenciales
             $datos = [
                 'nombre' => trim($_POST['nombre']),
                 'categoria' => (int)$_POST['categoria'],
-                'descripcion' => isset($_POST['descripcion']) && !empty($_POST['descripcion']) ? trim($_POST['descripcion']) : null,
-                'precio_contado' => (float)$_POST['precio_contado'],
-                'precio_financiado' => isset($_POST['precio_financiado']) && !empty($_POST['precio_financiado']) && $_POST['precio_financiado'] > 0 ? (float)$_POST['precio_financiado'] : null,
-                'cuotas_disponibles' => isset($_POST['cuotas_disponibles']) && !empty($_POST['cuotas_disponibles']) ? trim($_POST['cuotas_disponibles']) : null,
-                'tasa_interes' => isset($_POST['tasa_interes']) && !empty($_POST['tasa_interes']) && $_POST['tasa_interes'] > 0 ? (float)$_POST['tasa_interes'] : null,
-                'requisitos' => isset($_POST['requisitos']) && !empty($_POST['requisitos']) ? trim($_POST['requisitos']) : null,
-                'imagen_principal' => $imagenPrincipal,
-                'stock_disponible' => isset($_POST['stock_disponible']) && !empty($_POST['stock_disponible']) && $_POST['stock_disponible'] > 0 ? (int)$_POST['stock_disponible'] : null,
+                'descripcion' => isset($_POST['descripcion']) && !empty($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
+                'cuota_inicial' => (float)$_POST['cuota_inicial'],
+                'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
+                'cuota_mensual' => (float)$_POST['cuota_mensual'],
+                'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
-                'activo' => isset($_POST['activo']) ? (int)$_POST['activo'] : 1,
-                'codigo_producto' => isset($_POST['codigo_producto']) && !empty($_POST['codigo_producto']) ? trim($_POST['codigo_producto']) : null,
-                'marca' => isset($_POST['marca']) && !empty($_POST['marca']) ? trim($_POST['marca']) : null,
-                'modelo' => isset($_POST['modelo']) && !empty($_POST['modelo']) ? trim($_POST['modelo']) : null,
-                'especificaciones' => isset($_POST['especificaciones']) && !empty($_POST['especificaciones']) ? $_POST['especificaciones'] : null,
-                'peso' => isset($_POST['peso']) && !empty($_POST['peso']) && $_POST['peso'] > 0 ? (float)$_POST['peso'] : null,
-                'dimensiones' => isset($_POST['dimensiones']) && !empty($_POST['dimensiones']) ? trim($_POST['dimensiones']) : null,
-                'garantia_meses' => isset($_POST['garantia_meses']) && !empty($_POST['garantia_meses']) && $_POST['garantia_meses'] > 0 ? (int)$_POST['garantia_meses'] : null,
-                'proveedor' => isset($_POST['proveedor']) && !empty($_POST['proveedor']) ? trim($_POST['proveedor']) : null,
             ];
 
             $idBeneficio = $this->beneficioModel->crear($datos);
@@ -234,8 +234,18 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 return;
             }
 
-            if (empty($_POST['precio_contado']) || $_POST['precio_contado'] <= 0) {
-                echo json_encode(['success' => false, 'message' => 'El precio al contado es obligatorio y debe ser mayor a 0.']);
+            if (!isset($_POST['cuota_inicial']) || $_POST['cuota_inicial'] === '' || $_POST['cuota_inicial'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota inicial es obligatoria y debe ser mayor a 0.']);
+                return;
+            }
+
+            if (!isset($_POST['cantidad_cuotas']) || $_POST['cantidad_cuotas'] === '' || $_POST['cantidad_cuotas'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cantidad de cuotas es obligatoria y debe ser mayor a 0.']);
+                return;
+            }
+
+            if (!isset($_POST['cuota_mensual']) || $_POST['cuota_mensual'] === '' || $_POST['cuota_mensual'] <= 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota mensual es obligatoria y debe ser mayor a 0.']);
                 return;
             }
 
@@ -254,39 +264,29 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
             }
 
             // Procesar imagen principal (si se sube una nueva)
-            $imagenPrincipal = $beneficioExistente['imagen_principal']; // Mantener la actual por defecto
+            $imagenPrincipal = $beneficioExistente['imagen']; // Mantener la actual por defecto
             if (isset($_FILES['imagen_principal']) && $_FILES['imagen_principal']['error'] === UPLOAD_ERR_OK) {
                 $nuevaImagen = $this->procesarImagenUpload($_FILES['imagen_principal']);
                 if ($nuevaImagen) {
                     // Eliminar imagen anterior si existe
-                    if ($imagenPrincipal && file_exists('public/' . $imagenPrincipal)) {
-                        unlink('public/' . $imagenPrincipal);
+                    if ($imagenPrincipal && file_exists($_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $imagenPrincipal)) {
+                        unlink($_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $imagenPrincipal);
+                        error_log("Imagen anterior eliminada: " . $imagenPrincipal);
                     }
                     $imagenPrincipal = $nuevaImagen;
                 }
             }
 
-            // Preparar datos
+            // Preparar datos esenciales
             $datos = [
                 'nombre' => trim($_POST['nombre']),
                 'categoria' => (int)$_POST['categoria'],
-                'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : null,
-                'precio_contado' => (float)$_POST['precio_contado'],
-                'precio_financiado' => isset($_POST['precio_financiado']) && $_POST['precio_financiado'] > 0 ? (float)$_POST['precio_financiado'] : null,
-                'cuotas_disponibles' => isset($_POST['cuotas_disponibles']) ? trim($_POST['cuotas_disponibles']) : null,
-                'tasa_interes' => isset($_POST['tasa_interes']) && $_POST['tasa_interes'] > 0 ? (float)$_POST['tasa_interes'] : null,
-                'requisitos' => isset($_POST['requisitos']) ? trim($_POST['requisitos']) : null,
-                'imagen_principal' => $imagenPrincipal,
-                'stock_disponible' => isset($_POST['stock_disponible']) && $_POST['stock_disponible'] > 0 ? (int)$_POST['stock_disponible'] : null,
+                'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
+                'cuota_inicial' => (float)$_POST['cuota_inicial'],
+                'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
+                'cuota_mensual' => (float)$_POST['cuota_mensual'],
+                'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
-                'codigo_producto' => isset($_POST['codigo_producto']) ? trim($_POST['codigo_producto']) : null,
-                'marca' => isset($_POST['marca']) ? trim($_POST['marca']) : null,
-                'modelo' => isset($_POST['modelo']) ? trim($_POST['modelo']) : null,
-                'especificaciones' => isset($_POST['especificaciones']) ? $_POST['especificaciones'] : null,
-                'peso' => isset($_POST['peso']) && $_POST['peso'] > 0 ? (float)$_POST['peso'] : null,
-                'dimensiones' => isset($_POST['dimensiones']) ? trim($_POST['dimensiones']) : null,
-                'garantia_meses' => isset($_POST['garantia_meses']) && $_POST['garantia_meses'] > 0 ? (int)$_POST['garantia_meses'] : null,
-                'proveedor' => isset($_POST['proveedor']) ? trim($_POST['proveedor']) : null,
             ];
 
             $actualizado = $this->beneficioModel->actualizar((int)$id, $datos);
@@ -330,13 +330,30 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 return;
             }
 
+            // Obtener la información del beneficio antes de eliminarlo para conseguir la imagen
+            $beneficio = $this->beneficioModel->obtenerPorId((int)$id);
+
+            if (!$beneficio) {
+                echo json_encode(['success' => false, 'message' => 'Beneficio no encontrado.']);
+                return;
+            }
+
             $eliminado = $this->beneficioModel->eliminar((int)$id);
 
             if ($eliminado) {
+                // Si el beneficio fue eliminado exitosamente, eliminar también la imagen del servidor
+                if (!empty($beneficio['imagen'])) {
+                    $rutaImagen = $_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $beneficio['imagen'];
+                    if (file_exists($rutaImagen)) {
+                        unlink($rutaImagen);
+                        error_log("Imagen eliminada: " . $rutaImagen);
+                    }
+                }
+
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Beneficio eliminado exitosamente.'
+                    'message' => 'Beneficio e imagen eliminados exitosamente.'
                 ]);
             } else {
                 header('Content-Type: application/json');
