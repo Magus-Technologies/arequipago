@@ -820,10 +820,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             <div class="col-sm-8 d-flex">
                                 <select name="categoria_producto" id="categoria_producto" class="form-select me-2" onchange="mostrarIntfecha()">
                                     <option value="seleccionar_categoría">Seleccionar Categoría</option>
-                                    <option value="soat">SOAT</option>
-                                    <option value="seguro">Seguro</option>
-                                    <option value="llantas">Llantas</option>
-                                    <option value="aceites">Aceites</option>
+                                
                                 </select>
                                 <button data-bs-toggle="modal" data-bs-target="#exampleModalCategoria" class="btn btn-primary">Nuevo tipo de categoría</button>
                             </div>    
