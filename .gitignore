@@ -5,4 +5,8 @@
 /.env
 /.idea
 /.vscode
-/routes
+/public/img
+/public/clientesFiles
+/files
+/arequipa_db.sql
+# Base de datos de Arequipa
