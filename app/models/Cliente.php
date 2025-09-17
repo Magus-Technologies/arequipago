@@ -710,7 +710,15 @@ public function obtenerClientes($inicio, $registrosPorPagina, $busqueda = "")
                      OR n_documento LIKE ? OR correo LIKE ? OR telefono LIKE ? OR num_cod_finan LIKE ?";
     }
     
-    $query = "SELECT * FROM clientes_financiar $condicion ORDER BY id DESC LIMIT ?, ?";
+    $query = "SELECT c.*, 
+                 CASE WHEN cp.cliente_id IS NOT NULL THEN 1 ELSE 0 END as ha_pagado,
+                 cp.monto_pagado,
+                 cp.fecha_pago,
+                 mp.nombre as metodo_pago_nombre
+          FROM clientes_financiar c
+          LEFT JOIN cliente_pago cp ON c.id = cp.cliente_id
+          LEFT JOIN metodo_pago mp ON cp.metodo_pago_id = mp.id_metodo_pago
+          $condicion ORDER BY c.id DESC LIMIT ?, ?";
     $stmt = $this->conectar->prepare($query);
     
     if (!empty($busqueda)) {
@@ -767,15 +775,26 @@ public function totalClientes($busqueda = "")
  */
 public function obtenerCliente($id)
 {
-    $query = "SELECT c.*, 
-              d.nombre as departamento_nombre, 
-              p.nombre as provincia_nombre, 
-              dt.nombre as distrito_nombre 
-              FROM clientes_financiar c
-              LEFT JOIN depast d ON c.departamento = d.iddepast
-              LEFT JOIN provincet p ON c.provincia = p.idprovincet
-              LEFT JOIN distritot dt ON c.distrito = dt.iddistritot
-              WHERE c.id = ?";
+    $query = "SELECT c.*,
+            d.nombre as departamento_nombre,
+            p.nombre as provincia_nombre,
+            dt.nombre as distrito_nombre,
+            CASE WHEN cp.cliente_id IS NOT NULL THEN 1 ELSE 0 END as ha_pagado,
+            cp.monto_pagado,
+            cp.fecha_pago,
+            cp.monto_total,
+            cp.vuelto,
+            mp.nombre as metodo_pago_nombre,
+            u.nombres as usuario_nombres,
+            u.apellidos as usuario_apellidos
+            FROM clientes_financiar c
+           LEFT JOIN depast d ON c.departamento = d.iddepast
+           LEFT JOIN provincet p ON c.provincia = p.idprovincet
+           LEFT JOIN distritot dt ON c.distrito = dt.iddistritot
+           LEFT JOIN cliente_pago cp ON c.id = cp.cliente_id
+           LEFT JOIN metodo_pago mp ON cp.metodo_pago_id = mp.id_metodo_pago
+           LEFT JOIN usuarios u ON cp.usuario_id = u.usuario_id
+           WHERE c.id = ?";
     $stmt = $this->conectar->prepare($query);
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -1112,10 +1131,11 @@ public function obtenerDepartamentos()
             
             $stmt->execute();
             
+            $insertId = $this->conectar->insert_id;
+
             // Confirmar transacción
             $this->conectar->commit();
-            
-            return true;
+            return $insertId;
             
         } catch (Exception $e) {
             // Revertir transacción en caso de error
@@ -1128,4 +1148,52 @@ public function obtenerDepartamentos()
         }
     }
 
+    public function getPagoById($pagoId) {
+        $sql = "SELECT * FROM cliente_pago WHERE id = ?";
+        $stmt = $this->conectar->prepare($sql);
+        
+        if (!$stmt) {
+            return [];
+        }
+        
+        $stmt->bind_param('i', $pagoId);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        
+        return $result ?: [];
+    }
+
+    public function getMetodoPagoById($metodoPagoId) {
+        $sql = "SELECT * FROM metodo_pago WHERE id_metodo_pago = ?";
+        $stmt = $this->conectar->prepare($sql);
+        
+        if (!$stmt) {
+            return [];
+        }
+        
+        $stmt->bind_param('i', $metodoPagoId);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        
+        return $result ?: [];
+    }
+
+    public function getUsuarioById($usuarioId) {
+        if (!$usuarioId) {
+            return [];
+        }
+        
+        $sql = "SELECT * FROM usuarios WHERE usuario_id = ?";
+        $stmt = $this->conectar->prepare($sql);
+        
+        if (!$stmt) {
+            return [];
+        }
+        
+        $stmt->bind_param('i', $usuarioId);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+        
+        return $result ?: [];
+    }
 }

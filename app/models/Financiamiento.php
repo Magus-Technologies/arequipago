@@ -840,7 +840,11 @@ $stmtCuotas->close();
         // MODIFICADO: Base de la consulta - Cambiado INNER JOIN a LEFT JOIN para conductores
         $query = "SELECT p.*, 
             CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
-            CONCAT(u.nombres, ' ', u.apellidos) AS asesor,
+            CASE 
+                WHEN u.nombres IS NULL THEN NULL
+                WHEN u.apellidos IS NULL THEN u.nombres
+                ELSE CONCAT(u.nombres, ' ', u.apellidos) 
+            END AS asesor,
             c.numUnidad AS numUnidad,
             CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente  
         FROM pagos_financiamiento p
@@ -928,7 +932,7 @@ $stmtCuotas->close();
         $query = "SELECT COUNT(*) AS total FROM pagos_financiamiento p
                   LEFT JOIN conductores c ON p.id_conductor = c.id_conductor  
                   LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id  
-                  INNER JOIN usuarios u ON p.id_asesor = u.usuario_id
+                  LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
                   WHERE (c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR u.nombres LIKE ? OR p.monto LIKE ?
                     OR c.numUnidad LIKE ? OR cf.nombres LIKE ? OR cf.apellido_paterno LIKE ?  
                   )";

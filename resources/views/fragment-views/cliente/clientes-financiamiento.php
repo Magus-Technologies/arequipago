@@ -62,6 +62,16 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
             /* Agrega una sombra para diferenciarla */
         }
 
+        /* Asegurar que el texto del encabezado de la columna Acciones sea visible */
+        #tablaConductoresInicial th:last-child {
+            position: sticky;
+            right: 0;
+            background-color: #343a40; /* Color del header table-dark de Bootstrap */
+            color: white !important;
+            z-index: 3; /* Mayor que las celdas normales */
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
         /* Estilos para la tabla */
         .table-responsive {
             display: block;
@@ -115,6 +125,32 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
         .custom-file-input:lang(es)~.custom-file-label::after {
             content: "Buscar";
         }
+
+        /* Solución definitiva: sobrescribir las variables CSS de Bootstrap */
+        #tablaConductoresInicial tbody tr.cliente-pagado td:not(:last-child) {
+            --bs-table-accent-bg: #d4edda !important;
+            background-color: #d4edda !important;
+            background: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover td:not(:last-child) {
+            --bs-table-accent-bg: #c3e6cb !important;
+            --bs-table-hover-bg: #c3e6cb !important;
+            background-color: #c3e6cb !important;
+            background: #c3e6cb !important;
+        }
+
+        /* Asegurar que funcione también sin hover */
+        #tablaConductoresInicial tbody tr.cliente-pagado {
+            --bs-table-accent-bg: #d4edda !important;
+            --bs-table-striped-bg: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover {
+            --bs-table-accent-bg: #c3e6cb !important;
+            --bs-table-hover-bg: #c3e6cb !important;
+        }
+
     </style>
 </head>
 <body>
@@ -700,25 +736,37 @@ function UploadDepartamentos() {
             console.log("Select de distritos reiniciado");
         }
 
-         // Variables globales
-        let paginaActual = 1;
+       // Variables globales (usando window para evitar conflictos)
+        window.paginaActual = 1;
         const registrosPorPagina = 10;
         let totalPaginas = 0;
         let busquedaActual = "";
 
-         // Función para cargar datos de clientes con AJAX
-    function cargarDatosClientes() {
-        console.log("cargarDatosClientes");
+    function cargarDatosClientesPage() {
+        console.log("=== CARGANDO DATOS CLIENTES ===");
+        console.log("window.paginaActual:", window.paginaActual);
+        console.log("Tipo de window.paginaActual:", typeof window.paginaActual);
+        
+        // Usar directamente window.paginaActual
+        const paginaParaEnviar = parseInt(window.paginaActual) || 1;
+        
+        console.log("Página que se enviará:", paginaParaEnviar);
+        
+        const datosEnvio = {
+            pagina: paginaParaEnviar,
+            registrosPorPagina: parseInt(registrosPorPagina),
+            busqueda: busquedaActual || ""
+        };
+        
+        console.log("Datos enviados al servidor:", datosEnvio);
+        
         $.ajax({
             url: "/arequipago/cargardatosClientes",
             type: "POST",
             dataType: "json",
-            data: {
-                pagina: paginaActual,
-                registrosPorPagina: registrosPorPagina,
-                busqueda: busquedaActual
-            },
+            data: datosEnvio,
             success: function(response) {
+                console.log("Respuesta del servidor - página:", response.paginaActual);
                 mostrarClientes(response.clientes);
                 actualizarPaginacion(response.totalRegistros, response.totalPaginas, response.paginaActual);
                 totalPaginas = response.totalPaginas;
@@ -731,8 +779,8 @@ function UploadDepartamentos() {
                 });
             }
         });
-    }
-    
+    }   
+
     // Función para mostrar los clientes en la tabla
     function mostrarClientes(clientes) {
         let html = '';
@@ -744,9 +792,10 @@ function UploadDepartamentos() {
             
             clientes.forEach(function(cliente) {
                 const apellidos = `${cliente.apellido_paterno} ${cliente.apellido_materno}`;
-                
+                const filaClass = cliente.ha_pagado == 1 ? 'cliente-pagado' : '';
+
                 html += `
-                <tr>
+                <tr class="${filaClass}">
                     <td>${contador}</td>
                     <td>${cliente.n_documento}</td>
                     <td>${cliente.nombres}</td>
@@ -848,35 +897,59 @@ function UploadDepartamentos() {
         
         $("#paginacion").html(html);
         
-        // Asociar evento a los enlaces de paginación
-        $(".page-link").click(function(e) {
+        // Dentro de la función actualizarPaginacion, busca y reemplaza el evento de click:
+        $("#paginacion").off('click', '.page-link').on('click', '.page-link', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             
-            if (!$(this).parent().hasClass('disabled') && !$(this).parent().hasClass('active')) {
-                paginaActual = parseInt($(this).data("pagina"));
-                cargarDatosClientes();
+            const $enlace = $(this);
+            const $parent = $enlace.parent();
+            const nuevaPagina = parseInt($enlace.data("pagina"));
+            
+            console.log('=== CLICK EN PAGINACIÓN ===');
+            console.log('Página clickeada:', nuevaPagina);
+            console.log('window.paginaActual antes:', window.paginaActual);
+            
+            if ($parent.hasClass('disabled') || $parent.hasClass('active')) {
+                console.log('Enlace deshabilitado o activo');
+                return false;
             }
+            
+            if (!nuevaPagina || isNaN(nuevaPagina) || nuevaPagina === window.paginaActual) {
+                console.log('Página inválida o igual');
+                return false;
+            }
+            
+            // Actualizar usando window
+            window.paginaActual = nuevaPagina;
+            console.log('window.paginaActual actualizada a:', window.paginaActual);
+            
+            // Ejecutar inmediatamente
+            cargarDatosClientesPage();
+            
+            return false;
         });
+
     }
 
 $(document).ready(function() {
     
     // Cargar datos de clientes al iniciar
-    cargarDatosClientes();
+    cargarDatosClientesPage();
     
     // Evento de búsqueda
     $("#btnBuscar").click(function() {
         busquedaActual = $("#busquedaCliente").val().trim();
-        paginaActual = 1;
-        cargarDatosClientes();
+        window.paginaActual = 1;
+       cargarDatosClientesPage();
     });
     
     // Búsqueda con la tecla Enter
     $("#busquedaCliente").keypress(function(e) {
         if (e.which === 13) {
             busquedaActual = $(this).val().trim();
-            paginaActual = 1;
-            cargarDatosClientes();
+            window.paginaActual = 1;
+            cargarDatosClientesPage();
         }
     });
     
@@ -884,8 +957,8 @@ $(document).ready(function() {
     $("#btnLimpiarBusqueda").click(function() {
         $("#busquedaCliente").val("");
         busquedaActual = "";
-        paginaActual = 1;
-        cargarDatosClientes();
+        window.paginaActual = 1;
+        cargarDatosClientesPage();
     });
     
 });
@@ -910,10 +983,60 @@ $(document).on('click', '.ver-btn', function() {
         success: function(response) {
             if (response.success) {
                 const cliente = response.cliente;
+                
+                // Información de pago (se mostrará al final)
+                let infoPago = '';
+                if (cliente.ha_pagado == 1) {
+                    const fechaPago = new Date(cliente.fecha_pago).toLocaleString('es-PE');
+                    const asesorNombre = (cliente.usuario_nombres || '') + ' ' + (cliente.usuario_apellidos || '');
+                    
+                    infoPago = `
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-credit-card me-2 text-success"></i>Información de Pago</h5>
+                                <div class="card border-success">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-check-circle me-2 text-success"></i>
+                                            <span class="badge bg-success">PAGO REGISTRADO</span>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-1"><i class="fas fa-money-bill-wave me-2 text-primary"></i><strong>Monto Pagado:</strong> S/ ${parseFloat(cliente.monto_pagado).toFixed(2)}</p>
+                                                <p class="mb-1"><i class="fas fa-exchange-alt me-2 text-info"></i><strong>Vuelto:</strong> S/ ${parseFloat(cliente.vuelto || 0).toFixed(2)}</p>
+                                                <p class="mb-1"><i class="fas fa-wallet me-2 text-warning"></i><strong>Método:</strong> ${cliente.metodo_pago_nombre || 'No especificado'}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p class="mb-1"><i class="fas fa-calendar-alt me-2 text-secondary"></i><strong>Fecha:</strong> ${fechaPago}</p>
+                                                <p class="mb-1"><i class="fas fa-user-tie me-2 text-dark"></i><strong>Asesor:</strong> ${asesorNombre || 'No asignado'}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    infoPago = `
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Estado de Pago</h5>
+                                <div class="card border-warning">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-times-circle me-2 text-danger"></i>
+                                            <span class="badge bg-warning text-dark">PAGO PENDIENTE</span>
+                                        </div>
+                                        <p class="mt-2 mb-0"><i class="fas fa-info-circle me-2 text-info"></i>Este cliente aún no ha realizado el pago de inscripción (S/ 100.00)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                
                 let contenidoModal = `
                     <div class="row">
                         <div class="col-md-6">
-                            <h5>Datos Personales</h5>
+                            <h5><i class="fas fa-user me-2"></i>Datos Personales</h5>
                             <p><strong>ID:</strong> ${cliente.id}</p>
                             <p><strong>Tipo Documento:</strong> ${cliente.tipo_doc}</p>
                             <p><strong>Número Documento:</strong> ${cliente.n_documento}</p>
@@ -926,7 +1049,7 @@ $(document).on('click', '.ver-btn', function() {
                             <p><strong>Correo:</strong> ${cliente.correo || '-'}</p>
                         </div>
                         <div class="col-md-6">
-                            <h5>Dirección</h5>
+                            <h5><i class="fas fa-map-marker-alt me-2"></i>Dirección</h5>
                             <p><strong>Dirección Completa:</strong> ${cliente.direccion_completa}</p>
                             <p><strong>Departamento:</strong> ${cliente.departamento_nombre}</p>
                             <p><strong>Provincia:</strong> ${cliente.provincia_nombre}</p>
@@ -936,13 +1059,13 @@ $(document).on('click', '.ver-btn', function() {
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <h5>Contacto de Emergencia</h5>
+                            <h5><i class="fas fa-phone-alt me-2"></i>Contacto de Emergencia</h5>
                             <p><strong>Nombre:</strong> ${cliente.emergencia_nombre || '-'}</p>
                             <p><strong>Teléfono:</strong> ${cliente.emergencia_telefono || '-'}</p>
                             <p><strong>Parentesco:</strong> ${cliente.emergencia_parentesco || '-'}</p>
                         </div>
                         <div class="col-md-6">
-                            <h5>Información Laboral</h5>
+                            <h5><i class="fas fa-briefcase me-2"></i>Información Laboral</h5>
                             <p><strong>Nombre:</strong> ${cliente.laboral_nombre || '-'}</p>
                             <p><strong>Teléfono:</strong> ${cliente.laboral_telefono || '-'}</p>
                             <p><strong>Puesto:</strong> ${cliente.laboral_puesto || '-'}</p>
@@ -951,9 +1074,10 @@ $(document).on('click', '.ver-btn', function() {
                     </div>
                     <div class="row mt-3">
                         <div class="col-12">
-                            <h5>Documentos</h5>
+                            <h5><i class="fas fa-file-alt me-2"></i>Documentos</h5>
                             <div class="row">`;
                 
+                // Documentos (resto del código igual...)
                 // Documentos
                 if (cliente.recibo_servicios) {
                     contenidoModal += `
@@ -1011,6 +1135,11 @@ $(document).on('click', '.ver-btn', function() {
                         </div>
                     </div>`;
                 
+                contenidoModal += `
+                            </div>
+                        </div>
+                        ${infoPago}`;
+
                 $('#modalVerCliente .modal-body').html(contenidoModal);
             } else {
                 $('#modalVerCliente .modal-body').html(`<div class="alert alert-danger">${response.mensaje}</div>`);
@@ -1419,7 +1548,7 @@ $.ajax({
             }).then((result) => {
                 console.log('[Swal] Confirmación realizada, recargando tabla de clientes');
                 // Recargar tabla de clientes
-                cargarDatosClientes();
+                cargarDatosClientesPage();
             });
         } else {
             console.error('[AJAX Success] Error del servidor:', response.mensaje);
@@ -1476,7 +1605,7 @@ $(document).on('click', '.eliminar-btn', function() {
                             title: 'Cliente eliminado',
                             text: response.mensaje
                         }).then(() => {
-                           cargarDatosClientes();
+                         cargarDatosClientesPage();
                         });
                     } else {
                         Swal.fire({
@@ -1498,167 +1627,4 @@ $(document).on('click', '.eliminar-btn', function() {
     });
 });
 
-
-
-// Asegurarse de que los modales estén disponibles en el HTML
-// Estos deberían estar presentes en tu archivo HTML principal
-/*
-<!-- Modal Ver Cliente -->
-<div class="modal fade" id="modalVerCliente" tabindex="-1" aria-labelledby="modalVerClienteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalVerClienteLabel">Detalles del Cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Contenido cargado dinámicamente -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Editar Cliente -->
-<div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-labelledby="modalEditarClienteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div
-<div class="modal-header">
-                <h5 class="modal-title" id="modalEditarClienteLabel">Editar Cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Contenido cargado dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-*/
-
-// Función para recargar la tabla de clientes
-function cargarTablaClientes(pagina = 1) {
-    const busqueda = $('#inputBusqueda').val() || '';
-    const registrosPorPagina = $('#selectRegistrosPorPagina').val() || 10;
-    
-    $.ajax({
-        url: '/arequipago/cargarDatosClientes',
-        type: 'POST',
-        dataType: 'json',
-        data: {
-            pagina: pagina,
-            registrosPorPagina: registrosPorPagina,
-            busqueda: busqueda
-        },
-        beforeSend: function() {
-            $('#tablaClientes tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></td></tr>');
-            $('#paginacion').hide();
-        },
-        success: function(response) {
-            let html = '';
-            
-            if (response.clientes && response.clientes.length > 0) {
-                $.each(response.clientes, function(index, cliente) {
-                    html += `
-                    <tr>
-                        <td>${cliente.id}</td>
-                        <td>${cliente.tipo_doc}</td>
-                        <td>${cliente.n_documento}</td>
-                        <td>${cliente.nombres} ${cliente.apellido_paterno} ${cliente.apellido_materno}</td>
-                        <td>${cliente.telefono || '-'}</td>
-                        <td>
-                            <button class="btn btn-info btn-sm btn-ver-cliente" data-id="${cliente.id}" title="Ver detalles">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-primary btn-sm btn-editar-cliente" data-id="${cliente.id}" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-danger btn-sm btn-eliminar-cliente" data-id="${cliente.id}" data-nombre="${cliente.nombres} ${cliente.apellido_paterno}" title="Eliminar">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-            } else {
-                html = '<tr><td colspan="6" class="text-center">No se encontraron clientes</td></tr>';
-            }
-            
-            $('#tablaClientes tbody').html(html);
-            
-            // Actualizar paginación
-            if (response.totalPaginas > 1) {
-                let paginacionHtml = `
-                <nav aria-label="Paginación de clientes">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item ${response.paginaActual === 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="#" data-pagina="${response.paginaActual - 1}" aria-label="Anterior">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>`;
-                
-                // Mostrar páginas
-                for (let i = 1; i <= response.totalPaginas; i++) {
-                    paginacionHtml += `
-                        <li class="page-item ${response.paginaActual === i ? 'active' : ''}">
-                            <a class="page-link" href="#" data-pagina="${i}">${i}</a>
-                        </li>`;
-                }
-                
-                paginacionHtml += `
-                        <li class="page-item ${response.paginaActual === response.totalPaginas ? 'disabled' : ''}">
-                            <a class="page-link" href="#" data-pagina="${response.paginaActual + 1}" aria-label="Siguiente">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <div class="text-center text-muted">
-                    Mostrando ${((response.paginaActual - 1) * registrosPorPagina) + 1} - 
-                    ${Math.min(response.paginaActual * registrosPorPagina, response.totalRegistros)} 
-                    de ${response.totalRegistros} registros
-                </div>`;
-                
-                $('#paginacion').html(paginacionHtml).show();
-                
-                // Evento para enlaces de paginación
-                $('#paginacion .page-link').click(function(e) {
-                    e.preventDefault();
-                    const pagina = $(this).data('pagina');
-                    cargarTablaClientes(pagina);
-                });
-            } else {
-                $('#paginacion').hide();
-            }
-        },
-        error: function() {
-            $('#tablaClientes tbody').html('<tr><td colspan="6" class="text-center">Error al cargar los datos</td></tr>');
-            $('#paginacion').hide();
-        }
-    });
-}
-
-// Inicializar búsqueda y filtros
-$(document).ready(function() {
-    // Cargar tabla inicial
-    cargarTablaClientes();
-    
-    // Búsqueda
-    $('#formBusqueda').submit(function(e) {
-        e.preventDefault();
-        cargarTablaClientes(1);
-    });
-    
-    // Cambio en registros por página
-    $('#selectRegistrosPorPagina').change(function() {
-        cargarTablaClientes(1);
-    });
-    
-    // Limpiar búsqueda
-    $('#btnLimpiarBusqueda').click(function() {
-        $('#inputBusqueda').val('');
-        cargarTablaClientes(1);
-    });
-});
 </script>                          

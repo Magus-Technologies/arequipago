@@ -840,17 +840,12 @@ function UploadDepartamentos() {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
                         modal.hide();
                         
-                        // Mostrar confirmación
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Pago registrado!',
-                            text: 'El pago se ha registrado correctamente.',
-                            confirmButtonColor: '#02a398'
-                        }).then(() => {
-                            // Resetear formulario de pago
-                            document.getElementById('formPago').reset();
-                            document.getElementById('vueltoContainer').style.display = 'none';
-                        });
+                        // Mostrar modal con opciones de descarga y WhatsApp
+                        mostrarModalBoleta(response.pdf_path, response.pago_id);
+                        
+                        // Resetear formulario de pago
+                        document.getElementById('formPago').reset();
+                        document.getElementById('vueltoContainer').style.display = 'none';
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -939,6 +934,138 @@ function UploadDepartamentos() {
             btnConfirmarPago.addEventListener('click', procesarPago);
             
             console.log('Event listeners del modal configurados correctamente');
+        }
+
+        function mostrarModalBoleta(pdfPath, pagoId) {
+            Swal.fire({
+                title: '¡Pago registrado exitosamente!',
+                text: 'Su boleta está lista. ¿Qué desea hacer?',
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-download"></i> Descargar PDF',
+                cancelButtonText: '<i class="fab fa-whatsapp"></i> Enviar por WhatsApp',
+                confirmButtonColor: '#02a398',
+                cancelButtonColor: '#25d366',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    descargarPDF(pdfPath);
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    mostrarModalWhatsApp(pdfPath);
+                }
+            });
+        }
+
+        function descargarPDF(pdfPath) {
+            const link = document.createElement('a');
+            link.href = pdfPath;
+            link.download = pdfPath.split('/').pop();
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function mostrarModalWhatsApp(pdfPath) {
+            Swal.fire({
+                title: 'Enviar por WhatsApp',
+                html: `
+                    <div class="mb-3">
+                        <label for="numeroWhatsApp" class="form-label">Número de WhatsApp:</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+51</span>
+                            <input type="text" class="form-control" id="numeroWhatsApp" placeholder="987654321" maxlength="9">
+                        </div>
+                        <small class="text-muted">Ingrese el número sin código de país</small>
+                    </div>
+                `,
+                confirmButtonText: '<i class="fab fa-whatsapp"></i> Enviar',
+                confirmButtonColor: '#25d366',
+                showCancelButton: true,
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const numero = document.getElementById('numeroWhatsApp').value.trim();
+                    if (!numero) {
+                        Swal.showValidationMessage('Por favor ingrese un número de WhatsApp');
+                        return false;
+                    }
+                    if (numero.length !== 9) {
+                        Swal.showValidationMessage('El número debe tener 9 dígitos');
+                        return false;
+                    }
+                    return numero;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    enviarPDFWhatsApp(pdfPath, result.value, '51');
+                }
+            });
+        }
+
+        async function enviarPDFWhatsApp(ruta, numero, codigoPais) {
+            try {
+                Swal.fire({
+                    title: 'Procesando',
+                    text: 'Preparando el archivo para enviar...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+
+                const base64String = await obtenerPDF(ruta);
+                
+                const response = await $.ajax({
+                    url: "/arequipago/generarEnlacePDF",
+                    type: "POST",
+                    data: { pdf_base64: base64String },
+                    dataType: 'json'
+                });
+
+                Swal.close();
+
+                if (!response.success) {
+                    throw new Error(response.message || 'Error al generar el enlace');
+                }
+
+                const mensaje = "Aquí está tu comprobante de pago: " + response.pdf_url;
+                const whatsappUrl = `https://api.whatsapp.com/send?phone=${codigoPais}${numero}&text=${encodeURIComponent(mensaje)}`;
+                window.open(whatsappUrl, '_blank');
+
+                return true;
+            } catch (error) {
+                console.error('Error en enviarPDFWhatsApp:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'No se pudo enviar el documento'
+                });
+                return false;
+            }
+        }
+
+        async function obtenerPDF(ruta) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', ruta, true);
+                xhr.responseType = 'blob';
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            const base64 = reader.result.split(',')[1];
+                            resolve(base64);
+                        };
+                        reader.readAsDataURL(xhr.response);
+                    } else {
+                        reject(new Error('Error al obtener el PDF'));
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    reject(new Error('Error de red al obtener el PDF'));
+                };
+                
+                xhr.send();
+            });
         }
     </script>
 
