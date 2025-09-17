@@ -4,7 +4,9 @@ use Mpdf\Utils\Arrays;
 
 require_once "app/models/Cliente.php";
 require_once "utils/lib/exel/vendor/autoload.php";
+require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MPDF
 
+use Mpdf\Mpdf;
 
 class ClientesController extends Controller
 {
@@ -667,11 +669,101 @@ class ClientesController extends Controller
             
             // Guardar pago en la base de datos
             $resultado = $clienteModel->guardarPago($datosPago);
-            
+
             if ($resultado) {
-                echo json_encode(['success' => true, 'message' => 'Pago registrado exitosamente']);
+                // Generar la boleta PDF
+                $pdfResult = $this->generarBoletaPago($resultado, $datosPago['cliente_id']);
+                
+                if ($pdfResult['success']) {
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Pago registrado exitosamente',
+                        'pdf_path' => $pdfResult['pdf_path'],
+                        'pago_id' => $resultado
+                    ]);
+                } else {
+                    echo json_encode([
+                        'success' => false, 
+                        'message' => 'Pago registrado pero error al generar PDF: ' . $pdfResult['message']
+                    ]);
+                }
             } else {
                 echo json_encode(['success' => false, 'message' => 'Error al registrar el pago']);
+            }
+        }
+
+        private function generarBoletaPago($pagoId, $clienteId) {
+            try {
+                $clienteModel = new Cliente();
+                
+                // Obtener datos del cliente
+                $cliente = $clienteModel->getClienteById($clienteId);
+                if (empty($cliente)) {
+                    return ['success' => false, 'message' => 'Cliente no encontrado'];
+                }
+                
+                // Obtener datos del pago
+                $pago = $clienteModel->getPagoById($pagoId);
+                if (empty($pago)) {
+                    return ['success' => false, 'message' => 'Pago no encontrado'];
+                }
+                
+                // Obtener nombre del método de pago
+                $metodoPago = $clienteModel->getMetodoPagoById($pago['metodo_pago_id']);
+                
+                // Obtener datos del usuario (asesor)
+                $asesor = $clienteModel->getUsuarioById($pago['usuario_id']);
+                
+                // Cargar plantilla HTML
+                $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "nota_venta_inscrip-cliente.html";
+                $html = file_get_contents($rutaBase);
+                
+                if ($html === false) {
+                    return ['success' => false, 'message' => 'Error al leer la plantilla HTML'];
+                }
+                
+                // Preparar datos para reemplazar
+                $nombreCompleto = trim($cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno']);
+                $fechaPago = date('d/m/Y H:i:s', strtotime($pago['fecha_pago']));
+                $asesorNombre = trim(($asesor['nombres'] ?? '') . ' ' . ($asesor['apellidos'] ?? ''));
+                if (empty($asesorNombre)) {
+                    $asesorNombre = 'No asignado';
+                }
+                
+                $rutaLogo = 'public' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo-ticket.png';
+                $html = str_replace('{LOGO}', $rutaLogo, $html);
+                $html = str_replace('{FECHA}', $fechaPago, $html);
+                $html = str_replace('{NOMBRE_CLIENTE}', $nombreCompleto, $html);
+                $html = str_replace('{TIPO_DOCUMENTO}', $cliente['tipo_doc'], $html);
+                $html = str_replace('{NRO_DOCUMENTO}', $cliente['n_documento'], $html);
+                $html = str_replace('{METODO_PAGO}', $metodoPago['nombre'] ?? 'No especificado', $html);
+                $html = str_replace('{MONTO_PAGADO}', number_format($pago['monto_pagado'], 2), $html);
+                $html = str_replace('{TOTAL_PAGAR}', number_format($pago['monto_total'], 2), $html);
+                $html = str_replace('{VUELTO}', number_format($pago['vuelto'], 2), $html);
+                $html = str_replace('{TOTAL_INGRESADO}', number_format($pago['monto_total'], 2), $html);
+                $html = str_replace('{ASESOR}', $asesorNombre, $html);
+                
+                // Generar PDF
+                $mpdf = new \Mpdf\Mpdf([
+                    'format' => [132, 210],
+                    'default_font_size' => 9
+                ]);
+                $mpdf->WriteHTML("<style> body { font-size: 11px; } </style>" . $html);
+                
+                // Guardar PDF
+                $pdfContent = base64_encode($mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN));
+                $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                
+                $pdfPath = $uploadDir . "nota_venta_cliente_$pagoId.pdf";
+                file_put_contents($pdfPath, base64_decode($pdfContent));
+                
+                return ['success' => true, 'pdf_path' => $pdfPath];
+                
+            } catch (Exception $e) {
+                return ['success' => false, 'message' => 'Error al generar PDF: ' . $e->getMessage()];
             }
         }
 

@@ -838,9 +838,13 @@ $stmtCuotas->close();
     
     public function obtenerReportesPagos($offset, $limit, $search, $fechaInicio = '', $fechaFin = '') {
         // MODIFICADO: Base de la consulta - Cambiado INNER JOIN a LEFT JOIN para conductores
-        $query = "SELECT p.*,
-            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor,
-            TRIM(CONCAT(u.nombres, ' ', IFNULL(u.apellidos, ''))) AS asesor,
+        $query = "SELECT p.*, 
+            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
+            CASE 
+                WHEN u.nombres IS NULL THEN NULL
+                WHEN u.apellidos IS NULL THEN u.nombres
+                ELSE CONCAT(u.nombres, ' ', u.apellidos) 
+            END AS asesor,
             c.numUnidad AS numUnidad,
             CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente  
         FROM pagos_financiamiento p
