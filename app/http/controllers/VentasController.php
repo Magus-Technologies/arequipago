@@ -929,7 +929,21 @@ class VentasController extends Controller
                 $c_cliente->insertar();
             } else {
                 if (!$c_cliente->verificarDocumento()) {
-                    $c_cliente->insertar();
+                    // Usar el método insertarCliente que sí retorna el ID
+                    $nuevo_id = $c_cliente->insertarCliente(
+                        $c_cliente->getDocumento(),
+                        $c_cliente->getDatos(),
+                        $c_cliente->getEmail(),
+                        $c_cliente->getTelefono(),
+                        $c_cliente->getDireccion(),
+                        $id_empresa
+                    );
+                    
+                    if ($nuevo_id) {
+                        $c_cliente->setIdCliente($nuevo_id);
+                    } else {
+                        throw new Exception("Error al insertar cliente");
+                    }
                 }
             }
     
