@@ -322,7 +322,7 @@
 
                     <!-- Imagen del Producto -->
                     <div class="position-relative overflow-hidden">
-                        <img v-if="beneficio.imagen_principal" :src="'/arequipago/public/' + beneficio.imagen_principal" class="beneficio-imagen" :alt="beneficio.nombre">
+                        <img v-if="beneficio.imagen" :src="'/arequipago/public/' + beneficio.imagen" class="beneficio-imagen" :alt="beneficio.nombre">
                         <div v-else class="beneficio-imagen d-flex align-items-center justify-content-center bg-light">
                             <i class="bi display-1 text-muted" :class="obtenerIconoCategoria(beneficio.categoria)"></i>
                         </div>
@@ -335,14 +335,21 @@
                         <!-- Descripción -->
                         <p class="beneficio-description flex-grow-1">{{ beneficio.descripcion || 'Producto disponible para financiamiento.' }}</p>
 
-                        <!-- Precios -->
+                        <!-- Información de Financiamiento -->
                         <div class="mb-3">
-                            <div class="beneficio-precio">S/ {{ beneficio.precio_contado }}</div>
-                            <div class="beneficio-precio-financiado" v-if="beneficio.precio_financiado">
-                                Financiado: S/ {{ beneficio.precio_financiado }}
-                            </div>
-                            <div class="beneficio-cuotas" v-if="beneficio.cuotas_disponibles">
-                                Hasta {{ beneficio.cuotas_disponibles }} cuotas
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Cuota Inicial</small>
+                                    <strong class="text-primary">{{ getCurrencySymbolForCategory(beneficio.categoria) }} {{ beneficio.cuota_inicial || '0.00' }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Cuotas</small>
+                                    <strong class="text-info">{{ beneficio.cantidad_cuotas || 'N/A' }}</strong>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Cuota Mensual</small>
+                                    <strong class="text-success">{{ getCurrencySymbolForCategory(beneficio.categoria) }} {{ beneficio.cuota_mensual || '0.00' }}</strong>
+                                </div>
                             </div>
                         </div>
 
@@ -446,41 +453,47 @@
                                                   placeholder="Describe las características del producto..."></textarea>
                                     </div>
                                 </div>
+                                <!-- Nuevos campos de financiamiento -->
+                                <div class="col-12">
+                                    <hr>
+                                    <h6 class="text-primary mb-3"><i class="bi bi-credit-card me-2"></i>Información de Financiamiento</h6>
+                                </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">Precio al Contado *</label>
+                                        <label class="form-label fw-semibold">Cuota Inicial *</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">S/</span>
-                                            <input type="number" class="form-control" v-model="formData.precio_contado" 
+                                            <span class="input-group-text" id="currency-cuota-inicial">{{ getCurrencySymbol() }}</span>
+                                            <input type="number" class="form-control" v-model="formData.cuota_inicial"
                                                    step="0.01" min="0" placeholder="0.00" required>
                                         </div>
-                                        <div v-if="errores.precio_contado" class="error-message">{{ errores.precio_contado }}</div>
+                                        <div v-if="errores.cuota_inicial" class="error-message">{{ errores.cuota_inicial }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">Precio Financiado</label>
+                                        <label class="form-label fw-semibold">Cantidad de Cuotas *</label>
+                                        <input type="number" class="form-control" v-model="formData.cantidad_cuotas"
+                                               min="1" placeholder="Ej: 12" required>
+                                        <div v-if="errores.cantidad_cuotas" class="error-message">{{ errores.cantidad_cuotas }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Cuota Mensual *</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">S/</span>
-                                            <input type="number" class="form-control" v-model="formData.precio_financiado" 
-                                                   step="0.01" min="0" placeholder="0.00">
+                                            <span class="input-group-text" id="currency-cuota-mensual">{{ getCurrencySymbol() }}</span>
+                                            <input type="number" class="form-control" v-model="formData.cuota_mensual"
+                                                   step="0.01" min="0" placeholder="0.00" required>
                                         </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label class="form-label fw-semibold">Cuotas Disponibles</label>
-                                        <input type="text" class="form-control" v-model="formData.cuotas_disponibles" 
-                                               placeholder="Ej: 12, 18, 24">
-                                        <small class="text-muted">Separar con comas si son múltiples opciones</small>
+                                        <div v-if="errores.cuota_mensual" class="error-message">{{ errores.cuota_mensual }}</div>
                                     </div>
                                 </div>
                                 <div class="col-12">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Imagen del Producto</label>
-                                        <input type="file" class="form-control" @change="handleImagenUpload" 
-                                               accept="image/*" ref="imagenInput">
-                                        <small class="text-muted">Formatos: JPG, PNG, GIF. Máximo 2MB</small>
+                                        <input type="file" class="form-control" name="imagen_principal"
+                                               @change="handleImagenUpload" accept="image/*" ref="imagenInput">
+                                        <small class="text-muted">Formatos: JPG, PNG, GIF, WEBP. Máximo 2MB</small>
                                         <div v-if="errores.imagen" class="error-message">{{ errores.imagen }}</div>
                                     </div>
                                 </div>
@@ -565,9 +578,9 @@
                             nombre: '',
                             categoria: '',
                             descripcion: '',
-                            precio_contado: '',
-                            precio_financiado: '',
-                            cuotas_disponibles: '',
+                            cuota_inicial: '',
+                            cantidad_cuotas: '',
+                            cuota_mensual: '',
                             disponible: true
                         },
                         errores: {},
@@ -750,14 +763,14 @@ cargarCategorias: function () {
                             nombre: beneficio.nombre,
                             categoria: beneficio.categoria,
                             descripcion: beneficio.descripcion,
-                            precio_contado: beneficio.precio_contado,
-                            precio_financiado: beneficio.precio_financiado,
-                            cuotas_disponibles: beneficio.cuotas_disponibles,
+                            cuota_inicial: beneficio.cuota_inicial || '',
+                            cantidad_cuotas: beneficio.cantidad_cuotas || '',
+                            cuota_mensual: beneficio.cuota_mensual || '',
                             disponible: beneficio.disponible
                         };
                         // Configurar preview de imagen existente
-                        if (beneficio.imagen_principal) {
-                            this.imagenPreview = '/arequipago/public/' + beneficio.imagen_principal;
+                        if (beneficio.imagen) {
+                            this.imagenPreview = '/arequipago/public/' + beneficio.imagen;
                         } else {
                             this.imagenPreview = null;
                         }
@@ -774,14 +787,10 @@ cargarCategorias: function () {
                                     <p class="text-muted mb-2">${beneficio.descripcion || 'Producto disponible para financiamiento'}</p>
                                     <hr>
                                     <div class="row">
-                                        <div class="col-6">
-                                            <small class="text-muted">Precio contado:</small><br>
-                                            <strong>S/ ${beneficio.precio_contado}</strong>
-                                        </div>
                                         ${beneficio.precio_financiado ? `
-                                        <div class="col-6">
+                                        <div class="col-12">
                                             <small class="text-muted">Precio financiado:</small><br>
-                                            <strong class="text-success">S/ ${beneficio.precio_financiado}</strong>
+                                            <strong class="text-success">${this.getCurrencySymbolForCategory(beneficio.categoria)} ${beneficio.precio_financiado}</strong>
                                         </div>` : ''}
                                     </div>
                                     ${beneficio.cuotas_disponibles ? `
@@ -810,20 +819,22 @@ cargarCategorias: function () {
                             title: beneficio.nombre,
                             html: `
                                 <div class="text-start">
-                                    ${beneficio.imagen ? `<img src="${beneficio.imagen}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
+                                    ${beneficio.imagen ? `<img src="/arequipago/public/${beneficio.imagen}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
                                     <p><strong>Categoría:</strong> ${this.obtenerNombreCategoria(beneficio.categoria)}</p>
                                     <p><strong>Descripción:</strong> ${beneficio.descripcion || 'Sin descripción'}</p>
                                     <hr>
                                     <div class="row">
-                                        <div class="col-6">
-                                            <p><strong>Precio al contado:</strong><br>S/ ${beneficio.precio_contado}</p>
+                                        <div class="col-4">
+                                            <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForCategory(beneficio.categoria)} ${beneficio.cuota_inicial}</p>
                                         </div>
-                                        <div class="col-6">
-                                            <p><strong>Precio financiado:</strong><br>S/ ${beneficio.precio_financiado}</p>
+                                        <div class="col-4">
+                                            <p><strong>Cantidad de cuotas:</strong><br>${beneficio.cantidad_cuotas} cuotas</p>
+                                        </div>
+                                        <div class="col-4">
+                                            <p><strong>Cuota mensual:</strong><br>${this.getCurrencySymbolForCategory(beneficio.categoria)} ${beneficio.cuota_mensual}</p>
                                         </div>
                                     </div>
-                                    <p><strong>Cuotas disponibles:</strong> ${beneficio.cuotas_disponibles} meses</p>
-                                    <p><strong>Estado:</strong> 
+                                    <p><strong>Estado:</strong>
                                         <span class="badge ${beneficio.disponible ? 'bg-success' : 'bg-danger'}">
                                             ${beneficio.disponible ? 'Disponible' : 'No disponible'}
                                         </span>
@@ -893,9 +904,9 @@ cargarCategorias: function () {
                             nombre: '',
                             categoria: '',
                             descripcion: '',
-                            precio_contado: '',
-                            precio_financiado: '',
-                            cuotas_disponibles: '',
+                            cuota_inicial: '',
+                            cantidad_cuotas: '',
+                            cuota_mensual: '',
                             disponible: true
                         };
                         this.errores = {};
@@ -903,6 +914,17 @@ cargarCategorias: function () {
                         if (this.$refs.imagenInput) {
                             this.$refs.imagenInput.value = '';
                         }
+                    },
+
+                    // ============ FUNCIONES DE MONEDA ============
+                    getCurrencySymbol: function () {
+                        // Si la categoría seleccionada es Vehículo (ID: 15), usar dólares, sino soles
+                        return this.formData.categoria == 15 ? '$' : 'S/';
+                    },
+
+                    getCurrencySymbolForCategory: function (categoriaId) {
+                        // Si la categoría es Vehículo (ID: 15), usar dólares, sino soles
+                        return categoriaId == 15 ? '$' : 'S/';
                     },
 
                     validarFormulario: function () {
@@ -916,8 +938,16 @@ cargarCategorias: function () {
                             this.errores.categoria = 'La categoría es obligatoria';
                         }
 
-                        if (!this.formData.precio_contado || this.formData.precio_contado <= 0) {
-                            this.errores.precio_contado = 'El precio al contado es obligatorio y debe ser mayor a 0';
+                        if (!this.formData.cuota_inicial || this.formData.cuota_inicial <= 0) {
+                            this.errores.cuota_inicial = 'La cuota inicial es obligatoria y debe ser mayor a 0';
+                        }
+
+                        if (!this.formData.cantidad_cuotas || this.formData.cantidad_cuotas <= 0) {
+                            this.errores.cantidad_cuotas = 'La cantidad de cuotas es obligatoria y debe ser mayor a 0';
+                        }
+
+                        if (!this.formData.cuota_mensual || this.formData.cuota_mensual <= 0) {
+                            this.errores.cuota_mensual = 'La cuota mensual es obligatoria y debe ser mayor a 0';
                         }
 
                         return Object.keys(this.errores).length === 0;
@@ -933,9 +963,9 @@ cargarCategorias: function () {
                             return;
                         }
 
-                        const tiposPermitidos = ['image/jpeg', 'image/png', 'image/gif'];
+                        const tiposPermitidos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
                         if (!tiposPermitidos.includes(file.type)) {
-                            this.errores.imagen = 'Solo se permiten imágenes JPG, PNG o GIF';
+                            this.errores.imagen = 'Solo se permiten imágenes JPG, PNG, GIF o WEBP';
                             event.target.value = '';
                             return;
                         }
@@ -966,19 +996,31 @@ cargarCategorias: function () {
 
                         // Preparar FormData para envío con archivos
                         var formData = new FormData();
-                        
+
+                        // Debug: verificar datos antes del envío
+                        console.log('Datos del formulario:', {
+                            nombre: self.formData.nombre,
+                            categoria: self.formData.categoria,
+                            cuota_inicial: self.formData.cuota_inicial,
+                            cantidad_cuotas: self.formData.cantidad_cuotas,
+                            cuota_mensual: self.formData.cuota_mensual
+                        });
+
                         // Agregar datos del formulario
                         formData.append('nombre', self.formData.nombre);
                         formData.append('categoria', self.formData.categoria);
                         formData.append('descripcion', self.formData.descripcion || '');
-                        formData.append('precio_contado', self.formData.precio_contado);
-                        formData.append('precio_financiado', self.formData.precio_financiado || '');
-                        formData.append('cuotas_disponibles', self.formData.cuotas_disponibles || '');
+                        formData.append('cuota_inicial', self.formData.cuota_inicial);
+                        formData.append('cantidad_cuotas', self.formData.cantidad_cuotas);
+                        formData.append('cuota_mensual', self.formData.cuota_mensual);
                         formData.append('disponible', self.formData.disponible ? 1 : 0);
 
                         // Agregar imagen si hay archivo seleccionado
                         if (self.$refs.imagenInput && self.$refs.imagenInput.files[0]) {
                             formData.append('imagen_principal', self.$refs.imagenInput.files[0]);
+                            console.log('Imagen agregada:', self.$refs.imagenInput.files[0]);
+                        } else {
+                            console.log('No hay imagen seleccionada');
                         }
 
                         // Si estamos editando, agregar ID
@@ -1027,6 +1069,35 @@ cargarCategorias: function () {
                         .finally(() => {
                             self.guardandoProducto = false;
                         });
+                    }
+                },
+
+                // Watchers para limpiar errores cuando los campos se corrigen
+                watch: {
+                    'formData.nombre': function(newVal) {
+                        if (newVal && newVal.trim()) {
+                            this.errores.nombre = '';
+                        }
+                    },
+                    'formData.categoria': function(newVal) {
+                        if (newVal) {
+                            this.errores.categoria = '';
+                        }
+                    },
+                    'formData.cuota_inicial': function(newVal) {
+                        if (newVal && newVal > 0) {
+                            this.errores.cuota_inicial = '';
+                        }
+                    },
+                    'formData.cantidad_cuotas': function(newVal) {
+                        if (newVal && newVal > 0) {
+                            this.errores.cantidad_cuotas = '';
+                        }
+                    },
+                    'formData.cuota_mensual': function(newVal) {
+                        if (newVal && newVal > 0) {
+                            this.errores.cuota_mensual = '';
+                        }
                     }
                 }
             });
