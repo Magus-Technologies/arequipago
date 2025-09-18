@@ -208,25 +208,25 @@
                 </button>
             </div>
         </div>
-<!-- Filtros por Categoría -->
+<!-- Filtros por Plan de Financiamiento -->
 <div class="row mb-4">
     <div class="col-12">
-        <div v-if="cargandoCategorias" class="text-center">
+        <div v-if="cargandoPlanes" class="text-center">
             <div class="spinner-border spinner-border-sm" role="status"></div>
-            <span class="ms-2">Cargando categorías...</span>
+            <span class="ms-2">Cargando planes...</span>
         </div>
         <div v-else class="d-flex flex-wrap gap-2">
-            <span class="badge bg-secondary filter-badge" 
-                  :class="{ active: categoriaSeleccionada === '' }"
-                  @click="filtrarPorCategoria('')">
+            <span class="badge bg-secondary filter-badge"
+                  :class="{ active: planSeleccionado === '' }"
+                  @click="filtrarPorPlan('')">
                 <i class="bi bi-grid me-1"></i>Todos
             </span>
-            <span v-for="categoria in categorias" 
-                  :key="categoria.idcategoria_producto"
-                  class="badge bg-primary filter-badge" 
-                  :class="{ active: categoriaSeleccionada === categoria.idcategoria_producto }"
-                  @click="filtrarPorCategoria(categoria.idcategoria_producto)">
-                <i class="bi bi-tag me-1"></i>{{ categoria.nombre }}
+            <span v-for="plan in planes"
+                  :key="plan.idplan_financiamiento"
+                  class="badge bg-primary filter-badge"
+                  :class="{ active: planSeleccionado === plan.idplan_financiamiento }"
+                  @click="filtrarPorPlan(plan.idplan_financiamiento)">
+                <i class="bi bi-credit-card me-1"></i>{{ plan.nombre_plan }}
             </span>
         </div>
     </div>
@@ -310,9 +310,9 @@
                  :key="beneficio.id" class="col-xl-3 col-lg-4 col-md-6">
                 <div class="card beneficio-card h-100 position-relative">
                     
-                    <!-- Categoría Badge -->
-                    <span class="beneficio-categoria" :class="'categoria-' + beneficio.categoria">
-                        {{ obtenerNombreCategoria(beneficio.categoria) }}
+                    <!-- Plan de Financiamiento Badge -->
+                    <span class="beneficio-categoria" :class="'plan-' + beneficio.plan_financiamiento_id">
+                        {{ obtenerNombrePlan(beneficio.plan_financiamiento_id) }}
                     </span>
 
                     <!-- Disponible Badge -->
@@ -347,8 +347,8 @@
                                     <strong class="text-info">{{ beneficio.cantidad_cuotas || 'N/A' }}</strong>
                                 </div>
                                 <div class="col-4">
-                                    <small class="text-muted d-block">Cuota Mensual</small>
-                                    <strong class="text-success">{{ getCurrencySymbolForCategory(beneficio.categoria) }} {{ beneficio.cuota_mensual || '0.00' }}</strong>
+                                    <small class="text-muted d-block">{{ obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id) }}</small>
+                                    <strong class="text-success">{{ getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{ beneficio.cuota_mensual || '0.00' }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -433,19 +433,33 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">Categoría *</label>
-                                     <select class="form-select" v-model="formData.categoria" required>
-    <option value="">Seleccionar...</option>
-    <option v-for="categoria in categorias" 
-            :key="categoria.idcategoria_producto"
-            :value="categoria.idcategoria_producto">
-        {{ categoria.nombre }}
-    </option>
-</select>
-
-                                        <div v-if="errores.categoria" class="error-message">{{ errores.categoria }}</div>
+                                        <label class="form-label fw-semibold">Plan de Financiamiento *</label>
+                                        <select class="form-select" v-model="formData.plan_financiamiento_id" required @change="onPlanChange">
+                                            <option value="">Seleccionar...</option>
+                                            <option v-for="plan in planes"
+                                                    :key="plan.idplan_financiamiento"
+                                                    :value="plan.idplan_financiamiento">
+                                                {{ plan.nombre_plan }} ({{ plan.frecuencia_pago }})
+                                            </option>
+                                        </select>
+                                        <div v-if="errores.plan_financiamiento_id" class="error-message">{{ errores.plan_financiamiento_id }}</div>
                                     </div>
                                 </div>
+                                <!-- Categoría comentada temporalmente - preguntar al cliente si la quiere
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Categoría (Opcional)</label>
+                                        <select class="form-select" v-model="formData.categoria">
+                                            <option value="">Seleccionar...</option>
+                                            <option v-for="categoria in categorias"
+                                                    :key="categoria.idcategoria_producto"
+                                                    :value="categoria.idcategoria_producto">
+                                                {{ categoria.nombre }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                                -->
                                 <div class="col-12">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Descripción</label>
@@ -479,7 +493,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">Cuota Mensual *</label>
+                                        <label class="form-label fw-semibold">{{ obtenerEtiquetaFrecuenciaFormulario() }} *</label>
                                         <div class="input-group">
                                             <span class="input-group-text" id="currency-cuota-mensual">{{ getCurrencySymbol() }}</span>
                                             <input type="number" class="form-control" v-model="formData.cuota_mensual"
@@ -562,7 +576,10 @@
                         busqueda: '',
                         buscando: false,
                         categoriaSeleccionada: '',
+                        planSeleccionado: '',
                         cargandoBeneficios: false,
+                        planes: [],
+                        cargandoPlanes: false,
 
                         // CONFIGURACIÓN
                         itemsPorPagina: 12,
@@ -576,6 +593,7 @@
                         imagenPreview: null,
                         formData: {
                             nombre: '',
+                            plan_financiamiento_id: '',
                             categoria: '',
                             descripcion: '',
                             cuota_inicial: '',
@@ -598,6 +616,7 @@ cargandoCategorias: false
                 },
              mounted: function () {
     this.cargarCategorias(); // Cargar categorías primero
+    this.cargarPlanes(); // Cargar planes de financiamiento
     this.cargarBeneficios();
     this.modal = new bootstrap.Modal(document.getElementById('modalProducto'));
 },
@@ -663,6 +682,34 @@ cargarCategorias: function () {
         });
 },
 
+// ============ CARGAR PLANES DE FINANCIAMIENTO ============
+cargarPlanes: function () {
+    var self = this;
+    self.cargandoPlanes = true;
+
+    fetch('/arequipago/getAllPlanes')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && Array.isArray(data.planes)) {
+                self.planes = data.planes;
+            } else {
+                console.error('Error: Formato de planes no válido');
+                self.planes = [];
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar planes:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudieron cargar los planes de financiamiento'
+            });
+        })
+        .finally(() => {
+            self.cargandoPlanes = false;
+        });
+},
+
 
                     // ============ FILTROS Y BÚSQUEDA ============
                     filtrarBeneficios: function () {
@@ -677,6 +724,11 @@ cargarCategorias: function () {
 
                     filtrarPorCategoria: function (categoria) {
                         this.categoriaSeleccionada = categoria;
+                        this.aplicarFiltros();
+                    },
+
+                    filtrarPorPlan: function (plan) {
+                        this.planSeleccionado = plan;
                         this.aplicarFiltros();
                     },
 
@@ -700,6 +752,13 @@ cargarCategorias: function () {
                             }, this);
                         }
 
+                        // Filtrar por plan de financiamiento
+                        if (this.planSeleccionado) {
+                            resultado = resultado.filter(function (beneficio) {
+                                return beneficio.plan_financiamiento_id === this.planSeleccionado;
+                            }, this);
+                        }
+
                         this.beneficiosFiltrados = resultado;
                         this.paginaActual = 1;
                     },
@@ -707,6 +766,7 @@ cargarCategorias: function () {
                     limpiarFiltros: function () {
                         this.busqueda = '';
                         this.categoriaSeleccionada = '';
+                        this.planSeleccionado = '';
                         this.beneficiosFiltrados = this.beneficios;
                         this.paginaActual = 1;
                     },
@@ -715,6 +775,11 @@ cargarCategorias: function () {
                 obtenerNombreCategoria: function (categoria) {
     var cat = this.categorias.find(c => c.idcategoria_producto == categoria);
     return cat ? cat.nombre : categoria;
+},
+
+obtenerNombrePlan: function (planId) {
+    var plan = this.planes.find(p => p.idplan_financiamiento == planId);
+    return plan ? plan.nombre_plan : 'Plan no encontrado';
 },
 
 
@@ -761,7 +826,8 @@ cargarCategorias: function () {
                         this.formData = {
                             id: beneficio.id,
                             nombre: beneficio.nombre,
-                            categoria: beneficio.categoria,
+                            plan_financiamiento_id: beneficio.plan_financiamiento_id || '',
+                            categoria: beneficio.categoria || '',
                             descripcion: beneficio.descripcion,
                             cuota_inicial: beneficio.cuota_inicial || '',
                             cantidad_cuotas: beneficio.cantidad_cuotas || '',
@@ -820,18 +886,18 @@ cargarCategorias: function () {
                             html: `
                                 <div class="text-start">
                                     ${beneficio.imagen ? `<img src="/arequipago/public/${beneficio.imagen}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
-                                    <p><strong>Categoría:</strong> ${this.obtenerNombreCategoria(beneficio.categoria)}</p>
+                                    <p><strong>Plan de Financiamiento:</strong> ${this.obtenerNombrePlan(beneficio.plan_financiamiento_id)}</p>
                                     <p><strong>Descripción:</strong> ${beneficio.descripcion || 'Sin descripción'}</p>
                                     <hr>
                                     <div class="row">
                                         <div class="col-4">
-                                            <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForCategory(beneficio.categoria)} ${beneficio.cuota_inicial}</p>
+                                            <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForPlan(beneficio.plan_financiamiento_id)} ${beneficio.cuota_inicial}</p>
                                         </div>
                                         <div class="col-4">
                                             <p><strong>Cantidad de cuotas:</strong><br>${beneficio.cantidad_cuotas} cuotas</p>
                                         </div>
                                         <div class="col-4">
-                                            <p><strong>Cuota mensual:</strong><br>${this.getCurrencySymbolForCategory(beneficio.categoria)} ${beneficio.cuota_mensual}</p>
+                                            <p><strong>${this.obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id).toLowerCase()}:</strong><br>${this.getCurrencySymbolForPlan(beneficio.plan_financiamiento_id)} ${beneficio.cuota_mensual}</p>
                                         </div>
                                     </div>
                                     <p><strong>Estado:</strong>
@@ -902,6 +968,7 @@ cargarCategorias: function () {
                     limpiarFormulario: function () {
                         this.formData = {
                             nombre: '',
+                            plan_financiamiento_id: '',
                             categoria: '',
                             descripcion: '',
                             cuota_inicial: '',
@@ -916,15 +983,50 @@ cargarCategorias: function () {
                         }
                     },
 
-                    // ============ FUNCIONES DE MONEDA ============
+                    // ============ FUNCIONES DE MONEDA Y FRECUENCIA ============
                     getCurrencySymbol: function () {
-                        // Si la categoría seleccionada es Vehículo (ID: 15), usar dólares, sino soles
-                        return this.formData.categoria == 15 ? '$' : 'S/';
+                        if (!this.formData.plan_financiamiento_id) return 'S/';
+                        var plan = this.planes.find(p => p.idplan_financiamiento == this.formData.plan_financiamiento_id);
+                        return plan ? plan.moneda : 'S/';
                     },
 
                     getCurrencySymbolForCategory: function (categoriaId) {
-                        // Si la categoría es Vehículo (ID: 15), usar dólares, sino soles
+                        // Mantener para compatibilidad
                         return categoriaId == 15 ? '$' : 'S/';
+                    },
+
+                    getCurrencySymbolForPlan: function (planId) {
+                        if (!planId) return 'S/';
+                        var plan = this.planes.find(p => p.idplan_financiamiento == planId);
+                        return plan ? plan.moneda : 'S/';
+                    },
+
+                    obtenerEtiquetaFrecuencia: function (planId) {
+                        if (!planId) return 'Cuota';
+                        var plan = this.planes.find(p => p.idplan_financiamiento == planId);
+                        if (!plan) return 'Cuota';
+
+                        switch(plan.frecuencia_pago.toLowerCase()) {
+                            case 'semanal': return 'Cuota Semanal';
+                            case 'mensual': return 'Cuota Mensual';
+                            case 'quincenal': return 'Cuota Quincenal';
+                            default: return 'Cuota ' + this.capitalize(plan.frecuencia_pago);
+                        }
+                    },
+
+                    obtenerEtiquetaFrecuenciaFormulario: function () {
+                        if (!this.formData.plan_financiamiento_id) return 'Cuota Mensual';
+                        return this.obtenerEtiquetaFrecuencia(this.formData.plan_financiamiento_id);
+                    },
+
+                    capitalize: function (str) {
+                        if (!str) return '';
+                        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+                    },
+
+                    onPlanChange: function () {
+                        // Limpiar error cuando se selecciona un plan
+                        this.errores.plan_financiamiento_id = '';
                     },
 
                     validarFormulario: function () {
@@ -934,8 +1036,8 @@ cargarCategorias: function () {
                             this.errores.nombre = 'El nombre es obligatorio';
                         }
 
-                        if (!this.formData.categoria) {
-                            this.errores.categoria = 'La categoría es obligatoria';
+                        if (!this.formData.plan_financiamiento_id) {
+                            this.errores.plan_financiamiento_id = 'El plan de financiamiento es obligatorio';
                         }
 
                         if (!this.formData.cuota_inicial || this.formData.cuota_inicial <= 0) {
@@ -1008,7 +1110,8 @@ cargarCategorias: function () {
 
                         // Agregar datos del formulario
                         formData.append('nombre', self.formData.nombre);
-                        formData.append('categoria', self.formData.categoria);
+                        formData.append('plan_financiamiento_id', self.formData.plan_financiamiento_id);
+                        formData.append('categoria', self.formData.categoria || '');
                         formData.append('descripcion', self.formData.descripcion || '');
                         formData.append('cuota_inicial', self.formData.cuota_inicial);
                         formData.append('cantidad_cuotas', self.formData.cantidad_cuotas);
@@ -1077,6 +1180,11 @@ cargarCategorias: function () {
                     'formData.nombre': function(newVal) {
                         if (newVal && newVal.trim()) {
                             this.errores.nombre = '';
+                        }
+                    },
+                    'formData.plan_financiamiento_id': function(newVal) {
+                        if (newVal) {
+                            this.errores.plan_financiamiento_id = '';
                         }
                     },
                     'formData.categoria': function(newVal) {

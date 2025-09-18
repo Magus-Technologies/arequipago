@@ -76,8 +76,8 @@ class BeneficioController
                 return;
             }
 
-            if (empty($_POST['categoria'])) {
-                echo json_encode(['success' => false, 'message' => 'La categoría es obligatoria.']);
+            if (empty($_POST['plan_financiamiento_id'])) {
+                echo json_encode(['success' => false, 'message' => 'El plan de financiamiento es obligatorio.']);
                 return;
             }
 
@@ -96,8 +96,14 @@ class BeneficioController
                 return;
             }
 
-          // Validar categoría contra la base de datos
-if (!$this->validarCategoriaExiste($_POST['categoria'])) {
+          // Validar plan de financiamiento contra la base de datos
+if (!$this->validarPlanFinanciamientoExiste($_POST['plan_financiamiento_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Plan de financiamiento no válido.']);
+    return;
+}
+
+// Validar categoría contra la base de datos (opcional)
+if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['categoria'])) {
     echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
     return;
 }
@@ -129,7 +135,8 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
             // Preparar datos esenciales
             $datos = [
                 'nombre' => trim($_POST['nombre']),
-                'categoria' => (int)$_POST['categoria'],
+                'plan_financiamiento_id' => (int)$_POST['plan_financiamiento_id'],
+                'categoria' => !empty($_POST['categoria']) ? (int)$_POST['categoria'] : null,
                 'descripcion' => isset($_POST['descripcion']) && !empty($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
                 'cuota_inicial' => (float)$_POST['cuota_inicial'],
                 'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
@@ -229,8 +236,8 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 return;
             }
 
-            if (empty($_POST['categoria'])) {
-                echo json_encode(['success' => false, 'message' => 'La categoría es obligatoria.']);
+            if (empty($_POST['plan_financiamiento_id'])) {
+                echo json_encode(['success' => false, 'message' => 'El plan de financiamiento es obligatorio.']);
                 return;
             }
 
@@ -249,8 +256,14 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
                 return;
             }
 
-            // Validar categoría contra la base de datos
-            if (!$this->validarCategoriaExiste($_POST['categoria'])) {
+            // Validar plan de financiamiento contra la base de datos
+            if (!$this->validarPlanFinanciamientoExiste($_POST['plan_financiamiento_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Plan de financiamiento no válido.']);
+                return;
+            }
+
+            // Validar categoría contra la base de datos (opcional)
+            if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['categoria'])) {
                 echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
                 return;
             }
@@ -280,6 +293,7 @@ if (!$this->validarCategoriaExiste($_POST['categoria'])) {
             // Preparar datos esenciales
             $datos = [
                 'nombre' => trim($_POST['nombre']),
+                'plan_financiamiento_id' => (int)$_POST['plan_financiamiento_id'],
                 'categoria' => (int)$_POST['categoria'],
                 'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
                 'cuota_inicial' => (float)$_POST['cuota_inicial'],
@@ -586,7 +600,7 @@ public function obtenerCategoriasProducto()
       $stmt = $this->beneficioModel->getConexion()->prepare($sql);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         $categorias = [];
         while ($row = $result->fetch_assoc()) {
             $categorias[] = $row;
@@ -604,6 +618,27 @@ public function obtenerCategoriasProducto()
             'success' => false,
             'error' => 'Error al obtener categorías: ' . $e->getMessage()
         ]);
+    }
+}
+
+/**
+ * Validar que un plan de financiamiento existe en la base de datos
+ */
+private function validarPlanFinanciamientoExiste($idPlan)
+{
+    try {
+        $sql = "SELECT COUNT(*) as total FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+        $stmt = $this->beneficioModel->getConexion()->prepare($sql);
+        $stmt->bind_param('i', $idPlan);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+
+        return $row['total'] > 0;
+    } catch (Exception $e) {
+        error_log('Error al validar plan de financiamiento: ' . $e->getMessage());
+        return false;
     }
 }
 
