@@ -124,6 +124,10 @@ class EditarConductorController extends Controller
             $conductor->setCorreo(isset($_POST['correo']) ? $_POST['correo'] : '');
             $conductor->setNumUnidad($_POST['numUnidad']);
             $conductor->setNumeroCodFi((string) $_POST['numerocodfi']);
+            // Verificar y establecer verificación domiciliaria si está presente
+            if (isset($_POST['verificacion_domiciliaria'])) {
+                $conductor->setVerificacionDomiciliaria((int) $_POST['verificacion_domiciliaria']);
+            }
             $conductor->setCategoriaLicencia($_POST['licenciaCa']);
 
             
@@ -606,8 +610,8 @@ class EditarConductorController extends Controller
             $foto = $fotoActual; // Comentario: Si no se sube una nueva foto, se mantiene la actual
         }
 
-        // Actualizar la tabla conductores
-        $sql = "UPDATE conductores SET apellido_paterno=?, apellido_materno=?, telefono=?, correo=?, foto=? WHERE id_conductor=?";
+        // Actualizar la tabla conductores (incluir verificación domiciliaria)
+        $sql = "UPDATE conductores SET apellido_paterno=?, apellido_materno=?, telefono=?, correo=?, foto=?, verificacion_domiciliaria=? WHERE id_conductor=?";
         $stmt = $this->conectar->prepare($sql);
 
         // Asigna los valores de $_POST a variables
@@ -615,9 +619,10 @@ class EditarConductorController extends Controller
         $apellido_materno = $_POST['apellido_materno'];
         $telefono = $_POST['telefono'];
         $correo = $_POST['correo'];
-    
+        $verificacion_domiciliaria = isset($_POST['verificacion_domiciliaria']) ? (int)$_POST['verificacion_domiciliaria'] : null;
+
         // Ahora llama a bind_param usando las variables
-        $stmt->bind_param("sssssi", $apellido_paterno, $apellido_materno, $telefono, $correo, $foto, $id_conductor);
+        $stmt->bind_param("sssssii", $apellido_paterno, $apellido_materno, $telefono, $correo, $foto, $verificacion_domiciliaria, $id_conductor);
         $stmt->execute();
         
         // Obtener id_inscripcion

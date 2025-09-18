@@ -151,6 +151,63 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
             --bs-table-hover-bg: #c3e6cb !important;
         }
 
+        /* Estilos para badges de verificación de clientes */
+        .client-verification-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: -5px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .client-verification-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .client-verification-item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .client-verification-item .label {
+            font-weight: 500;
+            min-width: 180px;
+        }
+
+        .client-verification-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-verification-status.verified {
+            background-color: #02a499;
+            color: white;
+        }
+
+        .client-verification-status.not-verified {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .client-verification-status.pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
     </style>
 </head>
 <body>
@@ -984,6 +1041,27 @@ $(document).on('click', '.ver-btn', function() {
             if (response.success) {
                 const cliente = response.cliente;
                 
+                // NUEVO: Preparar badges de verificación
+                let badgesVerificacion = `
+                    <div class="client-verification-badges">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Estado de Verificación</h6>
+                        <div class="client-verification-item">
+                            <span class="icon">📋</span>
+                            <span class="label">Verificación Documentaria</span>
+                            <span>Estado: <span class="client-verification-status ${cliente.documentacion_completa ? 'verified' : 'not-verified'}">${cliente.documentacion_completa ? 'Verificado' : 'No verificado'}</span></span>
+                        </div>`;
+                
+                if (cliente.verificacion_domiciliaria !== null && cliente.verificacion_domiciliaria !== undefined) {
+                    badgesVerificacion += `
+                        <div class="client-verification-item">
+                            <span class="icon">🏠</span>
+                            <span class="label">Verificación Domiciliaria</span>
+                            <span>Estado: <span class="client-verification-status ${cliente.verificacion_domiciliaria ? 'verified' : 'not-verified'}">${cliente.verificacion_domiciliaria ? 'Verificado' : 'No verificado'}</span></span>
+                        </div>`;
+                }
+                
+                badgesVerificacion += `</div>`;
+
                 // Información de pago (se mostrará al final)
                 let infoPago = '';
                 if (cliente.ha_pagado == 1) {
@@ -1057,6 +1135,7 @@ $(document).on('click', '.ver-btn', function() {
                             <p><strong>Detalle Dirección:</strong> ${cliente.direccion_detallada}</p>
                         </div>
                     </div>
+                    ${badgesVerificacion}
                     <div class="row mt-3">
                         <div class="col-md-6">
                             <h5><i class="fas fa-phone-alt me-2"></i>Contacto de Emergencia</h5>
@@ -1072,6 +1151,7 @@ $(document).on('click', '.ver-btn', function() {
                             <p><strong>Empresa:</strong> ${cliente.laboral_empresa || '-'}</p>
                         </div>
                     </div>
+                   
                     <div class="row mt-3">
                         <div class="col-12">
                             <h5><i class="fas fa-file-alt me-2"></i>Documentos</h5>
@@ -1136,9 +1216,9 @@ $(document).on('click', '.ver-btn', function() {
                     </div>`;
                 
                 contenidoModal += `
-                            </div>
-                        </div>
-                        ${infoPago}`;
+                                    </div>
+                                </div>
+                                ${infoPago}`;
 
                 $('#modalVerCliente .modal-body').html(contenidoModal);
             } else {
@@ -1176,7 +1256,36 @@ $(document).on('click', '.editar-btn', function() {
             if (response.success) {
                 UploadDepartamentos();
                 const cliente = response.cliente;
-                
+                // Verificar si debe mostrar el campo de verificación domiciliaria
+                let campoVerificacionDomiciliaria = '';
+                if (response.tieneFinanciamientoVehicular) {
+                    const verificadoSi = cliente.verificacion_domiciliaria == 1 ? 'checked' : '';
+                    const verificadoNo = cliente.verificacion_domiciliaria == 0 ? 'checked' : '';
+                    
+                    campoVerificacionDomiciliaria = `
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <h5><i class="fas fa-home me-2"></i>Verificación Domiciliaria</h5>
+                                <p class="text-muted">¿Se ha verificado el domicilio?</p>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="verificacion_domiciliaria" id="verificado_si" value="1" ${verificadoSi}>
+                                    <label class="form-check-label" for="verificado_si">
+                                        <i class="fas fa-check-circle text-success me-1"></i>Sí verificado
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="verificacion_domiciliaria" id="verificado_no" value="0" ${verificadoNo}>
+                                    <label class="form-check-label" for="verificado_no">
+                                        <i class="fas fa-times-circle text-danger me-1"></i>No verificado
+                                    </label>
+                                </div>
+                                <small class="form-text text-info">
+                                    <i class="fas fa-info-circle me-1"></i>Indica si se ha realizado la verificación del domicilio del cliente/conductor
+                                </small>
+                            </div>
+                        </div>`;
+                }
+
                 // Construir el formulario
                 let contenidoModal = `
                 <form id="formEditarCliente" enctype="multipart/form-data">
@@ -1244,19 +1353,19 @@ $(document).on('click', '.editar-btn', function() {
                         </div>
                         <div class="col-md-4">
                             <label for="departamento" class="form-label">Departamento *</label>
-                            <select class="form-select" name="departamento" id="departamento" required onchange="UploadProvincias()">
+                            <select class="form-select" name="departamento" id="departamento" onchange="UploadProvincias()">
                                 <option value="">Seleccione...</option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label for="provincia" class="form-label">Provincia *</label>
-                            <select class="form-select" name="provincia" id="provincia" required onchange="UploadDistritos()">
+                            <select class="form-select" name="provincia" id="provincia" onchange="UploadDistritos()">
                                 <option value="">Seleccione...</option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label for="distrito" class="form-label">Distrito *</label>
-                            <select class="form-select" name="distrito" id="distrito" required>
+                            <select class="form-select" name="distrito" id="distrito">
                                 <option value="">Seleccione...</option>
                             </select>
                         </div>
@@ -1348,6 +1457,8 @@ $(document).on('click', '.editar-btn', function() {
                         </div>
                     </div>
                     
+                    ${campoVerificacionDomiciliaria}
+                    
                     <div class="row">
                         <div class="col-md-12 text-end">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -1361,6 +1472,19 @@ $(document).on('click', '.editar-btn', function() {
                 // Cargar departamentos
                 cargarDepartamentos(cliente.departamento, cliente.provincia, cliente.distrito);
                 
+                // Guardar valores originales inmediatamente después de cargar
+                setTimeout(function() {
+                    $('#departamento').data('original-value', cliente.departamento || '');
+                    $('#provincia').data('original-value', cliente.provincia || '');
+                    $('#distrito').data('original-value', cliente.distrito || '');
+                    
+                    console.log('[Debug] Valores originales guardados:', {
+                        dept: cliente.departamento,
+                        prov: cliente.provincia, 
+                        dist: cliente.distrito
+                    });
+                }, 1500);
+
                 // Inicializar eventos para los selects de ubicación
                 initSelectsUbicacion();
             } else {
@@ -1453,6 +1577,7 @@ function cargarDistritos(provinciaId, distritoId) {
 function initSelectsUbicacion() {
     // Cuando cambia el departamento, cargar provincias
     $('#departamento').change(function() {
+        $(this).data('modified', true);
         const departamentoId = $(this).val();
         if (departamentoId) {
             cargarProvincias(departamentoId);
@@ -1464,6 +1589,7 @@ function initSelectsUbicacion() {
     
     // Cuando cambia la provincia, cargar distritos
     $('#provincia').change(function() {
+        $(this).data('modified', true);
         const provinciaId = $(this).val();
         if (provinciaId) {
             cargarDistritos(provinciaId);
@@ -1479,12 +1605,13 @@ $(document).on('submit', '#formEditarCliente', function(e) {
 e.preventDefault();
 console.log('[Editar Cliente] Se ha enviado el formulario');
 
-// Validar campos obligatorios
-const camposObligatorios = ['tipo_doc', 'n_documento', 'nombres', 'apellido_paterno', 'apellido_materno', 
-                           'fecha_nacimiento', 'departamento', 'provincia', 'distrito', 'direccion_detallada'];
+// Validar campos obligatorios (sin incluir ubicación si no se modificó)
+const camposObligatorios = ['tipo_doc', 'n_documento', 'nombres', 'apellido_paterno', 'apellido_materno', 'fecha_nacimiento', 'direccion_detallada'];
+// Nota: departamento, provincia y distrito se validarán solo si fueron modificados
 
 let formularioValido = true;
 
+// Validar campos básicos obligatorios
 camposObligatorios.forEach(function(campo) {
     const valor = $(`#${campo}`).val();
     console.log(`[Validación] Campo "${campo}" tiene valor:`, valor);
@@ -1497,6 +1624,64 @@ camposObligatorios.forEach(function(campo) {
         $(`#${campo}`).removeClass('is-invalid');
     }
 });
+
+// Agregar variable para rastrear si se modificó la ubicación
+let ubicacionModificada = false;
+
+// Solo considerar modificado si el usuario realmente cambió algo
+const departamentoActual = $('#departamento').val();
+const provinciaActual = $('#provincia').val();
+const distritoActual = $('#distrito').val();
+
+const departamentoOriginal = $('#departamento').data('original-value');
+const provinciaOriginal = $('#provincia').data('original-value');  
+const distritoOriginal = $('#distrito').data('original-value');
+
+console.log('[Debug] Valores actuales:', {departamentoActual, provinciaActual, distritoActual});
+console.log('[Debug] Valores originales:', {departamentoOriginal, provinciaOriginal, distritoOriginal});
+
+// Solo validar si el usuario realmente seleccionó un departamento válido diferente al original
+// No considerar 'notdepartamento' como una selección válida
+if (departamentoActual && 
+    departamentoActual !== '' && 
+    departamentoActual !== 'Seleccione...' && 
+    departamentoActual !== 'notdepartamento' &&  // Agregar esta línea
+    departamentoOriginal !== undefined &&
+    departamentoActual !== departamentoOriginal) {
+    ubicacionModificada = true;
+    console.log('[Debug] Ubicación marcada como modificada');
+} else {
+    console.log('[Debug] No se considera modificación. departamentoActual:', departamentoActual);
+}
+
+// Solo validar ubicación si fue realmente modificada
+if (ubicacionModificada) {
+    console.log('[Validación] Se detectó modificación en departamento, validando ubicación completa');
+    
+    // Si se seleccionó departamento, validar provincia y distrito
+    const provinciaValue = $('#provincia').val();
+    const distritoValue = $('#distrito').val();
+    
+    if (!provinciaValue || provinciaValue === '' || provinciaValue === 'Seleccione...') {
+        console.warn('[Validación] Provincia no seleccionada');
+        $('#provincia').addClass('is-invalid');
+        formularioValido = false;
+    } else {
+        $('#provincia').removeClass('is-invalid');
+    }
+    
+    if (!distritoValue || distritoValue === '' || distritoValue === 'Seleccione...') {
+        console.warn('[Validación] Distrito no seleccionado');
+        $('#distrito').addClass('is-invalid');
+        formularioValido = false;
+    } else {
+        $('#distrito').removeClass('is-invalid');
+    }
+} else {
+    console.log('[Validación] No se modificó la ubicación, manteniendo valores originales');
+    // Limpiar estilos de error de los campos de ubicación
+    $('#departamento, #provincia, #distrito').removeClass('is-invalid');
+}
 
 if (!formularioValido) {
     console.warn('[Validación] El formulario no es válido. Se detiene el envío.');

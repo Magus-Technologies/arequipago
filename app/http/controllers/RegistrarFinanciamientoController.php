@@ -10,11 +10,11 @@ class RegistrarFinanciamientoController extends Controller
 {
     private $conexion;
     
-    public function __construct()
-    {
-        $this->conexion = (new Conexion())->getConexion();
+        public function __construct()
+        {
+            $this->conexion = (new Conexion())->getConexion();
 
-    }
+        }
 
     public function guardarFinanciamiento()
     {
@@ -23,6 +23,8 @@ class RegistrarFinanciamientoController extends Controller
             $datos = $_POST;
             // Obtener valor de cobrar mora con valor por defecto
             $datos['cobrar_mora'] = isset($datos['cobrar_mora']) ? intval($datos['cobrar_mora']) : 1;
+            // Obtener valor de verificación domiciliaria
+            $verificacion_domiciliaria = isset($datos['verificacion_domiciliaria']) ? intval($datos['verificacion_domiciliaria']) : null;
 
             $fechasVencimiento = $datos['fechas_vencimiento'];
             
@@ -106,6 +108,11 @@ class RegistrarFinanciamientoController extends Controller
 
             $financiamientoModel = new Financiamiento();
             $idFinanciamiento = $financiamientoModel->guardarFinanciamiento($datos);
+
+            // Actualizar verificación domiciliaria si es financiamiento vehicular y hay valor
+            if ($verificacion_domiciliaria !== null) {
+                $this->actualizarVerificacionDomiciliaria($datos['id_conductor'], $datos['id_cliente'], $verificacion_domiciliaria);
+            }
 
             // Después de obtener $idFinanciamiento
             $this->registrarComisionAutomatica($idFinanciamiento);
@@ -229,6 +236,8 @@ class RegistrarFinanciamientoController extends Controller
         // Recibir valor de cobrar mora
         $cobrar_mora = isset($_POST['cobrar_mora']) ? intval($_POST['cobrar_mora']) : 1;
 
+        // Obtener valor de verificación domiciliaria
+        $verificacion_domiciliaria = isset($_POST['verificacion_domiciliaria']) ? intval($_POST['verificacion_domiciliaria']) : null;
 
         // Recibir id_conductor e id_cliente del POST - MODIFICADO: Ahora recibimos ambos IDs
         $idConductor = isset($_POST['id_conductor']) ? (intval($_POST['id_conductor']) !== 0 ? intval($_POST['id_conductor']) : null) : null; // ✅ MODIFICADO: Si id_conductor es 0, lo convertimos en null
@@ -461,6 +470,11 @@ class RegistrarFinanciamientoController extends Controller
             return;
         }
     
+        // Actualizar verificación domiciliaria si hay valor
+        if ($verificacion_domiciliaria !== null) {
+            $this->actualizarVerificacionDomiciliaria($idConductor, $idCliente, $verificacion_domiciliaria);
+        }
+
         $stmt->close();
     
         // Después de obtener $idFinanciamiento
@@ -607,5 +621,38 @@ class RegistrarFinanciamientoController extends Controller
                 $financiamientoController->registrarComisionFinanciamiento($financiamiento);
             }
         }
+
+        private function actualizarVerificacionDomiciliaria($idConductor, $idCliente, $verificacionDomiciliaria)
+        {
+            try {
+                $actualizado = false;
+                
+                // Intentar actualizar conductor si el ID es válido
+                if (!empty($idConductor) && $idConductor > 0) {
+                    $query = "UPDATE conductores SET verificacion_domiciliaria = ? WHERE id_conductor = ?";
+                    $stmt = $this->conexion->prepare($query);
+                    $stmt->bind_param('ii', $verificacionDomiciliaria, $idConductor);
+                    if ($stmt->execute() && $stmt->affected_rows > 0) {
+                        $actualizado = true;
+                    }
+                    $stmt->close();
+                }
+                
+                // Intentar actualizar cliente si el ID es válido Y no se actualizó conductor
+                if (!$actualizado && !empty($idCliente) && $idCliente > 0) {
+                    $query = "UPDATE clientes_financiar SET verificacion_domiciliaria = ? WHERE id = ?";
+                    $stmt = $this->conexion->prepare($query);
+                    $stmt->bind_param('ii', $verificacionDomiciliaria, $idCliente);
+                    if ($stmt->execute() && $stmt->affected_rows > 0) {
+                        $actualizado = true;
+                    }
+                    $stmt->close();
+                }
+                
+            } catch (Exception $e) {
+                error_log("Error al actualizar verificación domiciliaria: " . $e->getMessage());
+            }
+        }   
+        
 }
 

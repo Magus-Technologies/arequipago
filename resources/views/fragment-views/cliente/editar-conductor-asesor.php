@@ -4,7 +4,7 @@ $id_conductor = $_GET['id'] ?? null;
 
 <head>
 <link rel="stylesheet" href="<?= URL::to('public/css/conductor.css') ?>">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
 <style>
 .container-custom {
             max-width: 1200px;
@@ -71,17 +71,9 @@ $id_conductor = $_GET['id'] ?? null;
             border: none;
         }
 
-        .bton-warning: hover {
-            background-color: #000000;
-        }
-
         .btn.btn-danger {
             background-color: #000000;
             border: none;
-        }
-
-        .btn-secondary {
-            color:
         }
 
         .btn-custom {
@@ -187,6 +179,35 @@ $id_conductor = $_GET['id'] ?? null;
             opacity: 0;
             cursor: pointer;
         }
+
+       /* Estilos para verificación domiciliaria */
+        #verificacion-domiciliaria-row {
+            margin-top: 15px;
+        }
+        
+        #verificacion-domiciliaria-row .form-check {
+            margin-bottom: 0.5rem;
+            padding-left: 1.25rem;
+        }
+
+        #verificacion-domiciliaria-row .form-check-input {
+            margin-top: 0.125rem;
+        }
+
+        #verificacion-domiciliaria-row .form-check-label {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: #000000;
+            margin-bottom: 0;
+        }
+
+        #verificacion-domiciliaria-row .form-label {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+            margin-bottom: 7px;
+            color: black;
+        }
+
 </style>
 </head>
 
@@ -252,11 +273,42 @@ $id_conductor = $_GET['id'] ?? null;
                     <input type="text" id="telefhone" name="telefhone" class="form-control" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
                 </div>
             </div>
-
+            
             <div class="row mb-10"></div> <!-- Espaciado agregado -->
             <div class="row mb-5"></div> <!-- Espaciado agregado -->
             <div class="row mb-5"></div> <!-- Espaciado agregado -->
             
+            <!-- Verificación Domiciliaria -->
+            <div id="verificacion-domiciliaria-row" style="display: none;">
+                <div class="form-section">
+                    <h5>Verificación Domiciliaria</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="verificacion_domiciliaria" class="form-label">¿Se ha verificado el domicilio?</label>
+                            <div class="mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="verificacion_domiciliaria" 
+                                        id="verificado_si" value="1">
+                                    <label class="form-check-label" for="verificado_si">
+                                        Sí verificado
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="verificacion_domiciliaria" 
+                                        id="verificado_no" value="0">
+                                    <label class="form-check-label" for="verificado_no">
+                                        No verificado
+                                    </label>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted mt-1">
+                                Indica si se ha realizado la verificación del domicilio del cliente/conductor
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-section">
                 <h5>Dirección</h5>
                 <div class="row">
@@ -285,13 +337,12 @@ $id_conductor = $_GET['id'] ?? null;
                 </div>
             </div>
         </form>
-    </div>
+        </div>
 
-
-            <!-- Formulario Vehículo -->
-            <div class="tab-pane fade" id="vehiculo" role="tabpanel" aria-labelledby="vehiculo-tab">
-                <form>
-                    <h5>Datos del Vehículo</h5>
+        <!-- Formulario Vehículo -->
+    <div class="tab-pane fade" id="vehiculo" role="tabpanel" aria-labelledby="vehiculo-tab">
+        <form>
+            <h5>Datos del Vehículo</h5>
                     <div class="row mb-4">
                         <div class="col-md-3">
                             <label for="n_placa">N° Placa</label>
@@ -589,7 +640,6 @@ $id_conductor = $_GET['id'] ?? null;
             </div>
 
         </div>
-       
 
     <!-- Botón para guardar al final -->
     <div class="text-center mt-4">
@@ -603,7 +653,7 @@ $id_conductor = $_GET['id'] ?? null;
         <!-- Contenido vacío / espacio -->
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
     var fotoActualConductor = '';
 
@@ -633,6 +683,22 @@ $id_conductor = $_GET['id'] ?? null;
                         document.getElementById('correo').value = data.conductor.correo || '';
                         document.getElementById('telefhone').value = data.conductor.telefono || '';
                         
+                        // Manejar verificación domiciliaria
+                        if (data.conductor.tiene_financiamiento_vehicular) {
+                            document.getElementById('verificacion-domiciliaria-row').style.display = 'block';
+                            
+                            // Establecer el valor del radio button si existe
+                            if (data.conductor.verificacion_domiciliaria !== null && data.conductor.verificacion_domiciliaria !== undefined) {
+                                const radioValue = data.conductor.verificacion_domiciliaria === 1 ? '1' : '0';
+                                const radioButton = document.querySelector(`input[name="verificacion_domiciliaria"][value="${radioValue}"]`);
+                                if (radioButton) {
+                                    radioButton.checked = true;
+                                }
+                            }
+                        } else {
+                            document.getElementById('verificacion-domiciliaria-row').style.display = 'none';
+                        }
+
                         // Mostrar foto del conductor si existe
                         if (data.conductor.foto) {
                             fotoActualConductor = data.conductor.foto;
@@ -783,6 +849,15 @@ $id_conductor = $_GET['id'] ?? null;
             }
         }
         
+        // Agregar verificación domiciliaria si está visible
+        const verificacionContainer = document.getElementById('verificacion-domiciliaria-row');
+        if (verificacionContainer.style.display !== 'none') {
+            const verificacionRadio = document.querySelector('input[name="verificacion_domiciliaria"]:checked');
+            if (verificacionRadio) {
+                formData.append('verificacion_domiciliaria', verificacionRadio.value);
+            }
+        }
+
         // Agregar datos de dirección
         var departamento = document.getElementById('departamentose').value;
         var provincia = document.getElementById('provinciase').value;

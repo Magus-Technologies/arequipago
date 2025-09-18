@@ -20,6 +20,7 @@ class Conductor
     private $numUnidad;
     private $fotoPath;
     private $conectar;
+    private $verificacion_domiciliaria;
 
     public function __construct()
     {
@@ -79,84 +80,84 @@ class Conductor
         }
     }
 
-public function insertar()
-{
-    try {
+    public function insertar()
+    {
+        try {
 
-        // Obtener usuario_id de la sesión 🔹 Agregado para obtener el usuario
-        $usuario_id = $_SESSION['usuario_id'] ?? null; // 🔹 NUEVO
-        if (!$usuario_id) { // 🔹 NUEVO
-            error_log("Error: No se encontró el ID del usuario en la sesión"); // 🔹 NUEVO
-            throw new Exception('No se pudo obtener el ID del usuario.'); // 🔹 NUEVO
-        } // 🔹 NUEVO
+            // Obtener usuario_id de la sesión 🔹 Agregado para obtener el usuario
+            $usuario_id = $_SESSION['usuario_id'] ?? null; // 🔹 NUEVO
+            if (!$usuario_id) { // 🔹 NUEVO
+                error_log("Error: No se encontró el ID del usuario en la sesión"); // 🔹 NUEVO
+                throw new Exception('No se pudo obtener el ID del usuario.'); // 🔹 NUEVO
+            } // 🔹 NUEVO
 
-        // Validar fecha de nacimiento
-        if (empty($this->fech_nac)) {
-            error_log("Error: fecha de nacimiento vacía");
-            throw new Exception('La fecha de nacimiento es requerida');
+            // Validar fecha de nacimiento
+            if (empty($this->fech_nac)) {
+                error_log("Error: fecha de nacimiento vacía");
+                throw new Exception('La fecha de nacimiento es requerida');
+            }
+
+            $sql = "INSERT INTO conductores (
+                usuario_id, tipo_doc, nro_documento, nombres, apellido_paterno, 
+                apellido_materno, nacionalidad, nro_licencia, telefono, 
+                correo, categoria_licencia, fech_nac, foto, numeroCodFi, numUnidad
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            $stmt = $this->conectar->prepare($sql);
+            
+            if (!$stmt) {
+                error_log("Error preparando la consulta: " . $this->conectar->error);
+                throw new Exception('Error al preparar la consulta');
+            }
+
+            $stmt->bind_param("issssssssssssii", 
+                $usuario_id,
+                $this->tipo_doc,
+                $this->nro_documento,
+                $this->nombres,
+                $this->apellido_paterno,
+                $this->apellido_materno,
+                $this->nacionalidad,
+                $this->nro_licencia,
+                $this->telefono,
+                $this->correo,
+                $this->categoria_licencia,
+                $this->fech_nac,
+                $this->foto,
+                $this->numeroCodFi,
+                $this->numUnidad
+            );
+
+            // Log de los valores antes de insertar
+            error_log("Insertando conductor con datos: " . print_r([
+                'tipo_doc' => $this->tipo_doc,
+                'nro_documento' => $this->nro_documento,
+                'nombres' => $this->nombres,
+                'fech_nac' => $this->fech_nac,
+                'foto' => $this->foto
+            ], true));
+
+            if (!$stmt->execute()) {
+                error_log("Error ejecutando la consulta: " . $stmt->error);
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $id = $stmt->insert_id;
+            $stmt->close();
+            
+            if ($id > 0) {
+                error_log("Conductor insertado exitosamente con ID: " . $id);
+                return $id;
+            } else {
+                error_log("Error: No se obtuvo ID después de la inserción");
+                throw new Exception('Error al obtener el ID del conductor insertado');
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en Conductor::insertar(): " . $e->getMessage());
+            throw $e; // Relanzar la excepción para que sea manejada por el controlador
         }
-
-        $sql = "INSERT INTO conductores (
-            usuario_id, tipo_doc, nro_documento, nombres, apellido_paterno, 
-            apellido_materno, nacionalidad, nro_licencia, telefono, 
-            correo, categoria_licencia, fech_nac, foto, numeroCodFi, numUnidad
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = $this->conectar->prepare($sql);
-        
-        if (!$stmt) {
-            error_log("Error preparando la consulta: " . $this->conectar->error);
-            throw new Exception('Error al preparar la consulta');
-        }
-
-        $stmt->bind_param("issssssssssssii", 
-            $usuario_id,
-            $this->tipo_doc,
-            $this->nro_documento,
-            $this->nombres,
-            $this->apellido_paterno,
-            $this->apellido_materno,
-            $this->nacionalidad,
-            $this->nro_licencia,
-            $this->telefono,
-            $this->correo,
-            $this->categoria_licencia,
-            $this->fech_nac,
-            $this->foto,
-            $this->numeroCodFi,
-            $this->numUnidad
-        );
-
-        // Log de los valores antes de insertar
-        error_log("Insertando conductor con datos: " . print_r([
-            'tipo_doc' => $this->tipo_doc,
-            'nro_documento' => $this->nro_documento,
-            'nombres' => $this->nombres,
-            'fech_nac' => $this->fech_nac,
-            'foto' => $this->foto
-        ], true));
-
-        if (!$stmt->execute()) {
-            error_log("Error ejecutando la consulta: " . $stmt->error);
-            throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
-        }
-
-        $id = $stmt->insert_id;
-        $stmt->close();
-        
-        if ($id > 0) {
-            error_log("Conductor insertado exitosamente con ID: " . $id);
-            return $id;
-        } else {
-            error_log("Error: No se obtuvo ID después de la inserción");
-            throw new Exception('Error al obtener el ID del conductor insertado');
-        }
-
-    } catch (Exception $e) {
-        error_log("Error en Conductor::insertar(): " . $e->getMessage());
-        throw $e; // Relanzar la excepción para que sea manejada por el controlador
     }
-}
 
 public function obtenerNumDocFiltrado($searchTerm = '')
 {
@@ -1100,6 +1101,11 @@ public function eliminar() {
     public function getNumUnidad() { return $this->numUnidad; }
     public function setNumUnidad($numUnidad) { $this->numUnidad = $numUnidad; }
 
+    public function setVerificacionDomiciliaria($verificacion_domiciliaria)
+    {
+        $this->verificacion_domiciliaria = $verificacion_domiciliaria;
+    }
+
     // Database operations
     public function obtenerDatos()
     {
@@ -1329,10 +1335,11 @@ public function eliminar() {
     {
         try {
             $sql = "UPDATE conductores SET 
-                    tipo_doc = ?, nro_documento = ?, nombres = ?, apellido_paterno = ?, 
-                    apellido_materno = ?, nacionalidad = ?, nro_licencia = ?, telefono = ?, 
-                    correo = ?, categoria_licencia = ?, fech_nac = ?, numeroCodFi = ?, numUnidad = ?
-                    WHERE id_conductor = ?";
+                tipo_doc = ?, nro_documento = ?, nombres = ?, apellido_paterno = ?, 
+                apellido_materno = ?, nacionalidad = ?, nro_licencia = ?, telefono = ?, 
+                correo = ?, categoria_licencia = ?, fech_nac = ?, numeroCodFi = ?, numUnidad = ?, 
+                verificacion_domiciliaria = ?
+                WHERE id_conductor = ?";
 
             $stmt = $this->conectar->prepare($sql);
             
@@ -1341,7 +1348,7 @@ public function eliminar() {
                 throw new Exception('Error al preparar la consulta');
             }
 
-            $stmt->bind_param("ssssssssssssis",
+            $stmt->bind_param("ssssssssssssisi",
                 $this->tipo_doc,
                 $this->nro_documento,
                 $this->nombres,
@@ -1355,6 +1362,7 @@ public function eliminar() {
                 $this->fech_nac,
                 $this->numeroCodFi,
                 $this->numUnidad,
+                $this->verificacion_domiciliaria,
                 $this->id_conductor
             );
 

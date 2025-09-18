@@ -77,10 +77,6 @@ $id_conductor = $_GET['id'] ?? null;
             border: none;
         }
 
-        .btn-secondary {
-            color:
-        }
-
         .btn-custom {
             padding: 0.375rem 0.75rem;
             font-family: inherit;
@@ -322,6 +318,30 @@ $id_conductor = $_GET['id'] ?? null;
             color: black;
         }
 
+        /* Estilos para verificación domiciliaria */
+        #verificacion-domiciliaria-container .form-check {
+            margin-bottom: 0.25rem;
+            padding-left: 1.25rem;
+        }
+
+        #verificacion-domiciliaria-container .form-check-input {
+            margin-top: 0.125rem;
+        }
+
+        #verificacion-domiciliaria-container .form-check-label {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: #000000;
+            margin-bottom: 0;
+        }
+
+        #verificacion-domiciliaria-container .form-label {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 300;
+            margin-bottom: 7px;
+            color: black;
+        }
+
     </style>
 </head>
 
@@ -466,7 +486,33 @@ $id_conductor = $_GET['id'] ?? null;
                         </div>
                     </div>
 
-
+                    <!-- Nueva fila exclusiva para verificación domiciliaria -->
+                    <div class="row mb-4" id="verificacion-domiciliaria-row" style="display: none;">
+                        <div class="col-md-4">
+                            <div class="form-section" style="padding: 15px; margin-bottom: 0;">
+                                <label for="verificacion_domiciliaria" class="form-label">¿Se ha verificado el domicilio?</label>
+                                <div class="mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="verificacion_domiciliaria" 
+                                            id="verificado_si" value="1">
+                                        <label class="form-check-label" for="verificado_si">
+                                            Sí verificado
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="verificacion_domiciliaria" 
+                                            id="verificado_no" value="0">
+                                        <label class="form-check-label" for="verificado_no">
+                                            No verificado
+                                        </label>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted mt-1">
+                                    Indica si se ha realizado la verificación del domicilio del conductor
+                                </small>
+                            </div>
+                        </div>
+                    </div>
 
 
 
@@ -1186,7 +1232,7 @@ $id_conductor = $_GET['id'] ?? null;
 
             // Add tipo_serv, fecha, and nro_unidad
             formData.append('tipo_serv', document.getElementById('tipo_serv').value);
-          //formData.append('fecha', document.getElementById('fecha').value);
+            //formData.append('fecha', document.getElementById('fecha').value);
             formData.append('nro_unidad', document.getElementById('numeroUnidad').value);
 
             // Validate and add fecha de nacimiento
@@ -1276,6 +1322,14 @@ $id_conductor = $_GET['id'] ?? null;
             // Add all fields to FormData
             for (var key in elementos) {
                 formData.append(key, elementos[key].value);
+            }
+
+            const verificacionContainer = document.getElementById('verificacion-domiciliaria-row');
+            if (verificacionContainer.style.display !== 'none') {
+                const verificacionRadio = document.querySelector('input[name="verificacion_domiciliaria"]:checked');
+                if (verificacionRadio) {
+                    formData.append('verificacion_domiciliaria', verificacionRadio.value);
+                }
             }
 
             // Add files
@@ -1513,6 +1567,21 @@ $id_conductor = $_GET['id'] ?? null;
                         document.getElementById('telefhone').value = data.conductor.telefono;
                         document.getElementById('correo').value = data.conductor.correo;
                         document.getElementById('numeroUnidad').value = data.conductor.numUnidad;
+
+                        if (data.conductor.tiene_financiamiento_vehicular) {
+                            document.getElementById('verificacion-domiciliaria-row').style.display = 'block';
+                            
+                            // Establecer el valor del radio button si existe
+                            if (data.conductor.verificacion_domiciliaria !== null) {
+                                const radioValue = data.conductor.verificacion_domiciliaria === 1 ? '1' : '0';
+                                const radioButton = document.querySelector(`input[name="verificacion_domiciliaria"][value="${radioValue}"]`);
+                                if (radioButton) {
+                                    radioButton.checked = true;
+                                }
+                            }
+                        } else {
+                            document.getElementById('verificacion-domiciliaria-row').style.display = 'none';
+                        }
 
                         console.log('antes de la foto');
                         // Set photo preview

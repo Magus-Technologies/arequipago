@@ -374,9 +374,7 @@ class ClientesController extends Controller
          * Obtiene los datos de un cliente para mostrar en el modal de detalles
          */
         public function verCliente() {
-
             $clienteModel = new Cliente();
-
             if (!isset($_POST['id']) || empty($_POST['id'])) {
                 echo json_encode(['success' => false, 'mensaje' => 'ID de cliente no proporcionado']);
                 return;
@@ -401,6 +399,21 @@ class ClientesController extends Controller
                     $cliente['direccion_completa'] .= ", " . $cliente['direccion_detallada'];
                 }
                 
+                // NUEVO: Verificar documentación completa
+                $documentosObligatorios = ['recibo_servicios', 'doc_identidad'];
+                $documentacionCompleta = true;
+                foreach ($documentosObligatorios as $doc) {
+                    if (empty($cliente[$doc])) {
+                        $documentacionCompleta = false;
+                        break;
+                    }
+                }
+                $cliente['documentacion_completa'] = $documentacionCompleta;
+                
+                // NUEVO: Agregar estado de verificación domiciliaria como booleano
+                $cliente['verificacion_domiciliaria'] = isset($cliente['verificacion_domiciliaria']) ? 
+                    (bool)$cliente['verificacion_domiciliaria'] : false;
+                
                 echo json_encode(['success' => true, 'cliente' => $cliente]);
             } else {
                 echo json_encode(['success' => false, 'mensaje' => 'Cliente no encontrado']);
@@ -415,9 +428,9 @@ class ClientesController extends Controller
             
             $clienteModel = new Cliente();
 
-            // Verificar los datos requeridos
+            // Reemplázala por:
             $camposObligatorios = ['id', 'tipo_doc', 'n_documento', 'nombres', 'apellido_paterno', 'apellido_materno', 
-                                'fecha_nacimiento', 'departamento', 'provincia', 'distrito', 'direccion_detallada'];
+                                'fecha_nacimiento', 'direccion_detallada'];
             
             foreach ($camposObligatorios as $campo) {
                 if (!isset($_POST[$campo]) || empty($_POST[$campo])) {
@@ -426,9 +439,26 @@ class ClientesController extends Controller
                 }
             }
             
+            // AGREGAR ESTAS LÍNEAS DESPUÉS DEL FOREACH ANTERIOR:
+            // Validar ubicación solo si se modificó el departamento
+            if (!empty($_POST['departamento']) && $_POST['departamento'] !== 'notdepartamento') {
+                $camposUbicacion = ['departamento', 'provincia', 'distrito'];
+                foreach ($camposUbicacion as $campo) {
+                    if (!isset($_POST[$campo]) || empty($_POST[$campo]) || $_POST[$campo] === 'notdepartamento') {
+                        echo json_encode(['success' => false, 'mensaje' => "El campo $campo es obligatorio cuando se modifica la ubicación"]);
+                        return;
+                    }
+                }
+            }
+
+            // Si no se modificó departamento, los valores ya están asignados arriba (mantienen los originales)
+
             $id = intval($_POST['id']);
             $clienteActual = $clienteModel->obtenerCliente($id);
-            
+            // Verificar si el cliente tiene financiamiento vehicular
+            $tieneFinanciamientoVehicular = $clienteModel->tieneFinanciamientoVehicular($id);
+
+            // Reemplazar el bloque eliminado por esto:
             if (!$clienteActual) {
                 echo json_encode(['success' => false, 'mensaje' => 'Cliente no encontrado']);
                 return;
@@ -452,9 +482,10 @@ class ClientesController extends Controller
                 'fecha_nacimiento' => $_POST['fecha_nacimiento'],
                 'telefono' => isset($_POST['telefono']) ? $_POST['telefono'] : "",
                 'correo' => isset($_POST['correo']) ? $_POST['correo'] : "",
-                'departamento' => $_POST['departamento'],
-                'provincia' => $_POST['provincia'],
-                'distrito' => $_POST['distrito'],
+                // Lógica correcta para ubicación
+                'departamento' => (!empty($_POST['departamento']) && $_POST['departamento'] !== 'notdepartamento') ? $_POST['departamento'] : $clienteActual['departamento'],
+                'provincia' => (!empty($_POST['provincia']) && $_POST['provincia'] !== 'notdepartamento') ? $_POST['provincia'] : $clienteActual['provincia'],
+                'distrito' => (!empty($_POST['distrito']) && $_POST['distrito'] !== 'notdepartamento') ? $_POST['distrito'] : $clienteActual['distrito'],
                 'direccion_detallada' => $_POST['direccion_detallada'],
                 'emergencia_nombre' => isset($_POST['emergencia_nombre']) ? $_POST['emergencia_nombre'] : "",
                 'emergencia_telefono' => isset($_POST['emergencia_telefono']) ? $_POST['emergencia_telefono'] : "",
@@ -468,7 +499,8 @@ class ClientesController extends Controller
                 'doc_identidad' => $clienteActual['doc_identidad'],
                 'otro_doc_1' => $clienteActual['otro_doc_1'],
                 'otro_doc_2' => $clienteActual['otro_doc_2'],
-                'otro_doc_3' => $clienteActual['otro_doc_3']
+                'otro_doc_3' => $clienteActual['otro_doc_3'],
+                'verificacion_domiciliaria' => isset($_POST['verificacion_domiciliaria']) ? (int)$_POST['verificacion_domiciliaria'] : null,
             ];
             
             // Verificar y procesar los archivos subidos
@@ -596,12 +628,16 @@ class ClientesController extends Controller
                 
                 $id = intval($_POST['id']);
                 $cliente = $clienteModel->verEditarCliente($id);
+
+                // Verificar si tiene financiamiento vehicular
+                $tieneFinanciamientoVehicular = $clienteModel->tieneFinanciamientoVehicular($id);
                 
                 if ($cliente) {
                     // Agregar la dirección completa para mostrarla
                     echo json_encode([
                         'success' => true,
-                        'cliente' => $cliente
+                        'cliente' => $cliente,
+                        'tieneFinanciamientoVehicular' => $tieneFinanciamientoVehicular
                     ]);
                 } else {
                     echo json_encode([

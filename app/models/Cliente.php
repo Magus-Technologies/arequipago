@@ -812,25 +812,25 @@ public function obtenerCliente($id)
 public function actualizarCliente($datos)
 {
     $query = "UPDATE clientes_financiar SET 
-              tipo_doc = ?, n_documento = ?, nombres = ?, 
-              apellido_paterno = ?, apellido_materno = ?, 
-              nacionalidad = ?, fecha_nacimiento = ?, 
-              telefono = ?, correo = ?, 
-              departamento = ?, provincia = ?, distrito = ?, 
-              direccion_detallada = ?, emergencia_nombre = ?, 
-              emergencia_telefono = ?, emergencia_parentesco = ?, 
-              laboral_nombre = ?, laboral_telefono = ?, 
-              laboral_puesto = ?, laboral_empresa = ?, 
-              recibo_servicios = ?, doc_identidad = ?, 
-              otro_doc_1 = ?, otro_doc_2 = ?, otro_doc_3 = ?, 
-              comentarios = ?, fecha_actualizacion = NOW() 
-              WHERE id = ?";
+          tipo_doc = ?, n_documento = ?, nombres = ?, 
+          apellido_paterno = ?, apellido_materno = ?, 
+          nacionalidad = ?, fecha_nacimiento = ?, 
+          telefono = ?, correo = ?, 
+          departamento = ?, provincia = ?, distrito = ?, 
+          direccion_detallada = ?, emergencia_nombre = ?, 
+          emergencia_telefono = ?, emergencia_parentesco = ?, 
+          laboral_nombre = ?, laboral_telefono = ?, 
+          laboral_puesto = ?, laboral_empresa = ?, 
+          recibo_servicios = ?, doc_identidad = ?, 
+          otro_doc_1 = ?, otro_doc_2 = ?, otro_doc_3 = ?, 
+          comentarios = ?, verificacion_domiciliaria = ?, fecha_actualizacion = NOW() 
+          WHERE id = ?";
               
     $stmt = $this->conectar->prepare($query);
     
     // Corregido: la cadena de tipos tenía menos tipos que variables a vincular
     $stmt->bind_param(
-        "ssssssssssssssssssssssssssi", // <- Corregido: Se añadió un 's' adicional para distrito y se verificó el total
+        "ssssssssssssssssssssssssssii", // <- Corregido: Se añadió un 's' adicional para distrito y se verificó el total
         $datos['tipo_doc'],
         $datos['n_documento'],
         $datos['nombres'],
@@ -857,6 +857,7 @@ public function actualizarCliente($datos)
         $datos['otro_doc_2'],
         $datos['otro_doc_3'],
         $datos['comentarios'],
+        $datos['verificacion_domiciliaria'],
         $datos['id']
     );
     
@@ -1195,5 +1196,22 @@ public function obtenerDepartamentos()
         $result = $stmt->get_result()->fetch_assoc();
         
         return $result ?: [];
+    }
+
+    public function tieneFinanciamientoVehicular($clienteId) {
+        $query = "SELECT COUNT(*) as count FROM financiamiento f 
+                INNER JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
+                WHERE f.id_cliente = ? 
+                AND pf.tipo_vehicular IS NOT NULL 
+                AND pf.tipo_vehicular IN ('moto', 'vehiculo')
+                AND f.estado_eliminado = 0";
+        
+        $stmt = $this->conectar->prepare($query);
+        $stmt->bind_param("i", $clienteId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        
+        return $row['count'] > 0;
     }
 }
