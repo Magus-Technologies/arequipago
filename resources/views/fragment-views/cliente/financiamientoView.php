@@ -777,7 +777,30 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
                                                         <i class="fas fa-info-circle"></i>
                                                     </span>
-                                                </div>                                              
+                                                </div>
+                                                
+                                                <!-- Campo de verificación domiciliaria - solo para financiamientos vehiculares -->
+                                                <div class="col-md-6 mb-3" id="contenedorVerificacionDomiciliaria" style="display: none;">
+                                                    <label for="verificacionDomiciliaria" class="form-label">¿Se ha verificado el domicilio?</label>
+                                                    <div class="d-flex gap-4">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="verificacionDomiciliaria" id="verificacionSi" value="1">
+                                                            <label class="form-check-label" for="verificacionSi">
+                                                                <i class="fas fa-check-circle me-1" style="color: #28a745;"></i>Sí verificado
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="verificacionDomiciliaria" id="verificacionNo" value="0">
+                                                            <label class="form-check-label" for="verificacionNo">
+                                                                <i class="fas fa-times-circle me-1" style="color: #dc3545;"></i>No verificado
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-text">
+                                                        <i class="fas fa-info-circle me-1" style="color: #626ed4;"></i>
+                                                        Indica si se ha realizado la verificación del domicilio del cliente/conductor
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <!-- AQUÍ INSERTAS EL CÓDIGO COMPLETO DEL SELECTOR DE MORA -->

@@ -229,3 +229,28 @@
             color: #2E217A;
         }
 
+        /* Estilo para el ícono de verificación domiciliaria "Sí verificado" */
+        #verificacionSi + label i {
+            color: #02a499 !important;
+        }
+
+        /* También aplicar el color cuando esté seleccionado */
+        #verificacionSi:checked + label i {
+            color: #02a499 !important;
+        }
+
+        /* Opcional: cambiar también el color del texto cuando esté seleccionado */
+        #verificacionSi:checked + label {
+            color: #02a499 !important;
+            font-weight: 600;
+        }
+
+        /* Hacer más grande el texto de ayuda de verificación domiciliaria */
+        #contenedorVerificacionDomiciliaria .form-text {
+            font-size: 12px !important; /* Aumenta de 13px (tamaño por defecto) a 14px */
+        }
+
+        /* O si quieres que sea aún más grande */
+        #contenedorVerificacionDomiciliaria .form-text {
+            font-size: 13px !important; /* Tamaño más grande */
+        }

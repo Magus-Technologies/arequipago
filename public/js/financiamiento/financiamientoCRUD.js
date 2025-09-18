@@ -107,6 +107,13 @@ function saveFinanciamiento(event) {
 
   const numeroDocumento = $("#numeroDocumento").val();
 
+  // Obtener valor de verificación domiciliaria (solo para vehiculares)
+  let verificacionDomiciliaria = null;
+  const verificacionDomiciliariaElement = document.querySelector('input[name="verificacionDomiciliaria"]:checked');
+  if (verificacionDomiciliariaElement) {
+      verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
+  }
+
   const fechasVencimiento = []; // Crear un arreglo vacío para almacenar las fechas
   $("#contenedorFechas span").each(function () {
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento
@@ -202,6 +209,7 @@ function saveFinanciamiento(event) {
         tipo_moneda: tipoMoneda,
         tasa: tasa, // Modificado: Añadido el parámetro tasa que faltaba
         cobrar_mora: cobrarMora,
+        verificacion_domiciliaria: verificacionDomiciliaria,
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -286,7 +294,8 @@ function saveFinanciamiento(event) {
             planT: plan_telefono,
             tipo_moneda: tipoMoneda,
             tasa: tasa,
-            cobrar_mora: cobrarMora
+            cobrar_mora: cobrarMora,
+            verificacion_domiciliaria: verificacionDomiciliaria,
           },
           success: function (response) {
             if (response.success) {
@@ -416,6 +425,13 @@ function saveFinanciamientoVehicular() {
   // Obtener el valor del cliente y eliminar espacios vacíos
   const cliente = document.getElementById("numeroDocumento").value.trim(); // ✅ Eliminar espacios vacíos
   const numeroDocumento = cliente;
+
+  // Obtener valor de verificación domiciliaria
+  let verificacionDomiciliaria = null;
+  const verificacionDomiciliariaElement = document.querySelector('input[name="verificacionDomiciliaria"]:checked');
+  if (verificacionDomiciliariaElement) {
+      verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
+  }
 
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
@@ -602,6 +618,7 @@ if (
       tasa: tasa && tasa !== "0" ? tasa : null,
       id_variante: idVariante,
       cobrar_mora: cobrarMora,
+      verificacion_domiciliaria: verificacionDomiciliaria,
     };
 
     $.ajax({
@@ -818,6 +835,14 @@ function limpiarFormulario() {
   // Limpiar selector de cobrar mora
   document.getElementById("cobrarMoraSi").checked = true;
   document.getElementById("cobrarMoraNo").checked = false;
+
+  // Limpiar y ocultar selector de verificación domiciliaria
+  const verificacionSi = document.getElementById("verificacionSi");
+  const verificacionNo = document.getElementById("verificacionNo");
+  const contenedorVerificacion = document.getElementById("contenedorVerificacionDomiciliaria");
+  if (verificacionSi) verificacionSi.checked = false;
+  if (verificacionNo) verificacionNo.checked = false;
+  if (contenedorVerificacion) contenedorVerificacion.style.display = "none";
 
 }
 

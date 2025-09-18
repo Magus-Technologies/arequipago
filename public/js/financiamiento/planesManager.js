@@ -39,6 +39,9 @@ function selectPlan(idPlan) {
         planGlobal = plan;
         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
 
+        // Manejar campo de verificación domiciliaria
+        manejarVerificacionDomiciliaria(plan);
+
         // NUEVO: Lógica específica para MotosYa (ID 33)
         if (parseInt(plan.idplan_financiamiento) === 33) {
           // Para MotosYa, establecer fecha de inicio una semana después de hoy
@@ -632,6 +635,9 @@ function seleccionarVariante(index) {
     tipo_vehicular: varianteSeleccionada.tipo_vehicular, // NUEVO: Preservar tipo vehicular
   };
 
+  // Manejar campo de verificación domiciliaria para la variante
+  manejarVerificacionDomiciliaria(planGlobal);
+
   // NUEVO: Lógica específica para variantes de MotosYa (IDs 18, 19, 20)
   if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     // Para variantes de MotosYa, establecer fecha de inicio una semana después de hoy
@@ -1214,6 +1220,8 @@ function checkSelection() {
   if (selectElement.value === "") {
     wrapperElement.classList.add("glow-active-wrapper"); // Cambiado: Agrega la clase al div envolvente
     revertirEstilosInputs();
+    // Ocultar verificación domiciliaria cuando no hay grupo seleccionado
+    manejarVerificacionDomiciliaria(null);
   } else {
     wrapperElement.classList.remove("glow-active-wrapper"); // Cambiado: Elimina la clase cuando cambia la opción
     if (!camposMontoHabilitadosUnaVez) {
@@ -1705,4 +1713,31 @@ function validarCodigoAsociadoAntesDeeGuardar() {
     return false;
   }
   return true;
+}
+
+/**
+ * Función para mostrar/ocultar el campo de verificación domiciliaria
+ * basado en si el plan o variante es vehicular
+ */
+function manejarVerificacionDomiciliaria(planOVariante) {
+    const contenedor = document.getElementById("contenedorVerificacionDomiciliaria");
+    
+    if (!contenedor) return;
+    
+    // Verificar si es vehicular (tiene tipo_vehicular definido)
+    const esVehicular = planOVariante && planOVariante.tipo_vehicular && 
+                       (planOVariante.tipo_vehicular === 'moto' || planOVariante.tipo_vehicular === 'vehiculo');
+    
+    if (esVehicular) {
+        contenedor.style.display = "block";
+        console.log("📋 Campo de verificación domiciliaria mostrado para tipo:", planOVariante.tipo_vehicular);
+    } else {
+        contenedor.style.display = "none";
+        // Limpiar selecciones cuando se oculta
+        const verificacionSi = document.getElementById("verificacionSi");
+        const verificacionNo = document.getElementById("verificacionNo");
+        if (verificacionSi) verificacionSi.checked = false;
+        if (verificacionNo) verificacionNo.checked = false;
+        console.log("📋 Campo de verificación domiciliaria ocultado (no es vehicular)");
+    }
 }

@@ -175,12 +175,23 @@ class ConductorController extends Controller
                 throw new Exception("ID del conductor no válido");
             }
 
-
             // Instanciar modelos
             $conductor = new Conductor();
             $direccionConductor = new DireccionConductor();
             $vehiculo = new Vehiculo();
             $requisito = new Requisito();
+            $estadosRequisitos = $requisito->obtenerEstadoRequisitos($id);
+            
+            // NUEVO: Determinar si tiene documentación completa
+            $documentosObligatorios = ['doc_identidad', 'licencia_doc', 'seguro_doc', 'revision_tecnica', 'soat_doc', 'tarjeta_propiedad'];
+            $documentacionCompleta = true;
+            foreach ($documentosObligatorios as $doc) {
+                if (!isset($estadosRequisitos[$doc]) || $estadosRequisitos[$doc] == 0) {
+                    $documentacionCompleta = false;
+                    break;
+                }
+            }
+
             $observacion = new Observacion();
             $inscripcion = new Inscripcion(); 
             $contactoEmergencia = new ContactoEmergencia();
@@ -195,6 +206,12 @@ class ConductorController extends Controller
                 $key = preg_replace('/^\x00.+\x00/', '', $key); // Eliminar prefijos de propiedades privadas
                 $conductorArray[$key] = $value; // Asignar al array con las claves limpias
             }
+
+            // NUEVO: Agregar estados de verificación al array del conductor (MOVIDO AQUÍ)
+            $conductorArray['documentacion_completa'] = $documentacionCompleta;
+            $conductorArray['verificacion_domiciliaria'] = isset($conductorArray['verificacion_domiciliaria']) ? 
+                (bool)$conductorArray['verificacion_domiciliaria'] : false;
+                
 
             $query = "SELECT usuario_id FROM conductores WHERE id_conductor = ?";
             $stmt = $this->conexion->prepare($query);
@@ -243,7 +260,6 @@ class ConductorController extends Controller
             // Obtener dirección del conductor
             $direccion = $direccionConductor->obtenerDatosDireccion($id);
             
-
             // Obtener datos del vehículo
             $datosVehiculo = $vehiculo->obtenerDatosVehiculo($id);
 
@@ -284,7 +300,8 @@ class ConductorController extends Controller
                     'contactoEmergencia' => $contactoEmergenciaArray,
                     'financiamientoInscripcion' => $financiamientoInscripcion, // Nuevo: Añadimos información sobre financiamiento de inscripción
                     'financiamientoProductos' => $financiamientoProductos,
-                    'kit' => $kitArray
+                    'kit' => $kitArray,
+                    'estadosRequisitos' => $estadosRequisitos 
                 ]
             ];
         } catch (Exception $e) {
@@ -489,7 +506,11 @@ class ConductorController extends Controller
         // Obtener datos del conductor
         $conductor = new Conductor();
         $conductor->setIdConductor($id_conductor);
-        $datosConductor = $conductor->obtenerDatosEdit(); 
+        $datosConductor = $conductor->obtenerDatosEdit();
+
+        // Verificar si tiene financiamiento vehicular
+        $tieneFinanciamientoVehicular = $this->tieneFinanciamientoVehicular($id_conductor);
+        $datosConductor['tiene_financiamiento_vehicular'] = $tieneFinanciamientoVehicular;
 
         if ($datosConductor === false) { // Changed condition to check for false explicitly
             echo json_encode(['success' => false, 'message' => 'Error al obtener datos del conductor']);
@@ -1406,123 +1427,161 @@ class ConductorController extends Controller
  * 
  * @return void Envía el PDF directamente al navegador
  */
-function generatePdfFromTable() {
-    try {
-        // Extraer datos de $_POST
-        $tableHtml = isset($_POST['tableHtml']) ? $_POST['tableHtml'] : '';
-        $title = isset($_POST['title']) ? $_POST['title'] : 'Cronograma';
+    function generatePdfFromTable() {
+        try {
+            // Extraer datos de $_POST
+            $tableHtml = isset($_POST['tableHtml']) ? $_POST['tableHtml'] : '';
+            $title = isset($_POST['title']) ? $_POST['title'] : 'Cronograma';
+            
+            // Verificar que se recibió el HTML de la tabla
+            if (empty($tableHtml)) {
+                header('HTTP/1.1 400 Bad Request');
+                exit('No se recibieron datos de la tabla');
+            }
+            
+            // Crear instancia de mPDF
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4-L', // Formato apaisado (landscape)
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'margin_top' => 25,
+                'margin_bottom' => 25
+            ]);
+            
+            // Configurar encabezado y pie de página
+            $mpdf->SetHTMLHeader('
+                <div style="text-align: right; font-weight: bold;">
+                    AREQUIPAGO
+                </div>
+            ');
+            
+            $mpdf->SetHTMLFooter('
+                <div style="text-align: center; font-size: 10px;">
+                    Página {PAGENO} de {nb}
+                    <br>
+                    Documento generado el ' . date('d/m/Y H:i:s') . '
+                </div>
+            ');
+            
+            // Estilos CSS para mejorar la apariencia de la tabla
+            $css = '
+                body {
+                    font-family: Arial, sans-serif;
+                    font-size: 14px;
+                    line-height: 1.5;
+                }
+                h1 {
+                    text-align: center;
+                    font-size: 22px;
+                    margin-bottom: 20px;
+                    color: #343a40;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                table, th, td {
+                    border: 1px solid #dee2e6;
+                }
+                th {
+                    background-color: #343a40;
+                    color: white;
+                    font-weight: bold;
+                    padding: 10px;
+                    text-align: center;
+                }
+                td {
+                    padding: 8px;
+                    text-align: center;
+                }
+                tr:nth-child(even) {
+                    background-color: #f8f9fa;
+                }
+                .estado-pendiente {
+                    color: #ffc107;
+                    font-weight: bold;
+                }
+                .estado-pagado {
+                    color: #28a745;
+                    font-weight: bold;
+                }
+                .estado-vencido {
+                    color: #dc3545;
+                    font-weight: bold;
+                }
+            ';
+            
+            // Agregar CSS
+            $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
+            
+            // Crear el HTML completo
+            $html = '
+                <h1>' . htmlspecialchars($title) . '</h1>
+                ' . $tableHtml . '
+            ';
+            
+            // Agregar el HTML al PDF
+            $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+            
+            // Generar nombre del archivo
+            $filename = 'Cronograma_Inscripcion_' . date('Ymd_His') . '.pdf';
+            
+            // Configurar encabezados para la descarga
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            // Salida del PDF
+            $mpdf->Output($filename, \Mpdf\Output\Destination::INLINE);
+            
+        } catch (\Mpdf\MpdfException $e) {
+            // Manejar errores de mPDF
+            header('HTTP/1.1 500 Internal Server Error');
+            exit('Error al generar el PDF: ' . $e->getMessage());
+        } catch (Exception $e) {
+            // Manejar otros errores
+            header('HTTP/1.1 500 Internal Server Error');
+            exit('Error: ' . $e->getMessage());
+        }
+    }
+
+    private function tieneFinanciamientoVehicular($id_conductor)
+    {
+        $sql = "SELECT f.grupo_financiamiento 
+                FROM financiamiento f
+                WHERE f.id_conductor = ? AND f.estado_eliminado = 0";
         
-        // Verificar que se recibió el HTML de la tabla
-        if (empty($tableHtml)) {
-            header('HTTP/1.1 400 Bad Request');
-            exit('No se recibieron datos de la tabla');
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->bind_param("i", $id_conductor);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $grupo_financiamiento = $row['grupo_financiamiento'];
+            
+            // Verificar si este grupo de financiamiento es vehicular
+            $sqlPlan = "SELECT tipo_vehicular 
+                        FROM planes_financiamiento 
+                        WHERE idplan_financiamiento = ?";
+            
+            $stmtPlan = $this->conexion->prepare($sqlPlan);
+            $stmtPlan->bind_param("i", $grupo_financiamiento);
+            $stmtPlan->execute();
+            $resultPlan = $stmtPlan->get_result();
+            
+            if ($rowPlan = $resultPlan->fetch_assoc()) {
+                if ($rowPlan['tipo_vehicular'] === 'vehiculo') {
+                    $stmtPlan->close();
+                    $stmt->close();
+                    return true; // Tiene al menos un financiamiento vehicular
+                }
+            }
+            $stmtPlan->close();
         }
         
-        // Crear instancia de mPDF
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4-L', // Formato apaisado (landscape)
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 25,
-            'margin_bottom' => 25
-        ]);
-        
-        // Configurar encabezado y pie de página
-        $mpdf->SetHTMLHeader('
-            <div style="text-align: right; font-weight: bold;">
-                AREQUIPAGO
-            </div>
-        ');
-        
-        $mpdf->SetHTMLFooter('
-            <div style="text-align: center; font-size: 10px;">
-                Página {PAGENO} de {nb}
-                <br>
-                Documento generado el ' . date('d/m/Y H:i:s') . '
-            </div>
-        ');
-        
-        // Estilos CSS para mejorar la apariencia de la tabla
-        $css = '
-            body {
-                font-family: Arial, sans-serif;
-                font-size: 14px;
-                line-height: 1.5;
-            }
-            h1 {
-                text-align: center;
-                font-size: 22px;
-                margin-bottom: 20px;
-                color: #343a40;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-            table, th, td {
-                border: 1px solid #dee2e6;
-            }
-            th {
-                background-color: #343a40;
-                color: white;
-                font-weight: bold;
-                padding: 10px;
-                text-align: center;
-            }
-            td {
-                padding: 8px;
-                text-align: center;
-            }
-            tr:nth-child(even) {
-                background-color: #f8f9fa;
-            }
-            .estado-pendiente {
-                color: #ffc107;
-                font-weight: bold;
-            }
-            .estado-pagado {
-                color: #28a745;
-                font-weight: bold;
-            }
-            .estado-vencido {
-                color: #dc3545;
-                font-weight: bold;
-            }
-        ';
-        
-        // Agregar CSS
-        $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
-        
-        // Crear el HTML completo
-        $html = '
-            <h1>' . htmlspecialchars($title) . '</h1>
-            ' . $tableHtml . '
-        ';
-        
-        // Agregar el HTML al PDF
-        $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
-        
-        // Generar nombre del archivo
-        $filename = 'Cronograma_Inscripcion_' . date('Ymd_His') . '.pdf';
-        
-        // Configurar encabezados para la descarga
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-        
-        // Salida del PDF
-        $mpdf->Output($filename, \Mpdf\Output\Destination::INLINE);
-        
-    } catch (\Mpdf\MpdfException $e) {
-        // Manejar errores de mPDF
-        header('HTTP/1.1 500 Internal Server Error');
-        exit('Error al generar el PDF: ' . $e->getMessage());
-    } catch (Exception $e) {
-        // Manejar otros errores
-        header('HTTP/1.1 500 Internal Server Error');
-        exit('Error: ' . $e->getMessage());
+        $stmt->close();
+        return false; // No tiene financiamientos vehiculares
     }
-}
 }
