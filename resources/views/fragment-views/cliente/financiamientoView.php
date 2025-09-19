@@ -1393,6 +1393,11 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
             checkSelection();
 
+            // NUEVO: Configurar frecuencia inicial al cargar la página
+            setTimeout(() => {
+                configurarFrecuenciaPago(null); // Inicialmente bloqueado
+            }, 100);
+
             // Configuramos el ordenamiento
             configurarOrdenamiento();
 

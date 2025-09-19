@@ -451,13 +451,12 @@ mysqli_stmt_close($stmt);
                 ];
             }
 
-            // Obtener cuotas con retraso (YA PAGADAS CON RETRASO)
-            $sqlRetrasosPagados = "SELECT COUNT(*) as retrasos_pagados
-                                FROM cuotas_financiamiento cf
-                                INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
-                                WHERE f.$campoId = ?
-                                AND cf.fecha_pago > cf.fecha_vencimiento
-                                AND cf.fecha_pago IS NOT NULL";
+           $sqlRetrasosPagados = "SELECT COUNT(*) as retrasos_pagados
+                    FROM cuotas_financiamiento cf
+                    INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                    WHERE f.$campoId = ?
+                    AND DATE(cf.fecha_pago) > DATE(cf.fecha_vencimiento)
+                    AND cf.fecha_pago IS NOT NULL";
 
             $stmt = mysqli_prepare($this->conexion, $sqlRetrasosPagados);
             mysqli_stmt_bind_param($stmt, 'i', $id);

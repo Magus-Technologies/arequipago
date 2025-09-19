@@ -39,6 +39,9 @@ function selectPlan(idPlan) {
         planGlobal = plan;
         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
 
+        // NUEVO: Configurar frecuencia de pago según tipo vehicular
+        configurarFrecuenciaPago(plan);
+
         // Manejar campo de verificación domiciliaria
         manejarVerificacionDomiciliaria(plan);
 
@@ -1739,5 +1742,79 @@ function manejarVerificacionDomiciliaria(planOVariante) {
         if (verificacionSi) verificacionSi.checked = false;
         if (verificacionNo) verificacionNo.checked = false;
         console.log("📋 Campo de verificación domiciliaria ocultado (no es vehicular)");
+    }
+}
+
+// NUEVA FUNCIÓN: Configurar frecuencia de pago según tipo vehicular
+function configurarFrecuenciaPago(planOVariante) {
+    const frecuenciaSelect = document.getElementById("frecuenciaPago");
+    
+    if (!frecuenciaSelect) return;
+    
+    // Verificar si es vehicular (tiene tipo_vehicular con valor)
+    const esVehicular = planOVariante && planOVariante.tipo_vehicular !== null;
+    
+    if (esVehicular) {
+        // Es vehicular: desbloquear el select
+        frecuenciaSelect.disabled = false;
+        frecuenciaSelect.style.backgroundColor = "#ffffff";
+        frecuenciaSelect.style.color = "#212529";
+        frecuenciaSelect.style.cursor = "pointer";
+        frecuenciaSelect.style.pointerEvents = "auto";
+        
+        console.log("🔓 Frecuencia de pago desbloqueada para tipo vehicular:", planOVariante.tipo_vehicular);
+        
+        // Agregar event listener para recalcular cuando cambie la frecuencia
+        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia); // Evitar duplicados
+        frecuenciaSelect.addEventListener('change', manejarCambioFrecuencia);
+        
+    } else {
+        // No es vehicular: mantener bloqueado
+        frecuenciaSelect.disabled = true;
+        frecuenciaSelect.style.backgroundColor = "#e9ecef";
+        frecuenciaSelect.style.color = "#6c757d";
+        frecuenciaSelect.style.cursor = "not-allowed";
+        frecuenciaSelect.style.pointerEvents = "none";
+        
+        // Remover event listener
+        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia);
+        
+        console.log("🔒 Frecuencia de pago bloqueada (no es vehicular)");
+    }
+}
+
+// NUEVA FUNCIÓN: Manejar cambio de frecuencia de pago
+function manejarCambioFrecuencia() {
+    const frecuenciaSeleccionada = this.value;
+    const contenedorFechas = document.getElementById("contenedorFechas");
+    
+    console.log("📅 Frecuencia cambiada a:", frecuenciaSeleccionada);
+    
+    if (!planGlobal) {
+        console.warn("No hay plan global disponible para recalcular");
+        return;
+    }
+    
+    // Actualizar la frecuencia en planGlobal
+    planGlobal.frecuencia_pago = frecuenciaSeleccionada;
+    
+    // Limpiar cronograma anterior
+    if (contenedorFechas) {
+        contenedorFechas.innerHTML = "";
+    }
+    
+    // Determinar qué función de cálculo usar según el tipo de plan
+    if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
+        // Plan vehicular con fechas definidas
+        setTimeout(() => {
+            console.log("🚗 Recalculando cronograma vehicular con nueva frecuencia");
+            calcularFinanciamientoConFechaIngreso(planGlobal);
+        }, 300);
+    } else {
+        // Plan dinámico
+        setTimeout(() => {
+            console.log("📊 Recalculando cronograma dinámico con nueva frecuencia");
+            calcularCronogramaDinamico();
+        }, 300);
     }
 }
