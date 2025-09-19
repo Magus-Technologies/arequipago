@@ -609,7 +609,7 @@ class GenerarContratosController extends controller
                     }
                 }
 
-
+//comentario de prueba 
                 // Reemplazar los valores en la plantilla
                 $plantillaChip = str_replace('<span id="hora">', $hora, $plantillaChip);
                 $plantillaChip = str_replace('<span id="dia">', $dia, $plantillaChip);
