@@ -99,9 +99,8 @@ function saveFinanciamiento(event) {
   const fechaHoraActual = $("#fechaHoraActual").val();
   // Obtener valor de cobrar mora (solo para directores)
   let cobrarMora = 1; // Valor por defecto
-  if (window.rolUsuarioActual == '3') {
-      const cobrarMoraElement = document.querySelector('input[name="cobrarMora"]:checked');
-      cobrarMora = cobrarMoraElement ? parseInt(cobrarMoraElement.value) : 1;
+  if (planGlobal && typeof planGlobal.cobrar_mora !== 'undefined') {
+      cobrarMora = parseInt(planGlobal.cobrar_mora);
   }
 
 
@@ -538,11 +537,9 @@ if (
     ? document.getElementById("tasaInteres").value.trim()
     : null;
 
-    // Obtener valor de cobrar mora (solo para directores)
     let cobrarMora = 1; // Valor por defecto
-    if (window.rolUsuarioActual == '3') {
-        const cobrarMoraElement = document.querySelector('input[name="cobrarMora"]:checked');
-        cobrarMora = cobrarMoraElement ? parseInt(cobrarMoraElement.value) : 1;
+    if (planGlobal && typeof planGlobal.cobrar_mora !== 'undefined') {
+        cobrarMora = parseInt(planGlobal.cobrar_mora);
     }
 
   // Extraer las fechas de vencimiento desde el contenedorFechas y agregar al arreglo fechasVencimiento
@@ -831,10 +828,6 @@ function limpiarFormulario() {
   cleanList();
   colorInput();
   camposMontoHabilitadosUnaVez = false;
-
-  // Limpiar selector de cobrar mora
-  document.getElementById("cobrarMoraSi").checked = true;
-  document.getElementById("cobrarMoraNo").checked = false;
 
   // Limpiar y ocultar selector de verificación domiciliaria
   const verificacionSi = document.getElementById("verificacionSi");

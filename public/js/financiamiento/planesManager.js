@@ -26,7 +26,14 @@ function getAllPlanes() {
   });
 }
 function selectPlan(idPlan) {
+  
   limpiarVarianteSeleccionada();
+
+  // NUEVO: Limpiar valores originales al cambiar de plan
+  limpiarValoresOriginalesPlan();
+
+  // NUEVO: Limpiar valores originales al cambiar de plan
+  valoresOriginalesPlan = null;
 
   $.ajax({
     url: "/arequipago/obtenerPlanFinanciamiento",
@@ -38,6 +45,9 @@ function selectPlan(idPlan) {
         var plan = respuesta.plan;
         planGlobal = plan;
         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
+
+        // NUEVO: Configurar frecuencia de pago según tipo vehicular
+        configurarFrecuenciaPago(plan);
 
         // Manejar campo de verificación domiciliaria
         manejarVerificacionDomiciliaria(plan);
@@ -617,6 +627,9 @@ function seleccionarVariante(index) {
   // NUEVO: Remover el event listener existente de fechaIngreso
   $("#fechaIngreso").off("change");
 
+  // NUEVO: Limpiar valores originales al cambiar de variante
+  limpiarValoresOriginalesPlan();
+
   // Limpiar planGlobal y asignar los valores de la variante seleccionada
   // REEMPLÁZALO POR:
   planGlobal = {
@@ -632,7 +645,8 @@ function seleccionarVariante(index) {
     moneda: varianteSeleccionada.moneda,
     id_variante: varianteSeleccionada.id_variante,
     idplan_financiamiento: varianteSeleccionada.idplan_financiamiento, // NUEVO: Preservar el ID del plan
-    tipo_vehicular: varianteSeleccionada.tipo_vehicular, // NUEVO: Preservar tipo vehicular
+    tipo_vehicular: varianteSeleccionada.tipo_vehicular, 
+    cobrar_mora: planGlobal.cobrar_mora || 1,
   };
 
   // Manejar campo de verificación domiciliaria para la variante
@@ -1741,3 +1755,194 @@ function manejarVerificacionDomiciliaria(planOVariante) {
         console.log("📋 Campo de verificación domiciliaria ocultado (no es vehicular)");
     }
 }
+
+// NUEVA FUNCIÓN: Configurar frecuencia de pago según tipo vehicular
+function configurarFrecuenciaPago(planOVariante) {
+    const frecuenciaSelect = document.getElementById("frecuenciaPago");
+    
+    if (!frecuenciaSelect) return;
+    
+    // Verificar si es vehicular (tiene tipo_vehicular con valor)
+    const esVehicular = planOVariante && planOVariante.tipo_vehicular !== null;
+    
+    if (esVehicular) {
+        // Es vehicular: desbloquear el select
+        frecuenciaSelect.disabled = false;
+        frecuenciaSelect.style.backgroundColor = "#ffffff";
+        frecuenciaSelect.style.color = "#212529";
+        frecuenciaSelect.style.cursor = "pointer";
+        frecuenciaSelect.style.pointerEvents = "auto";
+        
+        console.log("🔓 Frecuencia de pago desbloqueada para tipo vehicular:", planOVariante.tipo_vehicular);
+        
+        // Agregar event listener para recalcular cuando cambie la frecuencia
+        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia); // Evitar duplicados
+        frecuenciaSelect.addEventListener('change', manejarCambioFrecuencia);
+        
+    } else {
+        // No es vehicular: mantener bloqueado
+        frecuenciaSelect.disabled = true;
+        frecuenciaSelect.style.backgroundColor = "#e9ecef";
+        frecuenciaSelect.style.color = "#6c757d";
+        frecuenciaSelect.style.cursor = "not-allowed";
+        frecuenciaSelect.style.pointerEvents = "none";
+        
+        // Remover event listener
+        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia);
+        
+        console.log("🔒 Frecuencia de pago bloqueada (no es vehicular)");
+    }
+}
+
+// NUEVA VARIABLE GLOBAL: Almacenar valores originales completos
+let valoresOriginalesPlan = null;
+
+// FUNCIÓN CORREGIDA: Preservar la cantidad de cuotas restantes exacta
+function manejarCambioFrecuencia() {
+    const frecuenciaSeleccionada = this.value;
+    const cuotasInput = document.getElementById("cuotas");
+    const valorCuotaInput = document.getElementById("valorCuota");
+    
+    console.log("📅 Frecuencia cambiada a:", frecuenciaSeleccionada);
+    
+    if (!planGlobal) return;
+    
+    // Capturar número de cuota inicial
+    let numeroCuotaOriginal = 1;
+    const contenedorFechas = document.getElementById("contenedorFechas");
+    if (contenedorFechas && contenedorFechas.children && contenedorFechas.children.length > 0) {
+        const primerElemento = contenedorFechas.children[0];
+        if (primerElemento) {
+            const etiquetaCuota = primerElemento.querySelector("label");
+            if (etiquetaCuota) {
+                const textoEtiqueta = etiquetaCuota.textContent || "";
+                const coincidencia = textoEtiqueta.match(/Cuota\s+(\d+):/);
+                if (coincidencia && coincidencia[1]) {
+                    numeroCuotaOriginal = parseInt(coincidencia[1]);
+                }
+            }
+        }
+    }
+    
+    // CORREGIDO: Almacenar valores originales SOLO la primera vez
+    if (!valoresOriginalesPlan) {
+        // Capturar el estado actual como valores originales
+        const cuotasRestantesActuales = parseInt(cuotasInput.value);
+        const valorCuotaActual = parseFloat(valorCuotaInput.value.replace(/[^0-9.-]+/g, ""));
+        
+        valoresOriginalesPlan = {
+            cuotas_restantes_originales: cuotasRestantesActuales,
+            monto_cuota_original: valorCuotaActual,
+            frecuencia_pago_original: planGlobal.frecuencia_pago,
+            // NUEVO: Almacenar también el monto total original para preservar consistencia
+            monto_total_original: cuotasRestantesActuales * valorCuotaActual
+        };
+        console.log("💾 Valores originales almacenados:", valoresOriginalesPlan);
+    }
+    
+    let nuevasCuotasRestantes, nuevoValorCuota;
+    
+    // CRÍTICO: Si vuelve a la frecuencia original, restaurar valores exactos
+    if (frecuenciaSeleccionada === valoresOriginalesPlan.frecuencia_pago_original) {
+        console.log("🔄 Restaurando valores exactos del estado original");
+        
+        // Restaurar exactamente los valores originales
+        nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
+        nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
+        
+        console.log("📊 Restaurado - Cuotas restantes exactas:", nuevasCuotasRestantes, "Valor cuota:", nuevoValorCuota);
+        
+    } else {
+        // CORREGIDO: Para conversiones, usar el monto total como referencia fija
+        const montoTotalReferencia = valoresOriginalesPlan.monto_total_original;
+        
+        console.log("🔄 Aplicando conversión matemática con monto total fijo:", montoTotalReferencia);
+        
+        if (valoresOriginalesPlan.frecuencia_pago_original === "semanal" && frecuenciaSeleccionada === "mensual") {
+            // Convertir de semanal a mensual
+            const factorConversion = 4.33; // 52 semanas / 12 meses
+            nuevasCuotasRestantes = Math.round(valoresOriginalesPlan.cuotas_restantes_originales / factorConversion);
+            nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
+            
+        } else if (valoresOriginalesPlan.frecuencia_pago_original === "mensual" && frecuenciaSeleccionada === "semanal") {
+            // Convertir de mensual a semanal
+            const factorConversion = 4.33; // 52 semanas / 12 meses
+            nuevasCuotasRestantes = Math.round(valoresOriginalesPlan.cuotas_restantes_originales * factorConversion);
+            nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
+        } else {
+            // Para casos edge, mantener proporcionalidad
+            nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
+            nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
+        }
+        
+        console.log("📊 Conversión - Nuevas cuotas:", nuevasCuotasRestantes, "Nuevo valor:", nuevoValorCuota);
+    }
+    
+    // Actualizar inputs y planGlobal
+    cuotasInput.value = nuevasCuotasRestantes;
+    const tipoMoneda = obtenerTipoMoneda();
+    valorCuotaInput.value = formatMoneda(nuevoValorCuota, tipoMoneda);
+    
+    planGlobal.frecuencia_pago = frecuenciaSeleccionada;
+    planGlobal.cantidad_cuotas = nuevasCuotasRestantes;
+    planGlobal.monto_cuota = nuevoValorCuota;
+    
+    // Recalcular fechas (resto del código igual)
+    const fechaIngresoElement = document.getElementById("fechaIngreso");
+    if (fechaIngresoElement && planGlobal.fecha_inicio) {
+        const fechaIngreso = fechaIngresoElement.value;
+        let fechasVencimiento = [];
+        const fechaIngresoObj = new Date(fechaIngreso + "T00:00:00");
+        let primeraFechaVencimiento = new Date(fechaIngresoObj);
+        
+        if (frecuenciaSeleccionada === "semanal") {
+            const fechaOriginalIngreso = new Date(fechaIngresoObj);
+            primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
+            
+            if (primeraFechaVencimiento.getTime() !== fechaOriginalIngreso.getTime()) {
+                const diasMovidos = Math.floor(
+                    (primeraFechaVencimiento - fechaOriginalIngreso) / (1000 * 60 * 60 * 24)
+                );
+                if (diasMovidos > 0) {
+                    console.log("📅 Fecha ajustada al lunes, días movidos:", diasMovidos);
+                }
+            }
+        }
+        
+        fechasVencimiento.push(primeraFechaVencimiento);
+        
+        for (let i = 1; i < nuevasCuotasRestantes; i++) {
+            let fechaAnterior = fechasVencimiento[i - 1];
+            let nuevaFecha = new Date(fechaAnterior);
+            
+            if (frecuenciaSeleccionada === "semanal") {
+                nuevaFecha.setDate(nuevaFecha.getDate() + 7);
+            } else {
+                const diaInicio = nuevaFecha.getDate();
+                nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+                if (nuevaFecha.getDate() !== diaInicio) {
+                    nuevaFecha.setDate(diaInicio);
+                }
+            }
+            
+            fechasVencimiento.push(new Date(nuevaFecha));
+        }
+        
+        document.getElementById("contenedorFechas").innerHTML = "";
+        mostrarFechasVencimiento(
+            fechasVencimiento,
+            nuevoValorCuota,
+            tipoMoneda,
+            numeroCuotaOriginal
+        );
+        
+        console.log("✅ Cronograma recalculado con número inicial:", numeroCuotaOriginal);
+    }
+}
+
+// NUEVA FUNCIÓN: Limpiar valores originales cuando se cambia de plan
+function limpiarValoresOriginalesPlan() {
+    valoresOriginalesPlan = null;
+    console.log("🗑️ Valores originales del plan limpiados");
+}
+

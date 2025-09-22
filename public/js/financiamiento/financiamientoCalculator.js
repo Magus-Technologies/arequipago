@@ -8,7 +8,13 @@ function calcularFinanciamiento() {
   ); // NUEVO
   const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
   const tasaInteresRaw = document.getElementById("tasaInteres").value;
-  const frecuenciaPago = document.getElementById("frecuenciaPago").value;
+ // Cambio: Usar frecuencia del select solo si está habilitado
+  const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
+  const frecuenciaPago = frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled ? 
+                        frecuenciaSelectCalc.value : 
+                        'semanal'; // valor por defecto
+
+  console.log("🔄 Frecuencia utilizada en calcularFinanciamiento:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectCalc?.disabled);
   const tipoMoneda = obtenerTipoMoneda();
 
   console.log("Valores iniciales: ", {
@@ -348,7 +354,13 @@ function calcularCronogramaDinamico() {
   let valorCuota = parseFloat(valorCuotaLimpio) || 0;
 
   let montoTotalInput = document.getElementById("monto");
-  let frecuencia = document.getElementById("frecuenciaPago").value;
+  // Cambio: Obtener frecuencia del select solo si está habilitado
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+  let frecuencia = frecuenciaSelect && !frecuenciaSelect.disabled ? 
+                  frecuenciaSelect.value : 
+                  'semanal'; // valor por defecto
+
+  console.log("🔄 Frecuencia utilizada en cronograma dinámico:", frecuencia, "- Select habilitado:", !frecuenciaSelect?.disabled);
 
   // REEMPLÁZALO POR:
   if (!fechaInicio) {
@@ -640,7 +652,13 @@ function calcularFinanciamientoConFechaIngreso(plan) {
 
   const tasaInteres = parseFloat(plan.tasa_interes) / 100;
 
-  const frecuenciaPago = plan.frecuencia_pago;
+  // Cambio: Usar la frecuencia actual del select si está disponible para planes vehiculares
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+  const frecuenciaPago = (frecuenciaSelect && !frecuenciaSelect.disabled) ? 
+                        frecuenciaSelect.value : 
+                        plan.frecuencia_pago;
+
+  console.log("🔄 Frecuencia utilizada:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelect?.disabled);
 
   // CORREGIDO: Determinar si es plan vehicular por fechas definidas
   const esVehicular = plan.fecha_inicio !== null && plan.fecha_fin !== null;
@@ -810,8 +828,13 @@ function recalcularMonto() {
   );
   let tasaInteres =
     parseFloat(document.getElementById("tasaInteres").value) / 100;
-  let frecuenciaPago = document.getElementById("frecuenciaPago").value;
+  // Cambio: Usar frecuencia del select solo si está habilitado
+  const frecuenciaSelectRecalc = document.getElementById("frecuenciaPago");
+  let frecuenciaPago = frecuenciaSelectRecalc && !frecuenciaSelectRecalc.disabled ? 
+                      frecuenciaSelectRecalc.value : 
+                      planGlobal.frecuencia_pago;
 
+  console.log("🔄 Frecuencia utilizada en recalcularMonto:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectRecalc?.disabled);
   console.log("🔍 Valores iniciales recalcularMonto:", {
     precioVenta,
     montoSinIntereses,

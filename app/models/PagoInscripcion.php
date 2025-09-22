@@ -201,7 +201,7 @@ class PagoInscripcion
             return true; // Indicar que se registraron los pagos
         }
         
-        public function actualizarCuotas($idInscripcion, $cuotas, $fechaPago, $metodoPago) { 
+    public function actualizarCuotas($idInscripcion, $cuotas, $fechaPago, $metodoPago) { 
         $sql = "SELECT id_conductorcuota, numero_cuota, monto_cuota FROM conductor_cuotas WHERE idconductor_Financiamiento = ?"; // Agregado monto_cuota
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param("i", $idInscripcion);

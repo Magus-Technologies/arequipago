@@ -298,6 +298,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                             <strong>Es un plan vehicular</strong>
                                         </label>
                                     </div>
+                     
                                     <div id="tipoVehiculoContainer" class="ms-4 mt-2">
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" name="tipo_vehiculo" id="radioAuto" value="auto" disabled>
@@ -308,6 +309,20 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                             <label class="form-check-label" for="radioMoto">Moto</label>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Checkbox para cobrar mora -->
+                                <div class="mb-3 p-3 border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="cobrarMoraCheckbox" checked>
+                                        <label class="form-check-label" for="cobrarMoraCheckbox">
+                                            <strong>Cobrar mora en cuotas vencidas</strong>
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted ms-4" style="font-size: 0.83rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Esta opción determina si se aplicará mora a las cuotas que se paguen después de su fecha de vencimiento
+                                    </small>
                                 </div>
                                 
                                 <!-- Checkbox Visibilidad del Grupo -->
@@ -1144,6 +1159,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     formData.append("fecha_fin", fechaFin);
                 }
                 formData.append("estado", estado);
+                formData.append("cobrar_mora", getCobrarMora());
 
                 // Agregar variantes al formData si existen
                 if (variantes.length > 0) {
@@ -1338,6 +1354,24 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     },
                     error: function () {
                         console.error("Error al obtener estado del plan.");
+                    }
+                });
+
+                // Obtener y establecer cobrar_mora (nuevo)
+                $.ajax({
+                    url: '/arequipago/obtenerPlanFinanciamiento',
+                    type: 'POST',
+                    data: { id_plan: selectedPlanId },
+                    dataType: 'json',
+                    success: function(result) {
+                        if (result.success && result.plan) {
+                            // Establecer el checkbox de cobrar mora
+                            const cobrarMoraCheckbox = $('#cobrarMoraCheckbox');
+                            cobrarMoraCheckbox.prop('checked', result.plan.cobrar_mora == 1);
+                        }
+                    },
+                    error: function() {
+                        console.error("Error al obtener datos del plan.");
                     }
                 });
 
@@ -1763,6 +1797,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     fecha_fin: $('#fecha_fin').val() || null,
                     tipo_vehicular: getTipoVehicular() === 'auto' ? 'vehiculo' : getTipoVehicular(), // Mapear 'auto' a 'vehiculo'
                     estado: $('#estadoActivo').is(':checked') ? 'activo' : 'inactivo',
+                    cobrar_mora: getCobrarMora(),
                     variantes: currentVariantes,
                     nuevas_variantes: currentVariantes.filter(v => v.es_nueva === true)
 
@@ -1948,8 +1983,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 restaurarModalVariante();
             });
 
-
-
+            // Función para obtener el valor de cobrar mora
+            function getCobrarMora() {
+                return document.getElementById('cobrarMoraCheckbox').checked ? 1 : 0;
+            }
 
         });
     </script>
