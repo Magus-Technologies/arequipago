@@ -184,8 +184,8 @@ class GrupoFinanciamientoModel {
             $tipoVehicular = 'vehiculo';
         } elseif ($tipoVehicular === 'moto') {
             $tipoVehicular = 'moto';
-        } elseif (!in_array($tipoVehicular, ['moto', 'vehiculo'])) {
-            throw new Exception("Tipo vehicular inválido: '$tipoVehicular'");
+        } else {
+            $tipoVehicular = null; // Forzar a null si el valor no es válido
         }
 
         $sql = "UPDATE planes_financiamiento SET 

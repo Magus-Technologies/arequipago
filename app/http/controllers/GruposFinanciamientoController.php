@@ -91,6 +91,7 @@ class GruposFinanciamientoController extends Controller
         echo json_encode(["success" => true, "planes" => $planes]);
     }
 
+    // Después de la modificación:
     public function editarGrupo() {
         // Comprobar que la solicitud sea POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -117,7 +118,7 @@ class GruposFinanciamientoController extends Controller
             $fechaInicio = $_POST['fecha_inicio'] !== null ? $_POST['fecha_inicio'] : null;
             $fechaFin = $_POST['fecha_fin'] !== null ? $_POST['fecha_fin'] : null;
             // Capturar tipo vehicular del formulario
-            $tipoVehicular = $_POST['tipo_vehiculo'] ?? null;
+            $tipoVehicular = $_POST['tipo_vehicular'] ?? null; // Cambiado de 'tipo_vehiculo' a 'tipo_vehicular'
             $estado = $_POST['estado'] ?? 'activo';
 
             // NUEVO: Capturar cobrar mora
@@ -293,7 +294,7 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
         }
     }
-    
+
     public function obtenerDetallesPlan() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = isset($_POST['id']) ? $_POST['id'] : null;

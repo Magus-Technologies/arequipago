@@ -646,7 +646,7 @@ function seleccionarVariante(index) {
     id_variante: varianteSeleccionada.id_variante,
     idplan_financiamiento: varianteSeleccionada.idplan_financiamiento, // NUEVO: Preservar el ID del plan
     tipo_vehicular: varianteSeleccionada.tipo_vehicular, 
-    cobrar_mora: planGlobal.cobrar_mora || 1,
+    cobrar_mora: typeof planGlobal.cobrar_mora !== 'undefined' ? planGlobal.cobrar_mora : 1,
   };
 
   // Manejar campo de verificación domiciliaria para la variante
