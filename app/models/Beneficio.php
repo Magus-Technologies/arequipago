@@ -5,6 +5,7 @@ class Beneficio
     private $id;
     private $nombre;
     private $categoria;
+    private $plan_financiamiento_id;
     private $descripcion;
     // Nuevos campos de financiamiento
     private $cuota_inicial;
@@ -45,6 +46,9 @@ class Beneficio
 
     public function getCategoria() { return $this->categoria; }
     public function setCategoria($categoria) { $this->categoria = $categoria; }
+
+    public function getPlanFinanciamientoId() { return $this->plan_financiamiento_id; }
+    public function setPlanFinanciamientoId($plan_financiamiento_id) { $this->plan_financiamiento_id = $plan_financiamiento_id; }
 
     public function getDescripcion() { return $this->descripcion; }
     public function setDescripcion($descripcion) { $this->descripcion = $descripcion; }
@@ -130,8 +134,8 @@ class Beneficio
             if (empty($datos['nombre'])) {
                 throw new Exception('El nombre es obligatorio');
             }
-            if (!isset($datos['categoria']) || $datos['categoria'] <= 0) {
-                throw new Exception('La categoría es obligatoria');
+            if (!isset($datos['plan_financiamiento_id']) || $datos['plan_financiamiento_id'] <= 0) {
+                throw new Exception('El plan de financiamiento es obligatorio');
             }
             if (!isset($datos['cuota_inicial']) || $datos['cuota_inicial'] <= 0) {
                 throw new Exception('La cuota inicial es obligatoria');
@@ -144,9 +148,9 @@ class Beneficio
             }
 
             $sql = "INSERT INTO beneficios (
-                        nombre, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual,
+                        nombre, plan_financiamiento_id, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual,
                         imagen, disponible
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -156,7 +160,8 @@ class Beneficio
 
             // Preparar datos básicos
             $nombre = $datos['nombre'];
-            $categoria = $datos['categoria'];
+            $plan_financiamiento_id = $datos['plan_financiamiento_id'];
+            $categoria = isset($datos['categoria']) && $datos['categoria'] !== null ? $datos['categoria'] : null;
             $descripcion = isset($datos['descripcion']) && $datos['descripcion'] !== null ? $datos['descripcion'] : '';
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
@@ -165,15 +170,16 @@ class Beneficio
             $disponible = $datos['disponible'];
 
             $stmt->bind_param(
-                'sisdidsi',
-                $nombre,           // s - string
-                $categoria,        // i - integer
-                $descripcion,      // s - string
-                $cuota_inicial,    // d - decimal
-                $cantidad_cuotas,  // i - integer
-                $cuota_mensual,    // d - decimal
-                $imagen,           // s - string
-                $disponible        // i - integer
+                'siisdidsi',
+                $nombre,                  // s - string
+                $plan_financiamiento_id,  // i - integer
+                $categoria,               // i - integer (nullable)
+                $descripcion,             // s - string
+                $cuota_inicial,           // d - decimal
+                $cantidad_cuotas,         // i - integer
+                $cuota_mensual,           // d - decimal
+                $imagen,                  // s - string
+                $disponible               // i - integer
             );
 
             if (!$stmt->execute()) {
@@ -204,7 +210,13 @@ class Beneficio
             if (!empty($filtros['categoria'])) {
                 $sql .= " AND categoria = ?";
                 $params[] = $filtros['categoria'];
-                $types .= "s";
+                $types .= "i";
+            }
+
+            if (!empty($filtros['plan_financiamiento_id'])) {
+                $sql .= " AND plan_financiamiento_id = ?";
+                $params[] = $filtros['plan_financiamiento_id'];
+                $types .= "i";
             }
 
             if (!empty($filtros['disponible'])) {
@@ -243,11 +255,6 @@ class Beneficio
             $beneficios = [];
 
             while ($row = $result->fetch_assoc()) {
-                // Procesar datos adicionales
-                $row['especificaciones_array'] = !empty($row['especificaciones']) ? json_decode($row['especificaciones'], true) : [];
-                $row['galeria_array'] = !empty($row['galeria_imagenes']) ? json_decode($row['galeria_imagenes'], true) : [];
-                $row['cuotas_array'] = !empty($row['cuotas_disponibles']) ? explode(',', $row['cuotas_disponibles']) : [];
-                
                 $beneficios[] = $row;
             }
 
@@ -281,12 +288,7 @@ class Beneficio
             $result = $stmt->get_result();
             $beneficio = $result->fetch_assoc();
 
-            if ($beneficio) {
-                // Procesar datos adicionales
-                $beneficio['especificaciones_array'] = !empty($beneficio['especificaciones']) ? json_decode($beneficio['especificaciones'], true) : [];
-                $beneficio['galeria_array'] = !empty($beneficio['galeria_imagenes']) ? json_decode($beneficio['galeria_imagenes'], true) : [];
-                $beneficio['cuotas_array'] = !empty($beneficio['cuotas_disponibles']) ? explode(',', $beneficio['cuotas_disponibles']) : [];
-            }
+            // $beneficio ya viene limpio desde la base de datos
 
             $stmt->close();
             return $beneficio;
@@ -303,7 +305,7 @@ class Beneficio
     {
         try {
             $sql = "UPDATE beneficios SET
-                        nombre = ?, categoria = ?, descripcion = ?, cuota_inicial = ?,
+                        nombre = ?, plan_financiamiento_id = ?, categoria = ?, descripcion = ?, cuota_inicial = ?,
                         cantidad_cuotas = ?, cuota_mensual = ?, imagen = ?,
                         disponible = ?, fecha_actualizacion = CURRENT_TIMESTAMP
                     WHERE id = ?";
@@ -314,9 +316,18 @@ class Beneficio
                 throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
             }
 
+            // Validar campos obligatorios
+            if (empty($datos['nombre'])) {
+                throw new Exception('El nombre es obligatorio');
+            }
+            if (!isset($datos['plan_financiamiento_id']) || $datos['plan_financiamiento_id'] <= 0) {
+                throw new Exception('El plan de financiamiento es obligatorio');
+            }
+
             // Preparar datos básicos
             $nombre = $datos['nombre'];
-            $categoria = $datos['categoria'];
+            $plan_financiamiento_id = $datos['plan_financiamiento_id'];
+            $categoria = isset($datos['categoria']) && $datos['categoria'] !== null ? $datos['categoria'] : null;
             $descripcion = isset($datos['descripcion']) && $datos['descripcion'] !== null ? $datos['descripcion'] : '';
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
@@ -325,16 +336,17 @@ class Beneficio
             $disponible = $datos['disponible'];
 
             $stmt->bind_param(
-                'sisdidsii',
-                $nombre,           // s - string
-                $categoria,        // i - integer
-                $descripcion,      // s - string
-                $cuota_inicial,    // d - decimal
-                $cantidad_cuotas,  // i - integer
-                $cuota_mensual,    // d - decimal
-                $imagen,           // s - string
-                $disponible,       // i - integer
-                $id                // i - integer
+                'siisdidsii',
+                $nombre,                  // s - string
+                $plan_financiamiento_id,  // i - integer
+                $categoria,               // i - integer (nullable)
+                $descripcion,             // s - string
+                $cuota_inicial,           // d - decimal
+                $cantidad_cuotas,         // i - integer
+                $cuota_mensual,           // d - decimal
+                $imagen,                  // s - string
+                $disponible,              // i - integer
+                $id                       // i - integer
             );
 
             if (!$stmt->execute()) {
@@ -415,6 +427,14 @@ class Beneficio
     public function obtenerPorCategoria($categoria)
     {
         return $this->obtenerTodos(['categoria' => $categoria, 'disponible' => 1]);
+    }
+
+    /**
+     * Obtener beneficios por plan de financiamiento
+     */
+    public function obtenerPorPlan($planId)
+    {
+        return $this->obtenerTodos(['plan_financiamiento_id' => $planId, 'disponible' => 1]);
     }
 
     /**
