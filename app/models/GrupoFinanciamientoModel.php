@@ -24,8 +24,7 @@ class GrupoFinanciamientoModel {
         }
     }
 
-    
-    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo')
+    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1)
     {
         // 🔹 Convertir valores vacíos a null para evitar errores
         $cuotaInicial = $cuotaInicial !== "" ? $cuotaInicial : null;
@@ -39,11 +38,15 @@ class GrupoFinanciamientoModel {
 
         if ($tipoVehicular === 'auto') {
             $tipoVehicular = 'vehiculo';
+        } elseif ($tipoVehicular === 'moto') {
+            $tipoVehicular = 'moto';
+        } else {
+            $tipoVehicular = null;
         }
 
         $sql = "INSERT INTO planes_financiamiento
-        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -51,21 +54,21 @@ class GrupoFinanciamientoModel {
             die("Error en la preparación de la consulta: " . $this->conectar->error);
         }
 
-        // ✅ CORREGIDO: 13 tipos para 13 parámetros (todos como string ya que llegan como string)
-        $stmt->bind_param("sssssssssssss",
-            $nombrePlan,        // s - string
-            $cuotaInicial,      // s - string (era d)
-            $montoCuota,        // s - string (era d) 
-            $cantidadCuotas,    // s - string (era i)
-            $frecuenciaPago,    // s - string
-            $moneda,            // s - string
-            $tasaInteres,       // s - string (era d)
-            $monto,             // s - string (era d)
-            $montoSinInteres,   // s - string (era s)
-            $fechaInicio,       // s - string
-            $fechaFin,          // s - string
-            $tipoVehicular,     // s - string
-            $estado             // s - string
+        $stmt->bind_param("ssssssssssssis", // Cambiado: último parámetro es string (estado), cobrar_mora es integer
+            $nombrePlan,                     
+            $cuotaInicial,                   
+            $montoCuota,                     
+            $cantidadCuotas,                 
+            $frecuenciaPago,                 
+            $moneda,                         
+            $tasaInteres,                    
+            $monto,                          
+            $montoSinInteres,                
+            $fechaInicio,                    
+            $fechaFin,                       
+            $tipoVehicular,                  
+            $cobrarMora,        // i - integer
+            $estado             // s - string             
         );
 
         // 🔹 Ejecutar la consulta y verificar si fue exitosa
@@ -171,14 +174,16 @@ class GrupoFinanciamientoModel {
     }
 
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, 
-                            $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres, 
-                            $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo') {
+                          $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres, 
+                          $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1) {
         
-        // ✅ Validar y limpiar tipoVehicular
+        // CORREGIDO: Validar y limpiar tipoVehicular
         if ($tipoVehicular === '' || $tipoVehicular === 'null' || $tipoVehicular === null) {
             $tipoVehicular = null;
         } elseif ($tipoVehicular === 'auto') {
             $tipoVehicular = 'vehiculo';
+        } elseif ($tipoVehicular === 'moto') {
+            $tipoVehicular = 'moto';
         } elseif (!in_array($tipoVehicular, ['moto', 'vehiculo'])) {
             throw new Exception("Tipo vehicular inválido: '$tipoVehicular'");
         }
@@ -196,8 +201,10 @@ class GrupoFinanciamientoModel {
             fecha_inicio = ?,  
             fecha_fin = ?,
             tipo_vehicular = ?,
+            cobrar_mora = ?,
             estado = ?
         WHERE idplan_financiamiento = ?";
+
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -216,7 +223,8 @@ class GrupoFinanciamientoModel {
         $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
         $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
 
-        $stmt->bind_param("sssssssssssssi", 
+        
+        $stmt->bind_param("ssssssssssssisi",  
             $nombrePlan,           
             $cuotaInicial,         
             $montoCuota,           
@@ -229,9 +237,11 @@ class GrupoFinanciamientoModel {
             $fechaInicio,          
             $fechaFin,             
             $tipoVehicular,        
+            $cobrarMora,           // i - integer
             $estado,               
-            $id                    
+            $id                    // i - integer
         );
+
 
         if (!$stmt->execute()) {  
             throw new Exception("Error en la ejecución: " . $stmt->error);  
