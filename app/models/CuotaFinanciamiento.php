@@ -45,21 +45,28 @@ class CuotaFinanciamiento
 
     
 
-    public function guardarCuota($idFinanciamiento, $numeroCuota, $monto, $fechaVencimiento)
+    public function guardarCuota($idFinanciamiento, $numeroCuota, $monto, $fechaVencimiento, $grupoFinanciamiento = null)
     {
         // Asignar valores a variables
         $estado = 'En Progreso'; // Asignación a variable
         $fechaPago = null; // Asignación a variable
 
+        // Si es el plan corporativo de chips (ID 36), ajustar la fecha al día 24
+        if ($grupoFinanciamiento == 36) {
+            $fecha = new DateTime($fechaVencimiento);
+            $fecha->setDate($fecha->format('Y'), $fecha->format('n'), 24);
+            $fechaVencimiento = $fecha->format('Y-m-d');
+        }
+
         $query = "INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado, fecha_pago)
                 VALUES (?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conectar->prepare($query);
-        $stmt->bind_param("iidsss", 
+        $stmt->bind_param("iidsss",
             $idFinanciamiento,
             $numeroCuota,
             $monto,
-            $fechaVencimiento, // Se utiliza la fecha de vencimiento proporcionada
+            $fechaVencimiento, // Se utiliza la fecha de vencimiento ajustada
             $estado, // Usamos la variable $estado
             $fechaPago // Usamos la variable $fechaPago
         );

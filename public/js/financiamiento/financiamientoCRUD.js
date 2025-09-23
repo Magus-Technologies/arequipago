@@ -434,7 +434,10 @@ function saveFinanciamientoVehicular() {
 
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  if (document.getElementById("entregarSi").checked) {
+  // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
+  const entregarSiElement = document.getElementById("entregarSi");
+
+  if (entregarSiElement && entregarSiElement.checked) {
     // ✅ Si "Sí" está marcado
     idProducto = productoSeleccionado?.id; // ✅ Si "Sí" está marcado, tomar id del objeto productoSeleccionado
     if (!idProducto) {
@@ -452,15 +455,26 @@ function saveFinanciamientoVehicular() {
       ); // ✅ Mostrar alerta si el precio es inválido
       return; // ✅ Salir de la función si el precio no es válido
     }
+  } else if (!entregarSiElement) {
+    // Para planes no vehiculares (como corporativo), usar producto seleccionado si existe
+    if (productoSeleccionado && productoSeleccionado.id) {
+      idProducto = productoSeleccionado.id;
+    } else {
+      // Para planes corporativos sin producto, usar ID por defecto (ajustar según necesidad)
+      idProducto = 37; // ID para "Servicio" o similar
+    }
   }
 
-  // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo si no es plan ID 33)
- // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo si no es plan ID 33)
+  // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo para planes vehiculares)
 const grupoFinanciamiento = document.getElementById("grupo").value;
+const entregarNoElement = document.getElementById("entregarNo");
+
+// Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
 if (
+  entregarSiElement && entregarNoElement &&
   grupoFinanciamiento !== "33" &&
-  !document.getElementById("entregarSi").checked &&
-  !document.getElementById("entregarNo").checked
+  !entregarSiElement.checked &&
+  !entregarNoElement.checked
 ) {
   Swal.fire(
     "Error",
@@ -1433,7 +1447,8 @@ function generateCronograma() {
   const fechaLimite = new Date(fechaHoy);
   fechaLimite.setDate(fechaHoy.getDate() - 1); // Restar un día
 
-  console.log("Enviando cronogramaDatos al backend:", cronogramaDatos);
+  console.log("🔍 DEBUGING generateCronograma() - cronogramaDatos:", cronogramaDatos);
+  console.log("🔍 DEBUGING generateCronograma() - planGlobal:", planGlobal);
   // Aquí agregamos los datos del cronograma al objeto de datos
   const datosFormulario = {
     nombreCliente: nombreCliente,

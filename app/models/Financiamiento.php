@@ -141,28 +141,36 @@
         }
 
             
-    private function crearCuotas($id_financiamiento, $cantidad_cuotas, $valor_cuota, $fecha_inicio)
+    private function crearCuotas($id_financiamiento, $cantidad_cuotas, $valor_cuota, $fecha_inicio, $grupo_financiamiento = null)
     {
-        $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_inicio);
+        $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento);
         $estado = "Pendiente";  // Estado por defecto
 
         for ($i = 1; $i <= $cantidad_cuotas; $i++) {
             // Insertar cada cuota
-            $sql = "INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado) 
+            $sql = "INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado)
                     VALUES (?, ?, ?, ?, ?)";
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param("iiiss", $id_financiamiento, $i, $valor_cuota, $fecha_vencimiento, $estado);
             $stmt->execute();
-            
+
             // Incrementar fecha de vencimiento para la siguiente cuota
-            $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_vencimiento);
+            $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_vencimiento, $grupo_financiamiento);
         }
     }
 
-    private function calcularFechaVencimiento($fecha_inicio)
+    private function calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento = null)
     {
         $fecha = new DateTime($fecha_inicio);
-        $fecha->modify('+1 month');  // Añadir un mes a la fecha de inicio para la fecha de vencimiento
+
+        // Si es el plan corporativo de chips (ID 36), fijar el día 24
+        if ($grupo_financiamiento == 36) {
+            $fecha->modify('+1 month');
+            $fecha->setDate($fecha->format('Y'), $fecha->format('n'), 24);
+        } else {
+            $fecha->modify('+1 month');  // Añadir un mes a la fecha de inicio para la fecha de vencimiento
+        }
+
         return $fecha->format('Y-m-d');
     }
 

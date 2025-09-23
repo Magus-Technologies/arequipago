@@ -311,6 +311,50 @@ class CuponController
     }
 
     /**
+     * Verificar cupones de un cliente específico
+     */
+    public function verificarCuponCliente($idCliente = null, $request = null)
+    {
+        try {
+            // Obtener ID del cliente desde diferentes fuentes
+            if (empty($idCliente)) {
+                $idCliente = $_POST['id_cliente'] ?? $_GET['id_cliente'] ?? '';
+            }
+
+            if (empty($idCliente)) {
+                echo json_encode(['error' => 'ID de cliente requerido']);
+                return;
+            }
+
+            $cuponModel = new Cupon();
+            $cupones = $cuponModel->verificarClienteTieneCupon($idCliente);
+
+            // Obtener datos del cliente
+            $clienteModel = new Cliente();
+            $cliente = $clienteModel->getClienteById($idCliente);
+
+            $response = [
+                'cliente' => $cliente ? [
+                    'id' => $cliente['id'],
+                    'nombres' => $cliente['nombres'],
+                    'apellido_paterno' => $cliente['apellido_paterno'],
+                    'apellido_materno' => $cliente['apellido_materno'],
+                    'foto' => '/arequipago/public/img/default-user.png' // Foto por defecto para clientes
+                ] : null,
+                'cupones' => $cupones,
+                'tiene_cupones' => !empty($cupones),
+                'total_cupones' => count($cupones)
+            ];
+
+            header('Content-Type: application/json');
+            echo json_encode($response);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Error al verificar cupones del cliente: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Verificar cupones de un conductor específico
      */
     public function verificarCuponConductor($idConductor = null, $request = null)
@@ -590,6 +634,35 @@ $response = [
                 return;
             }
 
+            // Verificar si el cupón está asignado al usuario
+            if ($tipo === 'cliente') {
+                $cuponesCliente = $cuponModel->verificarClienteTieneCupon($idUsuario);
+                $cuponAsignado = false;
+                foreach ($cuponesCliente as $cupon) {
+                    if ($cupon['id'] == $idCupon) {
+                        $cuponAsignado = true;
+                        break;
+                    }
+                }
+                if (!$cuponAsignado) {
+                    echo json_encode(['success' => false, 'message' => 'Este cupón no está asignado al cliente']);
+                    return;
+                }
+            } else {
+                $cuponesConductor = $cuponModel->verificarConductorTieneCupon($idUsuario);
+                $cuponAsignado = false;
+                foreach ($cuponesConductor as $cupon) {
+                    if ($cupon['id'] == $idCupon) {
+                        $cuponAsignado = true;
+                        break;
+                    }
+                }
+                if (!$cuponAsignado) {
+                    echo json_encode(['success' => false, 'message' => 'Este cupón no está asignado al conductor']);
+                    return;
+                }
+            }
+
             // Verificar límites de uso
             if ($tipo === 'conductor') {
                 $usoInfo = $cuponModel->verificarUsoCuponEspecifico($idUsuario, $idCupon);
@@ -609,8 +682,7 @@ $response = [
             } else {
                 $resultado = $cuponModel->registrarUso($idCupon, null, 0, $idUsuario);
             }
-            
-            
+
             if ($resultado) {
       echo json_encode([
     'success' => true,

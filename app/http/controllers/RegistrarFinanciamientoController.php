@@ -125,7 +125,7 @@ class RegistrarFinanciamientoController extends Controller
                 $cuotaModel = new CuotaFinanciamiento();
                 // Convertir la fecha de vencimiento a formato 'Y-m-d'
                 $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
-                $cuotaModel->guardarCuota($idFinanciamiento, $i + 1, $valorCuota, $fechaVencimiento);
+                $cuotaModel->guardarCuota($idFinanciamiento, $i + 1, $valorCuota, $fechaVencimiento, $datos['grupo_financiamiento']);
             }
 
             // 💥 Modificado: Solo registrar el movimiento si corresponde
@@ -487,7 +487,7 @@ class RegistrarFinanciamientoController extends Controller
             $cuotaModel = new CuotaFinanciamiento();
             $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
             $numeroCuota = $numeroCuotaInicial + $i;
-            $cuotaModel->guardarCuota($idFinanciamiento, $numeroCuota, $valor_cuota, $fechaVencimiento);
+            $cuotaModel->guardarCuota($idFinanciamiento, $numeroCuota, $valor_cuota, $fechaVencimiento, $grupo_financiamiento);
         }
     
     

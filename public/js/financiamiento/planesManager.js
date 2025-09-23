@@ -277,29 +277,40 @@ if (parseInt(plan.idplan_financiamiento) === 33) {
         // Verificar si el plan tiene fecha_inicio y fecha_fin definidas // ✅ NUEVO
       // Verificar si el plan tiene fecha_inicio y fecha_fin definidas O si es MotosYa
 if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento) === 33) {
-  
+
   // Para planes vehiculares normales, usar sus fechas
   if (plan.fecha_inicio && plan.fecha_fin && parseInt(plan.idplan_financiamiento) !== 33) {
     $("#fechaInicio").val(plan.fecha_inicio).prop("disabled", true);
     $("#fechaFin").val(plan.fecha_fin);
   }
-  
+
   // Crear el input de "Fecha de ingreso" debajo de "contenedorVehicular" PARA TODOS (incluyendo MotosYa)
   const contenedorVehicular = $("#contenedorVehicular");
-  contenedorVehicular.html(`
-    <label for="fechaIngreso">Fecha de Ingreso</label>
-    <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
 
-    <label for="entregarVehiculo">Vehículo Entregado</label>
-    <div id="radioEntregarVehiculo">
-        <input type="radio" name="entregarVehiculo" id="entregarSi" value="si" onclick="recalcularMonto()">
-        <label style="margin-right: 6px;" for="entregarSi">Sí</label>
+  // NUEVO: Solo mostrar campos vehiculares si realmente es vehicular
+  const esVehicular = plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
 
-        <input type="radio" name="entregarVehiculo" id="entregarNo" value="no" onclick="calcularFinanciamientoConFechaIngreso(planGlobal); deleteMontoRecalculado();">
-        <label for="entregarNo">No</label>
-    </div>
-  `);
+  if (esVehicular || parseInt(plan.idplan_financiamiento) === 33) {
+    contenedorVehicular.html(`
+      <label for="fechaIngreso">Fecha de Ingreso</label>
+      <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
 
+      <label for="entregarVehiculo">Vehículo Entregado</label>
+      <div id="radioEntregarVehiculo">
+          <input type="radio" name="entregarVehiculo" id="entregarSi" value="si" onclick="recalcularMonto()">
+          <label style="margin-right: 6px;" for="entregarSi">Sí</label>
+
+          <input type="radio" name="entregarVehiculo" id="entregarNo" value="no" onclick="calcularFinanciamientoConFechaIngreso(planGlobal); deleteMontoRecalculado();">
+          <label for="entregarNo">No</label>
+      </div>
+    `);
+  } else {
+    // Para planes con fechas pero no vehiculares (como corporativo), solo mostrar fecha de ingreso
+    contenedorVehicular.html(`
+      <label for="fechaIngreso">Fecha de Ingreso</label>
+      <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
+    `);
+  }
 
           // Calcular el monto total
           montoCalculado =
@@ -345,7 +356,9 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
               calcularFinanciamientoConFechaIngreso(plan);
             }, 300);
           }
-        } else if (idPlan === "33") {
+        }
+
+        if (idPlan === "33") {
           // Asegurar que el contenedor vehicular esté vacío
           $("#contenedorVehicular").empty();
 
