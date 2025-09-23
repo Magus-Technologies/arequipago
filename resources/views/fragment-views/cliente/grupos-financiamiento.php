@@ -344,7 +344,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                         </div>
 
                         <!-- Fechas para financiamiento vehicular (ocultas por defecto) -->
-                        <div id="fechasVehicular" class="row mb-3 mt-3">
+                        <div id="fechasVehicular" class="row mb-3 mt-3" style="display: none;">
                             <div class="col-md-6">
                                 <label for="fecha_inicio" class="form-label">
                                     <i class="fas fa-calendar-day me-1"></i>Fecha de Inicio
@@ -1375,7 +1375,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     }
                 });
 
-                // Lógica para manejar el estado del plan vehicular al editar
+               // Lógica para manejar el estado del plan vehicular al editar
                 $.ajax({
                     url: '/arequipago/getTipoVehicular',
                     type: 'POST',
@@ -1385,6 +1385,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                         const esVehicularCheckbox = $('#esVehicularCheckbox');
                         const radioAuto = $('#radioAuto');
                         const radioMoto = $('#radioMoto');
+                        const fechasDiv = $('#fechasVehicular'); // Nueva línea para obtener el contenedor
 
                         if (result.status === 'success' && result.tipo_vehicular) {
                             // Si es un plan vehicular, marcar el checkbox principal
@@ -1400,6 +1401,9 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                             } else if (result.tipo_vehicular === 'moto') {
                                 radioMoto.prop('checked', true);
                             }
+
+                            // Mostrar la sección de fechas si es vehicular
+                            fechasDiv.css('display', 'flex'); // Nueva línea para mostrar las fechas
                         } else {
                             // Si no es un plan vehicular, desmarcar todo
                             esVehicularCheckbox.prop('checked', false);
@@ -1407,6 +1411,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                             radioMoto.prop('disabled', true);
                             radioAuto.prop('checked', false);
                             radioMoto.prop('checked', false);
+                            fechasDiv.css('display', 'none'); // Nueva línea para asegurar que las fechas estén ocultas
                         }
                     },
                     error: function () {
@@ -1781,7 +1786,6 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     return;
                 }
 
-                // Preparar los datos para enviar
                 const formData = {
                     id: selectedPlanId,
                     nombre_plan: nombrePlan,
@@ -1795,13 +1799,11 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     tasa_interes: $('#tasa_interes').val() || null,
                     fecha_inicio: $('#fecha_inicio').val() || null,
                     fecha_fin: $('#fecha_fin').val() || null,
-                    tipo_vehicular: getTipoVehicular() === 'auto' ? 'vehiculo' : getTipoVehicular(), // Mapear 'auto' a 'vehiculo'
+                    tipo_vehicular: getTipoVehicular(), // Usar directamente el valor de getTipoVehicular()
                     estado: $('#estadoActivo').is(':checked') ? 'activo' : 'inactivo',
                     cobrar_mora: getCobrarMora(),
                     variantes: currentVariantes,
                     nuevas_variantes: currentVariantes.filter(v => v.es_nueva === true)
-
-
                 };
 
                 // Enviar datos al backend mediante AJAX
@@ -1989,6 +1991,8 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
             }
 
         });
+
+
     </script>
 </body>
 
