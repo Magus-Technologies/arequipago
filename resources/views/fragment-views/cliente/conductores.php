@@ -605,6 +605,59 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 opacity: 1;
             }
         }
+
+        /* Estilos para badges de verificación - Nuevo diseño compacto */
+        .verification-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .verification-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .verification-item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .verification-item .label {
+            font-weight: 500;
+            min-width: 180px;
+        }
+
+        .verification-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+         .verification-status.verified {
+            background-color: #02a499;
+            color: white;
+        }
+        
+        .verification-status.not-verified {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .verification-status.pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
     </style>
 </head>
 
@@ -768,6 +821,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                                 <p><strong>Teléfono:</strong> </p>
                                 <p><strong>Correo:</strong> </p>
                                 <p><strong>Dirección:</strong> </p>
+                            </div>
+                        </div>
+
+                        <!-- NUEVO: Badges de verificación - Diseño compacto -->
+                        <div class="verification-badges">
+                            <div class="verification-item">
+                                <span class="icon">📋</span>
+                                <span class="label">Verificación Documentaria</span>
+                                <span>Estado: <span class="verification-status pending" id="status-documentacion">Pendiente</span></span>
+                            </div>
+                            <div class="verification-item">
+                                <span class="icon">🏠</span>
+                                <span class="label">Verificación Domiciliaria</span>
+                                <span>Estado: <span class="verification-status pending" id="status-domiciliaria">No verificado</span></span>
                             </div>
                         </div>
                     </section>
@@ -1943,6 +2010,28 @@ window.descargarCronogramaPDF = function() {
                             }
                         });
 
+                        // NUEVO: Actualizar badges de verificación - Diseño compacto
+                        const statusDocumentacion = document.getElementById('status-documentacion');
+                        const statusDomiciliaria = document.getElementById('status-domiciliaria');
+                        
+                        // Status de documentación completa
+                        if (response.data.conductor.documentacion_completa) {
+                            statusDocumentacion.className = 'verification-status verified';
+                            statusDocumentacion.textContent = 'Verificado';
+                        } else {
+                            statusDocumentacion.className = 'verification-status not-verified';
+                            statusDocumentacion.textContent = 'No verificado';
+                        }
+                        
+                        // Status de verificación domiciliaria
+                        if (response.data.conductor.verificacion_domiciliaria) {
+                            statusDomiciliaria.className = 'verification-status verified';
+                            statusDomiciliaria.textContent = 'Verificado';
+                        } else {
+                            statusDomiciliaria.className = 'verification-status not-verified';
+                            statusDomiciliaria.textContent = 'No verificado';
+                        }
+
                         const hoy = new Date();
                         const unMesDespues = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
 
@@ -2122,6 +2211,20 @@ window.descargarCronogramaPDF = function() {
 
             // Limpiar el textarea de observaciones // AÑADIDO: Limpiar el campo de observaciones
             $('#conductorVehiculoModal .modal-body textarea').val('');
+
+            // NUEVO: Resetear badges de verificación - Diseño compacto
+            const statusDocumentacion = document.getElementById('status-documentacion');
+            const statusDomiciliaria = document.getElementById('status-domiciliaria');
+            
+            if (statusDocumentacion) {
+                statusDocumentacion.className = 'verification-status pending';
+                statusDocumentacion.textContent = 'Pendiente';
+            }
+            
+            if (statusDomiciliaria) {
+                statusDomiciliaria.className = 'verification-status pending';
+                statusDomiciliaria.textContent = 'No verificado';
+            }
         }
 
         function eliminarConductor(id_conductor) {

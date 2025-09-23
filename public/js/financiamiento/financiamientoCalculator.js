@@ -1,14 +1,21 @@
 function calcularFinanciamiento() {
+  console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
   // Obtener valores de los inputs
   const montoRaw = document.getElementById("monto").value;
-  const montoSinIntereses = parseFloat(
-    document.getElementById("montoSinIntereses").value
-  ); // NUEVO
+  const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
+  const montoSinIntereses = parseFloat(montoSinInteresesRaw) || 0;
+  console.log("📊 montoSinInteresesRaw:", montoSinInteresesRaw, "-> parseado:", montoSinIntereses);
   const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
   const tasaInteresRaw = document.getElementById("tasaInteres").value;
-  const frecuenciaPago = document.getElementById("frecuenciaPago").value;
+ // Cambio: Usar frecuencia del select solo si está habilitado
+  const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
+  const frecuenciaPago = frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled ? 
+                        frecuenciaSelectCalc.value : 
+                        'semanal'; // valor por defecto
+
+  console.log("🔄 Frecuencia utilizada en calcularFinanciamiento:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectCalc?.disabled);
   const tipoMoneda = obtenerTipoMoneda();
 
   console.log("Valores iniciales: ", {
@@ -41,15 +48,24 @@ function calcularFinanciamiento() {
 
   document.getElementById("monto").value = montoTotal.toFixed(2);
 
-  // Verificar si hay valores NaN
+  // Verificar si hay valores NaN o faltan datos críticos
   if (
     isNaN(montoTotal) ||
     isNaN(cuotaInicial) ||
     isNaN(tasaInteres) ||
+    montoSinIntereses <= 0 ||
     !fechaInicio ||
     !frecuenciaPago
   ) {
     console.error("Faltan valores o hay NaN en el cálculo, revisa los inputs");
+    console.error("Estado de valores:", {
+      montoTotal: isNaN(montoTotal) ? "NaN" : montoTotal,
+      cuotaInicial: isNaN(cuotaInicial) ? "NaN" : cuotaInicial,
+      tasaInteres: isNaN(tasaInteres) ? "NaN" : tasaInteres,
+      montoSinIntereses: montoSinIntereses,
+      fechaInicio: fechaInicio,
+      frecuenciaPago: frecuenciaPago
+    });
     return; // Salir si hay problemas con los valores
   }
 
@@ -102,6 +118,20 @@ function calcularFinanciamiento() {
     primeraFechaVencimiento = obtenerProximoLunes(fechaInicioObj);
     console.log(
       "Plan vehicular semanal - Primera fecha ajustada al lunes:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+  } else if (
+    planGlobal &&
+    parseInt(planGlobal.idplan_financiamiento) === 36
+  ) {
+    // Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
+    console.log("🔧 BEFORE - Fecha original:", primeraFechaVencimiento.toLocaleDateString());
+    const año = primeraFechaVencimiento.getFullYear();
+    const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
+    console.log("🔧 Creando fecha para año:", año, "mes:", mes, "día: 24");
+    primeraFechaVencimiento = new Date(año, mes, 24);
+    console.log(
+      "🔧 AFTER - Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
       primeraFechaVencimiento.toLocaleDateString()
     );
   } else if (
@@ -159,8 +189,14 @@ function calcularFinanciamiento() {
     } else {
       nuevaFecha.setMonth(nuevaFecha.getMonth() + 1); // 👈 MODIFICADO: avanzar al siguiente mes
 
-      // NUEVO: Verificar si es plan de celular (IDs 2, 3 o 4)
+      // NUEVO: Verificar si es plan corporativo de chips (ID 36)
       if (
+        planGlobal &&
+        parseInt(planGlobal.idplan_financiamiento) === 36
+      ) {
+        // Para plan corporativo de chips: siempre día 24
+        nuevaFecha.setDate(24);
+      } else if (
         planGlobal &&
         [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
       ) {
@@ -214,13 +250,16 @@ function mostrarFechasVencimiento(
   moneda,
   numeroInicial
 ) {
+  console.log("🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas:", fechasVencimiento);
+  console.log("🔍 Plan actual:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
   const contenedorFechas = document.getElementById("contenedorFechas"); // Asegúrate de tener un contenedor para las fechas
   contenedorFechas.innerHTML = ""; // Limpiar el contenedor antes de agregar las nuevas fechas
 
   cronogramaDatos = [];
 
   // Si planGlobal tiene una fecha de inicio válida, ajustamos la primera al siguiente lunes
-  if (planGlobal?.fecha_inicio) {
+  // EXCEPCIÓN: Para plan corporativo de chips (ID 36), no ajustar fechas - ya están correctas
+  if (planGlobal?.fecha_inicio && !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36)) {
     let primeraFecha = fechasVencimiento[0];
     let diaSemana = primeraFecha.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
     let diasHastaLunes = (8 - diaSemana) % 7; // Cuántos días faltan para el próximo lunes
@@ -328,6 +367,14 @@ function formatMoneda(valor, tipoMoneda) {
 }
 
 function calcularCronogramaDinamico() {
+  console.log("🚀 EJECUTANDO: calcularCronogramaDinamico() - Función dinámica");
+
+  // NUEVO: No ejecutar para plan corporativo ID 36
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
+    console.log("⏹️ SALTANDO calcularCronogramaDinamico() para plan corporativo ID 36");
+    return;
+  }
+
   // Obtener valores de entrada
   let tasaInteres =
     parseFloat(document.getElementById("tasaInteres").value) || 0;
@@ -348,7 +395,13 @@ function calcularCronogramaDinamico() {
   let valorCuota = parseFloat(valorCuotaLimpio) || 0;
 
   let montoTotalInput = document.getElementById("monto");
-  let frecuencia = document.getElementById("frecuenciaPago").value;
+  // Cambio: Obtener frecuencia del select solo si está habilitado
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+  let frecuencia = frecuenciaSelect && !frecuenciaSelect.disabled ? 
+                  frecuenciaSelect.value : 
+                  'semanal'; // valor por defecto
+
+  console.log("🔄 Frecuencia utilizada en cronograma dinámico:", frecuencia, "- Select habilitado:", !frecuenciaSelect?.disabled);
 
   // REEMPLÁZALO POR:
   if (!fechaInicio) {
@@ -416,8 +469,8 @@ function calcularCronogramaDinamico() {
   // CORREGIDO: Solo ajustar al lunes si es plan vehicular y semanal
   if (
     planGlobal &&
-    planGlobal.fecha_inicio !== null &&
-    planGlobal.fecha_fin !== null &&
+    planGlobal.tipo_vehicular !== null &&
+    planGlobal.tipo_vehicular !== "" &&
     document.getElementById("frecuenciaPago").value === "semanal"
   ) {
     // Es plan vehicular semanal - ajustar al próximo lunes
@@ -456,6 +509,14 @@ function calcularCronogramaDinamico() {
   // NUEVO: Para planes de celular, ajustar la primera fecha al día 30
   let primeraFechaVencimiento = new Date(fechaPago);
   if (
+    planGlobal &&
+    parseInt(planGlobal.idplan_financiamiento) === 36
+  ) {
+    // Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
+    const año = primeraFechaVencimiento.getFullYear();
+    const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
+    primeraFechaVencimiento = new Date(año, mes, 24);
+  } else if (
     planGlobal &&
     [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
   ) {
@@ -533,8 +594,14 @@ function calcularCronogramaDinamico() {
       let diaOriginal = nuevaFecha.getDate();
       nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
 
-      // NUEVO: Verificar si es plan de celular (IDs 2, 3 o 4)
+      // NUEVO: Verificar si es plan corporativo de chips (ID 36)
       if (
+        planGlobal &&
+        parseInt(planGlobal.idplan_financiamiento) === 36
+      ) {
+        // Para plan corporativo de chips: siempre día 24
+        nuevaFecha.setDate(24);
+      } else if (
         planGlobal &&
         [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
       ) {
@@ -571,6 +638,7 @@ function calcularCronogramaDinamico() {
 }
 
 function mostrarFechasVencimientoPlan(fechasVencimiento, valorcuota) {
+  console.log("🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:", fechasVencimiento);
   const contenedorFechas = document.getElementById("contenedorFechas");
   contenedorFechas.innerHTML = "";
 
@@ -636,14 +704,21 @@ function obtenerProximoLunes(fecha) {
 }
 
 function calcularFinanciamientoConFechaIngreso(plan) {
+  console.log("🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular");
   const cuotaInicial = parseFloat(plan.cuota_inicial);
 
   const tasaInteres = parseFloat(plan.tasa_interes) / 100;
 
-  const frecuenciaPago = plan.frecuencia_pago;
+  // Cambio: Usar la frecuencia actual del select si está disponible para planes vehiculares
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+  const frecuenciaPago = (frecuenciaSelect && !frecuenciaSelect.disabled) ? 
+                        frecuenciaSelect.value : 
+                        plan.frecuencia_pago;
 
-  // CORREGIDO: Determinar si es plan vehicular por fechas definidas
-  const esVehicular = plan.fecha_inicio !== null && plan.fecha_fin !== null;
+  console.log("🔄 Frecuencia utilizada:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelect?.disabled);
+
+  // CORREGIDO: Determinar si es plan vehicular por tipo_vehicular
+  const esVehicular = plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
 
   const montoSinIntereses = parseFloat(plan.monto_sin_interes);
 
@@ -719,9 +794,32 @@ function calcularFinanciamientoConFechaIngreso(plan) {
 
     // CORREGIDO: Para planes vehiculares semanales, ajustar la fecha de ingreso al lunes más cercano
     let primeraFechaVencimiento = new Date(fechaIngresoObj);
-    let numeroInicial = cuotasRestantes + 1; // Cálculo base del número de cuota
 
-    if (esVehicular && frecuenciaPago === "semanal") {
+    // NUEVO: Para plan corporativo de chips (ID 36), empezar siempre desde cuota 1
+    let numeroInicial;
+    if (
+      planGlobal &&
+      parseInt(planGlobal.idplan_financiamiento) === 36
+    ) {
+      numeroInicial = 1; // Siempre empezar desde la primera cuota
+      console.log("Plan corporativo CLARO (ID 36) - Iniciando desde cuota 1");
+    } else {
+      numeroInicial = cuotasRestantes + 1; // Cálculo base del número de cuota para otros planes
+    }
+
+    // NUEVO: Para plan corporativo de chips (ID 36), ajustar primera fecha al día 24
+    if (
+      planGlobal &&
+      parseInt(planGlobal.idplan_financiamiento) === 36
+    ) {
+      const año = primeraFechaVencimiento.getFullYear();
+      const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
+      primeraFechaVencimiento = new Date(año, mes, 24);
+      console.log(
+        "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
+        primeraFechaVencimiento.toLocaleDateString()
+      );
+    } else if (esVehicular && frecuenciaPago === "semanal") {
       const fechaOriginalIngreso = new Date(fechaIngresoObj);
       primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
 
@@ -768,10 +866,16 @@ function calcularFinanciamientoConFechaIngreso(plan) {
         nuevaFecha.setDate(nuevaFecha.getDate() + 7);
       } else {
         const diaInicio = nuevaFecha.getDate();
-
         nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
 
-        if (nuevaFecha.getDate() !== diaInicio) {
+        // NUEVO: Verificar si es plan corporativo de chips (ID 36)
+        if (
+          planGlobal &&
+          parseInt(planGlobal.idplan_financiamiento) === 36
+        ) {
+          // Para plan corporativo de chips: siempre día 24
+          nuevaFecha.setDate(24);
+        } else if (nuevaFecha.getDate() !== diaInicio) {
           nuevaFecha.setDate(diaInicio);
         }
       }
@@ -780,6 +884,8 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     }
 
     // Mostrar el cronograma calculado usando el valor de la cuota correcta y el número de cuota inicial
+    console.log("📄 Llamando a mostrarFechasVencimiento desde calcularFinanciamientoConFechaIngreso");
+    console.log("📄 Fechas calculadas:", fechasVencimiento.map(f => f.toLocaleDateString()));
     mostrarFechasVencimiento(
       fechasVencimiento,
       valorCuota,
@@ -810,8 +916,13 @@ function recalcularMonto() {
   );
   let tasaInteres =
     parseFloat(document.getElementById("tasaInteres").value) / 100;
-  let frecuenciaPago = document.getElementById("frecuenciaPago").value;
+  // Cambio: Usar frecuencia del select solo si está habilitado
+  const frecuenciaSelectRecalc = document.getElementById("frecuenciaPago");
+  let frecuenciaPago = frecuenciaSelectRecalc && !frecuenciaSelectRecalc.disabled ? 
+                      frecuenciaSelectRecalc.value : 
+                      planGlobal.frecuencia_pago;
 
+  console.log("🔄 Frecuencia utilizada en recalcularMonto:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectRecalc?.disabled);
   console.log("🔍 Valores iniciales recalcularMonto:", {
     precioVenta,
     montoSinIntereses,
@@ -884,6 +995,21 @@ function recalcularMonto() {
 
         let fechaVencimientoInicio = new Date(fechaInicio);
 
+        // NUEVO: Para plan corporativo de chips (ID 36), ajustar primera fecha al día 24
+        if (
+          planGlobal &&
+          parseInt(planGlobal.idplan_financiamiento) === 36 &&
+          frecuenciaPago === "mensual"
+        ) {
+          const año = fechaVencimientoInicio.getFullYear();
+          const mes = fechaVencimientoInicio.getMonth() + 1; // Siguiente mes
+          fechaVencimientoInicio = new Date(año, mes, 24);
+          console.log(
+            "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
+            fechaVencimientoInicio.toLocaleDateString()
+          );
+        }
+
         // 🔴 CORREGIDO: Para frecuencia semanal, TODAS las fechas deben caer en lunes
         if (frecuenciaPago === "semanal") {
           // Calcular el primer lunes desde la fecha de ingreso
@@ -947,7 +1073,15 @@ function recalcularMonto() {
             let nuevaFecha = new Date(fechaAnterior);
             const diaInicio = nuevaFecha.getDate();
             nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-            if (nuevaFecha.getDate() !== diaInicio) {
+
+            // NUEVO: Verificar si es plan corporativo de chips (ID 36)
+            if (
+              planGlobal &&
+              parseInt(planGlobal.idplan_financiamiento) === 36
+            ) {
+              // Para plan corporativo de chips: siempre día 24
+              nuevaFecha.setDate(24);
+            } else if (nuevaFecha.getDate() !== diaInicio) {
               nuevaFecha.setDate(diaInicio);
             }
 

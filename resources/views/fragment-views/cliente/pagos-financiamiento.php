@@ -791,8 +791,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 // MODIFICADO: Agregamos función para manejar el input de mora
                 checkbox.attr("onchange", `marcarCuota(this, ${esCategoriaVehiculo}); toggleMoraInput(this); calcularTotal('${moneda}')`);
 
-                // 🔽 MODIFICADO: Solo se bloquea si no es lunes Y la categoría es Vehículo, EXCEPTO para el director (rol 3)
-                let debeDeshabilitarse = esFechaFutura && (parseInt(ROL_USUARIO) !== 3); // 📱 Solo deshabilitamos fechas futuras excepto para el director
+                // 🔽 MODIFICADO: Nueva lógica para permitir una cuota futura a roles 1 y 2
+                let debeDeshabilitarse = false;
+                if (esFechaFutura) {
+                    if (parseInt(ROL_USUARIO) === 3) {
+                        // Director: puede marcar cualquier cuota
+                        debeDeshabilitarse = false;
+                    } else if (parseInt(ROL_USUARIO) === 1 || parseInt(ROL_USUARIO) === 2) {
+                        // Admin y Asesor: pueden marcar máximo una cuota futura
+                        debeDeshabilitarse = contarCuotasFuturas() >= 1;
+                    } else {
+                        // Otros roles: no pueden marcar cuotas futuras
+                        debeDeshabilitarse = true;
+                    }
+                }
 
                 if (debeDeshabilitarse) {
                     console.log("🚫 Deshabilitando checkbox para cuota:", cuota.numero_cuota);
@@ -857,6 +869,50 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         // AÑADIDO: Llamamos a validarSecuenciaCheckbox después de actualizar cuotasSeleccionadas
         //validarSecuenciaCheckbox(checkbox, esCategoriaVehiculo);
         console.log("Cuotas seleccionadas actualmente:", cuotasSeleccionadas);
+
+        // Actualizar estado de checkboxes según límite de cuotas futuras
+        if (parseInt(ROL_USUARIO) === 1 || parseInt(ROL_USUARIO) === 2) {
+            actualizarEstadoCheckboxesFuturos();
+        }
+    }
+
+    // Nueva función para contar cuotas futuras seleccionadas
+    function contarCuotasFuturas() {
+        let contador = 0;
+        let fechaActual = new Date();
+        
+        $("#lista_cuotas input[type='checkbox']:checked").each(function() {
+            let data = JSON.parse($(this).attr("data-id"));
+            let fechaVencimiento = new Date(data.fechaVencimiento);
+            let fechaLimite = new Date(fechaVencimiento);
+            fechaLimite.setDate(fechaLimite.getDate() - 2); // 2 días antes
+            
+            if (fechaLimite > fechaActual) {
+                contador++;
+            }
+        });
+        
+        return contador;
+    }
+
+    // Nueva función para actualizar el estado de los checkboxes de cuotas futuras
+    function actualizarEstadoCheckboxesFuturos() {
+        let cuotasFuturasSeleccionadas = contarCuotasFuturas();
+        let fechaActual = new Date();
+        
+        $("#lista_cuotas input[type='checkbox']:not(:checked)").each(function() {
+            let data = JSON.parse($(this).attr("data-id"));
+            let fechaVencimiento = new Date(data.fechaVencimiento);
+            let fechaLimite = new Date(fechaVencimiento);
+            fechaLimite.setDate(fechaLimite.getDate() - 2);
+            
+            // Si es una cuota futura y ya se alcanzó el límite, deshabilitar
+            if (fechaLimite > fechaActual && cuotasFuturasSeleccionadas >= 1) {
+                $(this).prop("disabled", true);
+            } else if (fechaLimite > fechaActual && cuotasFuturasSeleccionadas < 1) {
+                $(this).prop("disabled", false);
+            }
+        });
     }
 
     function actualizarMoraCheckbox(checkbox, mora) {

@@ -35,6 +35,7 @@ Route::post('/ajs/cupones/conductores', 'CuponController@obtenerConductoresCupon
 // Rutas de verificación
 Route::post('/ajs/cupones/verificar/conductores', 'CuponController@verificarConductoresConCupones'); // cupones de un conductor en especifico
 Route::get('/ajs/cupones/verificar/conductor/:id_conductor', 'CuponController@verificarCuponConductor'); // verifica si ese conductor tiene cupones
+Route::get('/ajs/cupones/verificar/cliente/:id_cliente', 'CuponController@verificarCuponCliente'); // verifica si ese cliente tiene cupones
 // Rutas de estadísticas y uso
 Route::get('/ajs/cupones/estadisticas', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de todos los cupones
 Route::get('/ajs/cupones/estadisticas/:id', 'CuponController@obtenerEstadisticasUso'); // Para obtener estadísticas de uso de un cupón específico

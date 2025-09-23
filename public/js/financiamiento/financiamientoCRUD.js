@@ -99,13 +99,19 @@ function saveFinanciamiento(event) {
   const fechaHoraActual = $("#fechaHoraActual").val();
   // Obtener valor de cobrar mora (solo para directores)
   let cobrarMora = 1; // Valor por defecto
-  if (window.rolUsuarioActual == '3') {
-      const cobrarMoraElement = document.querySelector('input[name="cobrarMora"]:checked');
-      cobrarMora = cobrarMoraElement ? parseInt(cobrarMoraElement.value) : 1;
+  if (planGlobal && typeof planGlobal.cobrar_mora !== 'undefined') {
+      cobrarMora = parseInt(planGlobal.cobrar_mora);
   }
 
 
   const numeroDocumento = $("#numeroDocumento").val();
+
+  // Obtener valor de verificación domiciliaria (solo para vehiculares)
+  let verificacionDomiciliaria = null;
+  const verificacionDomiciliariaElement = document.querySelector('input[name="verificacionDomiciliaria"]:checked');
+  if (verificacionDomiciliariaElement) {
+      verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
+  }
 
   const fechasVencimiento = []; // Crear un arreglo vacío para almacenar las fechas
   $("#contenedorFechas span").each(function () {
@@ -202,6 +208,7 @@ function saveFinanciamiento(event) {
         tipo_moneda: tipoMoneda,
         tasa: tasa, // Modificado: Añadido el parámetro tasa que faltaba
         cobrar_mora: cobrarMora,
+        verificacion_domiciliaria: verificacionDomiciliaria,
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -286,7 +293,8 @@ function saveFinanciamiento(event) {
             planT: plan_telefono,
             tipo_moneda: tipoMoneda,
             tasa: tasa,
-            cobrar_mora: cobrarMora
+            cobrar_mora: cobrarMora,
+            verificacion_domiciliaria: verificacionDomiciliaria,
           },
           success: function (response) {
             if (response.success) {
@@ -417,9 +425,19 @@ function saveFinanciamientoVehicular() {
   const cliente = document.getElementById("numeroDocumento").value.trim(); // ✅ Eliminar espacios vacíos
   const numeroDocumento = cliente;
 
+  // Obtener valor de verificación domiciliaria
+  let verificacionDomiciliaria = null;
+  const verificacionDomiciliariaElement = document.querySelector('input[name="verificacionDomiciliaria"]:checked');
+  if (verificacionDomiciliariaElement) {
+      verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
+  }
+
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  if (document.getElementById("entregarSi").checked) {
+  // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
+  const entregarSiElement = document.getElementById("entregarSi");
+
+  if (entregarSiElement && entregarSiElement.checked) {
     // ✅ Si "Sí" está marcado
     idProducto = productoSeleccionado?.id; // ✅ Si "Sí" está marcado, tomar id del objeto productoSeleccionado
     if (!idProducto) {
@@ -437,15 +455,26 @@ function saveFinanciamientoVehicular() {
       ); // ✅ Mostrar alerta si el precio es inválido
       return; // ✅ Salir de la función si el precio no es válido
     }
+  } else if (!entregarSiElement) {
+    // Para planes no vehiculares (como corporativo), usar producto seleccionado si existe
+    if (productoSeleccionado && productoSeleccionado.id) {
+      idProducto = productoSeleccionado.id;
+    } else {
+      // Para planes corporativos sin producto, usar ID por defecto (ajustar según necesidad)
+      idProducto = 37; // ID para "Servicio" o similar
+    }
   }
 
-  // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo si no es plan ID 33)
- // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo si no es plan ID 33)
+  // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo para planes vehiculares)
 const grupoFinanciamiento = document.getElementById("grupo").value;
+const entregarNoElement = document.getElementById("entregarNo");
+
+// Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
 if (
+  entregarSiElement && entregarNoElement &&
   grupoFinanciamiento !== "33" &&
-  !document.getElementById("entregarSi").checked &&
-  !document.getElementById("entregarNo").checked
+  !entregarSiElement.checked &&
+  !entregarNoElement.checked
 ) {
   Swal.fire(
     "Error",
@@ -522,11 +551,9 @@ if (
     ? document.getElementById("tasaInteres").value.trim()
     : null;
 
-    // Obtener valor de cobrar mora (solo para directores)
     let cobrarMora = 1; // Valor por defecto
-    if (window.rolUsuarioActual == '3') {
-        const cobrarMoraElement = document.querySelector('input[name="cobrarMora"]:checked');
-        cobrarMora = cobrarMoraElement ? parseInt(cobrarMoraElement.value) : 1;
+    if (planGlobal && typeof planGlobal.cobrar_mora !== 'undefined') {
+        cobrarMora = parseInt(planGlobal.cobrar_mora);
     }
 
   // Extraer las fechas de vencimiento desde el contenedorFechas y agregar al arreglo fechasVencimiento
@@ -602,6 +629,7 @@ if (
       tasa: tasa && tasa !== "0" ? tasa : null,
       id_variante: idVariante,
       cobrar_mora: cobrarMora,
+      verificacion_domiciliaria: verificacionDomiciliaria,
     };
 
     $.ajax({
@@ -815,9 +843,13 @@ function limpiarFormulario() {
   colorInput();
   camposMontoHabilitadosUnaVez = false;
 
-  // Limpiar selector de cobrar mora
-  document.getElementById("cobrarMoraSi").checked = true;
-  document.getElementById("cobrarMoraNo").checked = false;
+  // Limpiar y ocultar selector de verificación domiciliaria
+  const verificacionSi = document.getElementById("verificacionSi");
+  const verificacionNo = document.getElementById("verificacionNo");
+  const contenedorVerificacion = document.getElementById("contenedorVerificacionDomiciliaria");
+  if (verificacionSi) verificacionSi.checked = false;
+  if (verificacionNo) verificacionNo.checked = false;
+  if (contenedorVerificacion) contenedorVerificacion.style.display = "none";
 
 }
 
@@ -1415,7 +1447,8 @@ function generateCronograma() {
   const fechaLimite = new Date(fechaHoy);
   fechaLimite.setDate(fechaHoy.getDate() - 1); // Restar un día
 
-  console.log("Enviando cronogramaDatos al backend:", cronogramaDatos);
+  console.log("🔍 DEBUGING generateCronograma() - cronogramaDatos:", cronogramaDatos);
+  console.log("🔍 DEBUGING generateCronograma() - planGlobal:", planGlobal);
   // Aquí agregamos los datos del cronograma al objeto de datos
   const datosFormulario = {
     nombreCliente: nombreCliente,

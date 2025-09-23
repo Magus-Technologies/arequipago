@@ -801,41 +801,84 @@ class FinanciamientoController extends Controller
        }
 
        public function obtenerTipoCambio() {
-            $token = 'apis-token-12676.06vC22lNLuV4uUGX4CsxHcdKf2tT92T8'; // Reemplaza con tu token
-            $url = 'https://api.apis.net.pe/v2/sunat/tipo-cambio';
+            // Intentar primero con la API principal (SUNAT)
+            $tipoCambio = $this->obtenerTipoCambioSUNAT();
 
-            // Iniciar llamada a API
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_SSL_VERIFYPEER => 0,
-                CURLOPT_HTTPHEADER => array(
-                    'Referer: https://apis.net.pe/tipo-de-cambio-sunat-api',
-                    'Authorization: Bearer ' . $token
-                ),
-            ));
-
-            $response = curl_exec($curl);
-            curl_close($curl);
-
-            
-
-            // Decodificar la respuesta
-            $data = json_decode($response, true);
-
-            
-
-            // Manejar errores o respuesta vacía
-            if (!$data || !isset($data['precioVenta'])) {
-                echo json_encode(['error' => 'No se pudo obtener el tipo de cambio']);
-                return;
+            if (!$tipoCambio) {
+                // Si falla, usar API de respaldo
+                $tipoCambio = $this->obtenerTipoCambioRespaldo();
             }
 
-            // Enviar el tipo de cambio al cliente
-            // Enviar el tipo de cambio al cliente
-            echo json_encode(['tipo_cambio' => $data['precioVenta']]); // Usamos 'precioVenta' que es el campo correcto
+            if (!$tipoCambio) {
+                // Si ambas fallan, usar valor por defecto
+                $tipoCambio = 3.70;
+            }
 
+            echo json_encode(['tipo_cambio' => $tipoCambio]);
+        }
+
+        private function obtenerTipoCambioSUNAT() {
+            try {
+                $url = 'https://api.apis.net.pe/v2/sunat/tipo-cambio';
+                $token = 'apis-token-12676.06vC22lNLuV4uUGX4CsxHcdKf2tT92T8';
+
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => 0,
+                    CURLOPT_TIMEOUT => 10,
+                    CURLOPT_HTTPHEADER => array(
+                        'Referer: https://apis.net.pe/tipo-de-cambio-sunat-api',
+                        'Authorization: Bearer ' . $token
+                    ),
+                ));
+
+                $response = curl_exec($curl);
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                curl_close($curl);
+
+                if ($httpCode === 200) {
+                    $data = json_decode($response, true);
+                    if ($data && isset($data['precioVenta'])) {
+                        return floatval($data['precioVenta']);
+                    }
+                }
+            } catch (Exception $e) {
+                // Continuar al método de respaldo
+            }
+
+            return false;
+        }
+
+        private function obtenerTipoCambioRespaldo() {
+            try {
+                // API gratuita de tipo de cambio (ejemplo)
+                $url = 'https://api.exchangerate-api.com/v4/latest/USD';
+
+                $curl = curl_init();
+                curl_setopt_array($curl, array(
+                    CURLOPT_URL => $url,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => 0,
+                    CURLOPT_TIMEOUT => 10,
+                ));
+
+                $response = curl_exec($curl);
+                $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+                curl_close($curl);
+
+                if ($httpCode === 200) {
+                    $data = json_decode($response, true);
+                    if ($data && isset($data['rates']['PEN'])) {
+                        return floatval($data['rates']['PEN']);
+                    }
+                }
+            } catch (Exception $e) {
+                // Falló también el respaldo
+            }
+
+            return false;
         }
 
         

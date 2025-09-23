@@ -470,12 +470,12 @@ class Cupon
     {
         try {
             if ($idCliente) {
-                $sql = "INSERT INTO cupones_uso_tracking (id_cupon, id_cliente, monto_descuento, tipo_usuario) 
+                $sql = "INSERT INTO cupones_uso_tracking (id_cupon, id_cliente, monto_descuento, tipo_usuario)
                         VALUES (?, ?, ?, 'cliente')";
                 $stmt = $this->conectar->prepare($sql);
                 $stmt->bind_param('iid', $idCupon, $idCliente, $montoDescuento);
             } else {
-                $sql = "INSERT INTO cupones_uso_tracking (id_cupon, id_conductor, monto_descuento, tipo_usuario) 
+                $sql = "INSERT INTO cupones_uso_tracking (id_cupon, id_conductor, monto_descuento, tipo_usuario)
                         VALUES (?, ?, ?, 'conductor')";
                 $stmt = $this->conectar->prepare($sql);
                 $stmt->bind_param('iid', $idCupon, $idConductor, $montoDescuento);

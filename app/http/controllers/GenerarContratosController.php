@@ -554,7 +554,7 @@ class GenerarContratosController extends controller
         // Generar textos dinámicos según tipo de persona
         $textoRol = $tipoPersona === 'conductor' ? 'conductor' : 'cliente';
         $fraseAfiliacion = $tipoPersona === 'conductor' ? ', afiliado a la empresa Arequipa Go donde actualmente labora' : '';
-        $bloqueLicencia = $tipoPersona === 'conductor' ? ' y N° de licencia ' . $persona['nro_licencia'] : '';
+        $bloqueLicencia = $tipoPersona === 'conductor' ? ', N° licencia ' . $persona['nro_licencia'] : '';
 
         // Generar texto para la cláusula de descuento según tipo de persona
         $clausulaConductor = '';
@@ -570,7 +570,7 @@ class GenerarContratosController extends controller
         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 33) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_MotosYa.html";
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipPlanMovil.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipLinea.html";
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 19) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "credigo_autos.html";
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
@@ -609,7 +609,7 @@ class GenerarContratosController extends controller
                     }
                 }
 
-
+//comentario de prueba 
                 // Reemplazar los valores en la plantilla
                 $plantillaChip = str_replace('<span id="hora">', $hora, $plantillaChip);
                 $plantillaChip = str_replace('<span id="dia">', $dia, $plantillaChip);

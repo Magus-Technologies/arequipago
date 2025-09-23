@@ -777,31 +777,28 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
                                                         <i class="fas fa-info-circle"></i>
                                                     </span>
-                                                </div>                                              
-                                            </div>
-
-                                            <!-- AQUÍ INSERTAS EL CÓDIGO COMPLETO DEL SELECTOR DE MORA -->
-                                            <!-- Sección de cobrar mora (solo para directores) -->
-                                            <div class="row mb-4" id="contenedorCobroMora" style="display: none;">
-                                                <div class="col-md-6 mb-3">
-                                                    <label class="form-label">Cobrar mora en cuotas vencidas</label>
-                                                    <div class="d-flex gap-4" id="opcionesCobroMora">
+                                                </div>
+                                                
+                                                <!-- Campo de verificación domiciliaria - solo para financiamientos vehiculares -->
+                                                <div class="col-md-6 mb-3" id="contenedorVerificacionDomiciliaria" style="display: none;">
+                                                    <label for="verificacionDomiciliaria" class="form-label">¿Se ha verificado el domicilio?</label>
+                                                    <div class="d-flex gap-4">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="radio" name="cobrarMora" id="cobrarMoraSi" value="1" checked>
-                                                            <label class="form-check-label" for="cobrarMoraSi">
-                                                                <i class="fas fa-check-circle me-1" style="color: #626ed4;"></i>Sí cobrar mora
+                                                            <input class="form-check-input" type="radio" name="verificacionDomiciliaria" id="verificacionSi" value="1">
+                                                            <label class="form-check-label" for="verificacionSi">
+                                                                <i class="fas fa-check-circle me-1" style="color: #28a745;"></i>Sí verificado
                                                             </label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                            <input class="form-check-input" type="radio" name="cobrarMora" id="cobrarMoraNo" value="0">
-                                                            <label class="form-check-label" for="cobrarMoraNo">
-                                                                <i class="fas fa-times-circle me-1" style="color: #6c757d;"></i>No cobrar mora
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="verificacionDomiciliaria" id="verificacionNo" value="0">
+                                                            <label class="form-check-label" for="verificacionNo">
+                                                                <i class="fas fa-times-circle me-1" style="color: #dc3545;"></i>No verificado
                                                             </label>
-                                                            </div>
+                                                        </div>
                                                     </div>
                                                     <div class="form-text">
                                                         <i class="fas fa-info-circle me-1" style="color: #626ed4;"></i>
-                                                        Esta opción determina si se aplicará mora a las cuotas que se paguen después de su fecha de vencimiento
+                                                        Indica si se ha realizado la verificación del domicilio del cliente/conductor
                                                     </div>
                                                 </div>
                                             </div>
@@ -1370,13 +1367,16 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
             checkSelection();
 
+            // NUEVO: Configurar frecuencia inicial al cargar la página
+            setTimeout(() => {
+                configurarFrecuenciaPago(null); // Inicialmente bloqueado
+            }, 100);
+
             // Configuramos el ordenamiento
             configurarOrdenamiento();
 
             obtenerFinanciamientosPendientes();
-            mostrarSelectorCobroMora(); // Mostrar selector de mora según rol
-
-
+           
             // Aplicar estilo activo a la primera pestaña por defecto
             $("#listaFinanciamientoNav").addClass("tab-button-active");
 
@@ -1444,9 +1444,12 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 timeout = setTimeout(calcularMonto, 300);
             });
 
-            $("#grupo").on("change", function () {
-                selectPlan($(this).val());
-
+            $("#grupo").off('change').on("change", function () {
+                const valorSeleccionado = $(this).val();
+                console.log("Valor seleccionado en grupo:", valorSeleccionado); // Para debug
+                
+                selectPlan(valorSeleccionado);
+                
                 // Verificar campos especiales después de un breve delay
                 setTimeout(() => {
                     verificarYMantenerCamposEspeciales();
@@ -1615,10 +1618,6 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 } else if (input.id === 'fechaHoraActual') {
                     input.setAttribute('title', 'Fecha y hora actual del registro'); // NUEVO: Título para fecha y hora actual
                 }
-            });
-
-            $('#grupo').on('change', function () {
-                checkSelection(); // Llama a la función cuando cambie el valor del select
             });
 
             NotGrupo();

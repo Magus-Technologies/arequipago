@@ -39,6 +39,8 @@ class GruposFinanciamientoController extends Controller
             $fechaFin = $_POST["fecha_fin"] ?? null;
             $tipoVehicular = $_POST["tipo_vehicular"] ?? null;
             $estado = $_POST["estado"] ?? "activo";
+ 
+            $cobrarMora = isset($_POST["cobrar_mora"]) ? (int)$_POST["cobrar_mora"] : 1;
 
             if (empty($nombrePlan) || empty($frecuenciaPago) || empty($moneda)) { 
                 echo json_encode(["success" => false, "message" => "Todos los campos son obligatorios excepto la cuota inicial, monto de cuota y cantidad de cuotas."]);
@@ -46,7 +48,7 @@ class GruposFinanciamientoController extends Controller
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
-            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado);
+            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora);
 
            if ($idPlan) {
                 // Verificar si hay variantes para guardar
@@ -118,12 +120,15 @@ class GruposFinanciamientoController extends Controller
             $tipoVehicular = $_POST['tipo_vehiculo'] ?? null;
             $estado = $_POST['estado'] ?? 'activo';
 
+            // NUEVO: Capturar cobrar mora
+            $cobrarMora = isset($_POST['cobrar_mora']) ? (int)$_POST['cobrar_mora'] : 1;
+
             try {
                 $modelo = new GrupoFinanciamientoModel();  // Instanciar correctamente el modelo antes de usarlo (EDITADO)
 
                 $modelo->editarGrupo(  
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
-                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado
+                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora  // Agregado $cobrarMora como 15º parámetro
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes
@@ -288,6 +293,7 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
         }
     }
+    
     public function obtenerDetallesPlan() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = isset($_POST['id']) ? $_POST['id'] : null;
