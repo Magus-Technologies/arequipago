@@ -395,11 +395,12 @@ function calcularCronogramaDinamico() {
   let valorCuota = parseFloat(valorCuotaLimpio) || 0;
 
   let montoTotalInput = document.getElementById("monto");
-  // Cambio: Obtener frecuencia del select solo si está habilitado
+  // CORREGIDO: Usar frecuencia del plan cuando el select esté deshabilitado
   const frecuenciaSelect = document.getElementById("frecuenciaPago");
   let frecuencia = frecuenciaSelect && !frecuenciaSelect.disabled ? 
                   frecuenciaSelect.value : 
-                  'semanal'; // valor por defecto
+                  (planGlobal ? planGlobal.frecuencia_pago : 'mensual');
+
 
   console.log("🔄 Frecuencia utilizada en cronograma dinámico:", frecuencia, "- Select habilitado:", !frecuenciaSelect?.disabled);
 
@@ -520,13 +521,19 @@ function calcularCronogramaDinamico() {
     planGlobal &&
     [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
   ) {
-    // Para planes de celular: siempre día 30, excepto febrero que es 28
+    // CORREGIDO: Para planes de celular (IDs 2, 3, 4): siempre día 30
+    const añoActual = primeraFechaVencimiento.getFullYear();
+    const mesActual = primeraFechaVencimiento.getMonth();
+    
+    // Crear fecha para el día 30 del mes actual
+    primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
+    
+    // Si es febrero, ajustar al día 28
     if (primeraFechaVencimiento.getMonth() === 1) {
-      // Febrero
       primeraFechaVencimiento.setDate(28);
-    } else {
-      primeraFechaVencimiento.setDate(30);
     }
+    
+    console.log("📱 Plan de celular - Primera fecha ajustada al día 30:", primeraFechaVencimiento.toLocaleDateString());
   }
 
   // NUEVO: Corregir fechas para planes especiales por ID - MOVIDO ANTES DE push()

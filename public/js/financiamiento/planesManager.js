@@ -1522,19 +1522,23 @@ function aplicarMontoInscripcion(
     // Para grupos vehiculares, bloquear el input y mostrar el monto calculado
     inputMontoInscripcion.value = montoInscripcion.toFixed(2);
     inputMontoInscripcion.readOnly = true;
+    inputMontoInscripcion.disabled = true; // NUEVO: Añadir disabled para mayor bloqueo
     inputMontoInscripcion.style.backgroundColor = "#e9ecef";
     inputMontoInscripcion.style.cursor = "not-allowed";
+    inputMontoInscripcion.style.pointerEvents = "none"; // NUEVO: Evitar cualquier interacción
 
     console.log(
-      `Monto de inscripción aplicado: ${moneda} ${montoInscripcion.toFixed(
+      `Monto de inscripción aplicado y bloqueado: ${moneda} ${montoInscripcion.toFixed(
         2
       )} para tipo ${tipoVehicular}`
     );
   } else {
     // Para grupos no vehiculares, permitir edición manual
     inputMontoInscripcion.readOnly = false;
+    inputMontoInscripcion.disabled = false; // NUEVO: Asegurar que esté habilitado
     inputMontoInscripcion.style.backgroundColor = "";
     inputMontoInscripcion.style.cursor = "";
+    inputMontoInscripcion.style.pointerEvents = "auto"; // NUEVO: Permitir interacción
 
     console.log(
       "Monto de inscripción habilitado para edición manual (no vehicular)"
@@ -1957,5 +1961,413 @@ function manejarCambioFrecuencia() {
 function limpiarValoresOriginalesPlan() {
     valoresOriginalesPlan = null;
     console.log("🗑️ Valores originales del plan limpiados");
+}
+
+// NUEVA FUNCIÓN: Verificar y mantener campos especiales según configuración del plan
+function verificarYMantenerCamposEspeciales() {
+  console.log("🔒 Verificando y manteniendo campos especiales según configuración del plan");
+  
+  // Verificar si el plan actual es vehicular
+  const esVehicular = planGlobal && planGlobal.tipo_vehicular && 
+                     (planGlobal.tipo_vehicular === 'vehiculo' || planGlobal.tipo_vehicular === 'moto');
+  
+  const inputMontoInscripcion = document.getElementById("montoInscripcion");
+  
+  if (esVehicular && inputMontoInscripcion) {
+    // Para planes vehiculares, asegurar que esté bloqueado
+    if (!inputMontoInscripcion.disabled || !inputMontoInscripcion.readOnly) {
+      console.log("🔒 Bloqueando monto de inscripción para plan vehicular");
+      
+      // Calcular el monto correcto según el tipo
+      let montoCalculado = 0;
+      if (planGlobal.tipo_vehicular === 'moto') {
+        montoCalculado = 200; // S/.200 fijo para motos
+      } else if (planGlobal.tipo_vehicular === 'vehiculo' && planGlobal.monto_sin_interes) {
+        montoCalculado = parseFloat(planGlobal.monto_sin_interes) * 0.02; // 2% para vehículos
+      }
+      
+      // Aplicar el bloqueo
+      inputMontoInscripcion.value = montoCalculado.toFixed(2);
+      inputMontoInscripcion.readOnly = true;
+      inputMontoInscripcion.disabled = true;
+      inputMontoInscripcion.style.backgroundColor = "#e9ecef";
+      inputMontoInscripcion.style.cursor = "not-allowed";
+      inputMontoInscripcion.style.pointerEvents = "none";
+      
+      console.log(`🔒 Monto de inscripción bloqueado en: ${montoCalculado.toFixed(2)}`);
+    }
+  }
+  
+  // Mantener otros campos especiales desbloqueados si es necesario
+  if (planGlobal && [14, 15, 16].includes(parseInt(planGlobal.idplan_financiamiento))) {
+    const cuotasInput = document.getElementById("cuotas");
+    const cuotaInicialInput = document.getElementById("cuotaInicial");
+    
+    if (cuotasInput && cuotasInput.disabled) {
+      cuotasInput.disabled = false;
+      cuotasInput.readOnly = false;
+      cuotasInput.style.backgroundColor = "#ffffff";
+      cuotasInput.style.color = "#333333";
+      cuotasInput.style.pointerEvents = "auto";
+      cuotasInput.style.cursor = "text";
+      console.log("🔓 Manteniendo cuotas desbloqueado para plan especial");
+    }
+    
+    if (cuotaInicialInput && cuotaInicialInput.disabled) {
+      cuotaInicialInput.disabled = false;
+      cuotaInicialInput.readOnly = false;
+      cuotaInicialInput.style.backgroundColor = "#ffffff";
+      cuotaInicialInput.style.color = "#333333";
+      cuotaInicialInput.style.pointerEvents = "auto";
+      cuotaInicialInput.style.cursor = "text";
+      console.log("🔓 Manteniendo cuota inicial desbloqueada para plan especial");
+    }
+  }
+}
+
+
+function calcularFinanciamiento() {
+  console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
+  console.log("Entrando a calcularFinanciamiento...");
+
+  // Obtener valores de los inputs
+  const montoRaw = document.getElementById("monto").value;
+  const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
+  const montoSinIntereses = parseFloat(montoSinInteresesRaw) || 0;
+  console.log("📊 montoSinInteresesRaw:", montoSinInteresesRaw, "-> parseado:", montoSinIntereses);
+  const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
+  const tasaInteresRaw = document.getElementById("tasaInteres").value;
+
+  // CORREGIDO: Usar frecuencia del plan cuando el select esté deshabilitado
+  const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
+  const frecuenciaPago = frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled ? 
+                        frecuenciaSelectCalc.value : 
+                        (planGlobal ? planGlobal.frecuencia_pago : 'mensual');
+
+
+  console.log("🔄 Frecuencia utilizada en calcularFinanciamiento:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectCalc?.disabled);
+  const tipoMoneda = obtenerTipoMoneda();
+
+  console.log("Valores iniciales: ", {
+    montoRaw,
+    cuotaInicialRaw,
+    tasaInteresRaw,
+    frecuenciaPago,
+    tipoMoneda,
+  });
+
+  // Convertir valores a números y calcular el monto total con intereses
+  let montoTotal = montoSinIntereses * (1 + parseFloat(tasaInteresRaw) / 100);
+  console.log("Monto total calculado:", montoTotal);
+
+  const cuotaInicial = parseFloat(
+    cuotaInicialRaw
+      .replace(/S\/\.|US\$/, "")
+      .replace(",", "")
+      .trim()
+  );
+  const tasaInteres = parseFloat(tasaInteresRaw) / 100;
+  const fechaInicio = document.getElementById("fechaInicio").value;
+
+  console.log("Valores parseados: ", {
+    montoTotal,
+    cuotaInicial,
+    tasaInteres,
+    fechaInicio,
+  });
+
+  document.getElementById("monto").value = montoTotal.toFixed(2);
+
+  // Verificar si hay valores NaN o faltan datos críticos
+  if (
+    isNaN(montoTotal) ||
+    isNaN(cuotaInicial) ||
+    isNaN(tasaInteres) ||
+    montoSinIntereses <= 0 ||
+    !fechaInicio ||
+    !frecuenciaPago
+  ) {
+    console.error("Faltan valores o hay NaN en el cálculo, revisa los inputs");
+    console.error("Estado de valores:", {
+      montoTotal: isNaN(montoTotal) ? "NaN" : montoTotal,
+      cuotaInicial: isNaN(cuotaInicial) ? "NaN" : cuotaInicial,
+      tasaInteres: isNaN(tasaInteres) ? "NaN" : tasaInteres,
+      montoSinIntereses: montoSinIntereses,
+      fechaInicio: fechaInicio,
+      frecuenciaPago: frecuenciaPago
+    });
+    return; // Salir si hay problemas con los valores
+  }
+
+  // Validar que cuota inicial no sea mayor que monto total
+  if (cuotaInicial > montoTotal) {
+    console.warn("La cuota inicial no puede ser mayor que el monto total");
+    return;
+  }
+
+  // Obtener cantidad de cuotas
+  const cantidadCuotas = parseInt(document.getElementById("cuotas").value);
+  if (!cantidadCuotas || cantidadCuotas <= 0) {
+    console.warn("Cantidad de cuotas inválida");
+    return;
+  }
+
+  console.log("Cantidad de cuotas válida: ", cantidadCuotas);
+
+  // Calcular tasa de interés por período
+  const tasaPeriodo =
+    frecuenciaPago === "semanal" ? tasaInteres / 52 : tasaInteres / 12;
+
+  console.log("Tasa de interés por período: ", tasaPeriodo);
+
+  // ✅ Corregido: Ahora el cálculo de la cuota sigue la fórmula correctamente
+  const valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
+  console.log("Valor de la cuota calculado: ", valorCuota);
+
+  console.log("Valor de la cuota calculado: ", valorCuota);
+  const cuotaFormateada = formatMoneda(valorCuota, tipoMoneda);
+
+  // Mostrar resultado en el input
+  document.getElementById("valorCuota").value = cuotaFormateada;
+  console.log("Valor de la cuota seteado en el input");
+
+  // Calcular fechas de vencimiento
+  let fechasVencimiento = [];
+  const fechaInicioObj = new Date(fechaInicio + "T00:00:00");
+  const diasIntervalo = frecuenciaPago === "semanal" ? 7 : 30;
+
+  // NUEVO: Para planes de celular, ajustar la primera fecha al día 30
+  let primeraFechaVencimiento = new Date(fechaInicioObj);
+
+  // NUEVO: Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
+  if (
+    planGlobal &&
+    parseInt(planGlobal.idplan_financiamiento) === 36
+  ) {
+    const año = primeraFechaVencimiento.getFullYear();
+    const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
+    primeraFechaVencimiento = new Date(año, mes, 24);
+    console.log(
+      "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+  // DESPUÉS (código corregido):
+  } else if (
+    planGlobal &&
+    [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
+  ) {
+    // CORREGIDO: Para planes de celular (IDs 2, 3, 4): día 30 del SIGUIENTE mes
+    const añoActual = primeraFechaVencimiento.getFullYear();
+    let mesActual = primeraFechaVencimiento.getMonth();
+    
+    // CORREGIDO: Avanzar al siguiente mes para la primera cuota
+    mesActual += 1;
+    let añoAjustado = añoActual;
+    
+    // Si el mes se pasa de diciembre, ajustar año
+    if (mesActual > 11) {
+      mesActual = 0; // Enero
+      añoAjustado += 1;
+    }
+    
+    // Crear fecha para el día 30 del siguiente mes
+    primeraFechaVencimiento = new Date(añoAjustado, mesActual, 30);
+    
+    // Si es febrero, ajustar al día 28 (o 29 en año bisiesto)
+    if (primeraFechaVencimiento.getMonth() === 1) {
+      const esBisiesto = (añoAjustado % 4 === 0 && añoAjustado % 100 !== 0) || (añoAjustado % 400 === 0);
+      primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
+    }
+    
+    console.log("📱 Plan de celular - Primera fecha ajustada al día 30 del siguiente mes:", primeraFechaVencimiento.toLocaleDateString());
+  }
+    else if (
+    planGlobal &&
+    planGlobal.grupo === "Vehicular" &&
+    frecuenciaPago === "semanal"
+  ) {
+    primeraFechaVencimiento = obtenerProximoLunes(fechaInicioObj);
+    console.log(
+      "Plan vehicular semanal - Primera fecha ajustada al lunes:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+  }
+
+  // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después
+  if (planGlobal && planGlobal.idplan_financiamiento) {
+    const idPlan = parseInt(planGlobal.idplan_financiamiento);
+
+    if ([14, 15, 16].includes(idPlan)) {
+      console.log(
+        "Plan especial detectado en calcularFinanciamiento, ID:",
+        idPlan
+      );
+
+      // Calcular fecha EXACTAMENTE una semana después de hoy (sin ajustar al lunes)
+      const fechaHoy = new Date();
+      const fechaEspecial = new Date(fechaHoy);
+      fechaEspecial.setDate(fechaEspecial.getDate() + 7); // Solo sumar 7 días
+
+      primeraFechaVencimiento = new Date(fechaEspecial);
+      console.log("Fecha hoy:", fechaHoy.toLocaleDateString());
+      console.log(
+        "Primera fecha ajustada (7 días después):",
+        primeraFechaVencimiento.toLocaleDateString()
+      );
+    }
+  }
+
+  console.log(
+    "Primera fecha de vencimiento:",
+    primeraFechaVencimiento.toLocaleDateString()
+  );
+
+  // CRÍTICO: Agregar la primera fecha al array antes del ciclo
+  fechasVencimiento.push(primeraFechaVencimiento);
+
+  console.log("Calculando fechas de vencimiento...");
+  for (let i = 1; i < cantidadCuotas; i++) {
+
+    // ✅ Se empieza desde 1 porque ya agregamos la primera fecha
+    let fechaAnterior = fechasVencimiento[i - 1]; // ✅ Tomar la última fecha añadida
+    let nuevaFecha = new Date(fechaAnterior);
+
+    if (frecuenciaPago === "semanal") {
+      // Para planes semanales, simplemente sumar 7 días
+      nuevaFecha.setDate(nuevaFecha.getDate() + 7);
+    
+      } else {
+      // Para planes mensuales, avanzar al siguiente mes
+      let diaOriginal = nuevaFecha.getDate();
+      nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+      
+      // NUEVO: Verificar si es plan corporativo de chips (ID 36)
+      if (
+        planGlobal &&
+        parseInt(planGlobal.idplan_financiamiento) === 36
+      ) {
+        // Para plan corporativo de chips: siempre día 24
+        nuevaFecha.setDate(24);
+      } else if (
+        planGlobal &&
+        [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
+      ) {
+        // Para planes de celular: siempre día 30, excepto febrero que es 28
+        if (nuevaFecha.getMonth() === 1) {
+          // Febrero
+          const esAnioBisiesto = (nuevaFecha.getFullYear() % 4 === 0 && nuevaFecha.getFullYear() % 100 !== 0) || (nuevaFecha.getFullYear() % 400 === 0);
+          nuevaFecha.setDate(esAnioBisiesto ? 29 : 28);
+        } else {
+          nuevaFecha.setDate(30);
+        }
+      } else {
+        // Para otros planes mensuales: mantener el día 30 como estándar
+        if (nuevaFecha.getMonth() === 1) {
+          // Si es febrero
+          const esAnioBisiesto = (nuevaFecha.getFullYear() % 4 === 0 && nuevaFecha.getFullYear() % 100 !== 0) || (nuevaFecha.getFullYear() % 400 === 0);
+          nuevaFecha.setDate(esAnioBisiesto ? 29 : 28);
+        } else {
+          // Para otros meses, usar día 30
+          nuevaFecha.setDate(30);
+        }
+      }
+    }
+
+    fechasVencimiento.push(nuevaFecha);
+    console.log(`Fecha ${i}: `, nuevaFecha.toLocaleDateString());
+  }
+
+  montoFormateado = montoTotal.toFixed(2); // ✅ Si formatMoneda falla, se usa el número sin formato
+  document.getElementById("monto").value = montoFormateado;
+
+  mostrarFechasVencimiento(fechasVencimiento, valorCuota, tipoMoneda);
+
+  // Actualizar fecha de fin
+  const fechaFin = fechasVencimiento[fechasVencimiento.length - 1];
+  const fechaFormateada = formatFechaInput(fechaFin);
+  document.getElementById("fechaFin").value = fechaFormateada;
+
+  console.log("Fecha fin calculada y seteada: ", fechaFormateada);
+}
+
+if (typeof cronogramaDatos === "undefined") {
+  var cronogramaDatos = []; // O usar let o const si está en un ámbito adecuado
+}
+
+// Función para mostrar las fechas de vencimiento de las cuotas
+function mostrarFechasVencimiento(
+  fechasVencimiento,
+  valorcuota,
+  moneda,
+  numeroInicial
+) {
+  console.log("🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas:", fechasVencimiento);
+  console.log("🔍 Plan actual:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
+  const contenedorFechas = document.getElementById("contenedorFechas"); // Asegúrate de tener un contenedor para las fechas
+  contenedorFechas.innerHTML = ""; // Limpiar el contenedor antes de agregar las nuevas fechas
+
+  cronogramaDatos = [];
+
+  // Si planGlobal tiene una fecha de inicio válida, ajustamos la primera al siguiente lunes
+  // EXCEPCIÓN: Para plan corporativo de chips (ID 36), no ajustar fechas - ya están correctas
+  if (planGlobal?.fecha_inicio && !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36)) {
+    let primeraFecha = fechasVencimiento[0];
+    let diaSemana = primeraFecha.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+    let diasHastaLunes = (8 - diaSemana) % 7; // Cuántos días faltan para el próximo lunes
+    primeraFecha.setDate(primeraFecha.getDate() + diasHastaLunes);
+    fechasVencimiento[0] = new Date(primeraFecha); // Reemplazar la primera fecha
+  }
+
+  let numeroCuotaInicial = 1; // Valor predeterminado
+  if (numeroInicial !== null && numeroInicial !== undefined) {
+    // MODIFICADO: Validación para numeroInicial
+    numeroCuotaInicial = numeroInicial; // MODIFICADO: Usar numeroInicial si existe
+  }
+
+  // Recorrer las fechas de vencimiento y mostrarlas
+  fechasVencimiento.forEach((fecha, index) => {
+    const fechaFormateada = formatFecha(fecha); // Asegúrate de tener una función para formatear la fecha
+    const numeroCuota = numeroCuotaInicial + index;
+    contenedorFechas.innerHTML += `
+                <div>
+                    <label>Cuota ${numeroCuota}:</label>
+                    <span>Valor: ${formatMoneda(
+                      valorcuota
+                    )} | Vencimiento: ${fechaFormateada}</span>
+                </div>
+            `;
+    // Almacenar los datos de cada cuota en el array cronogramaDatos
+    cronogramaDatos.push({
+      cuota: numeroCuota, // MODIFICADO: Usar numeroCuota calculado
+      valor: valorcuota,
+      vencimiento: fechaFormateada,
+    });
+  });
+  // Agregar botón para descargar cronograma (nuevo)
+  const botonDescargar = document.createElement("button"); // Crear el botón
+  botonDescargar.type = "button"; // Evitar que el botón actúe como un submit
+  botonDescargar.innerHTML = 'Cronograma <i class="fas fa-file-pdf"></i>'; // Icono y texto (Font Awesome)
+  botonDescargar.style.backgroundColor = "#d32f2f"; // Fondo rojo (Adobe Acrobat)
+  botonDescargar.style.color = "#FFFFFF"; // Texto blanco
+  botonDescargar.style.border = "none"; // Sin borde
+  botonDescargar.style.padding = "10px 15px"; // Espaciado interno
+  botonDescargar.style.borderRadius = "5px"; // Bordes redondeados
+  botonDescargar.style.cursor = "pointer"; // Cambiar cursor al pasar sobre el botón
+  botonDescargar.style.marginTop = "10px"; // Espacio superior
+  botonDescargar.style.display = "inline-flex"; // Alinear icono y texto
+  botonDescargar.style.alignItems = "center"; // Centrar verticalmente el contenido
+  botonDescargar.style.gap = "8px"; // Espacio entre el icono y el texto
+
+  botonDescargar.addEventListener("click", () => {
+    generateCronograma(); // Mensaje temporal, reemplázalo con tu lógica de descarga
+  });
+  contenedorFechas.appendChild(botonDescargar); // Agregar el botón al contenedor de fechas
+}
+
+function formatFechaInput(fecha) {
+  const anio = fecha.getFullYear();
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0"); // Mes debe tener 2 dígitos
+  const dia = fecha.getDate().toString().padStart(2, "0"); // Día debe tener 2 dígitos
+  return `${anio}-${mes}-${dia}`; // Formato adecuado para el input de tipo date
 }
 

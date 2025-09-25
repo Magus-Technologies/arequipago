@@ -1657,6 +1657,24 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 window.lastValues[id] = $(id).val();
             });
 
+            // NUEVA FUNCIÓN: checkAndUpdate con verificación de campos especiales
+            function checkAndUpdate() {
+                let hasChanged = false;
+                
+                window.inputIds.forEach(id => {
+                    const currentValue = $(id).val();
+                    if (window.lastValues[id] !== currentValue) {
+                        hasChanged = true;
+                        window.lastValues[id] = currentValue;
+                    }
+                });
+                
+                // Si hay cambios, verificar y mantener campos especiales
+                if (hasChanged) {
+                    verificarYMantenerCamposEspeciales();
+                }
+            }
+
             // Inicia polling cada 500ms
             const pollingInterval = setInterval(checkAndUpdate, 500);
 
