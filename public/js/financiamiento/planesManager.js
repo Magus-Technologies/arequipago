@@ -1926,22 +1926,55 @@ function manejarCambioFrecuencia() {
             }
         }
         
+        // CORREGIDO: Aplicar lógica específica para planes de celular en primera fecha
+        if (
+          planGlobal &&
+          parseInt(planGlobal.idplan_financiamiento) === 41 &&
+          frecuenciaSeleccionada === "mensual"
+        ) {
+          // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
+          const añoActual = primeraFechaVencimiento.getFullYear();
+          const mesActual = primeraFechaVencimiento.getMonth();
+          primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
+
+          // Si es febrero, ajustar al día 28
+          if (mesActual === 1) {
+            const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
+            primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
+          }
+
+          console.log("📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:", primeraFechaVencimiento.toLocaleDateString());
+        }
+
         fechasVencimiento.push(primeraFechaVencimiento);
-        
+
         for (let i = 1; i < nuevasCuotasRestantes; i++) {
             let fechaAnterior = fechasVencimiento[i - 1];
             let nuevaFecha = new Date(fechaAnterior);
-            
+
             if (frecuenciaSeleccionada === "semanal") {
                 nuevaFecha.setDate(nuevaFecha.getDate() + 7);
             } else {
                 const diaInicio = nuevaFecha.getDate();
                 nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-                if (nuevaFecha.getDate() !== diaInicio) {
+
+                // CORREGIDO: Aplicar lógica específica para planes de celular en fechas posteriores
+                if (
+                  planGlobal &&
+                  parseInt(planGlobal.idplan_financiamiento) === 41
+                ) {
+                  // Para financiamiento de celulares (ID 41): siempre día 30, excepto febrero
+                  if (nuevaFecha.getMonth() === 1) {
+                    const esBisiesto = new Date(nuevaFecha.getFullYear(), 1, 29).getMonth() === 1;
+                    nuevaFecha.setDate(esBisiesto ? 29 : 28);
+                  } else {
+                    nuevaFecha.setDate(30);
+                  }
+                } else if (nuevaFecha.getDate() !== diaInicio) {
                     nuevaFecha.setDate(diaInicio);
                 }
             }
-            
+
             fechasVencimiento.push(new Date(nuevaFecha));
         }
         
@@ -2154,32 +2187,22 @@ function calcularFinanciamiento() {
   // DESPUÉS (código corregido):
   } else if (
     planGlobal &&
-    [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
+    parseInt(planGlobal.idplan_financiamiento) === 41
   ) {
-    // CORREGIDO: Para planes de celular (IDs 2, 3, 4): día 30 del SIGUIENTE mes
+    // CORREGIDO: Para financiamiento de celulares (ID 41): día 30 del MES ACTUAL
     const añoActual = primeraFechaVencimiento.getFullYear();
-    let mesActual = primeraFechaVencimiento.getMonth();
-    
-    // CORREGIDO: Avanzar al siguiente mes para la primera cuota
-    mesActual += 1;
-    let añoAjustado = añoActual;
-    
-    // Si el mes se pasa de diciembre, ajustar año
-    if (mesActual > 11) {
-      mesActual = 0; // Enero
-      añoAjustado += 1;
-    }
-    
-    // Crear fecha para el día 30 del siguiente mes
-    primeraFechaVencimiento = new Date(añoAjustado, mesActual, 30);
-    
+    const mesActual = primeraFechaVencimiento.getMonth();
+
+    // CORREGIDO: Usar el mes actual para la primera cuota (NO sumar 1)
+    primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
+
     // Si es febrero, ajustar al día 28 (o 29 en año bisiesto)
-    if (primeraFechaVencimiento.getMonth() === 1) {
-      const esBisiesto = (añoAjustado % 4 === 0 && añoAjustado % 100 !== 0) || (añoAjustado % 400 === 0);
+    if (mesActual === 1) {
+      const esBisiesto = (añoActual % 4 === 0 && añoActual % 100 !== 0) || (añoActual % 400 === 0);
       primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
     }
-    
-    console.log("📱 Plan de celular - Primera fecha ajustada al día 30 del siguiente mes:", primeraFechaVencimiento.toLocaleDateString());
+
+    console.log("📱 FINANCIAMIENTO CELULARES - Primera fecha ajustada al día 30 del MES ACTUAL:", primeraFechaVencimiento.toLocaleDateString());
   }
     else if (
     planGlobal &&
