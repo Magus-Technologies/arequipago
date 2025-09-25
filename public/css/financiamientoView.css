@@ -254,3 +254,372 @@
         #contenedorVerificacionDomiciliaria .form-text {
             font-size: 13px !important; /* Tamaño más grande */
         }
+
+      /* Modal holográfico transparente para entregar vehículo */
+.modal-entregar-vehiculo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+}
+
+.modal-entregar-vehiculo.show {
+    opacity: 1;
+}
+
+.modal-content-vehiculo {
+    background: linear-gradient(145deg, 
+        rgba(248, 250, 252, 0.85) 0%,
+        rgba(241, 245, 249, 0.8) 50%,
+        rgba(248, 250, 252, 0.82) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(203, 213, 225, 0.5);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90%;
+    overflow: hidden;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    transform: scale(0.7) translateY(50px);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    position: relative;
+}
+
+.modal-content-vehiculo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(255, 255, 255, 0.03) 0%,
+        transparent 50%,
+        rgba(98, 110, 212, 0.02) 100%);
+    pointer-events: none;
+}
+
+.modal-entregar-vehiculo.show .modal-content-vehiculo {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.modal-header-vehiculo {
+    background: linear-gradient(135deg, 
+        rgba(59, 130, 246, 0.15) 0%,
+        rgba(37, 99, 235, 0.1) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #1f2937;
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    position: relative;
+}
+
+.modal-header-vehiculo::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent);
+}
+
+.modal-header-vehiculo h5 {
+    margin: 0;
+    font-size: 1.3rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.modal-body-vehiculo {
+    padding: 25px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(248, 250, 252, 0.6);
+}
+
+.modal-body-vehiculo::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body-vehiculo::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.modal-body-vehiculo::-webkit-scrollbar-thumb {
+    background: rgba(98, 110, 212, 0.4);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.modal-body-vehiculo::-webkit-scrollbar-thumb:hover {
+    background: rgba(98, 110, 212, 0.6);
+}
+
+.modal-footer-vehiculo {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 20px 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-close-vehiculo {
+    background: rgba(248, 250, 252, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(203, 213, 225, 0.4);
+    color: #374151;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-close-vehiculo:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.vehiculo-seleccionado {
+    background: rgba(98, 110, 212, 0.1) !important;
+    border: 1px solid rgba(98, 110, 212, 0.3) !important;
+    box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
+    }
+    to {
+        box-shadow: 0 0 25px rgba(98, 110, 212, 0.4);
+    }
+}
+
+.modal-entregar-vehiculo .form-label {
+    color: #374151;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.modal-entregar-vehiculo .form-control {
+    background: rgba(248, 250, 252, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(203, 213, 225, 0.6);
+    border-radius: 12px;
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.modal-entregar-vehiculo .form-control:focus {
+    background: rgba(255, 255, 255, 1);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+.modal-entregar-vehiculo .form-control::placeholder {
+    color: rgba(55, 65, 81, 0.6);
+}
+
+.modal-entregar-vehiculo .table {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.modal-entregar-vehiculo .table thead {
+    background: rgba(59, 130, 246, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.modal-entregar-vehiculo .table th {
+    border-bottom: 1px solid rgba(203, 213, 225, 0.4);
+    padding: 15px 10px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.modal-entregar-vehiculo .table tbody tr {
+    background: rgba(255, 255, 255, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.modal-entregar-vehiculo .table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.7);
+    transform: translateX(3px);
+}
+
+.modal-entregar-vehiculo .table td {
+    padding: 12px 10px;
+    vertical-align: middle;
+    color: #374151;
+    font-weight: 500;
+}
+
+.modal-entregar-vehiculo .btn {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-entregar-vehiculo .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s ease;
+}
+
+.modal-entregar-vehiculo .btn:hover::before {
+    left: 100%;
+}
+
+.modal-entregar-vehiculo .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.modal-entregar-vehiculo .btn-success {
+    background: linear-gradient(135deg, 
+        #02a398 0%,
+        #028a82 100%);
+    color: white;
+    border-color: #02a398;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.modal-entregar-vehiculo .btn-success:hover {
+    background: linear-gradient(135deg, 
+        #029b8f 0%,
+        #027a73 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(2, 163, 152, 0.3);
+}
+
+.modal-entregar-vehiculo .btn-secondary {
+    background: rgba(108, 117, 125, 0.15);
+    color: #495057;
+    border-color: rgba(108, 117, 125, 0.3);
+}
+
+.modal-entregar-vehiculo .btn-secondary:hover {
+    background: rgba(108, 117, 125, 0.25);
+    color: #343a40;
+}
+
+.modal-entregar-vehiculo input[type="radio"] {
+    accent-color: #626ed4;
+    transform: scale(1.3);
+    cursor: pointer;
+    filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5));
+}
+
+.modal-entregar-vehiculo input[type="radio"]:checked {
+    animation: radioGlow 1s ease-in-out;
+}
+
+@keyframes radioGlow {
+    0% { filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5)); }
+    50% { filter: drop-shadow(0 0 8px rgba(98, 110, 212, 0.8)); }
+    100% { filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5)); }
+}
+
+/* Animaciones de entrada */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .modal-content-vehiculo {
+        width: 95%;
+        max-height: 85%;
+        margin: 20px;
+        border-radius: 15px;
+    }
+    
+    .modal-header-vehiculo,
+    .modal-body-vehiculo,
+    .modal-footer-vehiculo {
+        padding: 15px 20px;
+    }
+    
+    .modal-body-vehiculo {
+        max-height: 400px;
+    }
+    
+    .modal-entregar-vehiculo .btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+.sin-stock {
+    background-color: #f8f9fa !important;
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+.sin-stock:hover {
+    background-color: #e9ecef !important;
+}

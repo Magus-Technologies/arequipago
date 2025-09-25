@@ -377,4 +377,7 @@ Route::post('/financiamientos/eliminar-permanentemente', 'FinanciamientoControll
 Route::post('/financiamientos/vaciar-papelera', 'FinanciamientoController@vaciarPapelera');
 
 Route::postBase("/beneficios", "FragmentController@beneficiosUsuarios");
-// hola
+
+Route::get("/obtenerProductosVehiculos", "FinanciamientoController@obtenerProductosVehiculos");
+Route::get('/buscarProductosVehiculos','FinanciamientoController@buscarProductosVehiculos');
+Route::post('/entregarVehiculo','FinanciamientoController@entregarVehiculo');

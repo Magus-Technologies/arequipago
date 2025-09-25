@@ -108,6 +108,16 @@ function seleccionarFinanciamiento(row) {
     idFinanciamientoSeleccionado = financiamiento.financiamiento.idfinanciamiento;
     let simboloMoneda = financiamiento.financiamiento.moneda;
 
+    // NUEVO: Verificar si el producto es ID 37 para mostrar botón "Entregar vehículo"
+    const btnEntregarVehiculo = document.getElementById("btnEntregarVehiculo");
+    if (btnEntregarVehiculo) {
+        if (financiamiento.producto && financiamiento.producto.idproductosv2 == 37) {
+            btnEntregarVehiculo.style.display = "inline-block";
+        } else {
+            btnEntregarVehiculo.style.display = "none";
+        }
+    }
+
     // Actualizar el "select box" con el nombre del producto seleccionado
     const selectBoxDetalle = document.getElementById("selectBoxDetalle");
     if (selectBoxDetalle) {
@@ -393,4 +403,302 @@ function asignarEventListenersFinanciamiento() {
   document
     .getElementById("montoSinIntereses")
     .addEventListener("input", calcularFinanciamiento); // NUEVO: Llamar función al escribir en "Monto sin intereses"
+}
+
+// NUEVAS FUNCIONES para entregar vehículo
+function mostrarModalEntregarVehiculo() {
+    console.log("Mostrando modal para entregar vehículo, ID financiamiento:", idFinanciamientoSeleccionado);
+    
+    // Crear modal tecnológico con div
+    const modalHTML = `
+        <div id="modalEntregarVehiculo" class="modal-entregar-vehiculo">
+            <div class="modal-content-vehiculo">
+                <div class="modal-header-vehiculo">
+                    <h5><i class="fas fa-car me-2"></i>Entregar Vehículo</h5>
+                    <button type="button" class="btn-close-vehiculo" onclick="cerrarModalEntregarVehiculo()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body-vehiculo">
+                    <div class="mb-3">
+                        <label class="form-label">Buscar vehículo:</label>
+                      <input type="text" id="buscarVehiculoInput" class="form-control" 
+                        placeholder="Buscar por código o nombre" onkeyup="buscarVehiculosParaEntregar()">
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover" id="tablaVehiculosEntregar">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">Elegir</th>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyVehiculosEntregar">
+                                <!-- Se llenarán los productos -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer-vehiculo">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEntregarVehiculo()">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmarEntregaVehiculo()">
+                        <i class="fas fa-check me-2"></i>Confirmar Entrega
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Mostrar modal con animación fluida
+    const modal = document.getElementById('modalEntregarVehiculo');
+    modal.style.display = 'flex';
+    // Forzar un reflow antes de agregar la clase show
+    modal.offsetHeight;
+    // Agregar clase para activar la animación
+    modal.classList.add('show');
+    
+    // Cargar productos vehiculares
+    cargarProductosVehiculos();
+}
+
+function cerrarModalEntregarVehiculo() {
+    const modal = document.getElementById('modalEntregarVehiculo');
+    if (modal) {
+        // Remover clase show para activar animación de cierre
+        modal.classList.remove('show');
+        // Reducir tiempo de espera para cierre más rápido
+        setTimeout(() => {
+            modal.remove();
+        }, 200); // Cambiado de 400 a 200ms
+    }
+} 
+
+function cargarProductosVehiculos() {
+    $.ajax({
+        url: '/arequipago/obtenerProductosVehiculos',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            mostrarProductosVehiculos(data.productos || []);
+        },
+        error: function() {
+            console.error("Error al cargar productos vehiculares");
+            alert("Error al cargar los productos vehiculares");
+        }
+    });
+}
+
+function mostrarProductosVehiculos(productos) {
+    const tbody = $('#tbodyVehiculosEntregar');
+    tbody.empty();
+    
+    productos.forEach(producto => {
+        const cantidad = parseInt(producto.cantidad) || 0;
+        const sinStock = cantidad === 0;
+        
+        tbody.append(`
+            <tr class="vehiculo-row ${sinStock ? 'sin-stock' : ''}" data-id-producto="${producto.idproductosv2}">
+                <td>
+                    ${sinStock ? 
+                        '<span class="text-danger">Sin Stock</span>' : 
+                        `<input type="radio" name="vehiculoEntregar" class="vehiculo-checkbox" value="${producto.idproductosv2}">`
+                    }
+                </td>
+                <td>${producto.codigo || 'N/A'}</td>
+                <td>${producto.nombre || 'N/A'}</td>
+                <td class="${sinStock ? 'text-danger fw-bold' : ''}">${cantidad}</td>
+                <td>S/. ${parseFloat(producto.precio_venta || 0).toFixed(2)}</td>
+            </tr>
+        `);
+    });
+    
+    // Event listener para selección (solo para productos con stock)
+    $('.vehiculo-checkbox').on('change', function() {
+        $('.vehiculo-row').removeClass('vehiculo-seleccionado');
+        $(this).closest('tr').addClass('vehiculo-seleccionado');
+    });
+    
+    // Event listener para mostrar alerta al hacer clic en productos sin stock
+    $('.sin-stock').on('click', function() {
+        mostrarNotificacionError('Este vehículo no tiene stock disponible');
+    });
+}
+
+function buscarVehiculosParaEntregar() {
+    const searchTerm = $('#buscarVehiculoInput').val();
+    
+    $.ajax({
+        url: '/arequipago/buscarProductosVehiculos',
+        type: 'GET',
+        data: { searchTerm: searchTerm },
+        dataType: 'json',
+        success: function(data) {
+            mostrarProductosVehiculos(data.productos || []);
+        },
+        error: function() {
+            console.error("Error al buscar productos vehiculares");
+        }
+    });
+}
+
+function confirmarEntregaVehiculo() {
+    const productoSeleccionado = $('input[name="vehiculoEntregar"]:checked').val();
+    
+    if (!productoSeleccionado) {
+        mostrarNotificacionError("Por favor seleccione un vehículo para entregar");
+        return;
+    }
+    
+    if (!idFinanciamientoSeleccionado) {
+        mostrarNotificacionError("Error: No se ha seleccionado un financiamiento");
+        return;
+    }
+    
+    giveVehicle(productoSeleccionado, idFinanciamientoSeleccionado);
+}
+
+function giveVehicle(idProducto, idFinanciamiento) {
+    $.ajax({
+        url: '/arequipago/entregarVehiculo',
+        type: 'POST',
+        data: {
+            id_producto: idProducto,
+            id_financiamiento: idFinanciamiento
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Cerrar modal inmediatamente
+                cerrarModalEntregarVehiculo();
+                
+                // Crear notificación personalizada para evitar problemas de z-index
+                mostrarNotificacionExito(response.message, function() {
+                    // Cerrar modal de detalles
+                    $('#financingDetailsModal').modal('hide');
+                    
+                    // Generar contrato con el ID correcto
+                    generarContratoInstant(idFinanciamiento);
+                    
+                    // Recargar lista de clientes
+                    cargarClientes();
+                });
+            } else {
+                cerrarModalEntregarVehiculo();
+                mostrarNotificacionError(response.message || 'Error al entregar el vehículo');
+            }
+        },
+        error: function() {
+            cerrarModalEntregarVehiculo();
+            mostrarNotificacionError('Error al conectar con el servidor');
+        }
+    });
+}
+
+// Funciones de notificación personalizadas para modal de vehículo
+function mostrarNotificacionExito(mensaje, callback) {
+    const notificacion = document.createElement('div');
+    notificacion.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #02a398 0%, #028a82 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(2, 163, 152, 0.3);
+            z-index: 99999;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.5s ease-out;
+        ">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle" style="font-size: 24px;"></i>
+                <div>
+                    <div style="font-size: 16px; margin-bottom: 4px;">¡Éxito!</div>
+                    <div style="font-size: 14px; opacity: 0.9;">${mensaje}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar estilos de animación
+    if (!document.getElementById('notificacion-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'notificacion-styles';
+        styles.innerHTML = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    document.body.appendChild(notificacion);
+    
+    // Auto eliminar después de 3 segundos
+    setTimeout(() => {
+        notificacion.firstElementChild.style.animation = 'slideOutRight 0.5s ease-in forwards';
+        setTimeout(() => {
+            if (notificacion.parentNode) {
+                notificacion.parentNode.removeChild(notificacion);
+            }
+            if (callback) callback();
+        }, 500);
+    }, 3000);
+}
+
+function mostrarNotificacionError(mensaje) {
+    const notificacion = document.createElement('div');
+    notificacion.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(220, 53, 69, 0.3);
+            z-index: 99999;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 600;
+            max-width: 400px;
+            animation: slideInRight 0.5s ease-out;
+        ">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
+                <div>
+                    <div style="font-size: 16px; margin-bottom: 4px;">Error</div>
+                    <div style="font-size: 14px; opacity: 0.9;">${mensaje}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Auto eliminar después de 4 segundos (más tiempo para errores)
+    setTimeout(() => {
+        notificacion.firstElementChild.style.animation = 'slideOutRight 0.5s ease-in forwards';
+        setTimeout(() => {
+            if (notificacion.parentNode) {
+                notificacion.parentNode.removeChild(notificacion);
+            }
+        }, 500);
+    }, 4000);
 }

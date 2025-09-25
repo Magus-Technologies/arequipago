@@ -555,35 +555,6 @@ class FinanciamientoController extends Controller
             }
         }
 
-        public function guardarGrupoFinanciamiento() {
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                $nombreGrupo = isset($_POST['nombre']) ? trim($_POST['nombre']) : '';
-
-                if (empty($nombreGrupo)) {
-                    echo json_encode(['success' => false, 'message' => 'El campo nombre está vacío.']);
-                    return;
-                }
-
-                $model = new GrupoFinanciamientoModel(); // Instanciar el modelo
-
-                $resultado = $model->guardarGrupoFinanciamiento($nombreGrupo); // Guardar el grupo
-
-                if ($resultado) {
-                    // Obtener el ID del nuevo grupo
-                    $nuevoId = $model->getUltimoIdInsertado();
-                    echo json_encode([
-                        'success' => true,
-                        'nuevoGrupoFinanciamiento' => [
-                            'idgrupoVehicular_financiamiento' => $nuevoId,
-                            'nombre' => $nombreGrupo
-                        ]
-                    ]);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'No se pudo guardar el grupo de financiamiento.']);
-                }
-            }
-        }
-
         public function cargarGruposFinanciamiento() {
             $grupoFinanciamientoModel = new GrupoFinanciamientoModel();
             $grupos = $grupoFinanciamientoModel->obtenerGruposFinanciamiento();
@@ -2154,6 +2125,141 @@ class FinanciamientoController extends Controller
                 }
             } catch (Exception $e) {
                 echo json_encode(['success' => false, 'message' => 'Error al vaciar la papelera: ' . $e->getMessage()]);
+            }
+        }
+
+        // NUEVOS MÉTODOS para entregar vehículo
+    
+        public function obtenerProductosVehiculos()
+        {
+            try {
+                // Filtrar productos que pertenezcan a categoría "Vehículo" o "Vehículos"
+                // Si el campo 'codigo' es NULL o está vacío, usar 'codigo_barra'
+                $query = "SELECT idproductosv2, 
+                                nombre, 
+                                COALESCE(NULLIF(TRIM(codigo), ''), codigo_barra) AS codigo,
+                                cantidad, 
+                                precio_venta, 
+                                categoria 
+                        FROM productosv2 
+                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        AND estado = '1'
+                        ORDER BY nombre";
+                
+                $result = mysqli_query($this->conexion, $query);
+                
+                $productos = [];
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $productos[] = $row;
+                }
+                
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'productos' => $productos
+                ]);
+                
+            } catch (Exception $e) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al obtener productos vehiculares: ' . $e->getMessage()
+                ]);
+            }
+        }
+        
+        public function buscarProductosVehiculos()
+        {
+            try {
+                $searchTerm = $_GET['searchTerm'] ?? '';
+                
+                $query = "SELECT idproductosv2, nombre, codigo, cantidad, precio_venta, categoria 
+                        FROM productosv2 
+                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        AND estado = '1'
+                        AND (LOWER(nombre) LIKE ? OR LOWER(codigo) LIKE ?)
+                        ORDER BY nombre";
+                
+                $stmt = mysqli_prepare($this->conexion, $query);
+                $searchParam = '%' . strtolower($searchTerm) . '%';
+                mysqli_stmt_bind_param($stmt, 'ss', $searchParam, $searchParam);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
+                
+                $productos = [];
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $productos[] = $row;
+                }
+                
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'productos' => $productos
+                ]);
+                
+            } catch (Exception $e) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al buscar productos vehiculares: ' . $e->getMessage()
+                ]);
+            }
+        }
+        
+        public function entregarVehiculo()
+        {
+            try {
+                $idProducto = $_POST['id_producto'] ?? null;
+                $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+                
+                if (!$idProducto || !$idFinanciamiento) {
+                    throw new Exception('Faltan parámetros requeridos');
+                }
+                
+                // Actualizar el financiamiento
+                $queryUpdate = "UPDATE financiamiento 
+                            SET idproductosv2 = ?, cobrar_mora = 1 
+                            WHERE idfinanciamiento = ?";
+                
+                $stmt = mysqli_prepare($this->conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmt, 'ii', $idProducto, $idFinanciamiento);
+                
+                if (mysqli_stmt_execute($stmt)) {
+
+                    // Actualizar cantidad del producto (restar 1)
+                    $queryUpdateStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ? AND cantidad > 0";
+                    $stmtStock = mysqli_prepare($this->conexion, $queryUpdateStock);
+                    mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
+
+                    if (!mysqli_stmt_execute($stmtStock) || mysqli_stmt_affected_rows($stmtStock) === 0) {
+                        throw new Exception('Error: El vehículo ya no tiene stock disponible');
+                    }
+
+                    mysqli_stmt_close($stmtStock);
+
+                    // Actualizar cantidad_producto a 1 en el financiamiento
+                    $queryUpdateCantidad = "UPDATE financiamiento SET cantidad_producto = '1' WHERE idfinanciamiento = ?";
+                    $stmtCantidad = mysqli_prepare($this->conexion, $queryUpdateCantidad);
+                    mysqli_stmt_bind_param($stmtCantidad, 'i', $idFinanciamiento);
+                    mysqli_stmt_execute($stmtCantidad);
+                    mysqli_stmt_close($stmtCantidad);
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Vehículo entregado con éxito',
+                        'id_financiamiento' => $idFinanciamiento
+                    ]);
+                } else {
+                    throw new Exception('Error al actualizar el financiamiento');
+                }
+                
+            } catch (Exception $e) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]);
             }
         }
     }
