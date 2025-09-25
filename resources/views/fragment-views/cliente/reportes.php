@@ -1072,8 +1072,16 @@
             function renderCuotasPagadasTable(data) {
                 // Check if we need to include numUnidad column
                 const incluirNumUnidad = data.cuotas_por_cliente.some(item => item.tipo_cliente === 'Conductor' && item.numUnidad);
-                
+
                 let html = `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-2">💰 Total en soles (PEN): S/ ${data.total_soles || '0.00'}</h5>
+                                <h5 class="mb-0">💵 Total en dólares (USD): $${data.total_dolares || '0.00'}</h5>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mb-4">
                         <h4>Cuotas por Cliente</h4>
                         <div class="table-responsive">

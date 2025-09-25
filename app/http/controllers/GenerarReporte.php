@@ -1389,7 +1389,7 @@ class GenerarReporte extends Controller
             }
 
             // Obtener financiamientos
-            $query = "SELECT 
+            $query = "SELECT
                     f.idfinanciamiento,
                     f.id_cliente,
                     f.id_conductor,
@@ -1397,13 +1397,14 @@ class GenerarReporte extends Controller
                     f.monto_total,
                     f.cuotas,
                     f.fecha_inicio,
-                    f.fecha_fin
-                FROM 
+                    f.fecha_fin,
+                    f.moneda
+                FROM
                     financiamiento f
-                WHERE 
+                WHERE
                     f.fecha_inicio BETWEEN '$fechaInicio' AND '$fechaFin'
                     $condicionTipoCliente
-                ORDER BY 
+                ORDER BY
                     f.fecha_inicio DESC";
 
             $resultado = $this->conexion->query($query);
@@ -1419,6 +1420,8 @@ class GenerarReporte extends Controller
             // Procesar para obtener cuotas pagadas
             $cuotasPorCliente = [];
             $clientesMorosos = [];
+            $totalSoles = 0;
+            $totalDolares = 0;
 
             foreach ($financiamientos as $financiamiento) {
                 $id_financiamiento = $financiamiento['idfinanciamiento'];
@@ -1444,6 +1447,20 @@ class GenerarReporte extends Controller
 
                 // Calcular saldo pendiente
                 $saldoPendiente = $cuotasInfo['cuotas_pendientes'] * ($financiamiento['monto_total'] / $financiamiento['cuotas']);
+
+                // Calcular el valor total de las cuotas pagadas (independientemente de cuándo se pagaron)
+                $montoPorCuota = $financiamiento['monto_total'] / $financiamiento['cuotas'];
+                $montoTotalCuotasPagadas = $cuotasInfo['cuotas_pagadas'] * $montoPorCuota;
+
+                // Determinar la moneda del financiamiento
+                $monedaFinanciamiento = $financiamiento['moneda'] ?: 'S/.';
+
+                // Sumar al total correspondiente según la moneda
+                if ($monedaFinanciamiento === '$') {
+                    $totalDolares += $montoTotalCuotasPagadas;
+                } else {
+                    $totalSoles += $montoTotalCuotasPagadas;
+                }
 
                 // Verificar si tiene cuotas vencidas
                 $cuotasVencidas = $this->obtenerCuotasVencidas($id_financiamiento);
@@ -1495,7 +1512,9 @@ class GenerarReporte extends Controller
 
             $this->responderExito([
                 'cuotas_por_cliente' => array_values($cuotasPorCliente),
-                'clientes_morosos' => array_values($clientesMorosos)
+                'clientes_morosos' => array_values($clientesMorosos),
+                'total_soles' => number_format($totalSoles, 2),
+                'total_dolares' => number_format($totalDolares, 2)
             ]);
         } catch (Exception $e) {
             $this->responderError('Error al procesar las cuotas pagadas: ' . $e->getMessage());
@@ -2057,7 +2076,6 @@ class GenerarReporte extends Controller
         }
     }
 
-
     /**
      * Obtiene el número de cuotas vencidas de un financiamiento
      */
@@ -2576,10 +2594,19 @@ class GenerarReporte extends Controller
             h1, h2 { text-align: center; }
             h1 { margin-bottom: 10px; }
             h2 { margin-top: 30px; margin-bottom: 20px; }
+            .resumen-totales { background-color: #e8f4f8; padding: 15px; margin: 20px 0; border-left: 4px solid #17a2b8; }
+            .resumen-totales h3 { margin: 0 0 10px 0; color: #17a2b8; }
+            .total-item { margin: 5px 0; font-size: 16px; font-weight: bold; }
         </style>
-        
+
         <h1>Reporte de Cuotas Pagadas</h1>
-        
+
+        <div class="resumen-totales">
+            <h3>💰 Resumen de Totales</h3>
+            <div class="total-item">Total en soles (PEN): S/ ' . ($data['total_soles'] ?? '0.00') . '</div>
+            <div class="total-item">Total en dólares (USD): $ ' . ($data['total_dolares'] ?? '0.00') . '</div>
+        </div>
+
         <h2>Cuotas por Cliente</h2>
         
         <table>

@@ -227,9 +227,10 @@ class ClientesController extends Controller
             
             // Validar campos requeridos
             $camposRequeridos = [
-                'tipo_doc', 'n_documento', 'nombres', 'apellido_paterno', 
-                'apellido_materno', 'fecha_nacimiento', 'departamento', 
-                'provincia', 'distrito', 'direccion_detallada'
+                'tipo_doc', 'n_documento', 'nombres', 'apellido_paterno',
+                'apellido_materno', 'fecha_nacimiento', 'departamento',
+                'provincia', 'distrito', 'direccion_detallada',
+                'emergencia_nombre', 'emergencia_telefono', 'emergencia_parentesco'
             ];
             
             foreach ($camposRequeridos as $campo) {
@@ -275,6 +276,7 @@ class ClientesController extends Controller
             $archivos = [
                 'recibo_servicios',
                 'doc_identidad',
+                'selfie',
                 'otro_doc_1',
                 'otro_doc_2',
                 'otro_doc_3'
@@ -347,26 +349,39 @@ class ClientesController extends Controller
 
             $clienteModel = new Cliente();
 
-            // Parámetros de paginación y búsqueda
-            $pagina = isset($_POST['pagina']) ? intval($_POST['pagina']) : 1;
-            $registrosPorPagina = isset($_POST['registrosPorPagina']) ? intval($_POST['registrosPorPagina']) : 10;
-            $busqueda = isset($_POST['busqueda']) ? $_POST['busqueda'] : "";
-            
-            $inicio = ($pagina - 1) * $registrosPorPagina;
-            
+            // Parámetros estándar de DataTables
+            $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
+            $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
+            $searchValue = isset($_POST['search']['value']) ? trim($_POST['search']['value']) : "";
+            $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
+            // Para compatibilidad con el sistema anterior
+            $inicio = $start;
+            $registrosPorPagina = $length;
+            $busqueda = $searchValue;
+            $pagina = floor($start / $length) + 1;
+
             // Obtener clientes con paginación
             $clientes = $clienteModel->obtenerClientes($inicio, $registrosPorPagina, $busqueda);
             $totalClientes = $clienteModel->totalClientes($busqueda);
             $totalPaginas = ceil($totalClientes / $registrosPorPagina);
-            
-            // Preparar respuesta JSON
+
+            // Debug temporal - puedes remover esta línea después
+            error_log("DEBUG: Total clientes: $totalClientes, Clientes array count: " . count($clientes) . ", Inicio: $inicio, RegistrosPorPagina: $registrosPorPagina");
+
+            // Estructura para DataTables
             $response = [
+                'draw' => $draw,
+                'recordsTotal' => $totalClientes,
+                'recordsFiltered' => $totalClientes,
+                'data' => $clientes,
+                // Compatibilidad con el sistema anterior
                 'clientes' => $clientes,
                 'totalRegistros' => $totalClientes,
                 'totalPaginas' => $totalPaginas,
                 'paginaActual' => $pagina
             ];
-            
+
             echo json_encode($response);
         }
         
@@ -497,6 +512,7 @@ class ClientesController extends Controller
                 'comentarios' => isset($_POST['comentarios']) ? $_POST['comentarios'] : "",
                 'recibo_servicios' => $clienteActual['recibo_servicios'],
                 'doc_identidad' => $clienteActual['doc_identidad'],
+                'selfie' => $clienteActual['selfie'],
                 'otro_doc_1' => $clienteActual['otro_doc_1'],
                 'otro_doc_2' => $clienteActual['otro_doc_2'],
                 'otro_doc_3' => $clienteActual['otro_doc_3'],
@@ -507,6 +523,7 @@ class ClientesController extends Controller
             $campos_archivos = [
                 'recibo_servicios' => 'recibo_servicios_file',
                 'doc_identidad' => 'doc_identidad_file',
+                'selfie' => 'selfie_file',
                 'otro_doc_1' => 'otro_doc_1_file',
                 'otro_doc_2' => 'otro_doc_2_file',
                 'otro_doc_3' => 'otro_doc_3_file'

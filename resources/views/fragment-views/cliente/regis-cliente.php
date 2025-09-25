@@ -85,6 +85,60 @@
             cursor: pointer !important;
         }
 
+        /* Estilos para preview de imágenes */
+        .image-preview {
+            margin-top: 8px;
+            margin-bottom: 15px;
+            max-width: 150px;
+            max-height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 3px;
+            background: #f9f9f9;
+            display: inline-block;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            max-height: 94px;
+            object-fit: contain;
+            border-radius: 3px;
+        }
+
+        .preview-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 3px;
+            margin-top: 8px;
+            font-style: italic;
+            display: block;
+        }
+
+        .file-preview {
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+
+        .download-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .download-btn:hover {
+            background-color: #c82333;
+        }
+
+        .download-btn i {
+            margin-right: 5px;
+        }
+
         /* Estilos para el modal de pago */
         .modal-content {
             border-radius: 15px;
@@ -129,7 +183,7 @@
 </head>
 <body>
     <div class="container container-custom">
-        <h3 class="text-center mb-4">Registro de Cliente</h3>
+        <h3 class="text-center mb-4">REGISTRO DE CLIENTES</h3>
         
         <form id="formRegistroCliente" enctype="multipart/form-data">
             <!-- Sección: Datos del Cliente -->
@@ -241,16 +295,27 @@
                 <h5>Contacto de Emergencia</h5>
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label for="emergencia_nombre" class="form-label">Nombre Completo</label>
-                        <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre">
+                        <label for="emergencia_nombre" class="form-label">Nombre Completo *</label>
+                        <input type="text" class="form-control" id="emergencia_nombre" name="emergencia_nombre" required>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="emergencia_telefono" class="form-label">Teléfono</label>
-                        <input type="text" class="form-control" id="emergencia_telefono" name="emergencia_telefono">
+                        <label for="emergencia_telefono" class="form-label">Teléfono *</label>
+                        <input type="text" class="form-control" id="emergencia_telefono" name="emergencia_telefono" required>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="emergencia_parentesco" class="form-label">Parentesco</label>
-                        <input type="text" class="form-control" id="emergencia_parentesco" name="emergencia_parentesco">
+                        <label for="emergencia_parentesco" class="form-label">Parentesco *</label>
+                        <select class="form-select" id="emergencia_parentesco" name="emergencia_parentesco" required>
+                            <option value="" selected disabled>Seleccione parentesco</option>
+                            <option value="Padre">Padre</option>
+                            <option value="Madre">Madre</option>
+                            <option value="Hermano/a">Hermano/a</option>
+                            <option value="Esposo/a">Esposo/a</option>
+                            <option value="Hijo/a">Hijo/a</option>
+                            <option value="Tío/a">Tío/a</option>
+                            <option value="Primo/a">Primo/a</option>
+                            <option value="Amigo/a">Amigo/a</option>
+                            <option value="Otro">Otro</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -280,48 +345,49 @@
                 </div>
             </div>
 
-            <!-- Sección: Requisitos -->
+            <!-- Sección: Documentos Requeridos -->
             <div class="form-section">
                 <h5>Requisitos</h5>
-                
+
+                <!-- RECIBO DE AGUA O LUZ -->
                 <div class="mb-3">
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" id="check_recibo_servicios">
-                        <label class="form-check-label me-3" for="check_recibo_servicios">Recibo de servicios</label>
-                        <input type="file" class="form-control" id="recibo_servicios" name="recibo_servicios" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                    </div>
+                    <label for="recibo_servicios" class="form-label">Recibo de agua o luz *</label>
+                    <small class="d-block text-muted mb-2">Subir recibo de agua o luz (imagen o PDF)</small>
+                    <input type="file" class="form-control" id="recibo_servicios" name="recibo_servicios"
+                           accept=".jpg,.jpeg,.png,.pdf" required onchange="previewImage(this, 'preview_recibo')">
+                    <div id="preview_recibo"></div>
                 </div>
-                
+
+                <!-- SELFIE -->
                 <div class="mb-3">
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" id="check_doc_identidad">
-                        <label class="form-check-label me-3" for="check_doc_identidad">Documento de identidad</label>
-                        <input type="file" class="form-control" id="doc_identidad" name="doc_identidad" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                    </div>
+                    <label for="selfie" class="form-label">Selfie *</label>
+                    <small class="d-block text-muted mb-2">Foto actual del cliente</small>
+                    <input type="file" class="form-control" id="selfie" name="selfie"
+                           accept=".jpg,.jpeg,.png" required onchange="previewImage(this, 'preview_selfie')">
+                    <div id="preview_selfie"></div>
                 </div>
-                
+
+                <!-- DOCUMENTOS ADICIONALES (OPCIONALES) -->
                 <div class="mb-3">
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" id="check_otro_doc_1">
-                        <label class="form-check-label me-3" for="check_otro_doc_1">Otro documento 1</label>
-                        <input type="file" class="form-control" id="otro_doc_1" name="otro_doc_1" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                    </div>
+                    <label for="doc_identidad" class="form-label">Documento de identidad</label>
+                    <input type="file" class="form-control" id="doc_identidad" name="doc_identidad"
+                           accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="previewImage(this, 'preview_doc_identidad')">
+                    <div id="preview_doc_identidad"></div>
                 </div>
-                
+
                 <div class="mb-3">
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" id="check_otro_doc_2">
-                        <label class="form-check-label me-3" for="check_otro_doc_2">Otro documento 2</label>
-                        <input type="file" class="form-control" id="otro_doc_2" name="otro_doc_2" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                    </div>
+                    <label for="otro_doc_1" class="form-label">Otro documento 1</label>
+                    <input type="file" class="form-control" id="otro_doc_1" name="otro_doc_1" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
                 </div>
-                
+
                 <div class="mb-3">
-                    <div class="form-check d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" id="check_otro_doc_3">
-                        <label class="form-check-label me-3" for="check_otro_doc_3">Otro documento 3</label>
-                        <input type="file" class="form-control" id="otro_doc_3" name="otro_doc_3" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
-                    </div>
+                    <label for="otro_doc_2" class="form-label">Otro documento 2</label>
+                    <input type="file" class="form-control" id="otro_doc_2" name="otro_doc_2" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+
+                <div class="mb-3">
+                    <label for="otro_doc_3" class="form-label">Otro documento 3</label>
+                    <input type="file" class="form-control" id="otro_doc_3" name="otro_doc_3" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
                 </div>
             </div>
 
@@ -603,8 +669,88 @@ function UploadDepartamentos() {
         }
 
 
+        // Función para mostrar preview de imágenes
+        function previewImage(input, previewId) {
+            const file = input.files[0];
+            const previewContainer = document.getElementById(previewId);
+
+            // Limpiar preview anterior
+            previewContainer.innerHTML = '';
+
+            if (file) {
+                // Verificar si es una imagen
+                const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                const fileType = file.type;
+
+                if (validImageTypes.includes(fileType)) {
+                    // Es una imagen, mostrar preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewContainer.innerHTML = `
+                            <div class="preview-label">Vista previa:</div>
+                            <div class="image-preview">
+                                <img src="${e.target.result}" alt="Preview">
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else if (file.type === 'application/pdf') {
+                    // Es un PDF, mostrar botón de descarga
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                    const fileUrl = URL.createObjectURL(file);
+
+                    previewContainer.innerHTML = `
+                        <div class="preview-label">Archivo PDF seleccionado:</div>
+                        <div class="file-preview p-2" style="border: 1px solid #ddd; border-radius: 4px; background: #f8f9fa; font-size: 12px;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-file-pdf text-danger me-1"></i>
+                                    <strong>${file.name}</strong><br>
+                                    <small class="text-muted">Tamaño: ${fileSize} MB</small>
+                                </div>
+                                <div>
+                                    <button class="download-btn" onclick="window.open('${fileUrl}', '_blank')" title="Ver PDF">
+                                        <i class="fas fa-eye"></i>Ver
+                                    </button>
+                                    <button class="download-btn ms-1" onclick="downloadFile('${fileUrl}', '${file.name}')" title="Descargar PDF">
+                                        <i class="fas fa-download"></i>Descargar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Otros tipos de archivo
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                    let fileIcon = 'fas fa-file';
+                    if (file.type.includes('word')) {
+                        fileIcon = 'fas fa-file-word text-primary';
+                    }
+
+                    previewContainer.innerHTML = `
+                        <div class="preview-label">Archivo seleccionado:</div>
+                        <div class="file-preview p-2" style="border: 1px solid #ddd; border-radius: 4px; background: #f8f9fa; font-size: 12px;">
+                            <i class="${fileIcon} me-1"></i>
+                            <strong>${file.name}</strong><br>
+                            <small class="text-muted">Tamaño: ${fileSize} MB</small>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Función para descargar archivos
+        function downloadFile(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
         $(document).ready(function() {
-           
+
             UploadDepartamentos();
 
             // Envío del formulario
@@ -652,6 +798,9 @@ function UploadDepartamentos() {
                             // Resetear formulario de registro
                             $("#formRegistroCliente")[0].reset();
                             $(".is-invalid").removeClass("is-invalid");
+
+                            // Limpiar previews de imágenes
+                            $("#preview_recibo, #preview_selfie, #preview_doc_identidad").html('');
                             
                         } else {
                             Swal.fire({
@@ -682,9 +831,15 @@ function UploadDepartamentos() {
                 
                 // Validar campos obligatorios
                 const camposObligatorios = [
-                    "tipo_doc", "n_documento", "nombres", "apellido_paterno", 
-                    "apellido_materno", "fecha_nacimiento", "departamento", 
-                    "provincia", "distrito", "direccion_detallada"
+                    "tipo_doc", "n_documento", "nombres", "apellido_paterno",
+                    "apellido_materno", "fecha_nacimiento", "departamento",
+                    "provincia", "distrito", "direccion_detallada",
+                    "emergencia_nombre", "emergencia_telefono", "emergencia_parentesco"
+                ];
+
+                // Validar archivos obligatorios
+                const archivosObligatorios = [
+                    "recibo_servicios", "selfie"
                 ];
                 
                 camposObligatorios.forEach(function(campo) {
@@ -693,12 +848,21 @@ function UploadDepartamentos() {
                         esValido = false;
                     }
                 });
+
+                // Validar archivos obligatorios
+                archivosObligatorios.forEach(function(archivo) {
+                    const fileInput = $("#" + archivo)[0];
+                    if (!fileInput.files.length) {
+                        $("#" + archivo).addClass("is-invalid");
+                        esValido = false;
+                    }
+                });
                 
                 if (!esValido) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Campos incompletos',
-                        text: 'Por favor, complete todos los campos obligatorios.',
+                        text: 'Por favor, complete todos los campos obligatorios y suba los documentos requeridos (Recibo de agua/luz y Selfie).',
                         confirmButtonColor: '#f9a825'
                     });
                 }
