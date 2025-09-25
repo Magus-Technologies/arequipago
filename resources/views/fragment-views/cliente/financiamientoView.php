@@ -403,6 +403,13 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     onclick="editarFinanciamiento()" style="margin-top: 15px;">
                                                     <i class="fas fa-edit me-2"></i>Editar este financiamiento
                                                 </button>
+
+                                                <!-- NUEVO: Botón Entregar vehículo - solo para productos con ID 37 -->
+                                                <button type="button" class="btn btn-success me-2" id="btnEntregarVehiculo"
+                                                    onclick="mostrarModalEntregarVehiculo()" style="margin-top: 15px; display: none;">
+                                                    <i class="fas fa-car me-2"></i>Entregar vehículo
+                                                </button>
+
                                                 <!-- Botón agregado para eliminar financiamiento -->
                                                 <button type="button" class="btn btn-danger mt-3" onclick="deleteFinance()">
                                                     <i class="fas fa-trash-alt me-2"></i>Eliminar este financiamiento
@@ -1656,6 +1663,24 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             window.inputIds.forEach(id => {
                 window.lastValues[id] = $(id).val();
             });
+
+            // NUEVA FUNCIÓN: checkAndUpdate con verificación de campos especiales
+            function checkAndUpdate() {
+                let hasChanged = false;
+                
+                window.inputIds.forEach(id => {
+                    const currentValue = $(id).val();
+                    if (window.lastValues[id] !== currentValue) {
+                        hasChanged = true;
+                        window.lastValues[id] = currentValue;
+                    }
+                });
+                
+                // Si hay cambios, verificar y mantener campos especiales
+                if (hasChanged) {
+                    verificarYMantenerCamposEspeciales();
+                }
+            }
 
             // Inicia polling cada 500ms
             const pollingInterval = setInterval(checkAndUpdate, 500);

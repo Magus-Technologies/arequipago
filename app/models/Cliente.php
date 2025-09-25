@@ -577,14 +577,14 @@ public function guardarCliente($datos)
         
         // Insertar datos personales y dirección
         $query = "INSERT INTO clientes_financiar (
-            tipo_doc, n_documento, nombres, apellido_paterno, apellido_materno, 
-            num_cod_finan, nacionalidad, fecha_nacimiento, telefono, correo, 
-            departamento, provincia, distrito, direccion_detallada, 
+            tipo_doc, n_documento, nombres, apellido_paterno, apellido_materno,
+            num_cod_finan, nacionalidad, fecha_nacimiento, telefono, correo,
+            departamento, provincia, distrito, direccion_detallada,
             emergencia_nombre, emergencia_telefono, emergencia_parentesco,
             laboral_nombre, laboral_telefono, laboral_puesto, laboral_empresa,
-            recibo_servicios, doc_identidad, otro_doc_1, otro_doc_2, otro_doc_3,
+            recibo_servicios, doc_identidad, selfie, otro_doc_1, otro_doc_2, otro_doc_3,
             comentarios, fecha_registro, password
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)";
         
         $stmt = $this->conectar->prepare($query);
         if (!$stmt) {
@@ -594,7 +594,7 @@ public function guardarCliente($datos)
         $passwordDefault = null;
         
         $bindResult = $stmt->bind_param(
-            "ssssssssssssssssssssssssssss",
+            "sssssssssssssssssssssssssssss",
             $datos['tipo_doc'],
             $datos['n_documento'],
             $datos['nombres'],
@@ -618,6 +618,7 @@ public function guardarCliente($datos)
             $datos['laboral_empresa'],
             $datos['recibo_servicios'],
             $datos['doc_identidad'],
+            $datos['selfie'],
             $datos['otro_doc_1'],
             $datos['otro_doc_2'],
             $datos['otro_doc_3'],
@@ -730,11 +731,19 @@ public function obtenerClientes($inicio, $registrosPorPagina, $busqueda = "")
     $stmt->execute();
     $result = $stmt->get_result();
     $clientes = [];
-    
+
+    // Debug temporal - remover después
+    if ($this->conectar->error) {
+        error_log("Error SQL en obtenerClientes: " . $this->conectar->error);
+    }
+
     while ($row = $result->fetch_assoc()) {
         $clientes[] = $row;
     }
-    
+
+    // Debug temporal
+    error_log("DEBUG obtenerClientes - Total rows: " . count($clientes) . " Inicio: $inicio, Limit: $registrosPorPagina");
+
     return $clientes;
 }
 

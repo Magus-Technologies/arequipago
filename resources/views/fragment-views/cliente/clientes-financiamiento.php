@@ -12,30 +12,78 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Clientes</title>
+    <title>Clientes</title>
     
     <style>
-        .acciones-btn {
-            margin: 2px;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
+        /* Estilos para botones de acciones - similar a conductores-cuotas-vencidas */
+        .btn-group .btn {
+            margin: 0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
         }
 
-        .editar-btn {
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .btn-warning {
             background-color: #ffc107;
+            border-color: #ffc107;
             color: #000;
         }
 
-        .eliminar-btn {
+        .btn-danger {
             background-color: #dc3545;
-            color: #fff;
+            border-color: #dc3545;
         }
 
-        .ver-btn {
-            background-color: #0d6efd;
-            color: #fff;
+        /* Estilos para clientes que ya pagaron - fondo verde profesional */
+        #tablaConductoresInicial tbody tr.cliente-pagado td {
+            background-color: #d4edda !important; /* Verde suave profesional */
+            border-color: #c3e6cb !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover td {
+            background-color: #c3e6cb !important; /* Verde más oscuro al hover */
+            border-color: #b8dabd !important;
+        }
+
+        /* Asegurar que funcione con las clases de DataTables */
+        #tablaConductoresInicial tbody tr.cliente-pagado.odd td,
+        #tablaConductoresInicial tbody tr.cliente-pagado.even td {
+            background-color: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado.odd:hover td,
+        #tablaConductoresInicial tbody tr.cliente-pagado.even:hover td {
+            background-color: #c3e6cb !important;
+        }
+
+        /* Estilos para badges de estado de pago */
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge.bg-success {
+            background-color: #28a745 !important;
+            color: white;
+        }
+
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #212529;
+        }
+
+        .badge i {
+            font-size: 10px;
         }
 
         /* Aplica estilos solo a la tabla con el ID "tablaConductoresInicial" */
@@ -66,8 +114,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
         #tablaConductoresInicial th:last-child {
             position: sticky;
             right: 0;
-            background-color: #343a40; /* Color del header table-dark de Bootstrap */
-            color: white !important;
+            background-color: white; /* Cambiar a fondo blanco */
+            color: #333 !important; /* Color de texto oscuro */
             z-index: 3; /* Mayor que las celdas normales */
             box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
         }
@@ -82,18 +130,6 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
             width: 100%;
         }
 
-        .btn-danger {
-            background-color: #d32f2f;
-            /* Rojo similar al de Adobe Acrobat */
-            border-color: #d32f2f;
-            color: #fff;
-            margin-top: -15px;
-        }
-
-        .btn-danger:hover {
-            background-color: #b71c1c;
-            /* Rojo más oscuro al pasar el mouse */
-        }
 
         .button-group {
             display: flex;
@@ -212,36 +248,36 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
 </head>
 <body>
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Gestión de Clientes</h3>
-                </div>
-                <div class="card-body">
-                    <!-- Botón para registrar cliente -->
-                    <div class="mb-3">
-                    <button id="btnRegistrarCliente" class="btn btn-success" onclick="window.location.href='regiscliente'">
-                        <i class="fas fa-plus-circle"></i> Registrar Cliente
-                    </button>
+<!-- Título de la página -->
+<div class="page-title-box" style="padding: 12px 0;">
+    <div class="row align-items-center">
+        <div class="col-md-12">
+            <h6 class="page-title text-center">CLIENTES</h6>
+        </div>
+    </div>
+</div>
 
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Botón para registrar cliente -->
+                        <button id="btnRegistrarCliente" class="btn" onclick="window.location.href='regiscliente'" style="background-color: #02a499; color: white;">
+                            <i class="fas fa-plus-circle"></i> Registrar Cliente
+                        </button>
                     </div>
-                    
-                    <!-- Barra de búsqueda -->
-                    <div class="mb-3">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" id="busquedaCliente" class="form-control" placeholder="Buscar cliente por nombre, apellido, documento, correo, teléfono...">
-                            <button id="btnBuscar" class="btn btn-primary">Buscar</button>
-                            <button id="btnLimpiarBusqueda" class="btn btn-secondary">Limpiar</button>
-                        </div>
+                    <div class="col-md-6">
+                        <!-- Espacio para futuros botones adicionales -->
                     </div>
-                    
-                    <!-- Tabla de clientes -->
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="card-title-desc">
                     <div class="table-responsive">
-                        <table id="tablaConductoresInicial" class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table id="tablaConductoresInicial" class="table table-bordered dt-responsive nowrap text-center table-sm dataTable no-footer">
+                            <thead>
                                 <tr>
                                     <th>N°</th>
                                     <th>N° Documento</th>
@@ -249,31 +285,32 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
                                     <th>Apellidos</th>
                                     <th>Teléfono</th>
                                     <th>Correo</th>
+                                    <th>Estado Pago</th>
                                     <th>Acciones</th>
                                 </tr>
-                                </thead>
+                            </thead>
                             <tbody id="tablaClientesBody">
                                 <!-- Aquí se cargarán los datos de forma dinámica con AJAX -->
                             </tbody>
                         </table>
                     </div>
-                    
-                    <!-- Paginación -->
-                    <div class="row mt-3">
-                        <div class="col-md-6" id="infoPaginacion">
-                            Mostrando <span id="desdeRegistro">0</span> al <span id="hastaRegistro">0</span> de <span id="totalRegistros">0</span> registros
-                        </div>
-                        <div class="col-md-6">
-                            <nav aria-label="Paginación de clientes">
-                                <ul class="pagination justify-content-end" id="paginacion">
-                                    <!-- Aquí se generarán los enlaces de paginación -->
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Paginación -->
+<div class="row mt-3">
+    <div class="col-md-6" id="infoPaginacion">
+        Mostrando <span id="desdeRegistro">0</span> al <span id="hastaRegistro">0</span> de <span id="totalRegistros">0</span> registros
+    </div>
+    <div class="col-md-6">
+        <nav aria-label="Paginación de clientes">
+            <ul class="pagination justify-content-end" id="paginacion">
+                <!-- Aquí se generarán los enlaces de paginación -->
+            </ul>
+        </nav>
     </div>
 </div>
 
@@ -350,20 +387,29 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠�
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-4">
+                        <strong>Recibo Agua/Luz:</strong>
                         <div id="btnReciboServicios" class="mb-2"></div>
                     </div>
                     <div class="col-md-4">
-                        <div id="btnDocIdentidad" class="mb-2"></div>
+                        <strong>Selfie:</strong>
+                        <div id="btnSelfie" class="mb-2"></div>
                     </div>
                     <div class="col-md-4">
-                        <div id="btnOtroDoc1" class="mb-2"></div>
+                        <strong>Doc. Identidad:</strong>
+                        <div id="btnDocIdentidad" class="mb-2"></div>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-4">
+                        <strong>Documento 1:</strong>
+                        <div id="btnOtroDoc1" class="mb-2"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Documento 2:</strong>
                         <div id="btnOtroDoc2" class="mb-2"></div>
                     </div>
                     <div class="col-md-4">
+                        <strong>Documento 3:</strong>
                         <div id="btnOtroDoc3" class="mb-2"></div>
                     </div>
                 </div>
@@ -793,231 +839,236 @@ function UploadDepartamentos() {
             console.log("Select de distritos reiniciado");
         }
 
-       // Variables globales (usando window para evitar conflictos)
-        window.paginaActual = 1;
-        const registrosPorPagina = 10;
-        let totalPaginas = 0;
-        let busquedaActual = "";
 
-    function cargarDatosClientesPage() {
-        console.log("=== CARGANDO DATOS CLIENTES ===");
-        console.log("window.paginaActual:", window.paginaActual);
-        console.log("Tipo de window.paginaActual:", typeof window.paginaActual);
-        
-        // Usar directamente window.paginaActual
-        const paginaParaEnviar = parseInt(window.paginaActual) || 1;
-        
-        console.log("Página que se enviará:", paginaParaEnviar);
-        
-        const datosEnvio = {
-            pagina: paginaParaEnviar,
-            registrosPorPagina: parseInt(registrosPorPagina),
-            busqueda: busquedaActual || ""
-        };
-        
-        console.log("Datos enviados al servidor:", datosEnvio);
-        
-        $.ajax({
-            url: "/arequipago/cargardatosClientes",
-            type: "POST",
-            dataType: "json",
-            data: datosEnvio,
-            success: function(response) {
-                console.log("Respuesta del servidor - página:", response.paginaActual);
-                mostrarClientes(response.clientes);
-                actualizarPaginacion(response.totalRegistros, response.totalPaginas, response.paginaActual);
-                totalPaginas = response.totalPaginas;
-            },
-            error: function(xhr, status, error) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Ocurrió un error al cargar los datos: ' + error
-                });
-            }
-        });
-    }   
+// Función para generar preview de archivos en modales (para ver detalles)
+function generarPreviewArchivo(rutaArchivo, nombreArchivo) {
+    if (!rutaArchivo) return '';
 
-    // Función para mostrar los clientes en la tabla
-    function mostrarClientes(clientes) {
-        let html = '';
-        
-        if (clientes.length === 0) {
-            html = '<tr><td colspan="7" class="text-center">No se encontraron registros</td></tr>';
-        } else {
-            let contador = (paginaActual - 1) * registrosPorPagina + 1;
-            
-            clientes.forEach(function(cliente) {
-                const apellidos = `${cliente.apellido_paterno} ${cliente.apellido_materno}`;
-                const filaClass = cliente.ha_pagado == 1 ? 'cliente-pagado' : '';
+    const extension = rutaArchivo.split('.').pop().toLowerCase();
+    const esImagen = ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
 
-                html += `
-                <tr class="${filaClass}">
-                    <td>${contador}</td>
-                    <td>${cliente.n_documento}</td>
-                    <td>${cliente.nombres}</td>
-                    <td>${apellidos}</td>
-                    <td>${cliente.telefono || '-'}</td>
-                    <td>${cliente.correo || '-'}</td>
-                    <td>
-                        <button class="acciones-btn ver-btn" data-id="${cliente.id}" title="Ver detalles">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="acciones-btn editar-btn" data-id="${cliente.id}" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        ${ROL_USUARIO != 2 ? ` 
-                        <button class="acciones-btn eliminar-btn" data-id="${cliente.id}" title="Eliminar">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                        ` : ''}
-                    </td>
-                </tr>
-                `;
-                
-                contador++;
-            });
+    if (esImagen) {
+        return `
+            <div class="documento-preview mb-3">
+                <label class="fw-bold text-primary">${nombreArchivo}:</label>
+                <div class="image-preview-modal mt-2">
+                    <img src="${rutaArchivo}" alt="${nombreArchivo}"
+                         style="max-width: 200px; max-height: 150px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;"
+                         onclick="window.open('${rutaArchivo}', '_blank')">
+                </div>
+                <div class="mt-1">
+                    <a href="${rutaArchivo}" class="btn btn-outline-primary btn-sm" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Ver completa
+                    </a>
+                </div>
+            </div>`;
+    } else {
+        // Para PDFs y otros archivos
+        let icono = 'fas fa-file';
+        let colorClass = 'btn-primary';
+        if (extension === 'pdf') {
+            icono = 'fas fa-file-pdf';
+            colorClass = 'btn-danger';
+        } else if (['doc', 'docx'].includes(extension)) {
+            icono = 'fas fa-file-word';
+            colorClass = 'btn-info';
         }
-        
-        $("#tablaClientesBody").html(html);
-             
-       
+
+        return `
+            <div class="documento-preview mb-3">
+                <label class="fw-bold text-primary">${nombreArchivo}:</label>
+                <div class="mt-2">
+                    <a href="${rutaArchivo}" class="btn ${colorClass} btn-sm" target="_blank">
+                        <i class="${icono}"></i> Ver ${nombreArchivo}
+                    </a>
+                </div>
+            </div>`;
     }
-    
-    // Función para actualizar la paginación
-    function actualizarPaginacion(totalRegistros, totalPaginas, paginaActual) {
-        const desde = totalRegistros === 0 ? 0 : (paginaActual - 1) * registrosPorPagina + 1;
-        const hasta = Math.min(paginaActual * registrosPorPagina, totalRegistros);
-        
-        $("#desdeRegistro").text(desde);
-        $("#hastaRegistro").text(hasta);
-        $("#totalRegistros").text(totalRegistros);
-        
-        // Generar enlaces de paginación
-        let html = '';
-        
-        // Botón anterior
-        html += `
-        <li class="page-item ${paginaActual === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-pagina="${paginaActual - 1}" aria-label="Anterior">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-        `;
-        
-        // Determinar las páginas a mostrar
-        let startPage = Math.max(1, paginaActual - 2);
-        let endPage = Math.min(totalPaginas, paginaActual + 2);
-        
-        // Siempre mostrar al menos 5 páginas si es posible
-        if (endPage - startPage < 4) {
-            if (startPage === 1) {
-                endPage = Math.min(5, totalPaginas);
-            } else if (endPage === totalPaginas) {
-                startPage = Math.max(1, totalPaginas - 4);
-            }
-        }
-        
-        // Mostrar la primera página y puntos suspensivos si es necesario
-        if (startPage > 1) {
-            html += `<li class="page-item"><a class="page-link" href="#" data-pagina="1">1</a></li>`;
-            if (startPage > 2) {
-                html += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
-            }
-        }
-        
-        // Mostrar las páginas
-        for (let i = startPage; i <= endPage; i++) {
-            html += `
-            <li class="page-item ${i === paginaActual ? 'active' : ''}">
-                <a class="page-link" href="#" data-pagina="${i}">${i}</a>
-            </li>
-            `;
-        }
-        
-        // Mostrar la última página y puntos suspensivos si es necesario
-        if (endPage < totalPaginas) {
-            if (endPage < totalPaginas - 1) {
-                html += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
-            }
-            html += `<li class="page-item"><a class="page-link" href="#" data-pagina="${totalPaginas}">${totalPaginas}</a></li>`;
-        }
-        
-        // Botón siguiente
-        html += `
-        <li class="page-item ${paginaActual === totalPaginas || totalPaginas === 0 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-pagina="${paginaActual + 1}" aria-label="Siguiente">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-        `;
-        
-        $("#paginacion").html(html);
-        
-        // Dentro de la función actualizarPaginacion, busca y reemplaza el evento de click:
-        $("#paginacion").off('click', '.page-link').on('click', '.page-link', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const $enlace = $(this);
-            const $parent = $enlace.parent();
-            const nuevaPagina = parseInt($enlace.data("pagina"));
-            
-            console.log('=== CLICK EN PAGINACIÓN ===');
-            console.log('Página clickeada:', nuevaPagina);
-            console.log('window.paginaActual antes:', window.paginaActual);
-            
-            if ($parent.hasClass('disabled') || $parent.hasClass('active')) {
-                console.log('Enlace deshabilitado o activo');
-                return false;
-            }
-            
-            if (!nuevaPagina || isNaN(nuevaPagina) || nuevaPagina === window.paginaActual) {
-                console.log('Página inválida o igual');
-                return false;
-            }
-            
-            // Actualizar usando window
-            window.paginaActual = nuevaPagina;
-            console.log('window.paginaActual actualizada a:', window.paginaActual);
-            
-            // Ejecutar inmediatamente
-            cargarDatosClientesPage();
-            
-            return false;
-        });
+}
 
+// Función para generar preview de archivos en modal de editar
+function generarPreviewEditar(rutaArchivo, nombreArchivo, inputId) {
+    if (!rutaArchivo) return '<span class="text-muted">Sin archivo</span>';
+
+    const extension = rutaArchivo.split('.').pop().toLowerCase();
+    const esImagen = ['jpg', 'jpeg', 'png', 'gif'].includes(extension);
+
+    if (esImagen) {
+        return `
+            <div class="archivo-actual">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img src="${rutaArchivo}" alt="${nombreArchivo}"
+                             style="max-width: 100%; max-height: 120px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"
+                             onclick="window.open('${rutaArchivo}', '_blank')">
+                    </div>
+                    <div class="col-md-6">
+                        <a href="${rutaArchivo}" target="_blank" class="btn btn-sm btn-primary mt-1">
+                            <i class="fas fa-eye"></i> Ver completa
+                        </a>
+                    </div>
+                </div>
+                <div id="preview_${inputId}" class="mt-2"></div>
+            </div>`;
+    } else {
+        let icono = 'fas fa-file';
+        let colorClass = 'btn-primary';
+        if (extension === 'pdf') {
+            icono = 'fas fa-file-pdf';
+            colorClass = 'btn-danger';
+        }
+
+        return `
+            <div class="archivo-actual">
+                <a href="${rutaArchivo}" target="_blank" class="btn btn-sm ${colorClass} mt-1">
+                    <i class="${icono}"></i> Ver actual
+                </a>
+                <div id="preview_${inputId}" class="mt-2"></div>
+            </div>`;
     }
+}
 
 $(document).ready(function() {
-    
-    // Cargar datos de clientes al iniciar
-    cargarDatosClientesPage();
-    
-    // Evento de búsqueda
-    $("#btnBuscar").click(function() {
-        busquedaActual = $("#busquedaCliente").val().trim();
-        window.paginaActual = 1;
-       cargarDatosClientesPage();
+
+    // Inicializar DataTable
+    var tablaClientes = $("#tablaConductoresInicial").DataTable({
+        paging: true,
+        bFilter: true,
+        ordering: true,
+        searching: true,
+        destroy: true,
+        scrollX: "100%",
+        scrollCollapse: true,
+        autoWidth: false,
+        columnDefs: [
+            {
+                targets: [0], // N°
+                width: "60px"
+            },
+            {
+                targets: [1], // N° Documento
+                width: "120px"
+            },
+            {
+                targets: [2], // Nombres
+                width: "200px"
+            },
+            {
+                targets: [3], // Apellidos
+                width: "200px"
+            },
+            {
+                targets: [4], // Teléfono
+                width: "120px"
+            },
+            {
+                targets: [5], // Correo
+                width: "200px"
+            },
+            {
+                targets: [6], // Estado Pago
+                width: "120px"
+            },
+            {
+                targets: [7], // Acciones
+                width: "150px",
+                orderable: false
+            }
+        ],
+        processing: true,
+        serverSide: true, // Cambiar a true para server-side processing
+        ajax: {
+            url: "/arequipago/cargardatosClientes",
+            type: "POST",
+            dataSrc: "data"
+        },
+        language: {
+            url: "ServerSide/Spanish.json",
+            search: "Buscar:",
+            searchPlaceholder: "Buscar cliente por nombre, documento, correo..."
+        },
+        rowCallback: function(row, data) {
+            // Aplicar clase si el cliente ya pagó
+            if (data.ha_pagado == 1) {
+                $(row).addClass('cliente-pagado');
+            }
+        },
+        columns: [
+            {
+                data: null,
+                className: "text-center",
+                render: function (data, type, row, meta) {
+                    return meta.row + 1;
+                }
+            },
+            {
+                data: "n_documento",
+                className: "text-center"
+            },
+            {
+                data: "nombres",
+                className: "text-center"
+            },
+            {
+                data: null,
+                className: "text-center",
+                render: function(data, type, row) {
+                    return `${row.apellido_paterno} ${row.apellido_materno}`;
+                }
+            },
+            {
+                data: "telefono",
+                className: "text-center",
+                render: function(data) {
+                    return data || '-';
+                }
+            },
+            {
+                data: "correo",
+                className: "text-center",
+                render: function(data) {
+                    return data || '-';
+                }
+            },
+            {
+                data: "ha_pagado",
+                className: "text-center",
+                render: function(data, type, row) {
+                    if (data == 1) {
+                        return `<span class="badge bg-success">
+                                    <i class="fas fa-check-circle"></i> PAGADO
+                                </span>`;
+                    } else {
+                        return `<span class="badge bg-warning text-dark">
+                                    <i class="fas fa-clock"></i> PENDIENTE
+                                </span>`;
+                    }
+                }
+            },
+            {
+                data: null,
+                className: "text-center",
+                render: function(data, type, row) {
+                    return `
+                        <div class="btn-group btn-sm" role="group">
+                            <button class="btn btn-sm btn-primary ver-btn" data-id="${row.id}" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning editar-btn" data-id="${row.id}" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            ${ROL_USUARIO != 2 ? `
+                            <button class="btn btn-sm btn-danger eliminar-btn" data-id="${row.id}" title="Eliminar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+            }
+        ]
     });
-    
-    // Búsqueda con la tecla Enter
-    $("#busquedaCliente").keypress(function(e) {
-        if (e.which === 13) {
-            busquedaActual = $(this).val().trim();
-            window.paginaActual = 1;
-            cargarDatosClientesPage();
-        }
-    });
-    
-    // Limpiar búsqueda
-    $("#btnLimpiarBusqueda").click(function() {
-        $("#busquedaCliente").val("");
-        busquedaActual = "";
-        window.paginaActual = 1;
-        cargarDatosClientesPage();
-    });
-    
+
 });
 
 
@@ -1115,7 +1166,7 @@ $(document).on('click', '.ver-btn', function() {
                     <div class="row">
                         <div class="col-md-6">
                             <h5><i class="fas fa-user me-2"></i>Datos Personales</h5>
-                            <p><strong>ID:</strong> ${cliente.id}</p>
+                            <!-- <p><strong>ID:</strong> ${cliente.id}</p> -->
                             <p><strong>Tipo Documento:</strong> ${cliente.tipo_doc}</p>
                             <p><strong>Número Documento:</strong> ${cliente.n_documento}</p>
                             <p><strong>Nombres:</strong> ${cliente.nombres}</p>
@@ -1125,6 +1176,9 @@ $(document).on('click', '.ver-btn', function() {
                             <p><strong>Fecha Nacimiento:</strong> ${cliente.fecha_nacimiento}</p>
                             <p><strong>Teléfono:</strong> ${cliente.telefono || '-'}</p>
                             <p><strong>Correo:</strong> ${cliente.correo || '-'}</p>
+
+                            <!-- Preview del Selfie en Datos Personales -->
+                            ${generarPreviewArchivo(cliente.selfie, 'Selfie del Cliente')}
                         </div>
                         <div class="col-md-6">
                             <h5><i class="fas fa-map-marker-alt me-2"></i>Dirección</h5>
@@ -1157,52 +1211,17 @@ $(document).on('click', '.ver-btn', function() {
                             <h5><i class="fas fa-file-alt me-2"></i>Documentos</h5>
                             <div class="row">`;
                 
-                // Documentos (resto del código igual...)
-                // Documentos
-                if (cliente.recibo_servicios) {
-                    contenidoModal += `
-                        <div class="col-md-4 mb-2">
-                            <a href="${cliente.recibo_servicios}" class="btn btn-primary btn-sm" target="_blank">
-                                <i class="fas fa-download"></i> Recibo de Servicios
-                            </a>
-                        </div>`;
-                }
-                
-                if (cliente.doc_identidad) {
-                    contenidoModal += `
-                        <div class="col-md-4 mb-2">
-                            <a href="${cliente.doc_identidad}" class="btn btn-primary btn-sm" target="_blank">
-                                <i class="fas fa-download"></i> Documento de Identidad
-                            </a>
-                        </div>`;
-                }
-                
-                if (cliente.otro_doc_1) {
-                    contenidoModal += `
-                        <div class="col-md-4 mb-2">
-                            <a href="${cliente.otro_doc_1}" class="btn btn-primary btn-sm" target="_blank">
-                                <i class="fas fa-download"></i> Documento Adicional 1
-                            </a>
-                        </div>`;
-                }
-                
-                if (cliente.otro_doc_2) {
-                    contenidoModal += `
-                        <div class="col-md-4 mb-2">
-                            <a href="${cliente.otro_doc_2}" class="btn btn-primary btn-sm" target="_blank">
-                                <i class="fas fa-download"></i> Documento Adicional 2
-                            </a>
-                        </div>`;
-                }
-                
-                if (cliente.otro_doc_3) {
-                    contenidoModal += `
-                        <div class="col-md-4 mb-2">
-                            <a href="${cliente.otro_doc_3}" class="btn btn-primary btn-sm" target="_blank">
-                                <i class="fas fa-download"></i> Documento Adicional 3
-                            </a>
-                        </div>`;
-                }
+                // Documentos con preview (sin selfie - ya está en Datos Personales)
+                contenidoModal += `
+                                <div class="col-md-6">
+                                    ${generarPreviewArchivo(cliente.recibo_servicios, 'Recibo Agua/Luz')}
+                                    ${generarPreviewArchivo(cliente.doc_identidad, 'Documento Identidad')}
+                                    ${generarPreviewArchivo(cliente.otro_doc_1, 'Documento Adicional 1')}
+                                </div>
+                                <div class="col-md-6">
+                                    ${generarPreviewArchivo(cliente.otro_doc_2, 'Documento Adicional 2')}
+                                    ${generarPreviewArchivo(cliente.otro_doc_3, 'Documento Adicional 3')}
+                                </div>`;
                 
                 contenidoModal += `
                             </div>
@@ -1424,29 +1443,40 @@ $(document).on('click', '.editar-btn', function() {
                             <p class="text-muted">Deje en blanco para mantener el documento actual</p>
                         </div>
                         <div class="col-md-6 mb-2">
-                            <label for="recibo_servicios_file" class="form-label">Recibo de Servicios</label>
-                            <input type="file" class="form-control" name="recibo_servicios_file" id="recibo_servicios_file">
-                            ${cliente.recibo_servicios ? `<a href="${cliente.recibo_servicios}" target="_blank" class="btn btn-sm btn-primary mt-1"><i class="fas fa-eye"></i> Ver actual</a>` : '<span class="text-muted">Sin archivo</span>'}
+                            <label for="recibo_servicios_file" class="form-label">Recibo Agua/Luz</label>
+                            <input type="file" class="form-control" name="recibo_servicios_file" id="recibo_servicios_file"
+                                   accept=".jpg,.jpeg,.png,.pdf" onchange="previewImage(this, 'preview_recibo_servicios_file')">
+                            ${generarPreviewEditar(cliente.recibo_servicios, 'Recibo Agua/Luz', 'recibo_servicios_file')}
                         </div>
                         <div class="col-md-6 mb-2">
+                            <label for="selfie_file" class="form-label">Selfie</label>
+                            <input type="file" class="form-control" name="selfie_file" id="selfie_file"
+                                   accept=".jpg,.jpeg,.png" onchange="previewImage(this, 'preview_selfie_file')">
+                            ${generarPreviewEditar(cliente.selfie, 'Selfie', 'selfie_file')}
+                        </div>
+                        <div class="col-md-12 mb-2">
                             <label for="doc_identidad_file" class="form-label">Documento de Identidad</label>
-                            <input type="file" class="form-control" name="doc_identidad_file" id="doc_identidad_file">
-                            ${cliente.doc_identidad ? `<a href="${cliente.doc_identidad}" target="_blank" class="btn btn-sm btn-primary mt-1"><i class="fas fa-eye"></i> Ver actual</a>` : '<span class="text-muted">Sin archivo</span>'}
+                            <input type="file" class="form-control" name="doc_identidad_file" id="doc_identidad_file"
+                                   accept=".jpg,.jpeg,.png,.pdf" onchange="previewImage(this, 'preview_doc_identidad_file')">
+                            ${generarPreviewEditar(cliente.doc_identidad, 'Documento Identidad', 'doc_identidad_file')}
                         </div>
                         <div class="col-md-4 mb-2">
                             <label for="otro_doc_1_file" class="form-label">Documento Adicional 1</label>
-                            <input type="file" class="form-control" name="otro_doc_1_file" id="otro_doc_1_file">
-                            ${cliente.otro_doc_1 ? `<a href="${cliente.otro_doc_1}" target="_blank" class="btn btn-sm btn-primary mt-1"><i class="fas fa-eye"></i> Ver actual</a>` : '<span class="text-muted">Sin archivo</span>'}
+                            <input type="file" class="form-control" name="otro_doc_1_file" id="otro_doc_1_file"
+                                   accept=".jpg,.jpeg,.png,.pdf" onchange="previewImage(this, 'preview_otro_doc_1_file')">
+                            ${generarPreviewEditar(cliente.otro_doc_1, 'Documento Adicional 1', 'otro_doc_1_file')}
                         </div>
                         <div class="col-md-4 mb-2">
                             <label for="otro_doc_2_file" class="form-label">Documento Adicional 2</label>
-                            <input type="file" class="form-control" name="otro_doc_2_file" id="otro_doc_2_file">
-                            ${cliente.otro_doc_2 ? `<a href="${cliente.otro_doc_2}" target="_blank" class="btn btn-sm btn-primary mt-1"><i class="fas fa-eye"></i> Ver actual</a>` : '<span class="text-muted">Sin archivo</span>'}
+                            <input type="file" class="form-control" name="otro_doc_2_file" id="otro_doc_2_file"
+                                   accept=".jpg,.jpeg,.png,.pdf" onchange="previewImage(this, 'preview_otro_doc_2_file')">
+                            ${generarPreviewEditar(cliente.otro_doc_2, 'Documento Adicional 2', 'otro_doc_2_file')}
                         </div>
                         <div class="col-md-4 mb-2">
                             <label for="otro_doc_3_file" class="form-label">Documento Adicional 3</label>
-                            <input type="file" class="form-control" name="otro_doc_3_file" id="otro_doc_3_file">
-                            ${cliente.otro_doc_3 ? `<a href="${cliente.otro_doc_3}" target="_blank" class="btn btn-sm btn-primary mt-1"><i class="fas fa-eye"></i> Ver actual</a>` : '<span class="text-muted">Sin archivo</span>'}
+                            <input type="file" class="form-control" name="otro_doc_3_file" id="otro_doc_3_file"
+                                   accept=".jpg,.jpeg,.png,.pdf" onchange="previewImage(this, 'preview_otro_doc_3_file')">
+                            ${generarPreviewEditar(cliente.otro_doc_3, 'Documento Adicional 3', 'otro_doc_3_file')}
                         </div>
                     </div>
                     
