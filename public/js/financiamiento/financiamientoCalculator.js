@@ -2,6 +2,13 @@ function calcularFinanciamiento() {
   console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
+  // REEMPLAZAR por:
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    console.log("📱 CELULARES - Solo recalculando fechas para cambio de fecha de inicio");
+    recalcularSoloFechasCelular();
+    return;
+  }
+
   // Obtener valores de los inputs
   const montoRaw = document.getElementById("monto").value;
   const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
@@ -91,10 +98,40 @@ function calcularFinanciamiento() {
   console.log("Tasa de interés por período: ", tasaPeriodo);
 
   // ✅ Corregido: Ahora el cálculo de la cuota sigue la fórmula correctamente
-  const valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
-  console.log("Valor de la cuota calculado: ", valorCuota);
+  let valorCuota;
+
+  // Solo para planes de celular (ID 41), usar valor fijo sin recalcular
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    // Para celulares: NUNCA recalcular, usar el valor original del monto_cuota
+    valorCuota = parseFloat(planGlobal.monto_cuota) || 0;
+    console.log("📱 CELULARES - Usando valor cuota FIJO del plan:", valorCuota);
+    
+    // Si no hay monto_cuota en planGlobal, calcular una sola vez
+    if (valorCuota === 0 && planGlobal.monto && planGlobal.cuota_inicial && planGlobal.cantidad_cuotas) {
+      const montoTotal = parseFloat(planGlobal.monto);
+      const cuotaInicial = parseFloat(planGlobal.cuota_inicial);
+      const cantCuotas = parseInt(planGlobal.cantidad_cuotas);
+      valorCuota = (montoTotal - cuotaInicial) / cantCuotas;
+      console.log("📱 CELULARES - Cuota calculada ÚNICA VEZ:", valorCuota);
+    }
+  } else {
+    // Para otros planes, mantener lógica original
+    valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
+  }
 
   console.log("Valor de la cuota calculado: ", valorCuota);
+
+  // NUEVO: Para celulares, verificar que no se sobrescriba un valor ya establecido
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    const valorActualInput = document.getElementById("valorCuota").value;
+    const valorActualNumerico = parseFloat(valorActualInput.replace(/[^\d.-]/g, ''));
+    
+    if (valorActualNumerico > 0 && valorActualNumerico !== valorCuota) {
+      console.log("📱 CELULARES - Manteniendo valor existente del input:", valorActualNumerico);
+      valorCuota = valorActualNumerico;
+    }
+  }
+
   const cuotaFormateada = formatMoneda(valorCuota, tipoMoneda);
 
   // Mostrar resultado en el input
@@ -380,6 +417,20 @@ function calcularCronogramaDinamico() {
   console.log("🚀 EJECUTANDO: calcularCronogramaDinamico() - Función dinámica");
   console.log("🔍 Plan actual en calcularCronogramaDinamico:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
 
+  // PROTECCIÓN ABSOLUTA PARA CELULARES  
+  if (proteccionAbsolutaCelulares()) {
+    console.log("📱 CELULARES - Solo recalculando fechas por protección absoluta");
+    recalcularSoloFechasCelular();
+    return;
+  }
+  
+  // NUEVO: Para planes de celular, SOLO recalcular fechas, NO valores
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    console.log("📱 CELULARES - Solo recalculando fechas, valores permanecen fijos");
+    recalcularSoloFechasCelular();
+    return; // Salir completamente para evitar cualquier recálculo
+  }
+
   // NUEVO: No ejecutar para plan corporativo ID 36
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
     console.log("⏹️ SALTANDO calcularCronogramaDinamico() para plan corporativo ID 36");
@@ -405,6 +456,41 @@ function calcularCronogramaDinamico() {
   // ✅ Convertir a número
   let valorCuota = parseFloat(valorCuotaLimpio) || 0;
 
+  // NUEVO: Para planes de celular, usar SIEMPRE el valor fijo de la variante
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    // Para celulares: usar el monto_cuota original de la variante/plan
+    if (planGlobal.monto_cuota) {
+      valorCuota = parseFloat(planGlobal.monto_cuota);
+      // Actualizar el input con el valor fijo
+      document.getElementById("valorCuota").value = valorCuota.toFixed(2);
+      console.log("📱 CELULARES - Valor cuota FIJO restaurado:", valorCuota);
+    } else {
+      // Fallback: calcular desde el monto total
+      const montoTotal = parseFloat(planGlobal.monto) || 0;
+      const cuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
+      const cantCuotas = parseInt(planGlobal.cantidad_cuotas) || 1;
+      valorCuota = (montoTotal - cuotaInicial) / cantCuotas;
+      document.getElementById("valorCuota").value = valorCuota.toFixed(2);
+      console.log("📱 CELULARES - Valor cuota calculado fijo:", valorCuota);
+    }
+    
+    // CRÍTICO: No permitir que se modifique más adelante
+    return; // Salir de la función para evitar recálculos posteriores
+  } else {
+    // Para otros planes, permitir recálculo si es necesario
+    console.log("🔄 Otros planes - Valor cuota actual:", valorCuota);
+  }
+
+  // NUEVO: Verificar si hay cambios no deseados en cuota para celulares
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    // Para celulares, forzar el valor original de la variante si existe
+    if (planGlobal.monto_cuota && parseFloat(planGlobal.monto_cuota) !== valorCuota) {
+      valorCuota = parseFloat(planGlobal.monto_cuota);
+      document.getElementById("valorCuota").value = formatMoneda(valorCuota, obtenerTipoMoneda());
+      console.log("📱 CELULARES - Restaurando valor cuota original:", valorCuota);
+    }
+  }
+
   let montoTotalInput = document.getElementById("monto");
   // CORREGIDO: Usar frecuencia del plan cuando el select esté deshabilitado
   const frecuenciaSelect = document.getElementById("frecuenciaPago");
@@ -414,6 +500,7 @@ function calcularCronogramaDinamico() {
 
 
   console.log("🔄 Frecuencia utilizada en cronograma dinámico:", frecuencia, "- Select habilitado:", !frecuenciaSelect?.disabled);
+
 
   // REEMPLÁZALO POR:
   if (!fechaInicio) {
@@ -662,6 +749,16 @@ function calcularCronogramaDinamico() {
   let montoTotal = cuotaInicial + valorCuota * cuotas;
   if (!montoTotalInput.value) {
     montoTotalInput.value = montoTotal.toFixed(2);
+  }
+
+  // NUEVO: Para celulares, asegurar que el valor de cuota no cambie
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    const valorCuotaFinal = parseFloat(planGlobal.monto_cuota) || valorCuota;
+    document.getElementById("valorCuota").value = valorCuotaFinal.toFixed(2);
+    console.log("📱 CELULARES - Valor cuota final asegurado:", valorCuotaFinal);
+    
+    mostrarFechasVencimientoPlan(fechasVencimiento, valorCuotaFinal);
+    return; // Evitar continuar con el flujo normal
   }
 
   mostrarFechasVencimientoPlan(fechasVencimiento, valorCuota);
@@ -1170,4 +1267,78 @@ function recalcularMonto() {
       );
     }
   }
+}
+
+function recalcularSoloFechasCelular() {
+  if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
+    return;
+  }
+
+  const fechaInicio = document.getElementById("fechaInicio").value;
+  if (!fechaInicio) {
+    console.warn("No hay fecha de inicio para recalcular");
+    return;
+  }
+
+  console.log("📱 CELULARES - Recalculando SOLO fechas con fecha inicio:", fechaInicio);
+
+  // Obtener valores FIJOS (sin recalcular)
+  const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
+  const cantidadCuotas = parseInt(planGlobal.cantidad_cuotas) || 0;
+
+  if (valorCuotaFijo === 0 || cantidadCuotas === 0) {
+    console.warn("📱 CELULARES - Valores fijos no disponibles");
+    return;
+  }
+
+  // Asegurar que el valor de la cuota permanezca fijo
+  document.getElementById("valorCuota").value = valorCuotaFijo.toFixed(2);
+
+  // Calcular SOLO las fechas basándose en la fecha de inicio
+  const fechaInicioObj = new Date(fechaInicio + "T00:00:00");
+  let fechasVencimiento = [];
+
+  // Primera fecha: día 30 del mes de la fecha de inicio
+  let primeraFecha = new Date(fechaInicioObj);
+  const mesInicio = primeraFecha.getMonth();
+  const añoInicio = primeraFecha.getFullYear();
+  
+  // Establecer al día 30 del mismo mes de la fecha de inicio
+  primeraFecha = new Date(añoInicio, mesInicio, 30);
+  
+  // Si es febrero, ajustar al día 28 o 29
+  if (mesInicio === 1) {
+    const esBisiesto = (añoInicio % 4 === 0 && añoInicio % 100 !== 0) || (añoInicio % 400 === 0);
+    primeraFecha.setDate(esBisiesto ? 29 : 28);
+  }
+
+  fechasVencimiento.push(primeraFecha);
+  console.log("📱 CELULARES - Primera fecha establecida:", primeraFecha.toLocaleDateString());
+
+  // Calcular fechas posteriores
+  for (let i = 1; i < cantidadCuotas; i++) {
+    let nuevaFecha = new Date(fechasVencimiento[i - 1]);
+    nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+    
+    // Siempre día 30, excepto febrero
+    if (nuevaFecha.getMonth() === 1) {
+      const añoActual = nuevaFecha.getFullYear();
+      const esBisiesto = (añoActual % 4 === 0 && añoActual % 100 !== 0) || (añoActual % 400 === 0);
+      nuevaFecha.setDate(esBisiesto ? 29 : 28);
+    } else {
+      nuevaFecha.setDate(30);
+    }
+    
+    fechasVencimiento.push(nuevaFecha);
+    console.log(`📱 CELULARES - Fecha ${i + 1}:`, nuevaFecha.toLocaleDateString());
+  }
+
+  // Actualizar fecha de fin
+  const fechaFin = fechasVencimiento[fechasVencimiento.length - 1];
+  document.getElementById("fechaFin").value = formatFechaInput(fechaFin);
+
+  // Mostrar cronograma con valores FIJOS
+  mostrarFechasVencimientoPlan(fechasVencimiento, valorCuotaFijo);
+
+  console.log("📱 CELULARES - Recálculo de fechas completado, valores mantenidos fijos");
 }

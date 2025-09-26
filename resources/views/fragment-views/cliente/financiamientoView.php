@@ -869,8 +869,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i
                                                                 class="fas fa-file-invoice"></i></span>
-                                                        <input type="text" class="form-control" id="montoInscripcion"
-                                                            placeholder="Monto de inscripción">
+                                                        <input type="text" class="form-control" id="montoInscripcion" placeholder="Monto de inscripción" disabled>
                                                     </div>
                                                 </div>
 
@@ -1383,6 +1382,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             configurarOrdenamiento();
 
             obtenerFinanciamientosPendientes();
+            iniciarProteccionCuotaCelular();
+
            
             // Aplicar estilo activo a la primera pestaña por defecto
             $("#listaFinanciamientoNav").addClass("tab-button-active");
@@ -1445,6 +1446,12 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             });
 
             asignarEventListenersFinanciamiento();
+
+            $(document).on('focus', '#valorCuota', function() {
+                if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+                    validarCambioCuotaCelular();
+                }
+            });
 
             $(document).on('change', '#cantidad', function () {
                 clearTimeout(timeout);
@@ -1932,6 +1939,23 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 });
             }
         });
+
+        function iniciarProteccionCuotaCelular() {
+            const valorCuotaInput = document.getElementById('valorCuota');
+            if (valorCuotaInput) {
+                $(valorCuotaInput).on('focus blur change input', protegerValorCuotaCelular);
+            }
+        }
+
+        function protegerValorCuotaCelular() {
+            if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+                const valorOriginal = parseFloat(planGlobal.monto_cuota);
+                if (valorOriginal && parseFloat(this.value) !== valorOriginal) {
+                    this.value = valorOriginal.toFixed(2);
+                    console.log("CELULARES - Valor cuota restaurado por protección:", valorOriginal);
+                }
+            }
+        }
     </script>
     <!-- En tu financiamientoView.php -->
     <script src="<?= URL::to('public/js/financiamiento/utilsManager.js') ?>?v=<?= time() ?>"></script>
