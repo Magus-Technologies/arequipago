@@ -44,6 +44,15 @@ function selectPlan(idPlan) {
       if (respuesta.success) {
         var plan = respuesta.plan;
         planGlobal = plan;
+
+        // APLICAR PROTECCIÓN INMEDIATA PARA CELULARES
+        if (parseInt(plan.idplan_financiamiento) === 41) {
+          setTimeout(() => {
+            proteccionAbsolutaCelulares();
+          }, 100);
+        }
+
+
         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
 
         // NUEVO: Configurar frecuencia de pago según tipo vehicular
@@ -414,7 +423,32 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
           }
         }
 
-        $("#valorCuota").val(plan.monto_cuota);
+        // DESPUÉS:
+        // Para planes de celular, calcular cuota fija
+        if (parseInt(plan.idplan_financiamiento) === 41) {
+          const montoSinIntereses = parseFloat(plan.monto_sin_interes) || 0;
+          const cuotaInicial = parseFloat(plan.cuota_inicial) || 0;
+          const cantidadCuotas = parseInt(plan.cantidad_cuotas) || 1;
+          const valorCuotaFijo = (montoSinIntereses - cuotaInicial) / cantidadCuotas;
+          
+          $("#valorCuota").val(valorCuotaFijo.toFixed(2));
+          console.log("📱 Plan celular - Cuota fija establecida:", valorCuotaFijo);
+        } else {
+          $("#valorCuota").val(plan.monto_cuota);
+        }
+
+        // NUEVO: Para celulares, bloquear el campo valorCuota para evitar cambios
+        if (parseInt(plan.idplan_financiamiento) === 41) {
+          const valorCuotaInput = document.getElementById("valorCuota");
+          if (valorCuotaInput) {
+            valorCuotaInput.readOnly = true;
+            valorCuotaInput.style.backgroundColor = "#f8f9fa";
+            valorCuotaInput.style.cursor = "not-allowed";
+            valorCuotaInput.title = "El valor de la cuota es fijo para financiamientos de celular";
+            console.log("📱 CELULARES - Campo valorCuota bloqueado para edición");
+          }
+        }
+
         $("#cuotas").val(plan.cantidad_cuotas);
         $("#tasaInteres").val(plan.tasa_interes);
         $("#tasaInteres").trigger("change");
@@ -465,15 +499,30 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
 
         $("#fechaInicio")
           .off("change")
-          .on("change", calcularCronogramaDinamico);
+          .on("change", function() {
+            if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+              recalcularSoloFechasCelular();
+            } else {
+              calcularCronogramaDinamico();
+            }
+          });
+        
+
+
         setTimeout(() => {
-          calcularCronogramaDinamico();
-        }, 4000);
+          if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+            recalcularSoloFechasCelular();
+          } else {
+            calcularCronogramaDinamico();
+          }
+        }, 4000); 
 
         // Verificar y mantener campos especiales desbloqueados
         setTimeout(() => {
           verificarYMantenerCamposEspeciales();
         }, 4500);
+
+
         // MODIFICADO: No ejecutar verificarInputsVacios para MotosYa
         if (!plan.fecha_inicio || !plan.fecha_fin) {
           if (parseInt(plan.idplan_financiamiento) !== 33) {
@@ -662,6 +711,13 @@ function seleccionarVariante(index) {
     cobrar_mora: typeof planGlobal.cobrar_mora !== 'undefined' ? planGlobal.cobrar_mora : 1,
   };
 
+  // APLICAR PROTECCIÓN INMEDIATA PARA VARIANTES DE CELULARES
+  if (parseInt(variante.idplan_financiamiento) === 41) {
+    setTimeout(() => {
+      proteccionAbsolutaCelulares();
+    }, 100);
+  }
+  
   // Manejar campo de verificación domiciliaria para la variante
   manejarVerificacionDomiciliaria(planGlobal);
 
@@ -825,6 +881,19 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
   $("#cuotas").val(variante.cantidad_cuotas);
   $("#tasaInteres").val(variante.tasa_interes);
   $("#montoSinIntereses").val(variante.monto_sin_interes || "");
+
+  // Agrega DESPUÉS de esas líneas:
+  // NUEVO: Para variantes de celular, calcular y fijar valor de cuota
+  if (parseInt(variante.idplan_financiamiento) === 41) {
+    const montoSinInt = parseFloat(variante.monto_sin_interes) || 0;
+    const cuotaInic = parseFloat(variante.cuota_inicial) || 0;
+    const cantCuotas = parseInt(variante.cantidad_cuotas) || 1;
+    const valorCuotaFijo = (montoSinInt - cuotaInic) / cantCuotas;
+    
+    $("#valorCuota").val(valorCuotaFijo.toFixed(2));
+    console.log("📱 Variante celular - Cuota fija:", valorCuotaFijo);
+  }
+
   // MODIFICADO: Calcular y aplicar monto de inscripción para variante y MotosYa
   if (variante.tipo_vehicular && variante.monto_sin_interes) {
     const montoInscripcionCalculado = calcularMontoInscripcion(
@@ -852,16 +921,6 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
   }
   $("#monto").val(variante.monto || "");
 
-  // MODIFICADO: Siempre desbloquear el input de monto de inscripción cuando se selecciona una variante
-  const inputMontoInscripcion = document.getElementById("montoInscripcion");
-  if (inputMontoInscripcion) {
-    inputMontoInscripcion.disabled = false;
-    inputMontoInscripcion.readOnly = false;
-    inputMontoInscripcion.style.backgroundColor = "#ffffff";
-    inputMontoInscripcion.style.color = "#212529";
-    inputMontoInscripcion.style.pointerEvents = "auto";
-    inputMontoInscripcion.style.cursor = "text";
-  }
 
   // MODIFICADO: Desbloquear fecha de inicio solo si la variante no tiene fecha_inicio o fecha_fin
   if (!variante.fecha_inicio || !variante.fecha_fin) {
@@ -925,9 +984,14 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
       calcularCronogramaDinamico();
     }, 1500); // Aumentar el delay para asegurar que todo esté listo
   } else {
-    // Para otros planes, usar la función normal
+    // REEMPLAZAR el setTimeout existente por:
     setTimeout(() => {
-      calcularCronogramaDinamico();
+      if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+        console.log("📱 VARIANTE CELULAR - Solo recalculando fechas");
+        recalcularSoloFechasCelular();
+      } else {
+        calcularCronogramaDinamico();
+      }
     }, 4000);
   }
 
@@ -1194,19 +1258,6 @@ function verificarInputsVacios() {
   // Bloquear inputs según el tipo de plan
   bloquearInputs();
 
-  // ✅ Asegurarse de que montoInscripcion esté desbloqueado
-  const inputInscripcion = document.getElementById("montoInscripcion");
-  if (inputInscripcion) {
-    inputInscripcion.disabled = false;
-    inputInscripcion.readOnly = false;
-    inputInscripcion.style.backgroundColor = "#ffffff";
-    inputInscripcion.style.color = "#212529";
-    inputInscripcion.style.pointerEvents = "auto";
-    inputInscripcion.style.cursor = "text";
-    console.log(
-      "🔓 Desbloqueado montoInscripcion desde calcularFinanciamientoConFechaIngreso"
-    );
-  }
 }
 
 function planMensual() {
@@ -1381,14 +1432,6 @@ function NotGrupo() {
       aplicarMontoInscripcion(0, null); // Permitir edición manual
     }
 
-    const montoInscripcionInput = document.getElementById("montoInscripcion");
-    if (montoInscripcionInput) {
-      montoInscripcionInput.disabled = false;
-      montoInscripcionInput.readOnly = false;
-      montoInscripcionInput.style.pointerEvents = "auto"; // ✅ Asegura que se pueda interactuar
-      montoInscripcionInput.style.cursor = "text"; // ✅ ESTO FORZA que el cursor sea el de texto (el palito de escribir)
-    }
-
     // Limpiar el input "Monto Recalculado" y ocultar su contenedor
     const montoRecalculadoInput = document.getElementById("montoRecalculado"); // Obtener el input "Monto Recalculado"
     montoRecalculadoInput.value = ""; // Limpiar el valor del input
@@ -1535,7 +1578,6 @@ function aplicarMontoInscripcion(
   } else {
     // Para grupos no vehiculares, permitir edición manual
     inputMontoInscripcion.readOnly = false;
-    inputMontoInscripcion.disabled = false; // NUEVO: Asegurar que esté habilitado
     inputMontoInscripcion.style.backgroundColor = "";
     inputMontoInscripcion.style.cursor = "";
     inputMontoInscripcion.style.pointerEvents = "auto"; // NUEVO: Permitir interacción
@@ -2063,6 +2105,12 @@ function calcularFinanciamiento() {
   console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
+  // PROTECCIÓN ABSOLUTA PARA CELULARES
+  if (proteccionAbsolutaCelulares()) {
+    console.log("📱 CELULARES - Función bloqueada por protección absoluta");
+    return;
+  }
+
   // Obtener valores de los inputs
   const montoRaw = document.getElementById("monto").value;
   const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
@@ -2394,3 +2442,44 @@ function formatFechaInput(fecha) {
   return `${anio}-${mes}-${dia}`; // Formato adecuado para el input de tipo date
 }
 
+// Nueva función para prevenir cambios en la cuota para planes de celular
+function validarCambioCuotaCelular() {
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+    const valorCuotaInput = document.getElementById("valorCuota");
+    const valorActual = valorCuotaInput.value;
+    
+    // Hacer el input de solo lectura para celulares
+    valorCuotaInput.readOnly = true;
+    valorCuotaInput.style.backgroundColor = "#f8f9fa";
+    valorCuotaInput.style.cursor = "not-allowed";
+    valorCuotaInput.title = "El valor de la cuota es fijo para financiamientos de celular";
+    
+    console.log("📱 CELULARES - Cuota bloqueada para edición:", valorActual);
+  }
+}
+
+// NUEVA función para protección absoluta de cuotas en celulares
+function proteccionAbsolutaCelulares() {
+  if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
+    return false; // No es celular, permitir cambios
+  }
+  
+  // Es celular - calcular el valor correcto UNA sola vez
+  const monto = parseFloat(planGlobal.monto) || 0;
+  const cuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
+  const cantidadCuotas = parseInt(planGlobal.cantidad_cuotas) || 1;
+  
+  const valorCuotaFijo = (monto - cuotaInicial) / cantidadCuotas;
+  
+  // Forzar el valor correcto en el input
+  const valorCuotaInput = document.getElementById("valorCuota");
+  if (valorCuotaInput) {
+    valorCuotaInput.value = valorCuotaFijo.toFixed(2);
+    valorCuotaInput.readOnly = true;
+    valorCuotaInput.style.backgroundColor = "#f8f9fa";
+    valorCuotaInput.style.pointerEvents = "none";
+  }
+  
+  console.log("📱 PROTECCIÓN CELULARES - Valor fijo aplicado:", valorCuotaFijo);
+  return true; // Es celular, bloquear otros cálculos
+}

@@ -274,6 +274,7 @@ function saveFinanciamiento(event) {
           type: "POST",
           data: {
             id_conductor: idConductor,
+            id_cliente: null, // AGREGADO: Enviar id_cliente como null cuando hay conductor
             id_producto: idProducto,
             valorCuota: valorCuota,
             codigo_asociado: codigoAsociado,
@@ -829,12 +830,9 @@ function limpiarFormulario() {
   document.getElementById("cuotaInicial").value = "";
   document.getElementById("montoInscripcion").value = "";
   document.getElementById("tasaInteres").value = "";
-  // AGREGADO: Resetear el input de monto de inscripción
+  // Solo limpiar el valor, mantener disabled del HTML
   const inputMontoInscripcion = document.getElementById("montoInscripcion");
   inputMontoInscripcion.value = "";
-  inputMontoInscripcion.readOnly = false;
-  inputMontoInscripcion.style.backgroundColor = "";
-  inputMontoInscripcion.style.cursor = "";
   document.getElementById("valorCuota").value = "";
 
   // Llamar a funciones adicionales

@@ -88,10 +88,16 @@
                     precio_venta: row.find('td:nth-child(8)').text().trim()
                 };
 
-                if (document.getElementById('entregarSi') && document.getElementById('entregarSi').checked) { 
-                    recalcularMonto();
-                }
+                // Solo recalcular si NO es plan de celular
+                const grupoSelect = document.getElementById('grupo');
+                const idPlan = grupoSelect ? parseInt(grupoSelect.value) : null;
+                const esPlanCelular = idPlan === 41;
 
+                if (document.getElementById('entregarSi') && document.getElementById('entregarSi').checked && !esPlanCelular) { 
+                    recalcularMonto();
+                } else if (esPlanCelular) {
+                    console.log("📱 CELULARES - NO recalculando monto al seleccionar producto");
+                }
 
                 // Apply the selected class to the current row only
                 $('.producto-row').removeClass('producto-seleccionado');
@@ -178,6 +184,12 @@
         }
           function calcularMonto() {
 
+            // PROTECCIÓN PARA CELULARES
+            if (proteccionAbsolutaCelulares()) {
+                console.log("📱 CELULARES - calcularMonto bloqueado por protección");
+                return;
+            }
+
             const grupoSelect = document.getElementById('grupo'); // ✅ Obtener el select de grupo
             const grupoSeleccionado = grupoSelect ? grupoSelect.value : ""; // ✅ Obtener el valor seleccionado
 
@@ -212,17 +224,23 @@
             let cantidad = parseFloat($('#cantidad').val()) || 0; // Si no es número, usa 0
             console.log("Cantidad ingresada:", cantidad);
 
-            // Calcular el monto
-            const monto = precio * cantidad;
-
-            $('#montoSinIntereses').val(monto.toFixed(2)); // Cambio: Setear solo el valor numérico sin prefijo de moneda  
-            $('#montoSinIntereses')[0].dispatchEvent(new Event('input')); // Cambio: Emitimos el evento input para posibles dependencias
-            $('#montoSinIntereses').val(monto.toFixed(2)); 
-
+            // NUEVO: No calcular monto para planes de celular (ID 41)
             const idPlan = grupoSelect ? parseInt(grupoSelect.value) : null;
+            const esPlanCelular = idPlan === 41;
             const esPlanEspecial = idPlan && [14, 15, 16].includes(idPlan);
 
-            if (!esPlanEspecial) {
+            if (!esPlanCelular) {
+                // Solo calcular monto si NO es plan de celular
+                const monto = precio * cantidad;
+                $('#montoSinIntereses').val(monto.toFixed(2));
+                $('#montoSinIntereses')[0].dispatchEvent(new Event('input'));
+                
+                console.log("Monto calculado para plan NO celular:", monto);
+            } else {
+                console.log("📱 CELULARES - NO recalculando monto sin intereses (se mantiene del grupo)");
+            }
+
+            if (!esPlanEspecial && !esPlanCelular) {
                 setTimeout(recalcularMonto, 4000);
             }
 

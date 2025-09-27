@@ -181,9 +181,21 @@ class ConductorController extends Controller
             $vehiculo = new Vehiculo();
             $requisito = new Requisito();
             $estadosRequisitos = $requisito->obtenerEstadoRequisitos($id);
-            
+            $inscripcion = new Inscripcion(); 
+
+            // Obtener el valor de 'setare' desde el modelo Inscripcion
+            $inscripcionData = $inscripcion->obtenerInscripcionPorConductor($id);
+
             // NUEVO: Determinar si tiene documentación completa
-            $documentosObligatorios = ['doc_identidad', 'licencia_doc', 'seguro_doc', 'revision_tecnica', 'soat_doc', 'tarjeta_propiedad'];
+            $documentosObligatorios = ['doc_identidad', 'licencia_doc', 'seguro_doc', 'revision_tecnica', 'soat_doc', 'tarjeta_propiedad', 'carta_desvinculacion'];
+
+            // Si el tipo de servicio es 'Particular', excluir carta_desvinculacion
+            if (isset($inscripcionData['setare']) && $inscripcionData['setare'] === 'Particular') {
+                $documentosObligatorios = array_filter($documentosObligatorios, function($doc) {
+                    return $doc !== 'carta_desvinculacion';
+                });
+            }
+
             $documentacionCompleta = true;
             foreach ($documentosObligatorios as $doc) {
                 if (!isset($estadosRequisitos[$doc]) || $estadosRequisitos[$doc] == 0) {
@@ -193,7 +205,6 @@ class ConductorController extends Controller
             }
 
             $observacion = new Observacion();
-            $inscripcion = new Inscripcion(); 
             $contactoEmergencia = new ContactoEmergencia();
 
             // Obtener datos del conductor
@@ -296,7 +307,7 @@ class ConductorController extends Controller
                     'vehiculo' => $datosVehiculo ?: [], // Asegurar que no sea null
                     'requisitos' => $datosRequisitos ?: [], // Asegurar que no sea null
                     'observacion' => $datoobservacion,
-                    'inscripcion' => $inscripcion,
+                    'inscripcion' => $inscripcionData,
                     'contactoEmergencia' => $contactoEmergenciaArray,
                     'financiamientoInscripcion' => $financiamientoInscripcion, // Nuevo: Añadimos información sobre financiamiento de inscripción
                     'financiamientoProductos' => $financiamientoProductos,
