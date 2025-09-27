@@ -922,7 +922,7 @@ class GenerarContratosController extends controller
                     'color' => $vehiculo['color'] ?? 'Sin color', // Color, con valor por defecto
                     'anio' => $vehiculo['anio'] ?? 'Sin año', 
                     'condicion' => $vehiculo['condicion'] ?? 'Sin condición',
-                    'monto_pago' => $datoPago[0]['monto_pago'],
+                    'monto_pago' => isset($datoPago[0]['monto_pago']) ? $datoPago[0]['monto_pago'] : 'No registrado',
                     'tipo_pago' => $tipoPago, // Tipo de pago
                     'nro_licencia' => $datosConductor['nro_licencia'] ?? 'No registrado',
                     'correo' => $datosConductor['correo'] ?? 'No registrado',
@@ -1244,7 +1244,9 @@ class GenerarContratosController extends controller
         $html = str_replace('<span id="nombre_conductor">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_conductor">', $datos['dni'], $html);
         
-        $html = str_replace('<span id="monto_pago"></span>', '.' . number_format($datos['monto_pago'], 2), $html);
+        // Formatear el monto solo si es un número
+        $montoFormateado = is_numeric($datos['monto_pago']) ? number_format($datos['monto_pago'], 2) : $datos['monto_pago'];
+        $html = str_replace('<span id="monto_pago"></span>', '.' . $montoFormateado, $html);
         $html = str_replace('<span id="nombre_conductor2">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_conductor2">', $datos['dni'], $html);
         
