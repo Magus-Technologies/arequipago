@@ -125,7 +125,16 @@ class RegistrarFinanciamientoController extends Controller
                 $cuotaModel = new CuotaFinanciamiento();
                 // Convertir la fecha de vencimiento a formato 'Y-m-d'
                 $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
-                $cuotaModel->guardarCuota($idFinanciamiento, $i + 1, $valorCuota, $fechaVencimiento, $datos['grupo_financiamiento']);
+                
+                // ✅ MODIFICADO: Pasar la moneda a guardarCuota
+                $cuotaModel->guardarCuota(
+                    $idFinanciamiento, 
+                    $i + 1, 
+                    $valorCuota, 
+                    $fechaVencimiento, 
+                    $datos['grupo_financiamiento'],
+                    $datos['tipo_moneda']  // ✅ NUEVO: Pasar la moneda
+                );
             }
 
             // 💥 Modificado: Solo registrar el movimiento si corresponde
@@ -487,9 +496,17 @@ class RegistrarFinanciamientoController extends Controller
             $cuotaModel = new CuotaFinanciamiento();
             $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
             $numeroCuota = $numeroCuotaInicial + $i;
-            $cuotaModel->guardarCuota($idFinanciamiento, $numeroCuota, $valor_cuota, $fechaVencimiento, $grupo_financiamiento);
+            
+            // ✅ MODIFICADO: Pasar la moneda a guardarCuota
+            $cuotaModel->guardarCuota(
+                $idFinanciamiento, 
+                $numeroCuota, 
+                $valor_cuota, 
+                $fechaVencimiento, 
+                $grupo_financiamiento,
+                $moneda  // ✅ NUEVO: Pasar la moneda
+            );
         }
-    
     
         // Registrar movimiento en el almacén solo si hay un id_producto válido
         if ($idProducto !== 37 && $rol_usuario != 2) {

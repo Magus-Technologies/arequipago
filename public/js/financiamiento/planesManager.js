@@ -142,7 +142,8 @@ function selectPlan(idPlan) {
         $("#tasaInteres").val(""); // Limpiar tasa de interés
         // MODIFICADO: No limpiar fechaInicio si es MotosYa
         if (parseInt(plan.idplan_financiamiento) !== 33) {
-          $("#fechaInicio").val("").prop("disabled", false); // Limpiar y habilitar fecha inicio
+            $("#fechaInicio").val("");
+            // No establecer disabled aquí, se manejará por manejarCambioFechaInicioPorDirector()
         } else {
           console.log("🏍️ No limpiando fechaInicio para MotosYa en selectPlan");
         }
@@ -498,17 +499,38 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
         }
 
         $("#fechaInicio")
-          .off("change")
-          .on("change", function() {
-            if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-              recalcularSoloFechasCelular();
+        .off("change")
+        .on("change", function() {
+            const rolUsuario = window.rolUsuarioActual || "1";
+            
+            // Si es Director, usar la nueva función de recálculo inteligente
+            if (rolUsuario === "3") {
+                recalcularPorCambioFechaInicio();
             } else {
-              calcularCronogramaDinamico();
+                // Para otros roles, mantener lógica original
+                if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+                    recalcularSoloFechasCelular();
+                } else {
+                    calcularCronogramaDinamico();
+                }
             }
-          });
+        });
         
+        // Inicializar permisos de fecha de inicio según rol
+        manejarCambioFechaInicioPorDirector();
 
+        // CRÍTICO: Activar protección continua para Directores
+        setTimeout(() => {
+            protegerFechaInicioPorDirector();
+        }, 500);
 
+        manejarCambioCuotaInicial();
+
+        // CRÍTICO: Activar protección continua para cuota inicial de Directores
+        setTimeout(() => {
+            protegerCuotaInicialPorDirector();
+        }, 500);
+        
         setTimeout(() => {
           if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
             recalcularSoloFechasCelular();
@@ -522,6 +544,13 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
           verificarYMantenerCamposEspeciales();
         }, 4500);
 
+        // Configurar permisos de fecha de inicio según rol del usuario
+        setTimeout(() => {
+            manejarCambioFechaInicioPorDirector();
+            protegerFechaInicioPorDirector(); // Reactivar protección
+            manejarCambioCuotaInicial(); // NUEVO
+            protegerCuotaInicialPorDirector();
+          }, 4600);
 
         // MODIFICADO: No ejecutar verificarInputsVacios para MotosYa
         if (!plan.fecha_inicio || !plan.fecha_fin) {
@@ -1000,6 +1029,14 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     verificarYMantenerCamposEspeciales();
   }, 4500);
 
+  // Configurar permisos de fecha de inicio y cuota inicial para la variante seleccionada
+  setTimeout(() => {
+      manejarCambioFechaInicioPorDirector();
+      protegerFechaInicioPorDirector();
+      manejarCambioCuotaInicial(); // NUEVO
+      protegerCuotaInicialPorDirector(); // NUEVO
+  }, 4600);
+
   // NUEVO: Forzar establecimiento de fecha para MotosYa al final
   if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     setTimeout(() => {
@@ -1193,6 +1230,12 @@ function verificarInputsVacios() {
       console.log(`❌ No se encontró el elemento con id: ${id}`);
     }
   });
+
+  // CRÍTICO: Restaurar permisos de Director para fechaInicio y cuotaInicial después de aplicar estilos
+  setTimeout(() => {
+      manejarCambioFechaInicioPorDirector();
+      manejarCambioCuotaInicial(); // NUEVO
+  }, 100);
 
   // Resaltar los campos clave que el usuario debe completar (solo si hay campos a resaltar)
   resaltarInputs.forEach((id) => {
@@ -1391,6 +1434,12 @@ function NotGrupo() {
         input.style.cursor = "auto";
       }
     });
+
+    // CRÍTICO: Restaurar permisos de Director para fechaInicio y cuotaInicial
+    setTimeout(() => {
+        manejarCambioFechaInicioPorDirector();
+        manejarCambioCuotaInicial(); // NUEVO
+    }, 100);
 
     // Resaltar los campos clave que el usuario debe completar
     resaltarInputs.forEach((id) => {
@@ -2264,13 +2313,26 @@ function calcularFinanciamiento() {
     );
   }
 
-  // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después
+  // NUEVO: Para planes vehiculares semanales, ajustar al próximo lunes
+  if (
+    planGlobal &&
+    planGlobal.grupo === "Vehicular" &&
+    frecuenciaPago === "semanal"
+  ) {
+    primeraFechaVencimiento = obtenerProximoLunes(fechaInicioObj);
+    console.log(
+      "Plan vehicular semanal - Primera fecha ajustada al lunes:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+  }
+
+  // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después (SIN ajustar al lunes)
   if (planGlobal && planGlobal.idplan_financiamiento) {
     const idPlan = parseInt(planGlobal.idplan_financiamiento);
 
     if ([14, 15, 16].includes(idPlan)) {
       console.log(
-        "Plan especial detectado en calcularFinanciamiento, ID:",
+        "🔧 Plan especial detectado en calcularFinanciamiento, ID:",
         idPlan
       );
 
@@ -2280,20 +2342,14 @@ function calcularFinanciamiento() {
       fechaEspecial.setDate(fechaEspecial.getDate() + 7); // Solo sumar 7 días
 
       primeraFechaVencimiento = new Date(fechaEspecial);
-      console.log("Fecha hoy:", fechaHoy.toLocaleDateString());
+      console.log("🔧 Fecha hoy:", fechaHoy.toLocaleDateString());
       console.log(
-        "Primera fecha ajustada (7 días después):",
+        "🔧 Primera fecha ajustada (7 días después):",
         primeraFechaVencimiento.toLocaleDateString()
       );
     }
   }
 
-  console.log(
-    "Primera fecha de vencimiento:",
-    primeraFechaVencimiento.toLocaleDateString()
-  );
-
-  // CRÍTICO: Agregar la primera fecha al array antes del ciclo
   fechasVencimiento.push(primeraFechaVencimiento);
 
   console.log("Calculando fechas de vencimiento...");
@@ -2359,6 +2415,363 @@ function calcularFinanciamiento() {
   document.getElementById("fechaFin").value = fechaFormateada;
 
   console.log("Fecha fin calculada y seteada: ", fechaFormateada);
+}
+
+/**
+ * Función para manejar cambios en la fecha de inicio por parte de Directores
+ * Recalcula automáticamente el cronograma según el tipo de plan seleccionado
+ */
+/**
+ * Función para manejar cambios en la fecha de inicio por parte de Directores
+ * Recalcula automáticamente el cronograma según el tipo de plan seleccionado
+ */
+function manejarCambioFechaInicioPorDirector() {
+    const rolUsuario = window.rolUsuarioActual || "1";
+    const fechaInicioInput = document.getElementById("fechaInicio");
+    
+    if (!fechaInicioInput) return;
+    
+    // Solo permitir modificación a Directores (rol 3)
+    if (rolUsuario === "3") {
+        // CRÍTICO: Remover todos los atributos y estilos de bloqueo
+        fechaInicioInput.disabled = false;
+        fechaInicioInput.readOnly = false;
+        
+        // Remover clases conflictivas
+        fechaInicioInput.classList.remove('disabled-input');
+        
+        // CRÍTICO: Limpiar estilos inline que bloquean la interacción
+        fechaInicioInput.style.backgroundColor = "#ffffff";
+        fechaInicioInput.style.color = "#212529";
+        fechaInicioInput.style.border = "1px solid #ced4da";
+        fechaInicioInput.style.pointerEvents = "auto"; // CRÍTICO: Permitir interacción
+        fechaInicioInput.style.cursor = "pointer";
+        
+        fechaInicioInput.title = "Puedes modificar la fecha de inicio del grupo";
+        
+        console.log("✅ Director detectado - fecha de inicio COMPLETAMENTE habilitada");
+        
+        // Event listener para recalcular cuando cambie la fecha
+        fechaInicioInput.removeEventListener('change', recalcularPorCambioFechaInicio);
+        fechaInicioInput.addEventListener('change', recalcularPorCambioFechaInicio);
+    } else {
+        fechaInicioInput.disabled = true;
+        fechaInicioInput.readOnly = true;
+        fechaInicioInput.classList.add('disabled-input');
+        fechaInicioInput.style.backgroundColor = "#f8f9fa";
+        fechaInicioInput.style.color = "#6c757d";
+        fechaInicioInput.style.pointerEvents = "none";
+        fechaInicioInput.style.cursor = "not-allowed";
+        fechaInicioInput.title = "Solo los directores pueden modificar la fecha de inicio";
+        
+        console.log("🔒 Usuario sin permisos - fecha de inicio bloqueada");
+    }
+}
+
+/**
+ * Observer que protege el campo fechaInicio para Directores
+ * Detecta cualquier cambio en atributos/estilos y los revierte
+ */
+function protegerFechaInicioPorDirector() {
+    const rolUsuario = window.rolUsuarioActual || "1";
+    
+    if (rolUsuario !== "3") return; // Solo para directores
+    
+    const fechaInicioInput = document.getElementById("fechaInicio");
+    if (!fechaInicioInput) return;
+    
+    // Configuración del observer
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes') {
+                const atributo = mutation.attributeName;
+                
+                // Si alguien intenta bloquear el campo, revertirlo inmediatamente
+                if (atributo === 'disabled' || atributo === 'readonly') {
+                    if (fechaInicioInput.disabled || fechaInicioInput.readOnly) {
+                        fechaInicioInput.disabled = false;
+                        fechaInicioInput.readOnly = false;
+                        console.log("🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio");
+                    }
+                }
+                
+                // Si cambian el estilo, restaurar permisos
+                if (atributo === 'style') {
+                    const estilosActuales = window.getComputedStyle(fechaInicioInput);
+                    if (estilosActuales.pointerEvents === 'none') {
+                        fechaInicioInput.style.pointerEvents = 'auto';
+                        fechaInicioInput.style.cursor = 'pointer';
+                        fechaInicioInput.style.backgroundColor = '#ffffff';
+                        fechaInicioInput.style.color = '#212529';
+                        console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción");
+                    }
+                }
+                
+                // Remover clases de bloqueo
+                if (atributo === 'class') {
+                    if (fechaInicioInput.classList.contains('disabled-input')) {
+                        fechaInicioInput.classList.remove('disabled-input');
+                        console.log("🛡️ PROTECCIÓN: Removida clase disabled-input");
+                    }
+                }
+            }
+        });
+    });
+    
+    // Observar cambios en atributos
+    observer.observe(fechaInicioInput, {
+        attributes: true,
+        attributeOldValue: true
+    });
+    
+    console.log("🛡️ Observer de protección activado para fechaInicio");
+}
+
+/**
+ * Función que se ejecuta cuando el Director cambia la fecha de inicio
+ * Detecta el tipo de plan y aplica la lógica de recálculo correspondiente
+ */
+function recalcularPorCambioFechaInicio() {
+    console.log("📅 Director cambió la fecha de inicio - iniciando recálculo automático");
+    
+    if (!planGlobal || !planGlobal.idplan_financiamiento) {
+        console.warn("⚠️ No hay plan seleccionado para recalcular");
+        return;
+    }
+    
+    const idPlan = parseInt(planGlobal.idplan_financiamiento);
+    
+    // Para planes de celular (ID 41): solo recalcular fechas, valores fijos
+    if (idPlan === 41) {
+        console.log("📱 CELULARES - Recalculando solo fechas (valores permanecen fijos)");
+        recalcularSoloFechasCelular();
+        return;
+    }
+    
+    // Para planes vehiculares (con fecha_inicio y fecha_fin definidas)
+    if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
+        console.log("🚗 VEHICULAR - Recalculando con fechas de ingreso");
+        
+        // Verificar si existe el input de fecha de ingreso
+        const fechaIngresoElement = document.getElementById("fechaIngreso");
+        if (fechaIngresoElement) {
+            calcularFinanciamientoConFechaIngreso(planGlobal);
+        } else {
+            calcularCronogramaDinamico();
+        }
+        return;
+    }
+    
+    // Para MotosYa (ID 33) o variantes (IDs 18, 19, 20)
+    if (idPlan === 33 || (planGlobal.id_variante && [18, 19, 20].includes(parseInt(planGlobal.id_variante)))) {
+        console.log("🏍️ MOTOSYA - Recalculando cronograma dinámico");
+        calcularCronogramaDinamico();
+        return;
+    }
+    
+    // Para planes especiales (Llantas, Aceites, Baterías - IDs 14, 15, 16)
+    if ([14, 15, 16].includes(idPlan)) {
+        console.log("🔧 PLAN ESPECIAL - Recalculando cronograma dinámico");
+        calcularCronogramaDinamico();
+        return;
+    }
+    
+    // Para plan corporativo de chips (ID 36) y plan de celular (ID 2, 3, 4)
+    if ([2, 3, 4, 36].includes(idPlan)) {
+        console.log("📞 PLAN CORPORATIVO/CELULAR - Recalculando cronograma dinámico");
+        calcularCronogramaDinamico();
+        return;
+    }
+    
+    // Para cualquier otro plan, usar cálculo dinámico por defecto
+    console.log("📊 PLAN GENERAL - Recalculando cronograma dinámico");
+    calcularCronogramaDinamico();
+}
+
+/**
+ * Función para manejar cambios en la cuota inicial por parte de Directores
+ * Habilita/deshabilita el campo según el rol y añade listener para recálculo
+ */
+function manejarCambioCuotaInicial() {
+    const rolUsuario = window.rolUsuarioActual || "1";
+    const cuotaInicialInput = document.getElementById("cuotaInicial");
+    
+    if (!cuotaInicialInput) return;
+    
+    // Solo permitir modificación a Directores (rol 3)
+    if (rolUsuario === "3") {
+        // CRÍTICO: Remover todos los atributos y estilos de bloqueo
+        cuotaInicialInput.disabled = false;
+        cuotaInicialInput.readOnly = false;
+        
+        // Remover clases conflictivas
+        cuotaInicialInput.classList.remove('disabled-input');
+        cuotaInicialInput.classList.remove('input-bloqueado-suave');
+        
+        // CRÍTICO: Limpiar estilos inline que bloquean la interacción
+        cuotaInicialInput.style.backgroundColor = "#ffffff";
+        cuotaInicialInput.style.color = "#212529";
+        cuotaInicialInput.style.border = "1px solid #ced4da";
+        cuotaInicialInput.style.pointerEvents = "auto";
+        cuotaInicialInput.style.cursor = "text";
+        
+        cuotaInicialInput.title = "Puedes modificar la cuota inicial del grupo";
+        
+        console.log("✅ Director detectado - cuota inicial COMPLETAMENTE habilitada");
+        
+        // Event listener para recalcular cuando cambie la cuota
+        cuotaInicialInput.removeEventListener('blur', recalcularPorCambioCuotaInicial);
+        cuotaInicialInput.addEventListener('blur', recalcularPorCambioCuotaInicial);
+    } else {
+        cuotaInicialInput.disabled = true;
+        cuotaInicialInput.readOnly = true;
+        cuotaInicialInput.classList.add('disabled-input');
+        cuotaInicialInput.style.backgroundColor = "#f8f9fa";
+        cuotaInicialInput.style.color = "#6c757d";
+        cuotaInicialInput.style.pointerEvents = "none";
+        cuotaInicialInput.style.cursor = "not-allowed";
+        cuotaInicialInput.title = "Solo los directores pueden modificar la cuota inicial";
+        
+        console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
+    }
+}
+
+/**
+ * Función que se ejecuta cuando el Director cambia la cuota inicial
+ * Recalcula el financiamiento según el tipo de plan
+ */
+function recalcularPorCambioCuotaInicial() {
+    console.log("💰 Director cambió la cuota inicial - iniciando recálculo");
+    
+    if (!planGlobal || !planGlobal.idplan_financiamiento) {
+        console.warn("⚠️ No hay plan seleccionado para recalcular");
+        return;
+    }
+    
+    const cuotaInicialInput = document.getElementById("cuotaInicial");
+    const nuevaCuotaInicial = parseFloat(cuotaInicialInput.value.replace(/[^\d.-]/g, ''));
+    
+    if (isNaN(nuevaCuotaInicial) || nuevaCuotaInicial < 0) {
+        console.warn("⚠️ Cuota inicial inválida");
+        return;
+    }
+    
+    // Actualizar planGlobal con la nueva cuota inicial
+    planGlobal.cuota_inicial = nuevaCuotaInicial;
+    
+    const idPlan = parseInt(planGlobal.idplan_financiamiento);
+    
+    // Para planes de celular (ID 41): recalcular manteniendo la cuota fija
+    if (idPlan === 41) {
+        console.log("📱 CELULARES - Recalculando con nueva cuota inicial");
+        recalcularCelularesConNuevaCuotaInicial();
+        return;
+    }
+    
+    // Para planes vehiculares
+    if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
+        console.log("🚗 VEHICULAR - Recalculando con nueva cuota inicial");
+        
+        const fechaIngresoElement = document.getElementById("fechaIngreso");
+        if (fechaIngresoElement) {
+            calcularFinanciamientoConFechaIngreso(planGlobal);
+        } else {
+            calcularCronogramaDinamico();
+        }
+        return;
+    }
+    
+    // Para otros planes, usar cálculo dinámico
+    console.log("📊 PLAN GENERAL - Recalculando con nueva cuota inicial");
+    calcularCronogramaDinamico();
+}
+
+/**
+ * Función específica para recalcular planes de celular con nueva cuota inicial
+ * Mantiene el valor de cuota fijo y ajusta la cantidad de cuotas
+ */
+function recalcularCelularesConNuevaCuotaInicial() {
+    if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
+        return;
+    }
+    
+    const montoTotal = parseFloat(planGlobal.monto) || 0;
+    const nuevaCuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
+    const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
+    
+    if (valorCuotaFijo === 0) {
+        console.warn("📱 CELULARES - No se puede recalcular sin valor de cuota");
+        return;
+    }
+    
+    // Calcular nueva cantidad de cuotas
+    const montoRestante = montoTotal - nuevaCuotaInicial;
+    const nuevaCantidadCuotas = Math.round(montoRestante / valorCuotaFijo);
+    
+    // Actualizar inputs
+    document.getElementById("cuotas").value = nuevaCantidadCuotas;
+    planGlobal.cantidad_cuotas = nuevaCantidadCuotas;
+    
+    console.log("📱 CELULARES - Nueva cantidad de cuotas:", nuevaCantidadCuotas);
+    console.log("📱 CELULARES - Valor cuota se mantiene:", valorCuotaFijo);
+    
+    // Recalcular solo las fechas
+    recalcularSoloFechasCelular();
+}
+
+/**
+ * Observer para proteger el campo cuota inicial para Directores
+ */
+function protegerCuotaInicialPorDirector() {
+    const rolUsuario = window.rolUsuarioActual || "1";
+    
+    if (rolUsuario !== "3") return;
+    
+    const cuotaInicialInput = document.getElementById("cuotaInicial");
+    if (!cuotaInicialInput) return;
+    
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes') {
+                const atributo = mutation.attributeName;
+                
+                if (atributo === 'disabled' || atributo === 'readonly') {
+                    if (cuotaInicialInput.disabled || cuotaInicialInput.readOnly) {
+                        cuotaInicialInput.disabled = false;
+                        cuotaInicialInput.readOnly = false;
+                        console.log("🛡️ PROTECCIÓN: Revertido intento de bloqueo en cuotaInicial");
+                    }
+                }
+                
+                if (atributo === 'style') {
+                    const estilosActuales = window.getComputedStyle(cuotaInicialInput);
+                    if (estilosActuales.pointerEvents === 'none') {
+                        cuotaInicialInput.style.pointerEvents = 'auto';
+                        cuotaInicialInput.style.cursor = 'text';
+                        cuotaInicialInput.style.backgroundColor = '#ffffff';
+                        cuotaInicialInput.style.color = '#212529';
+                        console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción en cuotaInicial");
+                    }
+                }
+                
+                if (atributo === 'class') {
+                    if (cuotaInicialInput.classList.contains('disabled-input') || 
+                        cuotaInicialInput.classList.contains('input-bloqueado-suave')) {
+                        cuotaInicialInput.classList.remove('disabled-input');
+                        cuotaInicialInput.classList.remove('input-bloqueado-suave');
+                        console.log("🛡️ PROTECCIÓN: Removidas clases de bloqueo en cuotaInicial");
+                    }
+                }
+            }
+        });
+    });
+    
+    observer.observe(cuotaInicialInput, {
+        attributes: true,
+        attributeOldValue: true
+    });
+    
+    console.log("🛡️ Observer de protección activado para cuotaInicial");
 }
 
 if (typeof cronogramaDatos === "undefined") {
