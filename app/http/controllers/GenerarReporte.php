@@ -428,7 +428,9 @@ class GenerarReporte extends Controller
             'Precio',
             'Precio de Venta',
             'Fecha de Registro',
-            'Guía de Remisión'
+            'Guía de Remisión',
+            'Moneda',
+            'Descuento por Cuota'
         ];
 
         foreach ($headers1 as $index => $header) {
@@ -444,8 +446,7 @@ class GenerarReporte extends Controller
             $sheet1->getColumnDimension($columnID)->setAutoSize(true); // Ajusta automáticamente el ancho
         }
 
-        // Aplicar setAutoSize a las columnas de la J a la N
-        foreach (range('J', 'N') as $columnID) {
+        foreach (range('J', 'P') as $columnID) {
             $sheet1->getColumnDimension($columnID)->setAutoSize(true); // Ajusta automáticamente el ancho
         }
 
@@ -502,8 +503,7 @@ class GenerarReporte extends Controller
         $validationTipoProducto->setFormula1($opcionesTipoProducto);
         $sheet1->setDataValidation('F2:F101', $validationTipoProducto);
 
-        // Validación para que Precio y Precio de Venta acepten solo números con 2 decimales
-        foreach (['K', 'L'] as $column) { // Precio (K) y Precio de Venta (L)
+        foreach (['K', 'L', 'P'] as $column) { // Precio (K), Precio de Venta (L) y Descuento por Cuota (P)
             $validationPrecio = $sheet1->getCell($column . '2')->getDataValidation();
             $validationPrecio->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DECIMAL);
             $validationPrecio->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
@@ -527,6 +527,15 @@ class GenerarReporte extends Controller
             $validationFecha->setPrompt('Ingrese una fecha válida en el formato correcto.');
             $sheet1->setDataValidation($column . '2:' . $column . '101', $validationFecha);
         }
+
+        // Validación para Moneda con lista desplegable
+        $validationMoneda = $sheet1->getCell('O2')->getDataValidation();
+        $validationMoneda->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+        $validationMoneda->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validationMoneda->setAllowBlank(false);
+        $validationMoneda->setShowDropDown(true);
+        $validationMoneda->setFormula1('"S/.,$"');
+        $sheet1->setDataValidation('O2:O101', $validationMoneda);
 
         // Segunda hoja: Características de productos
         $sheet2 = $spreadsheet->createSheet();

@@ -1226,16 +1226,34 @@ require_once "app/models/Distrito.php";
 
             // Validar y agregar fecha de nacimiento
             var fechNac = document.getElementById('fechaNac');
-            if (!fechNac || !fechNac.value) {
+            console.log('Valor de fechaNac:', fechNac ? fechNac.value : 'NO EXISTE EL ELEMENTO');
+
+            if (!fechNac || !fechNac.value || fechNac.value.trim() === '') {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
                     text: 'Por favor, ingrese la fecha de nacimiento.',
                     confirmButtonText: 'Aceptar'
                 });
+                fechNac.focus(); // Enfocar el campo
                 return;
             }
+
+            // Asegurarse de que la fecha es válida
+            var fecha = new Date(fechNac.value);
+            if (isNaN(fecha.getTime())) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'La fecha de nacimiento no es válida.',
+                    confirmButtonText: 'Aceptar'
+                });
+                fechNac.focus();
+                return;
+            }
+
             formData.append('fechaNac', fechNac.value);
+            console.log('fechaNac agregado al FormData:', fechNac.value);
 
             var tipoVehiculo = document.getElementById('toggle_tipo_vehiculo').checked ? 'moto' : 'auto';
             formData.append('tipo_vehiculo', tipoVehiculo);
@@ -1381,10 +1399,12 @@ require_once "app/models/Distrito.php";
                 allowOutsideClick: false
             });
 
-            // Log para depuración
+            // Log para depuración - verificar todos los campos
+            console.log('=== DATOS DEL FORMULARIO ===');
             for (var pair of formData.entries()) {
                 console.log(pair[0] + ': ' + pair[1]);
             }
+            console.log('=== FIN DATOS DEL FORMULARIO ===');
 
             // Enviar datos al servidor
             $.ajax({

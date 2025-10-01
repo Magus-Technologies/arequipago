@@ -20,7 +20,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
 ?>
 <head>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         
         input{
@@ -94,8 +94,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
         }
 
-        #exampleModal {
-            z-index: 1051 !important; /* Asegura que el modal hijo se muestre encima del modal padre */
+        #exampleModal .modal-backdrop {
+            z-index: 1054 !important;
         }
 
         #exampleModal .modal-header{
@@ -108,6 +108,15 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
         #exampleModal .modal-footer{
             background-color: #d5d696;
+        }
+
+        /* AGREGADO: Asegurar que el modal de tipo de producto aparezca encima */
+        #exampleModal {
+            z-index: 1060 !important; /* Aumentado el z-index para que aparezca encima del modal padre */
+        }
+
+        #exampleModalCategoria .modal-backdrop {
+            z-index: 1055 !important; /* Backdrop del modal de categoría */
         }
 
         .sliding-panel {
@@ -365,7 +374,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="exampleModalLabel">Nuevo Tipo de Producto</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="atras()"></button>
+                        <button type="button" class="btn-close" onclick="cerrarModalTipoProducto()" aria-label="Close"></button>
                     </div>
 
                     <div class="modal-body">
@@ -414,7 +423,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                 </div>
 
                 <div class="modal-footer" style="background-color: #d5d696;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="atras()">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalTipoProducto()">Cancelar</button>
                     <button onclick="guardarCategoryProduct()" type="button" class="btn btn-primary">Guardar</button>
                 </div>
             </div>
@@ -757,7 +766,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                     <option value="intangible">Intangible</option>
                                     <!-- Los tipos de producto se cargarán aquí dinámicamente -->
                                 </select>
-                                <button type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" class="btn btn-primary">Nuevo tipo de producto</button>
+                                <button type="button" onclick="abrirModalTipoProducto()" class="btn btn-primary">Nuevo tipo de producto</button>
                             </div>
 
                            
@@ -822,7 +831,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                     <option value="seleccionar_categoría">Seleccionar Categoría</option>
                                 
                                 </select>
-                                <button data-bs-toggle="modal" data-bs-target="#exampleModalCategoria" class="btn btn-primary">Nuevo tipo de categoría</button>
+                                <button type="button" onclick="abrirModalCategoria()" class="btn btn-primary">Nueva categoría</button>
                             </div>    
                         </div>   
                         
@@ -1061,6 +1070,27 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="form-group col-sm-4">
+                                <label>Moneda: </label>
+                            </div>
+                            <div class="form-group col-sm-4">
+                                <select id="moneda" required class="form-select">
+                                    <option value="S/.">S/.</option>
+                                    <option value="$">$</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="form-group col-sm-4">
+                                <label>Descuento por cuota: </label>
+                            </div>
+                            <div class="form-group col-sm-4">
+                                <input id="descuentoCuota" type="number" step="0.01" min="0" class="form-control" placeholder="0.00"/>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-sm-4">
                                 <label for="guia_remision">Guía Remisión:</label>
@@ -1071,10 +1101,10 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
                             <div class="col-sm-4">
                                 <div class="d-flex align-items-center">
-                                    <label class="mr-2" style="50%">Fecha de registro:</label>
-                                    <input id="fechaActual" style="width= 60%" type="date" readonly>
+                                    <label class="mr-2" style="width: 50%;">Fecha de registro:</label>
+                                    <input id="fechaActual" style="width: 60%;" type="date" readonly>
                                 </div>
-                            </div>    
+                            </div>   
                         </div>
                      
                 </form>  
@@ -1087,124 +1117,6 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         </div>
     </div>
 
-    <!----
-    
-
-    <div class="modal fade" id="modal-restock" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form @submit.prevent="agregarStock">
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Cantidad</label>
-                            <input v-model="restock.cantidad" required type="text" class="form-control">
-                            <small class="form-text text-muted">La cantidad ingresada se sumara a la cantidad actual</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                </form>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="importarModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Importar Productos con EXCEL</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form enctype='multipart/form-data'>
-                        <div class="mb-3">
-                            <p>Descargue el modelo en <span class="fw-bold">EXCEL</span> para importar, no
-                                modifique los campos en el archivo, <span class="fw-bold">click para
-                                    descargar</span> <a href="<?=URL::to('/reporte/producto/guia')?>">plantilla.xlsx</a></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="col-form-label">Importar Excel:</label>
-
-                        </div>
-                        <input id="file-import-exel" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" type="file">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    --->
-
-    <!---
-    <div class="modal fade" id="modal-prodEreport" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Reporte De Producto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Año</label>
-                        <select  id='anioreporEFG' class="form-control">
-                            <?php
-                            $anio = date("Y");
-                            for ($i = 0; $i < 10; $i++) {
-                                echo "<option value='$anio'>$anio</option>";
-                                $anio--;
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Mes</label>
-                        <select id='mesreprEFG' class="form-control">
-                            <?php
-                            $contador = 1;
-                            $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
-                            foreach ($meses as $mes) {
-                                echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
-                                $contador++;
-                            }
-                            ?>
-                        </select>
-                    </div>
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Dia</label>
-                        <input id='diareporEfghg' class="form-control">
-                    </div>
-
-                </div>
-                <div class="modal-footer">
-                    <button id="generarreporteProd" type="button" class="btn btn-primary">Generar</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-                            --->
- 
-
-
-
-<!-- <script src="
-https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
-"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
- -->
-
 <script>
 
     function onlyNumber(event) {
@@ -1215,32 +1127,32 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
     }
 
     function consultarRUC() {
-    const rucInput = document.getElementById("rucInput").value;
+        const rucInput = document.getElementById("rucInput").value;
 
-    if (rucInput.length === 11) {
-        // Mostrar el loader menor
-        $("#loader-menor").show();
+        if (rucInput.length === 11) {
+            // Mostrar el loader menor
+            $("#loader-menor").show();
 
-        // Realizar la solicitud AJAX
-        _ajax("/ajs/conductor/doc/cliente", "POST", { doc: rucInput }, (resp) => {
-            // Ocultar el loader menor
-            $("#loader-menor").hide();
+            // Realizar la solicitud AJAX
+            _ajax("/ajs/conductor/doc/cliente", "POST", { doc: rucInput }, (resp) => {
+                // Ocultar el loader menor
+                $("#loader-menor").hide();
 
-            console.log(resp);
+                console.log(resp);
 
-            if (resp.razonSocial) {
-                // Mostrar la razón social en el input correspondiente
-                document.getElementById("razon").value = resp.razonSocial;
-            } else {
-                // Manejar el caso de RUC no encontrado
-                alertAdvertencia("RUC no encontrado.");
-            }
-        });
-    } else {
-        // Manejar el caso de RUC inválido
-        alertAdvertencia("El RUC debe ser de 11 dígitos.");
+                if (resp.razonSocial) {
+                    // Mostrar la razón social en el input correspondiente
+                    document.getElementById("razon").value = resp.razonSocial;
+                } else {
+                    // Manejar el caso de RUC no encontrado
+                    alertAdvertencia("RUC no encontrado.");
+                }
+            });
+        } else {
+            // Manejar el caso de RUC inválido
+            alertAdvertencia("El RUC debe ser de 11 dígitos.");
+        }
     }
-}
 
     function mostrarIntfecha() {
         var select = document.getElementById('categoria_producto');
@@ -1293,15 +1205,40 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
     }
 
     function atras(){
+        // Cerrar el modal hijo
+        $('#exampleModal').modal('hide');
         
-        // Obtén el modal hijo
-        var modalHijo = new bootstrap.Modal(document.getElementById('modal-add-prod'), {
-            backdrop: 'static',  // Evita que el modal se cierre al hacer clic fuera de él
-            keyboard: false       // Desactiva el cierre al presionar la tecla ESC
-        });
-        // Muestra el modal hijo
-        modalHijo.show();
+        // Restaurar el z-index del modal padre
+        setTimeout(function() {
+            $('#modal-add-prod').css('z-index', '1050');
+            $('.modal-backdrop').css('z-index', '1040');
+        }, 300);
+    }
+
+    function abrirModalTipoProducto() {
+        // Ocultar temporalmente el modal padre sin cerrarlo completamente
+        $('#modal-add-prod').css('z-index', '1040');
+        $('.modal-backdrop').css('z-index', '1039');
         
+        // Mostrar el modal hijo con z-index más alto
+        $('#exampleModal').css('z-index', '1060').modal('show');
+    }
+
+    function cerrarModalTipoProducto() {
+        $('#exampleModal').modal('hide');
+        setTimeout(function() {
+            $('#modal-add-prod').css('z-index', '1050');
+            $('.modal-backdrop').css('z-index', '1040');
+        }, 300);
+    }
+
+    function abrirModalCategoria() {
+        // Ocultar temporalmente el modal padre sin cerrarlo completamente
+        $('#modal-add-prod').css('z-index', '1040');
+        $('.modal-backdrop').css('z-index', '1039');
+        
+        // Mostrar el modal hijo con z-index más alto
+        $('#exampleModalCategoria').css('z-index', '1060').modal('show');
     }
 
     function focusBody() {
@@ -1713,6 +1650,14 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
 
         var precio_venta = document.getElementById('precioVenta').value.trim(); // Eliminar espacios en blanco
 
+        var moneda = document.getElementById('moneda').value;
+        var descuento_cuota = document.getElementById('descuentoCuota').value.trim();
+
+        // Convertir descuento_cuota a null si está vacío
+        if (descuento_cuota === '') {
+            descuento_cuota = null;
+        }
+
         // Verificar si está vacío
         if (precio_venta === '') {
             Swal.fire({
@@ -1834,6 +1779,8 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
         formData.append('ruc', ruc);
         formData.append('precio_venta', precio_venta);
         formData.append('razonsocial', razon_social);
+        formData.append('moneda', moneda);
+        formData.append('descuento_cuota', descuento_cuota);
         formData.append('fecha_vencimiento', fecha_vencimiento); // Incluir fecha_vencimiento
         formData.append('cantidad_unidad', cantidad_unidad); // Agregar cantidad_unidad
         formData.append('unidad_medida', unidad_medida); // Agregar unidad_medida
@@ -1931,6 +1878,8 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
                             document.getElementById('fecha_vencimiento').value = ''; // Limpiar la fecha
                             document.getElementById('precio').value = ''; // Limpiar precio 
                             document.getElementById('precioVenta').value = '';
+                            document.getElementById('moneda').value = 'S/.'; // Restablecer a valor por defecto
+                            document.getElementById('descuentoCuota').value = '';
                             document.getElementById('aro').value = ''; // Limpiar aro
                             document.getElementById('perfil').value = ''; // Limpiar perfil
                             document.getElementById('guia_remision').value = '';
@@ -1968,6 +1917,9 @@ https://cdn.jsdelivr.net/npm/@pokusew/escpos@3.0.8/dist/index.min.js
                             } 
 
                             cargarProductos();
+
+                            // Cerrar el modal
+                            $('#modal-add-prod').modal('hide');
                         }
                     });
                 } else {

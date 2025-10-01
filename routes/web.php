@@ -184,6 +184,12 @@ Route::post("/generarEnlacePDF", "ConductorController@generarEnlacePDF");
 Route::get("/obtenerReportesPagos", "ConductorController@obtenerReportesPagos");
 Route::post("/eliminarReportePago", "ConductorController@eliminarReportePago");
 Route::post('/actualizarProducto', 'ProductosController@actualizarProducto');
+// Ruta para obtener datos del producto para edición (nueva)
+Route::post('/dataEditProducto', 'ProductosController@obtenerDatosProducto');
+
+// Ruta para obtener opciones de selects - tipos y categorías (nueva)  
+Route::get('/getDataSelets', 'ProductosController@getEditsSeletProducto');
+
 Route::get('/chargedReportAlmacen', 'ReportesMovimientosController@chargedReportAlmacen');
 Route::get('/chargedUsuarios','ReportesMovimientosController@chargedUsuarios');
 Route::get('/filtrarMovimientos','ReportesMovimientosController@filtrarMovimientos');

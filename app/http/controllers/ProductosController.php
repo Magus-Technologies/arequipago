@@ -174,6 +174,8 @@ class ProductosController extends Controller
         $fecha_registro = $_POST['fecha_registro'] ?? null; // Obtener fecha_registro desde el formulario
         $guia_remision = $_POST['guia_remision']?? null;
         $precio_venta = $_POST['precio_venta']?? null;
+        $moneda = $_POST['moneda'] ?? 'S/.';
+        $descuento_cuota = $_POST['descuento_cuota'] ?? null;
         
         $aro = $_POST['aro'] ?? null; // Nuevo campo: aro
         $perfil = $_POST['perfil'] ?? null; // Nuevo campo: perfil
@@ -211,6 +213,8 @@ class ProductosController extends Controller
             'guia_remision' => $guia_remision,
             'codigo_barra' => $codigo_barra, // Código de barras generado si no se proporcionó uno
             'precio_venta' => $precio_venta,
+            'moneda' => $moneda,
+            'descuento_cuota' => $descuento_cuota,
         ];
 
         // Ajustar para pasar datos en el orden correcto
@@ -230,6 +234,8 @@ class ProductosController extends Controller
             $productoData['guia_remision'],
             $productoData['codigo_barra'], 
             $productoData['precio_venta'],
+            $productoData['moneda'],
+            $productoData['descuento_cuota']
         );
 
         // MODIFICADO: Verificar si la categoría es "celular" o "celulares" (sin importar mayúsculas, tildes, espacios o plural)
@@ -678,58 +684,6 @@ class ProductosController extends Controller
       
         return json_encode($respuesta);
     }
-//     public function actualizar()
-//     {
-//         $respuesta = ["res" => false];
-//         $descripcion = $_POST['descripcicon'];
-//         $codigoProd = $_POST['codigo'];
-
-//         $sql="select * from productos where id_producto='{$_POST['cod']}'";
-//         $result = $this->conexion->query($sql);
-//         if ($row= $result->fetch_assoc()){
-//             $almacenTemp = $row["almacen"]=="1"?2:1;
-//             $sql = "update productos set descripcion=?,
-//                      cod_barra='',
-//                      usar_barra='{$_POST['usar_barra']}',
-//                   precio='{$_POST['precio']}',
-//                   costo='{$_POST['costo']}',
-//                   iscbp='{$_POST['afecto']}',
-//                   codsunat='{$_POST['codSunat']}',precio_mayor={$_POST['precioMayor']},precio_menor={$_POST['precioMenor']},razon_social='{$_POST['razon']}',ruc='{$_POST['ruc']}',
-//                   codigo=?
-//                   where descripcion=? and almacen='$almacenTemp'";
-//             $stmt = $this->conexion->prepare($sql);
-//             $stmt->bind_param('sss', $descripcion, $codigoProd,$row['descripcion']);
-//             /*   $stmt->bind_param('s', $codigoProd); */
-
-//             if(!$stmt->execute()){
-//                 var_dump($stmt->error);
-//             }
-
-//         }
-
-//         /*   $sql = "insert into productos set descripcion=?, */
-//         $sql = "update productos set descripcion=?,
-//                      cod_barra='',
-//                      usar_barra='{$_POST['usar_barra']}',
-//   precio='{$_POST['precio']}',
-//   costo='{$_POST['costo']}',
-//   iscbp='{$_POST['afecto']}',
-//   cantidad='{$_POST['cantidad']}',
-//   codsunat='{$_POST['codSunat']}',precio_mayor={$_POST['precioMayor']},precio_menor={$_POST['precioMenor']},razon_social='{$_POST['razon']}',ruc='{$_POST['ruc']}',
-//   codigo=?
-//   where id_producto='{$_POST['cod']}'";
-
-//         $stmt = $this->conexion->prepare($sql);
-//         $stmt->bind_param('ss', $descripcion, $codigoProd);
-//         /*   $stmt->bind_param('s', $codigoProd); */
-
-//         if ($stmt->execute()) {
-//             $respuesta["res"] = true;
-
-
-//         }
-//         return json_encode($respuesta);
-//     }
 
     public function actualizarPrecios()
     {
@@ -941,7 +895,6 @@ class ProductosController extends Controller
         }
     }
     
-    // AÑADIDO: Método para actualizar un producto existente
     private function actualizarProductom($producto, $idProducto) {
         $query = "UPDATE productosv2 SET 
             nombre = ?,
@@ -956,29 +909,48 @@ class ProductosController extends Controller
             precio = ?,
             fecha_registro = ?,
             guia_remision = ?,
-            precio_venta = ?
+            precio_venta = ?,
+            moneda = ?,
+            descuento_cuota = ?
             WHERE idproductosv2 = ?";
         
         // Convertir fechas al formato correcto
         $fecha_vencimiento = !empty($producto['fecha_vencimiento']) ? date('Y-m-d', strtotime($producto['fecha_vencimiento'])) : null;
         $fecha_registro = !empty($producto['fecha_registro']) ? date('Y-m-d', strtotime($producto['fecha_registro'])) : date('Y-m-d');
         
+        // Asignar valores a variables para poder pasarlas por referencia
+        $nombre = $producto['nombre'];
+        $cantidad = $producto['cantidad'];
+        $cantidad_unidad = $producto['cantidad_unidad'];
+        $unidad_medida = $producto['unidad_medida'];
+        $tipo_producto = $producto['tipo_producto'];
+        $categoria = $producto['categoria'];
+        $ruc = $producto['ruc'];
+        $razon_social = $producto['razon_social'];
+        $precio = $producto['precio'];
+        $guia_remision = $producto['guia_remision'];
+        $precio_venta = $producto['precio_venta'];
+        $moneda = $producto['moneda'] ?? 'S/.'; // Ahora asignado a variable
+        $descuento_cuota = $producto['descuento_cuota'];
+        
         $stmt = $this->conexion->prepare($query);
         $stmt->bind_param(
-            "sidssssssdsssi",
-            $producto['nombre'],
-            $producto['cantidad'],
-            $producto['cantidad_unidad'],
-            $producto['unidad_medida'],
-            $producto['tipo_producto'],
-            $producto['categoria'],
+            "sidssssssdsssssi",
+            $nombre,
+            $cantidad,
+            $cantidad_unidad,
+            $unidad_medida,
+            $tipo_producto,
+            $categoria,
             $fecha_vencimiento,
-            $producto['ruc'],
-            $producto['razon_social'],
-            $producto['precio'],
+            $ruc,
+            $razon_social,
+            $precio,
             $fecha_registro,
-            $producto['guia_remision'],
-            $producto['precio_venta'],
+            $guia_remision,
+            $precio_venta,
+            $moneda,
+            $descuento_cuota,
             $idProducto
         );
         
@@ -998,19 +970,23 @@ class ProductosController extends Controller
         
         $reportesModel = new Reportes();
         
-        $tipo_movimiento = 'Entrada';
-        $subtipo_movimiento = 'Ajuste';
-        $cantidad_movimiento = $cantidadNueva - $cantidadActual;
-        
-        if ($cantidadNueva < $cantidadActual) {
+        // Determinar tipo y subtipo de movimiento
+        if ($cantidadNueva > $cantidadActual) {
+            $tipo_movimiento = 'Entrada';
+            $subtipo_movimiento = 'Masivo'; // Entrada por Excel
+            $cantidad_movimiento = $cantidadNueva - $cantidadActual;
+        } else if ($cantidadNueva < $cantidadActual) {
             $tipo_movimiento = 'Salida';
-            $subtipo_movimiento = 'Ajuste';
+            $subtipo_movimiento = 'Ajuste'; // Ajuste de inventario
             $cantidad_movimiento = $cantidadActual - $cantidadNueva;
+        } else {
+            // Si son iguales, no registrar movimiento
+            return true;
         }
         
         // Convertir a string para el método registrarMovimiento
         $codigo = (string)$codigo;
-        $cantidad_movimiento = (string)abs($cantidad_movimiento);
+        $cantidad_movimiento = (string)$cantidad_movimiento;
         
         return $reportesModel->registrarMovimiento(
             $usuario_id,
@@ -1343,7 +1319,9 @@ private function esCategoríaCelular($categoriaNormalizada) {
                 'precio' => $sheet->getCellByColumnAndRow(11, $row)->getValue(),
                 'precio_venta' =>$sheet->getCellByColumnAndRow(12, $row)->getValue(),
                 'fecha_registro' => $sheet->getCellByColumnAndRow(13, $row)->getValue(),
-                'guia_remision' => $sheet->getCellByColumnAndRow(14, $row)->getValue()
+                'guia_remision' => $sheet->getCellByColumnAndRow(14, $row)->getValue(),
+                'moneda' => $sheet->getCellByColumnAndRow(15, $row)->getValue(),
+                'descuento_cuota' => $sheet->getCellByColumnAndRow(16, $row)->getValue()
             ];
             $productosRestantes[] = $producto; 
             
@@ -1421,6 +1399,23 @@ private function esCategoríaCelular($categoriaNormalizada) {
         }
     
         $this->validateRegistrationDate($fechaRegistro, $row);
+
+        $moneda = $sheet->getCellByColumnAndRow(15, $row)->getValue();
+        $descuentoCuota = $sheet->getCellByColumnAndRow(16, $row)->getValue();
+
+        // Validar moneda
+        if (empty($moneda) || !in_array($moneda, ['S/.', '$'])) {
+            throw new \Exception("Moneda inválida en la fila $row. Debe ser 'S/.' o '$'.");
+        }
+
+        // Validar descuento por cuota (opcional, pero si tiene valor debe ser numérico)
+        if (!empty($descuentoCuota) && !is_numeric($descuentoCuota)) {
+            throw new \Exception("Descuento por cuota inválido en la fila $row.");
+        }
+
+        if (!empty($descuentoCuota) && $descuentoCuota < 0) {
+            throw new \Exception("Descuento por cuota no puede ser negativo en la fila $row.");
+        }
     }
 
     private function validateDate($date, $fieldName, $row)
@@ -1787,33 +1782,28 @@ private function esCategoríaCelular($categoriaNormalizada) {
         echo json_encode($response);
     }
 
+    // Reemplaza toda la función actualizarProducto() en ProductosController.php
     public function actualizarProducto()
     {
         try {
-            
-            // Verificar que es una petición POST
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 echo json_encode(['success' => false, 'message' => 'Método no permitido']);
                 return;
             }
-    
-            // Obtener el ID del producto
+
             $idProducto = isset($_POST['ID_PRODUCTO']) ? intval($_POST['ID_PRODUCTO']) : 0;
             
-            // Validar que el ID sea válido
             if ($idProducto <= 0) {
                 echo json_encode(['success' => false, 'message' => 'ID de producto no válido']);
                 return;
             }
             
-           // Obtener usuario_id de la sesión
             $usuario_id = $_SESSION['usuario_id'] ?? null;
             if (!$usuario_id) {
                 echo json_encode(['success' => false, 'message' => 'No se pudo obtener el ID del usuario.']);
                 return;
             }
-    
-            // Verificar que el producto existe
+
             $productoModel = new Productov2();
             $productoExistente = $productoModel->obtenerProductoPorId($idProducto);
             
@@ -1822,215 +1812,42 @@ private function esCategoríaCelular($categoriaNormalizada) {
                 return;
             }
 
-            // Obtener cantidad actual del producto y la nueva cantidad ingresada
-            $cantidadActual = floatval($productoExistente['CANTIDAD']);
-            $cantidadNueva = isset($_POST['CANTIDAD']) ? floatval($_POST['CANTIDAD']) : 0;
+            // Iniciar transacción
+            $this->conexion = (new Conexion())->getConexion();
+            $this->conexion->begin_transaction();
 
-            // Si la cantidad ha cambiado, registrar movimiento
-            if ($cantidadNueva !== $cantidadActual) {
-                $tipoMovimiento = ($cantidadNueva > $cantidadActual) ? "Entrada" : "Salida";
-                $subtipoMovimiento = "Ajuste";
-                $diferenciaCantidad = abs($cantidadNueva - $cantidadActual);
-
-                $reportesModel = new Reportes();
-                $reportesModel->registrarMovimiento(
-                    $usuario_id,
-                    $productoExistente['ID_PRODUCTO'],
-                    $productoExistente['CODIGO'],
-                    $productoExistente['NOMBRE'],
-                    $tipoMovimiento,
-                    $subtipoMovimiento,
-                    $diferenciaCantidad,
-                    $productoExistente['RAZON_SOCIAL']
-                );
-            }
-
-
-    
-            // Obtener todos los datos del producto
-            $nombre = isset($_POST['NOMBRE']) ? $_POST['NOMBRE'] : '';
-            $codigo = isset($_POST['CODIGO']) ? $_POST['CODIGO'] : null;
-            $cantidad = isset($_POST['CANTIDAD']) ? floatval($_POST['CANTIDAD']) : 0;
-            $cantidadUnidad = isset($_POST['CANTIDAD_UNIDAD']) ? floatval($_POST['CANTIDAD_UNIDAD']) : null;
-            $unidadMedida = isset($_POST['UNIDAD_MEDIDA']) ? $_POST['UNIDAD_MEDIDA'] : null;
-            $tipoProducto = isset($_POST['TIPO_PRODUCTO']) ? $_POST['TIPO_PRODUCTO'] : '';
-            $categoria = isset($_POST['CATEGORIA']) ? $_POST['CATEGORIA'] : '';
-            $fechaVencimiento = isset($_POST['FECHA_VENCIMIENTO']) ? $_POST['FECHA_VENCIMIENTO'] : null;
-            $ruc = isset($_POST['RUC']) ? $_POST['RUC'] : '';
-            $razonSocial = isset($_POST['RAZON_SOCIAL']) ? $_POST['RAZON_SOCIAL'] : '';
-            $precio = isset($_POST['PRECIO']) ? floatval($_POST['PRECIO']) : 0;
-            $precioVenta = isset($_POST['PRECIO_VENTA']) ? floatval($_POST['PRECIO_VENTA']) : 0;
-            $fechaRegistro = isset($_POST['FECHA_REGISTRO']) ? $_POST['FECHA_REGISTRO'] : null;
-            $guiaRemision = isset($_POST['GUIA_REMISION']) ? $_POST['GUIA_REMISION'] : '';
-            $codigoBarra = isset($_POST['CODIGO_BARRA']) ? $_POST['CODIGO_BARRA'] : null;
-
-            $categoriaModel = new CategoriaProductoModel(); // ✅ NUEVO - Instanciamos el modelo
-            $categoriaNoCambio = $categoriaModel->verificarCambioCategorie($idProducto, $categoria); // ✅ NUEVO - Verificamos la categoría
-
-            if (ctype_digit($categoria)) { // Si es un número, obtenemos el nombre de la BD
-                $categoriaModel = new CategoriaProductoModel(); // Instanciamos el modelo // ✅ NUEVO
-                $categoriaData = $categoriaModel->getCategoriesforId(intval($categoria)); // Enviamos el ID como entero // ✅ NUEVO
-    
-                if ($categoriaData) { // Si hay datos, obtenemos el nombre
-                    $categoria = $categoriaData['nombre']; // ✅ NUEVO - Asignamos el nombre de la categoría
-                }
-            }
-
-          
-            // Verificar si es un producto celular
-            $esCelular = $this->esCategoríaCelularedit($categoria);
-            $eraCelular = $this->esCategoríaCelularedit($productoExistente['CATEGORIA']);
-            
-            
-            // Manejar las características según la categoría
-            if ($esCelular) {
-               
-                // Es un celular - usamos lógica especial para celulares
-                $celularModel = new Celular();
+            try {
+                // Recopilar datos del formulario
+                $datosProducto = $this->recopilarDatosProducto($_POST, $productoExistente);
                 
-                // Mapeo de IDs de características a los campos esperados
-                $caracteristicaMapping = [
-                    '1' => 'chip_linea',    // Asumimos que caracteristica_1 es chip_linea
-                    '2' => 'marca',         // Asumimos que caracteristica_2 es marca
-                    '3' => 'modelo',        // Asumimos que caracteristica_3 es modelo
-                    '4' => 'imei',          // Asumimos que caracteristica_4 es imei
-                    '5' => 'imei2',         // Asumimos que caracteristica_5 es imei2/num_serie
-                    '6' => 'color',         // Asumimos que caracteristica_6 es color
-                    '7' => 'cargador',      // Asumimos que caracteristica_7 es cargador
-                    '8' => 'cable_usb',     // Asumimos que caracteristica_8 es cable_usb
-                    '9' => 'manual_usuario', // Asumimos que caracteristica_9 es manual_usuario
-                    '10' => 'estuche'       // Asumimos que caracteristica_10 es estuche/caja
-                ];
-                
-                // Inicializamos el array de datos del celular
-                $datosCelular = [
-                    'idproductosv2' => $idProducto,
-                    'chip_linea' => null,
-                    'marca' => null,
-                    'modelo' => null,
-                    'imei' => null,
-                    'imei2' => null,
-                    'color' => null,
-                    'cargador' => null,
-                    'cable_usb' => null,
-                    'manual_usuario' => null,
-                    'estuche' => null
-                ];
-
-                // Recorremos los POST para encontrar las características
-                foreach ($_POST as $key => $value) {
-                    if (strpos($key, 'caracteristica_') === 0) {
-                        $idCaracteristica = substr($key, strlen('caracteristica_'));
-                        
-                        // Verificamos si este ID está en nuestro mapeo
-                        if (isset($caracteristicaMapping[$idCaracteristica])) {
-                            $campoMapeado = $caracteristicaMapping[$idCaracteristica];
-                            $datosCelular[$campoMapeado] = $value;
-                        }
-                    }
+                // Validar datos obligatorios
+                if (empty($datosProducto['nombre']) || empty($datosProducto['categoria'])) {
+                    throw new Exception('El nombre y la categoría son obligatorios');
                 }
 
-                // Si antes no era celular pero ahora sí, eliminamos las características anteriores
-                if (!$eraCelular) {
-                    $caracteristicaModel = new CaracteristicaProducto();
-                    $caracteristicaModel->eliminarCaracteristicasPorProducto($idProducto);
-                }
-                
-                // Actualizar características del celular
-                $celularModel->actualizarCaracteristicasCelular($datosCelular);
-                } else {
-                    // No es celular - usamos lógica normal
-                    // Si antes era celular pero ahora no, eliminamos los datos de celular
-                    if ($eraCelular) {
-                        $celularModel = new Celular();
-                        $celularModel->eliminarCelularPorProductoId($idProducto);
-                    }
-                
-                    if ($categoriaNoCambio) {
-                        $caracteristicaModel = new CaracteristicaProducto();
-                     
-                    
-                        foreach ($_POST as $key => $value) {
-                          
-                    
-                            if (strpos($key, 'caracteristica_') === 0) {
-                                $idCaracteristica = substr($key, strlen('caracteristica_'));
-                               
-                    
-                                $caracteristicaModel->actualizarCaracteristica([
-                                    'idcaracteristica' => $idCaracteristica,
-                                    'valor_caracteristica' => $value
-                                ]);
-                                
-                            }
-                        }
-                    } else {
-                        // Eliminamos todas las características del producto antes de insertar las nuevas
-                        $caracteristicaModel = new CaracteristicaProducto();
-                        $caracteristicaModel->eliminarCaracteristicasPorProducto($idProducto);
+                // Registrar movimiento si cambió la cantidad
+                $this->registrarMovimientoCantidad($productoExistente, $datosProducto, $usuario_id);
 
-                        // Decodificamos las características enviadas
-                        $caracteristicasJson = isset($_POST['caracteristicas']) ? $_POST['caracteristicas'] : '[]';
-                        $caracteristicas = json_decode($caracteristicasJson, true);
-                
-                        if (is_array($caracteristicas)) {
-                            foreach ($caracteristicas as $caracteristica) {
-                                $caracteristica['idproductosv2'] = $idProducto; // Añadimos el ID del producto
-                                $caracteristicaModel->insertarCaracteristica($caracteristica);
-                            }
-                        }
-                    }
-                 }
-
-                // Instanciar el modelo TipoProductoModel y obtener el registro por ID
-                $tipoProductoModel = new TipoProductoModel();
-                $tipoProductoData = $tipoProductoModel->getdataForId($tipoProducto);
-                
-                if ($tipoProductoData) {
-                    $tipoProducto = $tipoProductoData['tipo_productocol'];
+                // Actualizar producto principal
+                if (!$productoModel->actualizar($datosProducto)) {
+                    throw new Exception('Error al actualizar el producto');
                 }
 
-                // Validar campos obligatorios
-                if (empty($nombre) || empty($categoria)) {
-                    echo json_encode(['success' => false, 'message' => 'El nombre y la categoría son obligatorios']);
-                    return;
-                }
+                // Manejar características según la categoría
+                $this->procesarCaracteristicas($idProducto, $datosProducto['categoria'], $_POST);
 
-                // Crear array con datos a actualizar
-                $datosProducto = [
-                    'idproductosv2' => $idProducto,
-                    'nombre' => $nombre,
-                    'codigo' => $codigo,
-                    'cantidad' => $cantidad,
-                    'cantidad_unidad' => $cantidadUnidad,
-                    'unidad_medida' => $unidadMedida,
-                    'tipo_producto' => $tipoProducto,
-                    'categoria' => $categoria,
-                    'fecha_vencimiento' => $fechaVencimiento,
-                    'ruc' => $ruc,
-                    'razon_social' => $razonSocial,
-                    'precio' => $precio,
-                    'precio_venta' => $precioVenta,
-                    'fecha_registro' => $fechaRegistro,
-                    'guia_remision' => $guiaRemision,
-                    'codigo_barra' => $codigoBarra
-                ];
-                
-                // Actualizar el producto en la base de datos
-                $resultado = $productoModel->actualizar($datosProducto);
-                
-                if (!$resultado) {
-                    echo json_encode(['success' => false, 'message' => 'Error al actualizar el producto']);
-                    return;
-                }
-                
-                // Respuesta exitosa
+                $this->conexion->commit();
                 echo json_encode(['success' => true, 'message' => 'Producto actualizado correctamente']);
                 
             } catch (Exception $e) {
-                error_log("Error en actualizarProducto: " . $e->getMessage());
-                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                $this->conexion->rollback();
+                throw $e;
             }
+            
+        } catch (Exception $e) {
+            error_log("Error en actualizarProducto: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -2229,6 +2046,124 @@ private function esCategoríaCelular($categoriaNormalizada) {
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ]);
+        }
+    }
+
+
+    // Agrega estas funciones nuevas al final de la clase ProductosController
+    private function recopilarDatosProducto($post, $productoExistente) 
+    {
+        // Obtener y procesar tipo de producto
+        $tipoProducto = $post['TIPO_PRODUCTO'] ?? '';
+        if (is_numeric($tipoProducto)) {
+            $tipoProductoModel = new TipoProductoModel();
+            $tipoData = $tipoProductoModel->getdataForId($tipoProducto);
+            $tipoProducto = $tipoData ? $tipoData['tipo_productocol'] : $tipoProducto;
+        }
+
+        // Obtener y procesar categoría
+        $categoria = $post['CATEGORIA'] ?? '';
+        if (is_numeric($categoria)) {
+            $categoriaModel = new CategoriaProductoModel();
+            $categoriaData = $categoriaModel->getCategoriesforId(intval($categoria));
+            $categoria = $categoriaData ? $categoriaData['nombre'] : $categoria;
+        }
+
+        return [
+            'idproductosv2' => $productoExistente['ID_PRODUCTO'],
+            'nombre' => $post['NOMBRE'] ?? '',
+            'codigo' => $post['CODIGO'] ?? null,
+            'cantidad' => floatval($post['CANTIDAD'] ?? 0),
+            'cantidad_unidad' => isset($post['CANTIDAD_UNIDAD']) ? floatval($post['CANTIDAD_UNIDAD']) : null,
+            'unidad_medida' => $post['UNIDAD_MEDIDA'] ?? null,
+            'tipo_producto' => $tipoProducto,
+            'categoria' => $categoria,
+            'fecha_vencimiento' => $post['FECHA_VENCIMIENTO'] ?? null,
+            'ruc' => $post['RUC'] ?? '',
+            'razon_social' => $post['RAZON_SOCIAL'] ?? '',
+            'precio' => floatval($post['PRECIO'] ?? 0),
+            'precio_venta' => floatval($post['PRECIO_VENTA'] ?? 0),
+            'fecha_registro' => $post['FECHA_REGISTRO'] ?? null,
+            'guia_remision' => $post['GUIA_REMISION'] ?? '',
+            'codigo_barra' => $post['CODIGO_BARRA'] ?? null,
+            'descuento_cuota' => isset($post['DESCUENTO_CUOTA']) ? floatval($post['DESCUENTO_CUOTA']) : null,
+            'moneda' => $post['MONEDA'] ?? 'S/.'
+        ];
+    }
+
+    private function registrarMovimientoCantidad($productoExistente, $datosProducto, $usuario_id) 
+    {
+        $cantidadActual = floatval($productoExistente['CANTIDAD']);
+        $cantidadNueva = $datosProducto['cantidad'];
+
+        if ($cantidadNueva !== $cantidadActual) {
+            $tipoMovimiento = ($cantidadNueva > $cantidadActual) ? "Entrada" : "Salida";
+            $diferenciaCantidad = abs($cantidadNueva - $cantidadActual);
+
+            $reportesModel = new Reportes();
+            $reportesModel->registrarMovimiento(
+                $usuario_id,
+                $productoExistente['ID_PRODUCTO'],
+                $productoExistente['CODIGO'],
+                $productoExistente['NOMBRE'],
+                $tipoMovimiento,
+                "Ajuste",
+                $diferenciaCantidad,
+                $productoExistente['RAZON_SOCIAL']
+            );
+        }
+    }
+
+    private function procesarCaracteristicas($idProducto, $categoria, $post) 
+    {
+        $categoriaNorm = $this->normalizarTextoEditar($categoria);
+        
+        if ($this->esCategoríaCelularedit($categoria)) {
+            $this->procesarCaracteristicasCelular($idProducto, $post);
+        } else {
+            $this->procesarCaracteristicasGenerales($idProducto, $categoria, $post);
+        }
+    }
+
+    private function procesarCaracteristicasCelular($idProducto, $post) 
+    {
+        $celularModel = new Celular();
+        
+        $datosCelular = [
+            'idproductosv2' => $idProducto,
+            'chip_linea' => $post['chip_linea'] ?? null,
+            'marca' => $post['marca'] ?? null,
+            'modelo' => $post['modelo'] ?? null,
+            'imei' => $post['imei'] ?? null,
+            'imei2' => $post['imei2'] ?? null,
+            'color' => $post['color'] ?? null,
+            'cargador' => $post['cargador'] ?? null,
+            'cable_usb' => $post['cable_usb'] ?? null,
+            'manual_usuario' => $post['manual_usuario'] ?? null,
+            'estuche' => $post['estuche'] ?? null
+        ];
+
+        $celularModel->actualizarCaracteristicasCelular($datosCelular);
+    }
+
+    private function procesarCaracteristicasGenerales($idProducto, $categoria, $post) 
+    {
+        $caracteristicaModel = new CaracteristicaProducto();
+        
+        // Eliminar características existentes
+        $caracteristicaModel->eliminarCaracteristicasPorProducto($idProducto);
+
+        // Procesar nuevas características desde JSON
+        if (isset($post['caracteristicas'])) {
+            $caracteristicas = json_decode($post['caracteristicas'], true);
+            if (is_array($caracteristicas)) {
+                foreach ($caracteristicas as $caracteristica) {
+                    if (!empty($caracteristica['valor_caracteristica'])) {
+                        $caracteristica['idproductosv2'] = $idProducto;
+                        $caracteristicaModel->insertarCaracteristica($caracteristica);
+                    }
+                }
+            }
         }
     }
 

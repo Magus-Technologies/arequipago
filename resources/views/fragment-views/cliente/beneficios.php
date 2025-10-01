@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Beneficios - Productos Financiados</title>
- 
+
     <style>
         .beneficio-card {
             transition: all 0.3s ease;
@@ -21,15 +21,19 @@
         }
 
         .beneficio-imagen {
-            height: 200px;
+            height: 400px;
             object-fit: cover;
             width: 100%;
             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
         }
 
+        .beneficio-card .position-relative {
+            position: relative !important;
+        }
+
         .beneficio-categoria {
             position: absolute;
-            top: 10px;
+            bottom: 10px;
             left: 10px;
             padding: 0.4rem 0.8rem;
             border-radius: 15px;
@@ -37,13 +41,28 @@
             font-weight: 600;
             color: white;
             z-index: 10;
+            background: linear-gradient(45deg, #6c757d, #495057);
         }
 
-        .categoria-llantas { background: linear-gradient(45deg, #ff6b35, #f7931e); }
-        .categoria-baterias { background: linear-gradient(45deg, #4ecdc4, #44a08d); }
-        .categoria-aceites { background: linear-gradient(45deg, #ffd89b, #19547b); }
-        .categoria-celulares { background: linear-gradient(45deg, #667eea, #764ba2); }
-        .categoria-vehiculos { background: linear-gradient(45deg, #f093fb, #f5576c); }
+        .categoria-llantas {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+        }
+
+        .categoria-baterias {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+
+        .categoria-aceites {
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+        }
+
+        .categoria-celulares {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .categoria-vehiculos {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
 
         .beneficio-precio {
             background: linear-gradient(45deg, #6f42c1, #17a2b8);
@@ -54,28 +73,32 @@
             font-weight: 800;
         }
 
-        .beneficio-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-            height: 2.5rem;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
+       .beneficio-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    min-height: auto;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
 
-        .beneficio-description {
-            color: #6c757d;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            height: 3rem;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-        }
+
+   .beneficio-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    height: auto;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin-bottom: 0.5rem;
+}
+
+
 
         .vista-beneficios-header {
             background: linear-gradient(135deg, #6f42c1 0%, #17a2b8 100%);
@@ -180,7 +203,8 @@
                             <i class="bi bi-star-fill me-3"></i>
                             Catálogo de Beneficios
                         </h1>
-                        <p class="lead mb-0">Productos disponibles para financiamiento - Acceso para todos los usuarios</p>
+                        <p class="lead mb-0">Productos disponibles para financiamiento - Acceso para todos los usuarios
+                        </p>
                     </div>
                 </div>
             </div>
@@ -192,8 +216,7 @@
                 <div class="d-flex gap-3 align-items-center">
                     <!-- Búsqueda -->
                     <div class="search-container flex-grow-1">
-                        <input type="text" class="form-control" v-model="busqueda"
-                            @input="filtrarBeneficios"
+                        <input type="text" class="form-control" v-model="busqueda" @input="filtrarBeneficios"
                             placeholder="Buscar productos: llantas, baterías, aceites...">
                         <div class="loading-spinner" v-if="buscando">
                             <div class="spinner-border spinner-border-sm" style="color: #6f42c1;" role="status"></div>
@@ -208,29 +231,26 @@
                 </button>
             </div>
         </div>
-<!-- Filtros por Plan de Financiamiento -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div v-if="cargandoPlanes" class="text-center">
-            <div class="spinner-border spinner-border-sm" role="status"></div>
-            <span class="ms-2">Cargando planes...</span>
+        <!-- Filtros por Plan de Financiamiento -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div v-if="cargandoPlanes" class="text-center">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Cargando planes...</span>
+                </div>
+                <div v-else class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-secondary filter-badge" :class="{ active: planSeleccionado === '' }"
+                        @click="filtrarPorPlan('')">
+                        <i class="bi bi-grid me-1"></i>Todos
+                    </span>
+                    <span v-for="plan in planes" :key="plan.idplan_financiamiento" class="badge bg-primary filter-badge"
+                        :class="{ active: planSeleccionado === plan.idplan_financiamiento }"
+                        @click="filtrarPorPlan(plan.idplan_financiamiento)">
+                        <i class="bi bi-credit-card me-1"></i>{{ plan.nombre_plan }}
+                    </span>
+                </div>
+            </div>
         </div>
-        <div v-else class="d-flex flex-wrap gap-2">
-            <span class="badge bg-secondary filter-badge"
-                  :class="{ active: planSeleccionado === '' }"
-                  @click="filtrarPorPlan('')">
-                <i class="bi bi-grid me-1"></i>Todos
-            </span>
-            <span v-for="plan in planes"
-                  :key="plan.idplan_financiamiento"
-                  class="badge bg-primary filter-badge"
-                  :class="{ active: planSeleccionado === plan.idplan_financiamiento }"
-                  @click="filtrarPorPlan(plan.idplan_financiamiento)">
-                <i class="bi bi-credit-card me-1"></i>{{ plan.nombre_plan }}
-            </span>
-        </div>
-    </div>
-</div>
 
 
         <!-- Estadísticas -->
@@ -284,7 +304,8 @@
             <div class="card shadow-sm mx-auto" style="max-width: 500px;">
                 <div class="card-body py-5">
                     <i class="bi bi-inbox display-1 text-muted mb-4"></i>
-                    <h3 class="text-muted mb-3" v-if="busqueda || categoriaSeleccionada">No se encontraron productos</h3>
+                    <h3 class="text-muted mb-3" v-if="busqueda || categoriaSeleccionada">No se encontraron productos
+                    </h3>
                     <h3 class="text-muted mb-3" v-else>Aún no hay productos en el catálogo</h3>
                     <p class="text-muted mb-4" v-if="busqueda || categoriaSeleccionada">
                         Intenta cambiar los filtros de búsqueda o categoría.
@@ -292,12 +313,12 @@
                     <p class="text-muted mb-4" v-else>
                         Comienza agregando productos al catálogo de beneficios.
                     </p>
-                    <button class="btn btn-lg" @click="limpiarFiltros" v-if="busqueda || categoriaSeleccionada" 
-                            style="background-color: #6f42c1; border-color: #6f42c1; color: white;">
+                    <button class="btn btn-lg" @click="limpiarFiltros" v-if="busqueda || categoriaSeleccionada"
+                        style="background-color: #6f42c1; border-color: #6f42c1; color: white;">
                         <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros
                     </button>
                     <button class="btn btn-lg" @click="abrirModalAgregarProducto" v-else
-                            style="background-color: #6f42c1; border-color: #6f42c1; color: white;">
+                        style="background-color: #6f42c1; border-color: #6f42c1; color: white;">
                         <i class="bi bi-plus-circle me-2"></i>Agregar Primer Producto
                     </button>
                 </div>
@@ -306,23 +327,24 @@
 
         <!-- Catálogo de Productos -->
         <div v-if="!cargandoBeneficios && beneficiosFiltrados.length > 0" class="row g-4">
-            <div v-for="beneficio in beneficiosFiltrados.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina)" 
-                 :key="beneficio.id" class="col-xl-3 col-lg-4 col-md-6">
+            <div v-for="beneficio in beneficiosFiltrados.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina)"
+                :key="beneficio.id" class="col-xl-3 col-lg-4 col-md-6">
                 <div class="card beneficio-card h-100 position-relative">
-                    
-                    <!-- Plan de Financiamiento Badge -->
-                    <span class="beneficio-categoria" :class="'plan-' + beneficio.plan_financiamiento_id">
-                        {{ obtenerNombrePlan(beneficio.plan_financiamiento_id) }}
-                    </span>
-
-                    <!-- Disponible Badge -->
-                    <span class="beneficio-disponible" v-if="beneficio.disponible">
-                        ✓ Disponible
-                    </span>
 
                     <!-- Imagen del Producto -->
                     <div class="position-relative overflow-hidden">
-                        <img v-if="beneficio.imagen" :src="'/arequipago/public/' + beneficio.imagen" class="beneficio-imagen" :alt="beneficio.nombre">
+                        <!-- Plan de Financiamiento Badge - DENTRO de la imagen -->
+                        <span class="beneficio-categoria" style="background: linear-gradient(45deg, #6c757d, #495057);">
+                            {{ obtenerNombrePlan(beneficio.plan_financiamiento_id) }}
+                        </span>
+
+                        <!-- Disponible Badge -->
+                        <span class="beneficio-disponible" v-if="beneficio.disponible">
+                            ✓ Disponible
+                        </span>
+
+                        <img v-if="beneficio.imagen" :src="'/arequipago/public/' + beneficio.imagen"
+                            class="beneficio-imagen" :alt="beneficio.nombre">
                         <div v-else class="beneficio-imagen d-flex align-items-center justify-content-center bg-light">
                             <i class="bi display-1 text-muted" :class="obtenerIconoCategoria(beneficio.categoria)"></i>
                         </div>
@@ -331,24 +353,29 @@
                     <div class="card-body d-flex flex-column">
                         <!-- Título del Producto -->
                         <h5 class="beneficio-title">{{ beneficio.nombre }}</h5>
-                        
+
                         <!-- Descripción -->
-                        <p class="beneficio-description flex-grow-1">{{ beneficio.descripcion || 'Producto disponible para financiamiento.' }}</p>
+                     <p class="beneficio-description">{{ beneficio.descripcion || 'Producto disponible para financiamiento.' }}</p>
 
                         <!-- Información de Financiamiento -->
                         <div class="mb-3">
                             <div class="row text-center">
                                 <div class="col-4">
                                     <small class="text-muted d-block">Cuota Inicial</small>
-                                    <strong class="text-primary">{{ getCurrencySymbolForCategory(beneficio.categoria) }} {{ beneficio.cuota_inicial || '0.00' }}</strong>
+                                    <strong class="text-primary">{{
+                                        getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{
+                                        beneficio.cuota_inicial || '0.00' }}</strong>
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted d-block">Cuotas</small>
                                     <strong class="text-info">{{ beneficio.cantidad_cuotas || 'N/A' }}</strong>
                                 </div>
                                 <div class="col-4">
-                                    <small class="text-muted d-block">{{ obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id) }}</small>
-                                    <strong class="text-success">{{ getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{ beneficio.cuota_mensual || '0.00' }}</strong>
+                                    <small class="text-muted d-block">{{
+                                        obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id) }}</small>
+                                    <strong class="text-success">{{
+                                        getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{
+                                        beneficio.cuota_mensual || '0.00' }}</strong>
                                 </div>
                             </div>
                         </div>
@@ -364,21 +391,26 @@
                                 </div>
                                 <div class="col-5">
                                     <div class="dropdown">
-                                        <button class="btn btn-secondary w-100" type="button"
-                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                        <button class="btn btn-secondary w-100" type="button" data-bs-toggle="dropdown"
+                                            aria-expanded="false">
                                             <i class="bi bi-gear-fill me-1"></i>Opciones
                                         </button>
                                         <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="verDetalles(beneficio)">
-                                                <i class="bi bi-eye me-2"></i>Ver Detalles
-                                            </a></li>
-                                            <li><a class="dropdown-item" href="javascript:void(0)" @click.prevent="editarBeneficio(beneficio)">
-                                                <i class="bi bi-pencil me-2"></i>Editar
-                                            </a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" @click.prevent="eliminarBeneficio(beneficio)">
-                                                <i class="bi bi-trash me-2"></i>Eliminar
-                                            </a></li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)"
+                                                    @click.prevent="verDetalles(beneficio)">
+                                                    <i class="bi bi-eye me-2"></i>Ver Detalles
+                                                </a></li>
+                                            <li><a class="dropdown-item" href="javascript:void(0)"
+                                                    @click.prevent="editarBeneficio(beneficio)">
+                                                    <i class="bi bi-pencil me-2"></i>Editar
+                                                </a></li>
+                                            <li>
+                                                <hr class="dropdown-divider">
+                                            </li>
+                                            <li><a class="dropdown-item text-danger" href="javascript:void(0)"
+                                                    @click.prevent="eliminarBeneficio(beneficio)">
+                                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                                </a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -426,23 +458,24 @@
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Nombre del Producto *</label>
-                                        <input type="text" class="form-control" v-model="formData.nombre" 
-                                               placeholder="Ej: Llanta Michelin 205/55R16" required>
+                                        <input type="text" class="form-control" v-model="formData.nombre"
+                                            placeholder="Ej: Llanta Michelin 205/55R16" required>
                                         <div v-if="errores.nombre" class="error-message">{{ errores.nombre }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Plan de Financiamiento *</label>
-                                        <select class="form-select" v-model="formData.plan_financiamiento_id" required @change="onPlanChange">
+                                        <select class="form-select" v-model="formData.plan_financiamiento_id" required
+                                            @change="onPlanChange">
                                             <option value="">Seleccionar...</option>
-                                            <option v-for="plan in planes"
-                                                    :key="plan.idplan_financiamiento"
-                                                    :value="plan.idplan_financiamiento">
+                                            <option v-for="plan in planes" :key="plan.idplan_financiamiento"
+                                                :value="plan.idplan_financiamiento">
                                                 {{ plan.nombre_plan }} ({{ plan.frecuencia_pago }})
                                             </option>
                                         </select>
-                                        <div v-if="errores.plan_financiamiento_id" class="error-message">{{ errores.plan_financiamiento_id }}</div>
+                                        <div v-if="errores.plan_financiamiento_id" class="error-message">{{
+                                            errores.plan_financiamiento_id }}</div>
                                     </div>
                                 </div>
                                 <!-- Categoría comentada temporalmente - preguntar al cliente si la quiere
@@ -464,49 +497,56 @@
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Descripción</label>
                                         <textarea class="form-control" rows="3" v-model="formData.descripcion"
-                                                  placeholder="Describe las características del producto..."></textarea>
+                                            placeholder="Describe las características del producto..."></textarea>
                                     </div>
                                 </div>
                                 <!-- Nuevos campos de financiamiento -->
                                 <div class="col-12">
                                     <hr>
-                                    <h6 class="text-primary mb-3"><i class="bi bi-credit-card me-2"></i>Información de Financiamiento</h6>
+                                    <h6 class="text-primary mb-3"><i class="bi bi-credit-card me-2"></i>Información de
+                                        Financiamiento</h6>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Cuota Inicial *</label>
                                         <div class="input-group">
-                                            <span class="input-group-text" id="currency-cuota-inicial">{{ getCurrencySymbol() }}</span>
+                                            <span class="input-group-text" id="currency-cuota-inicial">{{
+                                                getCurrencySymbol() }}</span>
                                             <input type="number" class="form-control" v-model="formData.cuota_inicial"
-                                                   step="0.01" min="0" placeholder="0.00" required>
+                                                step="0.01" min="0" placeholder="0.00" required>
                                         </div>
-                                        <div v-if="errores.cuota_inicial" class="error-message">{{ errores.cuota_inicial }}</div>
+                                        <div v-if="errores.cuota_inicial" class="error-message">{{ errores.cuota_inicial
+                                            }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Cantidad de Cuotas *</label>
                                         <input type="number" class="form-control" v-model="formData.cantidad_cuotas"
-                                               min="1" placeholder="Ej: 12" required>
-                                        <div v-if="errores.cantidad_cuotas" class="error-message">{{ errores.cantidad_cuotas }}</div>
+                                            min="1" placeholder="Ej: 12" required>
+                                        <div v-if="errores.cantidad_cuotas" class="error-message">{{
+                                            errores.cantidad_cuotas }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">{{ obtenerEtiquetaFrecuenciaFormulario() }} *</label>
+                                        <label class="form-label fw-semibold">{{ obtenerEtiquetaFrecuenciaFormulario()
+                                            }} *</label>
                                         <div class="input-group">
-                                            <span class="input-group-text" id="currency-cuota-mensual">{{ getCurrencySymbol() }}</span>
+                                            <span class="input-group-text" id="currency-cuota-mensual">{{
+                                                getCurrencySymbol() }}</span>
                                             <input type="number" class="form-control" v-model="formData.cuota_mensual"
-                                                   step="0.01" min="0" placeholder="0.00" required>
+                                                step="0.01" min="0" placeholder="0.00" required>
                                         </div>
-                                        <div v-if="errores.cuota_mensual" class="error-message">{{ errores.cuota_mensual }}</div>
+                                        <div v-if="errores.cuota_mensual" class="error-message">{{ errores.cuota_mensual
+                                            }}</div>
                                     </div>
                                 </div>
                                 <div class="col-12">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Imagen del Producto</label>
                                         <input type="file" class="form-control" name="imagen_principal"
-                                               @change="handleImagenUpload" accept="image/*" ref="imagenInput">
+                                            @change="handleImagenUpload" accept="image/*" ref="imagenInput">
                                         <small class="text-muted">Formatos: JPG, PNG, GIF, WEBP. Máximo 2MB</small>
                                         <div v-if="errores.imagen" class="error-message">{{ errores.imagen }}</div>
                                     </div>
@@ -518,7 +558,7 @@
                                             <img :src="imagenPreview" class="banner-preview" alt="Imagen Preview">
                                             <div class="mt-2">
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        @click="eliminarImagen">
+                                                    @click="eliminarImagen">
                                                     <i class="bi bi-trash me-1"></i>Eliminar Imagen
                                                 </button>
                                             </div>
@@ -528,7 +568,7 @@
                                 <div class="col-12">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="disponible"
-                                               v-model="formData.disponible">
+                                            v-model="formData.disponible">
                                         <label class="form-check-label fw-semibold" for="disponible">
                                             Producto Disponible
                                         </label>
@@ -541,12 +581,12 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-2"></i>Cancelar
                         </button>
-                        <button type="submit" class="btn text-white" :disabled="guardandoProducto" 
-                                @click="guardarProducto" style="background-color: #6f42c1; border-color: #6f42c1;">
-                            <span v-if="guardandoProducto" class="spinner-border spinner-border-sm me-2"></span>
-                            <i v-if="!guardandoProducto" class="bi bi-check-circle me-2"></i>
-                            {{ guardandoProducto ? 'Guardando...' : (editandoProducto ? 'Actualizar' : 'Agregar Producto') }}
-                        </button>
+                       <button type="submit" class="btn text-white" :disabled="guardandoProducto"
+    @click="guardarProducto" style="background-color: #6f42c1; border-color: #6f42c1;">
+    <span v-if="guardandoProducto" class="spinner-border spinner-border-sm me-2"></span>
+    <i v-if="!guardandoProducto" class="bi bi-check-circle me-2"></i>
+    {{ guardandoProducto ? 'Guardando...' : (editandoProducto ? 'Actualizar' : 'Agregar Producto') }}
+</button>
                     </div>
                 </div>
             </div>
@@ -603,9 +643,9 @@
                         },
                         errores: {},
 
-                      // CATEGORÍAS (se cargarán desde la base de datos)
-categorias: [],
-cargandoCategorias: false
+                        // CATEGORÍAS (se cargarán desde la base de datos)
+                        categorias: [],
+                        cargandoCategorias: false
 
                     }
                 },
@@ -614,11 +654,19 @@ cargandoCategorias: false
                         return Math.ceil(this.beneficiosFiltrados.length / this.itemsPorPagina);
                     }
                 },
-             mounted: function () {
-    this.cargarCategorias(); // Cargar categorías primero
-    this.cargarPlanes(); // Cargar planes de financiamiento
+               mounted: function () {
+    var self = this;
+    this.cargarCategorias();
+    this.cargarPlanes();
     this.cargarBeneficios();
-    this.modal = new bootstrap.Modal(document.getElementById('modalProducto'));
+    
+    // Esperar a que el DOM esté completamente renderizado
+    this.$nextTick(function() {
+        var modalElement = document.getElementById('modalProducto');
+        if (modalElement) {
+            self.modal = new bootstrap.Modal(modalElement);
+        }
+    });
 },
 
                 methods: {
@@ -626,7 +674,7 @@ cargandoCategorias: false
                     cargarBeneficios: function () {
                         var self = this;
                         self.cargandoBeneficios = true;
-                        
+
                         fetch(_URL + '/ajs/beneficios/listar')
                             .then(response => response.json())
                             .then(data => {
@@ -655,60 +703,60 @@ cargandoCategorias: false
                             });
                     },
                     // ============ CARGAR CATEGORÍAS ============
-cargarCategorias: function () {
-    var self = this;
-    self.cargandoCategorias = true;
+                    cargarCategorias: function () {
+                        var self = this;
+                        self.cargandoCategorias = true;
 
-    fetch('/arequipago/cargarcategoriaproductos')
-        .then(response => response.json())
-        .then(data => {
-            if (Array.isArray(data)) {
-                self.categorias = data;
-            } else {
-                console.error('Error: Formato de categorías no válido');
-                self.categorias = [];
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar categorías:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudieron cargar las categorías'
-            });
-        })
-        .finally(() => {
-            self.cargandoCategorias = false;
-        });
-},
+                        fetch('/arequipago/cargarcategoriaproductos')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (Array.isArray(data)) {
+                                    self.categorias = data;
+                                } else {
+                                    console.error('Error: Formato de categorías no válido');
+                                    self.categorias = [];
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error al cargar categorías:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No se pudieron cargar las categorías'
+                                });
+                            })
+                            .finally(() => {
+                                self.cargandoCategorias = false;
+                            });
+                    },
 
-// ============ CARGAR PLANES DE FINANCIAMIENTO ============
-cargarPlanes: function () {
-    var self = this;
-    self.cargandoPlanes = true;
+                    // ============ CARGAR PLANES DE FINANCIAMIENTO ============
+                    cargarPlanes: function () {
+                        var self = this;
+                        self.cargandoPlanes = true;
 
-    fetch('/arequipago/getAllPlanes')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && Array.isArray(data.planes)) {
-                self.planes = data.planes;
-            } else {
-                console.error('Error: Formato de planes no válido');
-                self.planes = [];
-            }
-        })
-        .catch(error => {
-            console.error('Error al cargar planes:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudieron cargar los planes de financiamiento'
-            });
-        })
-        .finally(() => {
-            self.cargandoPlanes = false;
-        });
-},
+                        fetch('/arequipago/getAllPlanes')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && Array.isArray(data.planes)) {
+                                    self.planes = data.planes;
+                                } else {
+                                    console.error('Error: Formato de planes no válido');
+                                    self.planes = [];
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error al cargar planes:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No se pudieron cargar los planes de financiamiento'
+                                });
+                            })
+                            .finally(() => {
+                                self.cargandoPlanes = false;
+                            });
+                    },
 
 
                     // ============ FILTROS Y BÚSQUEDA ============
@@ -740,8 +788,8 @@ cargarPlanes: function () {
                             var termino = this.busqueda.toLowerCase();
                             resultado = resultado.filter(function (beneficio) {
                                 return beneficio.nombre.toLowerCase().includes(termino) ||
-                                       beneficio.descripcion.toLowerCase().includes(termino) ||
-                                       beneficio.categoria.toLowerCase().includes(termino);
+                                    beneficio.descripcion.toLowerCase().includes(termino) ||
+                                    beneficio.categoria.toLowerCase().includes(termino);
                             });
                         }
 
@@ -755,7 +803,7 @@ cargarPlanes: function () {
                         // Filtrar por plan de financiamiento
                         if (this.planSeleccionado) {
                             resultado = resultado.filter(function (beneficio) {
-                                return beneficio.plan_financiamiento_id === this.planSeleccionado;
+                                return beneficio.plan_financiamiento_id == this.planSeleccionado;
                             }, this);
                         }
 
@@ -772,15 +820,15 @@ cargarPlanes: function () {
                     },
 
                     // ============ UTILIDADES ============
-                obtenerNombreCategoria: function (categoria) {
-    var cat = this.categorias.find(c => c.idcategoria_producto == categoria);
-    return cat ? cat.nombre : categoria;
-},
+                    obtenerNombreCategoria: function (categoria) {
+                        var cat = this.categorias.find(c => c.idcategoria_producto == categoria);
+                        return cat ? cat.nombre : categoria;
+                    },
 
-obtenerNombrePlan: function (planId) {
-    var plan = this.planes.find(p => p.idplan_financiamiento == planId);
-    return plan ? plan.nombre_plan : 'Plan no encontrado';
-},
+                    obtenerNombrePlan: function (planId) {
+                        var plan = this.planes.find(p => p.idplan_financiamiento == planId);
+                        return plan ? plan.nombre_plan : 'Plan no encontrado';
+                    },
 
 
                     obtenerIconoCategoria: function (categoria) {
@@ -933,33 +981,33 @@ obtenerNombrePlan: function (planId) {
                                     },
                                     body: 'id=' + beneficio.id
                                 })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            title: '¡Eliminado!',
-                                            text: data.message || 'El producto ha sido eliminado del catálogo.',
-                                            timer: 2000,
-                                            showConfirmButton: false
-                                        });
-                                        self.cargarBeneficios(); // Recargar lista
-                                    } else {
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: '¡Eliminado!',
+                                                text: data.message || 'El producto ha sido eliminado del catálogo.',
+                                                timer: 2000,
+                                                showConfirmButton: false
+                                            });
+                                            self.cargarBeneficios(); // Recargar lista
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Error',
+                                                text: data.message || 'Error al eliminar el producto'
+                                            });
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
                                         Swal.fire({
                                             icon: 'error',
-                                            title: 'Error',
-                                            text: data.message || 'Error al eliminar el producto'
+                                            title: 'Error de conexión',
+                                            text: 'No se pudo conectar con el servidor'
                                         });
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    Swal.fire({
-                                        icon: 'error',
-                                        title: 'Error de conexión',
-                                        text: 'No se pudo conectar con el servidor'
                                     });
-                                });
                             }
                         });
                     },
@@ -1006,7 +1054,7 @@ obtenerNombrePlan: function (planId) {
                         var plan = this.planes.find(p => p.idplan_financiamiento == planId);
                         if (!plan) return 'Cuota';
 
-                        switch(plan.frecuencia_pago.toLowerCase()) {
+                        switch (plan.frecuencia_pago.toLowerCase()) {
                             case 'semanal': return 'Cuota Semanal';
                             case 'mensual': return 'Cuota Mensual';
                             case 'quincenal': return 'Cuota Quincenal';
@@ -1131,78 +1179,78 @@ obtenerNombrePlan: function (planId) {
                             formData.append('id', self.formData.id);
                         }
 
-                        var url = self.editandoProducto ? 
-                            _URL + '/ajs/beneficios/actualizar' : 
+                        var url = self.editandoProducto ?
+                            _URL + '/ajs/beneficios/actualizar' :
                             _URL + '/ajs/beneficios/crear';
 
                         fetch(url, {
                             method: 'POST',
                             body: formData
                         })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: self.editandoProducto ? '¡Producto Actualizado!' : '¡Producto Agregado!',
-                                    text: data.message,
-                                    timer: 3000,
-                                    showConfirmButton: false
-                                });
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: self.editandoProducto ? '¡Producto Actualizado!' : '¡Producto Agregado!',
+                                        text: data.message,
+                                        timer: 3000,
+                                        showConfirmButton: false
+                                    });
 
-                                self.modal.hide();
-                                self.limpiarFormulario();
-                                self.cargarBeneficios(); // Recargar lista
-                            } else {
+                                    self.modal.hide();
+                                    self.limpiarFormulario();
+                                    self.cargarBeneficios(); // Recargar lista
+                                } else {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: data.message || 'Error al guardar el producto'
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
                                 Swal.fire({
                                     icon: 'error',
-                                    title: 'Error',
-                                    text: data.message || 'Error al guardar el producto'
+                                    title: 'Error de conexión',
+                                    text: 'No se pudo conectar con el servidor'
                                 });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error de conexión',
-                                text: 'No se pudo conectar con el servidor'
+                            })
+                            .finally(() => {
+                                self.guardandoProducto = false;
                             });
-                        })
-                        .finally(() => {
-                            self.guardandoProducto = false;
-                        });
                     }
                 },
 
                 // Watchers para limpiar errores cuando los campos se corrigen
                 watch: {
-                    'formData.nombre': function(newVal) {
+                    'formData.nombre': function (newVal) {
                         if (newVal && newVal.trim()) {
                             this.errores.nombre = '';
                         }
                     },
-                    'formData.plan_financiamiento_id': function(newVal) {
+                    'formData.plan_financiamiento_id': function (newVal) {
                         if (newVal) {
                             this.errores.plan_financiamiento_id = '';
                         }
                     },
-                    'formData.categoria': function(newVal) {
+                    'formData.categoria': function (newVal) {
                         if (newVal) {
                             this.errores.categoria = '';
                         }
                     },
-                    'formData.cuota_inicial': function(newVal) {
+                    'formData.cuota_inicial': function (newVal) {
                         if (newVal && newVal > 0) {
                             this.errores.cuota_inicial = '';
                         }
                     },
-                    'formData.cantidad_cuotas': function(newVal) {
+                    'formData.cantidad_cuotas': function (newVal) {
                         if (newVal && newVal > 0) {
                             this.errores.cantidad_cuotas = '';
                         }
                     },
-                    'formData.cuota_mensual': function(newVal) {
+                    'formData.cuota_mensual': function (newVal) {
                         if (newVal && newVal > 0) {
                             this.errores.cuota_mensual = '';
                         }

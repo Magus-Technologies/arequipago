@@ -307,19 +307,49 @@ class VentasController extends Controller
         $c_anulada = new VentaAnulada();
         $c_producto = new ProductoVenta();
 
-        /*$c_producto->setIdVenta($this->venta->getIdVenta());
-        $c_producto->eliminar();*/
-
         $c_anulada->setIdVenta($this->venta->getIdVenta());
         $c_anulada->setFecha(date("Y-m-d"));
         $c_anulada->setMotivo("-");
         $resultado = ["res" => false];
-        if ($this->venta->anular()) {
-            $resultado['res'] = true;
-            $c_anulada->insertar();
 
+        // CORREGIDO: Devolver stock antes de anular
+        try {
+            $this->conexion->begin_transaction();
 
+            // Obtener todos los productos de la venta
+            $sql = "SELECT id_producto, cantidad FROM productos_ventas WHERE id_venta = '{$this->venta->getIdVenta()}'";
+            $productos_venta = $this->venta->exeSQL($sql);
+
+            // Devolver el stock a productosv2
+            if ($productos_venta && $productos_venta->num_rows > 0) {
+                while ($producto = $productos_venta->fetch_assoc()) {
+                    $id_producto = $producto['id_producto'];
+                    $cantidad = $producto['cantidad'];
+
+                    // Actualizar stock en productosv2
+                    $sql_update = "UPDATE productosv2 SET cantidad = cantidad + {$cantidad} WHERE idproductosv2 = {$id_producto}";
+                    if (!$this->venta->exeSQL($sql_update)) {
+                        throw new Exception("Error al devolver stock del producto ID: {$id_producto}");
+                    }
+                }
+            }
+
+            // Anular la venta
+            if ($this->venta->anular()) {
+                $c_anulada->insertar();
+                $this->conexion->commit();
+                $resultado['res'] = true;
+            } else {
+                throw new Exception("Error al anular la venta");
+            }
+
+        } catch (Exception $e) {
+            $this->conexion->rollback();
+            error_log("Error en anularVenta: " . $e->getMessage());
+            $resultado['res'] = false;
+            $resultado['mensaje'] = $e->getMessage();
         }
+
         return json_encode($resultado);
     }
   

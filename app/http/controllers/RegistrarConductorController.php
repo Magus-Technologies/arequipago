@@ -106,9 +106,17 @@ class RegistrarConductorController extends Controller
                 throw new Exception('Ya existe un conductor con este número de documento.');
             }
     
-            // Validar fecha de nacimiento
+            // Validar fecha de nacimiento con más detalle
             if (!isset($_POST['fechaNac']) || empty($_POST['fechaNac'])) {
+                error_log("ERROR: fechaNac no recibido. POST data: " . print_r($_POST, true));
                 throw new Exception('La fecha de nacimiento es requerida');
+            }
+
+            // Validar formato de fecha
+            $fechaPost = $_POST['fechaNac'];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaPost)) {
+                error_log("ERROR: Formato de fecha inválido: " . $fechaPost);
+                throw new Exception('El formato de fecha de nacimiento no es válido');
             }
         
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) { // Verificar si la foto está presente y no tiene errores
@@ -451,20 +459,39 @@ public function buscarConductor()
                 throw new Exception('Conductor no encontrado');
             }
 
-            // Obtener información del vehículo
-            $vehiculo = (new Vehiculo())->obtenerPlacaPorConductor($id_conductor);
-            $montoDefecto = 200; // Valor por defecto si no se encuentra el tipo de vehículo
-            
-            if ($vehiculo && isset($vehiculo['tipo_vehiculo'])) {
-                $montoDefecto = ($vehiculo['tipo_vehiculo'] === 'auto') ? 250 : 150;
+            $direccion = (new DireccionConductor())->obtenerDatosDireccion($id_conductor);
+            $departamento = strtolower(trim($direccion['departamento'] ?? ''));
+            $esLima = ($departamento === 'lima');
+
+            $montoDefecto = 200;
+            $tasaInteres = null;
+            $numeroCuotas = null;
+
+            if ($esLima) {
+                $montoDefecto = 150;
+                $tasaInteres = 0;
+                $numeroCuotas = 3;
+            } else {
+                $vehiculo = (new Vehiculo())->obtenerPlacaPorConductor($id_conductor);
+                if ($vehiculo && isset($vehiculo['tipo_vehiculo'])) {
+                    $montoDefecto = ($vehiculo['tipo_vehiculo'] === 'auto') ? 250 : 150;
+                }
+            }
+
+            $fotoUrl = $conductor->getFoto();
+            if (empty($fotoUrl) || !file_exists($_SERVER['DOCUMENT_ROOT'] . parse_url($fotoUrl, PHP_URL_PATH))) {
+                $fotoUrl = '/arequipago/assets/images/avatar-default.png';
             }
 
             $response = [
                 'success' => true,
                 'data' => [
-                    'foto' => $conductor->getFoto(),
+                    'foto' => $fotoUrl,
                     'nombre_completo' => $conductor->getNombres() . ' ' . $conductor->getApellidoPaterno() . ' ' . $conductor->getApellidoMaterno(),
-                    'monto_defecto' => $montoDefecto
+                    'monto_defecto' => $montoDefecto,
+                    'es_lima' => $esLima,
+                    'tasa_interes' => $tasaInteres,
+                    'numero_cuotas' => $numeroCuotas
                 ]
             ];
 

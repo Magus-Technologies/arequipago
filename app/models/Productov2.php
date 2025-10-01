@@ -46,7 +46,7 @@ class Productov2
     }
 
         
-    public function insertar(
+        public function insertar(
             $nombre, 
             $codigo, 
             $cantidad, 
@@ -61,7 +61,9 @@ class Productov2
             $precio = null,
             $guia_remision = null,
             $codigo_barra = null,
-            $precio_venta = null
+            $precio_venta = null,
+            $moneda = 'S/.',
+            $descuento_cuota = null
         ) {
             try {
                 // Si ambos est�n vac�os, dejarlos en NULL
@@ -103,16 +105,25 @@ class Productov2
                 $precio_venta = null;                                // ? L�nea agregada
             }
 
-                // Modificaci�n en la consulta SQL: Se incluyen todos los campos
-                $sql = "INSERT INTO productosv2 (nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, estado) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
+            // NUEVO: Convertir '' en NULL para descuento_cuota
+            if ($descuento_cuota === '' || $descuento_cuota === 'null') {
+                $descuento_cuota = null;
+            }
+
+            // NUEVO: Validar moneda
+            if ($moneda === '' || $moneda === null) {
+                $moneda = 'S/.'; // Valor por defecto
+            }
+
+                $sql = "INSERT INTO productosv2 (nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, moneda, descuento_cuota, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
         
                 // Preparar la consulta
                 $stmt = $this->conectar->prepare($sql);
         
                 // Enlazar par�metros en el orden correcto
                 $stmt->bind_param(
-                    "ssissssssssssss",
+                    "ssissssssssssssss",
                     
 
                     $nombre, 
@@ -129,7 +140,9 @@ class Productov2
                     $fecha_registro,
                     $guia_remision,
                     $codigo_barra,
-                    $precio_venta
+                    $precio_venta,
+                    $moneda,
+                    $descuento_cuota
                 );
         
                 // Ejecutar la consulta
@@ -394,6 +407,19 @@ class Productov2
                     }
                     
                     $producto['guia_remision'] = $producto['guia_remision'] ?? '';
+
+                    $producto['moneda'] = $producto['moneda'] ?? 'S/.';
+                    $producto['descuento_cuota'] = $producto['descuento_cuota'] ?? null;
+
+                    // Convertir '' en NULL para descuento_cuota
+                    if ($producto['descuento_cuota'] === '' || $producto['descuento_cuota'] === 'null') {
+                        $producto['descuento_cuota'] = null;
+                    }
+
+                    // Validar moneda
+                    if ($producto['moneda'] === '' || $producto['moneda'] === null) {
+                        $producto['moneda'] = 'S/.'; // Valor por defecto
+                    }
                     
                     // Generar código de barras si no hay código
                     if (is_null($producto['codigo'])) { // Si no hay código, generar código de barras
@@ -405,9 +431,9 @@ class Productov2
                     //var_dump("Código de barras generado:", $producto['codigo_barra']);
                     
                     $stmt = $this->conectar->prepare(
-                        "INSERT INTO productosv2 
-                        (nombre, codigo, cantidad, cantidad_unidad, unidad_medida, tipo_producto, categoria, fecha_vencimiento, ruc, razon_social, precio_venta, precio, fecha_registro, guia_remision, codigo_barra, estado) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                       "INSERT INTO productosv2 
+                        (nombre, codigo, cantidad, cantidad_unidad, unidad_medida, tipo_producto, categoria, fecha_vencimiento, ruc, razon_social, precio_venta, precio, fecha_registro, guia_remision, codigo_barra, moneda, descuento_cuota, estado) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                     );
                     
                     if (!$stmt) {
@@ -417,7 +443,7 @@ class Productov2
                     //var_dump("Statement preparado con éxito");
                     
                     $stmt->bind_param(
-                        'ssddssssssddssss',
+                        'ssddssssssddssssss',
                         $producto['nombre'],
                         $producto['codigo'],
                         $producto['cantidad'],
@@ -433,6 +459,8 @@ class Productov2
                         $producto['fecha_registro'],
                         $producto['guia_remision'],
                         $producto['codigo_barra'],
+                        $producto['moneda'],
+                        $producto['descuento_cuota'],
                         $producto['estado']
                     );
                     
@@ -625,6 +653,7 @@ class Productov2
         return $query ? true : false;
     }
 
+    // Reemplaza la función obtenerProductoPorId() en Productov2.php
     public function obtenerProductoPorId($id_producto)
     {
         $sql = "SELECT 
@@ -644,19 +673,21 @@ class Productov2
                     fecha_registro AS FECHA_REGISTRO,
                     guia_remision AS GUIA_REMISION,
                     codigo_barra AS CODIGO_BARRA,
-                    estado AS ESTADO
+                    estado AS ESTADO,
+                    descuento_cuota AS DESCUENTO_CUOTA,
+                    moneda AS MONEDA
                 FROM productosv2
                 WHERE idproductosv2 = ?";
 
-        $stmt = $this->conectar->prepare($sql); // Preparar la consulta
-        $stmt->bind_param("i", $id_producto); // Enlazar el parámetro
-        $stmt->execute(); // Ejecutar la consulta
-        $resultado = $stmt->get_result(); // Obtener el resultado
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param("i", $id_producto);
+        $stmt->execute();
+        $resultado = $stmt->get_result();
 
         if ($resultado->num_rows > 0) {
-            return $resultado->fetch_assoc(); // Devolver el registro como array asociativo
+            return $resultado->fetch_assoc();
         } else {
-            return null; // Retornar null si no se encuentra el producto
+            return null;
         }
     }
 
@@ -689,10 +720,11 @@ class Productov2
         $stmtUpdate->bind_param("ii", $nuevaCantidad, $idProducto);
         $stmtUpdate->execute();
     }
+    
+    // Reemplaza la función actualizar() en Productov2.php
     public function actualizar(array $producto)
     {
         try {
-            // Iniciar una transacción
             $this->conectar->begin_transaction();
             
             $sql = "UPDATE productosv2 SET 
@@ -710,7 +742,9 @@ class Productov2
                     precio_venta = ?,
                     fecha_registro = ?, 
                     guia_remision = ?, 
-                    codigo_barra = ? 
+                    codigo_barra = ?,
+                    descuento_cuota = ?,
+                    moneda = ?
                     WHERE idproductosv2 = ?";
             
             $stmt = $this->conectar->prepare($sql);
@@ -719,11 +753,8 @@ class Productov2
                 throw new Exception("Error en prepare: " . $this->conectar->error);
             }
             
-            // Debug: Imprimir los valores antes de bind_param
-            error_log("Valores a actualizar: " . print_r($producto, true));
-            
             $stmt->bind_param(
-                'ssidssssssddsssi',
+                'ssidssssssddsssdsi',
                 $producto['nombre'],
                 $producto['codigo'],
                 $producto['cantidad'],
@@ -739,6 +770,8 @@ class Productov2
                 $producto['fecha_registro'],
                 $producto['guia_remision'],
                 $producto['codigo_barra'],
+                $producto['descuento_cuota'],
+                $producto['moneda'],
                 $producto['idproductosv2']
             );
             
@@ -746,23 +779,16 @@ class Productov2
                 throw new Exception("Error en execute: " . $stmt->error);
             }
             
-            // Si no hubo errores, confirmar la transacción
             $this->conectar->commit();
             return true;
             
         } catch (Exception $e) {
-            // En caso de error, revertir la transacción
             $this->conectar->rollback();
-            
-            // Registrar el error detallado
             error_log("Error en Productov2::actualizar(): " . $e->getMessage());
-            error_log("SQL State: " . $stmt->sqlstate ?? 'N/A');
-            error_log("Error No: " . $stmt->errno ?? 'N/A');
-            error_log("Error: " . $stmt->error ?? 'N/A');
-            
-            throw $e; // Relanzar la excepción para manejarla en el controlador
+            throw $e;
         }
     }
+
     public function obtenerProductoDetallado($idProducto)
     {
         try {

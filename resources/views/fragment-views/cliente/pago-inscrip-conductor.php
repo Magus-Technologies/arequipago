@@ -149,6 +149,12 @@ $id_conductor = $_GET['id'] ?? null;
         background: rgba(255, 215, 0, 0.2); /* Resaltar al pasar el mouse */
     }
 
+    .photo-placeholder img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
     </style>
     <script>
         function toggleFinanciado(select) {
@@ -218,34 +224,59 @@ $id_conductor = $_GET['id'] ?? null;
 
         function cargarDatos(){
             var id_conductor = <?php echo json_encode($id_conductor); ?>;
-                if (id_conductor) {
-                    $.ajax({
-                        url: '/arequipago/conductorPago',
-                        type: 'GET',
-                        data: { id: id_conductor },
-                        dataType: 'json',
-                        success: function(response) {
-                            if (response.success) {
-                                console.log("Datos del conductor:", response.data);
-                                $('#fotoConductor').attr('src', response.data.foto);
-                                $('#nombreConductor').text(response.data.nombre_completo);
-                                
-                                // Establecer monto por defecto según tipo de vehículo
+            if (id_conductor) {
+                $.ajax({
+                    url: '/arequipago/conductorPago',
+                    type: 'GET',
+                    data: { id: id_conductor },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            console.log("Datos del conductor:", response.data);
+                            
+                            const fotoUrl = response.data.foto;
+                            if (fotoUrl && fotoUrl !== '' && fotoUrl !== '/arequipago/assets/images/avatar-default.png') {
+                                const img = new Image();
+                                img.onload = function() {
+                                    $('#fotoConductor').attr('src', fotoUrl);
+                                };
+                                img.onerror = function() {
+                                    $('#fotoConductor').attr('src', '/arequipago/public/img/not-foto.png');
+                                };
+                                img.src = fotoUrl;
+                            } else {
+                                $('#fotoConductor').attr('src', '/arequipago/public/img/not-foto.png');
+                            }
+                            $('#nombreConductor').text(response.data.nombre_completo);
+                            
+                            if (response.data.es_lima) {
+                                $('#montoBase').val(150);
+                                $('#montoBase').prop('readonly', true);
+                                $('#tasaInteres').val(0);
+                                $('#tasaInteres').prop('readonly', true);
+                                $('#numeroCuotas').val(3);
+                                $('#numeroCuotas').prop('readonly', true);
+                                $('#tipoInteres').prop('disabled', true);
+                            } else {
                                 if (response.data.monto_defecto) {
                                     $('#montoBase').val(response.data.monto_defecto);
-                                    $('#montoBase').prop('readonly', true); // Bloquear el input
+                                    $('#montoBase').prop('readonly', true);
                                 }
-                            } else {
-                                console.error('Error al obtener datos del conductor:', response.message);
+                                $('#tasaInteres').prop('readonly', false);
+                                $('#numeroCuotas').prop('readonly', false);
+                                $('#tipoInteres').prop('disabled', false);
                             }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Error en la solicitud AJAX:', error);
+                        } else {
+                            console.error('Error al obtener datos del conductor:', response.message);
                         }
-                    });
-                } else {
-                    console.error('No se proporcionó ID del conductor');
-                }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error en la solicitud AJAX:', error);
+                    }
+                });
+            } else {
+                console.error('No se proporcionó ID del conductor');
+            }
         }
 
         function showMessage() {
@@ -387,19 +418,23 @@ $id_conductor = $_GET['id'] ?? null;
                         title: 'Éxito',
                         text: 'El registro de pago se ha guardado correctamente.'
                     });
-                    // 🆕 Limpiar inputs si el pago es financiado
-                    if (tipo_pago === 'financiado') {
-                        document.getElementById('montoInicial').value = ''; // Limpiar monto inicial
-                        document.getElementById('numeroCuotas').value = ''; // Limpiar número de cuotas
-                        document.getElementById('fechaInicio').value = ''; // Limpiar fecha de inicio
-                        document.getElementById('montoCuota').value = ''; // Limpiar monto de cuota
-                        document.getElementById('cuotasList').innerHTML = ''; // Limpiar lista de cuotas
-                        document.getElementById('tasaInteres').value = ''; 
-                    }
-
-                    // 🆕 Resetear el tipo de pago a "contado"
+                    
                     document.getElementById('tipoPago').value = 'contado';
-                    document.getElementById('montoBase').value = '';
+                    document.getElementById('informacionFinanciado').style.display = 'none';
+                    document.getElementById('montoInicialContainer').style.display = 'none';
+                    
+                    document.getElementById('montoInicial').value = '';
+                    document.getElementById('numeroCuotas').value = '';
+                    document.getElementById('fechaInicio').value = '';
+                    document.getElementById('montoCuota').value = '';
+                    document.getElementById('cuotasList').innerHTML = '';
+                    document.getElementById('tasaInteres').value = '';
+                    document.getElementById('frecuenciaPago').value = 'mensual';
+                    document.getElementById('tipoInteres').value = '% anual';
+                    
+                    cargarDatos();
+                    colorInput();
+                    zero();
                     console.log('antes del error?');
                     // Mostrar modal para ingresar número de WhatsApp
                     if (result.pdf_base64) { 
@@ -835,7 +870,7 @@ $id_conductor = $_GET['id'] ?? null;
                     <div class="col-sm-9">
                         <div class="photo-placeholder">
                             <!-- Mostrar la foto del conductor -->
-                            <img id="fotoConductor" src="ruta/por/defecto.jpg" alt="Foto del Conductor" class="custom-photo"> <!-- Modificado: Cambiado class="img-thumbnail" por class="custom-photo" -->
+                            <img id="fotoConductor" src="/arequipago/public/img/not-foto.png" alt="Foto del Conductor" class="custom-photo">
                         </div>
                     </div>
                 </div>
