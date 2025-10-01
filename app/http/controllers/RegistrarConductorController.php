@@ -106,9 +106,17 @@ class RegistrarConductorController extends Controller
                 throw new Exception('Ya existe un conductor con este número de documento.');
             }
     
-            // Validar fecha de nacimiento
+            // Validar fecha de nacimiento con más detalle
             if (!isset($_POST['fechaNac']) || empty($_POST['fechaNac'])) {
+                error_log("ERROR: fechaNac no recibido. POST data: " . print_r($_POST, true));
                 throw new Exception('La fecha de nacimiento es requerida');
+            }
+
+            // Validar formato de fecha
+            $fechaPost = $_POST['fechaNac'];
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaPost)) {
+                error_log("ERROR: Formato de fecha inválido: " . $fechaPost);
+                throw new Exception('El formato de fecha de nacimiento no es válido');
             }
         
             if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) { // Verificar si la foto está presente y no tiene errores
