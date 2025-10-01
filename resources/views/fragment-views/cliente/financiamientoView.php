@@ -824,11 +824,16 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                 <div id="cuotaInicialContenedor" class="col-md-4 mb-3">
                                                     <label for="cuotaInicial" class="form-label">Cuota Inicial</label>
                                                     <div class="input-group">
-                                                        <span class="input-group-text"><i
-                                                                class="fas fa-hand-holding-usd"></i></span>
+                                                        <span class="input-group-text"><i class="fas fa-hand-holding-usd"></i></span>
                                                         <input type="text" class="form-control" id="cuotaInicial"
                                                             placeholder="Cuota inicial" required>
                                                     </div>
+                                                    <?php if ($id_rol == 3): ?>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Como Director, puedes modificar la cuota inicial del grupo
+                                                    </small>
+                                                    <?php endif; ?>
                                                 </div>
 
                                                 <!-- Monto Recalculado (oculto inicialmente) -->
@@ -902,11 +907,15 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                 <div class="col-md-4 mb-3">
                                                     <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
                                                     <div class="input-group">
-                                                        <span class="input-group-text"><i
-                                                                class="fas fa-calendar-day"></i></span>
-                                                        <input type="date" class="form-control" id="fechaInicio"
-                                                            required>
+                                                        <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
+                                                        <input type="date" class="form-control" id="fechaInicio" required>
                                                     </div>
+                                                    <?php if ($id_rol == 3): ?>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Como Director, puedes modificar la fecha de inicio del grupo de financiamiento
+                                                    </small>
+                                                    <?php endif; ?>
                                                 </div>
 
                                                 <div class="col-md-4 mb-3">

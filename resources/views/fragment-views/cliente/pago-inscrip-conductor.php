@@ -158,6 +158,20 @@ $id_conductor = $_GET['id'] ?? null;
     </style>
     <script>
         function toggleFinanciado(select) {
+
+            
+            const esLima = window.conductorEsLima || false;
+            
+            if (esLima) {
+                if (select.value === 'financiado') {
+                    $('#montoBase').val(150);
+                } else { // contado
+                    $('#montoBase').val(100);
+                }
+                // Siempre mantener readonly para Lima
+                $('#montoBase').prop('readonly', true);
+            }
+
             const financiadoSection = document.getElementById('informacionFinanciado');
             const montoInicialContainer = document.getElementById('montoInicialContainer');
             financiadoSection.style.display = select.value === 'financiado' ? 'block' : 'none';
@@ -250,7 +264,11 @@ $id_conductor = $_GET['id'] ?? null;
                             $('#nombreConductor').text(response.data.nombre_completo);
                             
                             if (response.data.es_lima) {
-                                $('#montoBase').val(150);
+                                // Guardar bandera globalmente para usarla en toggleFinanciado()
+                                window.conductorEsLima = true;
+                                
+                                $('#montoBase').val(100);  // ✅ Valor por defecto para "Contado"
+                                $('#montoBase').prop('readonly', true);
                                 $('#montoBase').prop('readonly', true);
                                 $('#tasaInteres').val(0);
                                 $('#tasaInteres').prop('readonly', true);
@@ -258,6 +276,8 @@ $id_conductor = $_GET['id'] ?? null;
                                 $('#numeroCuotas').prop('readonly', true);
                                 $('#tipoInteres').prop('disabled', true);
                             } else {
+                                window.conductorEsLima = false;
+
                                 if (response.data.monto_defecto) {
                                     $('#montoBase').val(response.data.monto_defecto);
                                     $('#montoBase').prop('readonly', true);

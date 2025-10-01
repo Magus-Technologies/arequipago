@@ -264,7 +264,9 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             <button onclick="downloadReport()" class="btn btn-success"><i class="fa fa-file-excel"></i> Descargar reporte Inventario</button>
                                 <?php if ($_SESSION['id_rol'] == 3 || $_SESSION['id_rol'] == 1): ?> <!-- Solo el rol 3 puede ver estos botones -->
                                     <button data-bs-toggle="modal" data-bs-target="#importModal" class="btn btn-primary"><i class="fa fa-file-excel"></i> Importar</button>
-                                    <button data-bs-toggle="modal" data-bs-target="#modal-add-prod" class="btn btn-primary mt-2 mb-2"><i class="fa fa-plus"></i> Agregar Producto</button>
+                                    <button data-bs-toggle="modal" data-bs-target="#modal-add-prod" class="btn btn-primary mt-2 mb-2" onclick="inicializarPlaceholderDescuento()">
+                                        <i class="fa fa-plus"></i> Agregar Producto
+                                    </button>
                                     <button class="btn btn-danger btnBorrar" onclick="deleteProducto()">
                                         <i class="fa fa-times"></i> Borrar
                                     </button>
@@ -1075,7 +1077,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 <label>Moneda: </label>
                             </div>
                             <div class="form-group col-sm-4">
-                                <select id="moneda" required class="form-select">
+                                <select id="moneda" required class="form-select" onchange="actualizarPlaceholderDescuento()">
                                     <option value="S/.">S/.</option>
                                     <option value="$">$</option>
                                 </select>
@@ -1246,6 +1248,10 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         var modal = new bootstrap.Modal(modalPadre); // Crea una instancia de modal de Bootstrap
         modal.hide(); // Cierra el modal
         console.log("Funciona Focus");
+
+        document.getElementById('descuentoCuota').value = '';
+        // NUEVA LÍNEA: Restaurar placeholder por defecto
+        document.getElementById('descuentoCuota').placeholder = '0.50';
 
         // Usamos el evento 'hidden.bs.modal' para realizar las acciones después de que el modal se haya cerrado
         $(modalPadre).on('hidden.bs.modal', function () {
@@ -2353,6 +2359,10 @@ function mostrarDetallesProducto(idProducto) {
         document.getElementById("fechaActual").value = formattedDate;
     }
 
+    function inicializarPlaceholderDescuento() {
+        actualizarPlaceholderDescuento();
+    }
+
     function saveProductsMassive(){
         
         const fileInput = document.getElementById('file-import-excel'); // Modificación: se obtiene el archivo directamente del input
@@ -2597,6 +2607,17 @@ function mostrarDetallesProducto(idProducto) {
         function redirigirEditar(id_producto) { // Nueva función agregada
             window.location.href = '/arequipago/editar-producto?id=' + id_producto; // Redirigir a la página de edición
         }
+
+        function actualizarPlaceholderDescuento() {
+                const moneda = document.getElementById('moneda').value;
+                const descuentoCuotaInput = document.getElementById('descuentoCuota');
+                
+                if (moneda === 'S/.') {
+                    descuentoCuotaInput.placeholder = 'Ej: 0.50 (opcional)';
+                } else if (moneda === '$') {
+                    descuentoCuotaInput.placeholder = 'Ej: 0.20 (opcional)';
+                }
+            }
            
     var nombreBarraTemps=''
     var codeBarraTemps=''

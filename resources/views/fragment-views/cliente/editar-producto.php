@@ -299,6 +299,7 @@
                 setTimeout(() => {
                     evaluarTipoProducto();
                     evaluarCategoriaInicial(); // Nueva función que no limpia características
+                    actualizarPlaceholderDescuentoEdit();
                 }, 500);
             }).catch(error => {
                 mostrarCargando(false);
@@ -401,7 +402,9 @@
                     html += `<button class="btn btn-info" type="button" onclick="consultarRUC()">`;
                     html += `<i class="fas fa-search"></i></button></div>`;
                 } else if (config.type === 'select') {
-                    html += `<select class="form-select" name="${key}" id="${key}" onchange="manejarCambioSelect('${key}')">`;
+                    // MODIFICADO: Agregar evento adicional para el select de moneda
+                    const eventoAdicional = (key === 'MONEDA') ? ` onchange="manejarCambioSelect('${key}'); actualizarPlaceholderDescuentoEdit();"` : ` onchange="manejarCambioSelect('${key}')"`;
+                    html += `<select class="form-select" name="${key}" id="${key}"${eventoAdicional}>`;
                     html += `<option value="${fieldValue}">${fieldValue}</option></select>`;
                 } else {
                     const stepAttr = config.step ? `step="${config.step}"` : '';
@@ -498,6 +501,22 @@
                     const selected = (productData.MONEDA === moneda) ? 'selected' : '';
                     monedaSelect.append(`<option value="${moneda}" ${selected}>${moneda}</option>`);
                 });
+            }
+        }
+
+        // NUEVA FUNCIÓN: Actualizar placeholder de descuento en formulario de edición
+        function actualizarPlaceholderDescuentoEdit() {
+            const monedaSelect = $('#MONEDA');
+            const descuentoCuotaInput = $('#DESCUENTO_CUOTA');
+            
+            if (monedaSelect.length && descuentoCuotaInput.length) {
+                const moneda = monedaSelect.val();
+                
+                if (moneda === 'S/.') {
+                    descuentoCuotaInput.attr('placeholder', 'Ej: 0.50 (opcional)');
+                } else if (moneda === '$') {
+                    descuentoCuotaInput.attr('placeholder', 'Ej: 0.20 (opcional)    ');
+                }
             }
         }
         
