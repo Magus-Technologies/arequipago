@@ -695,12 +695,16 @@
             $idCuota = $cuota['idCuota'];
             $monto = $cuota['monto'];
             $mora = $cuota['mora'] ?? 0;
+            
+            // ✅ NUEVO: Obtener el descuento aplicado desde el array de cuotas
+            $descuentoAplicado = isset($cuota['descuento_aplicado']) ? $cuota['descuento_aplicado'] : 0.00;
 
+            // ✅ MODIFICADO: Actualizar también el descuento_aplicado
             $sql = "UPDATE cuotas_financiamiento 
-                SET mora = ?, estado = 'pagado', fecha_pago = ? 
+                SET mora = ?, estado = 'pagado', fecha_pago = ?, descuento_aplicado = ? 
                 WHERE idcuotas_financiamiento = ?";
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param('dsi', $mora, $fechaPagoReal, $idCuota);
+            $stmt->bind_param('dsdi', $mora, $fechaPagoReal, $descuentoAplicado, $idCuota);
 
             if ($stmt->execute()) {
                 $cuotasPagadas++;
@@ -1491,6 +1495,36 @@
             $this->conectar->rollback();
             error_log("Error en vaciarPapelera: " . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Obtener información completa de una cuota incluyendo datos del producto
+     * @param int $idCuota ID de la cuota
+     * @return array|null Información de la cuota con datos del producto
+     */
+    public function obtenerInfoCuota($idCuota)
+    {
+        try {
+            $query = "SELECT 
+                        cf.*, 
+                        f.idproductosv2,
+                        p.descuento_cuota
+                    FROM cuotas_financiamiento cf
+                    INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                    INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                    WHERE cf.idcuotas_financiamiento = ?";
+            
+            $stmt = $this->conectar->prepare($query);
+            $stmt->bind_param('i', $idCuota);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            return $result->fetch_assoc();
+            
+        } catch (Exception $e) {
+            error_log("Error en obtenerInfoCuota: " . $e->getMessage());
+            return null;
         }
     }
     

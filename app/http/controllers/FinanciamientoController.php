@@ -930,6 +930,28 @@ class FinanciamientoController extends Controller
                 $vuelto = $_POST['vuelto'] ?? null;
                 $cuotasJson = $_POST['cuotas'] ?? '[]';
                 $cuotasSeleccionadas = json_decode($cuotasJson, true);
+
+                // ✅ NUEVO: Calcular y agregar el descuento_aplicado a cada cuota
+                foreach ($cuotasSeleccionadas as &$cuota) {
+                    // Obtener información de la cuota desde la BD
+                    $financiamientoModel = new Financiamiento();
+                    $cuotaInfo = $financiamientoModel->obtenerInfoCuota($cuota['idCuota']);
+                    
+                    if ($cuotaInfo) {
+                        // Obtener el descuento_cuota del producto
+                        $descuentoCuotaProducto = isset($cuotaInfo['descuento_cuota']) ? floatval($cuotaInfo['descuento_cuota']) : 0.00;
+                        
+                        // El descuento aplicado es el menor entre la comisión y el descuento del producto
+                        $comisionCanalDigital = isset($cuotaInfo['comision_canal_digital']) ? floatval($cuotaInfo['comision_canal_digital']) : 0.00;
+                        $descuentoAplicado = min($descuentoCuotaProducto, $comisionCanalDigital);
+                        
+                        // Agregar al array de cuota
+                        $cuota['descuento_aplicado'] = $descuentoAplicado;
+                        $cuota['comision_canal_digital'] = $comisionCanalDigital;
+                        $cuota['monto_cuota_base'] = isset($cuotaInfo['monto_cuota_base']) ? $cuotaInfo['monto_cuota_base'] : $cuota['monto'];
+                    }
+                }
+                unset($cuota); // Romper la referencia
                 
                 // Obtener el rol del usuario desde la sesión 🌎
                 $rolUsuario = $_SESSION['id_rol'] ?? null; 
