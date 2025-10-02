@@ -869,6 +869,9 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             listaCuotasDiv.append(cuotaDiv);
         });
 
+        // NUEVO: Resetear el select de moneda efectivo a su valor por defecto
+        $("#moneda_efectivo").val("Elegir moneda");
+
         calcularTotal();
     }
 
@@ -1006,7 +1009,15 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         let metodo = document.getElementById("metodo_pago").value;
         let seccionEfectivo = document.getElementById("seccion_efectivo");
 
-        seccionEfectivo.style.display = (metodo === "Efectivo") ? "block" : "none";
+        if (metodo === "Efectivo") {
+            seccionEfectivo.style.display = "block";
+            // NUEVO: Resetear select de moneda y limpiar campos cuando se muestra la sección
+            $("#moneda_efectivo").val("");
+            $("#efectivo_recibido").val("");
+            $("#vuelto").val("");
+        } else {
+            seccionEfectivo.style.display = "none";
+        }
     }
 
     function calcularTotal() {
@@ -2220,12 +2231,25 @@ function enviarPDFPorWhatsApp() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                // NUEVO: Mostrar loader mientras se procesa la aprobación
+                Swal.fire({
+                    title: 'Procesando aprobación',
+                    text: 'Por favor espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
                 $.ajax({
                     url: '/arequipago/aprobarPagoPendiente',
                     type: 'POST',
                     data: { idPago: idPago },
                     dataType: 'json',
                     success: function(response) {
+                        // NUEVO: Cerrar el loader
+                        Swal.close();
+                        
                         if (response.success) {
                             Swal.fire(
                                 '¡Aprobado!',
@@ -2244,6 +2268,9 @@ function enviarPDFPorWhatsApp() {
                         }
                     },
                     error: function() {
+                        // NUEVO: Cerrar el loader en caso de error
+                        Swal.close();
+                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',

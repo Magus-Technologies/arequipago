@@ -551,6 +551,18 @@ class PagosController extends Controller
              // Confirmamos la transacción
              mysqli_commit($this->conectar);
              
+             // ===== NUEVO: Aplicar puntos al aprobar el pago =====
+            try {
+                require_once "app/models/ScoreService.php";
+                $scoreService = new ScoreService();
+                $scoreService->aplicarPuntosEnAprobacion($idPago);
+            } catch (Exception $e) {
+                // Si falla la aplicación de puntos, lo registramos pero no revertimos el pago
+                // ya que la transacción principal ya fue confirmada
+                error_log("Error al aplicar puntos en aprobación de pago {$idPago}: " . $e->getMessage());
+            }
+            // ===== FIN NUEVO =====
+
              echo json_encode([
                  'success' => true,
                  'message' => 'Pago aprobado correctamente'
