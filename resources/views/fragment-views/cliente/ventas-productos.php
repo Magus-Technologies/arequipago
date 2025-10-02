@@ -1148,18 +1148,30 @@ if (isset($_GET["guia"])) {
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success && data.productos.length > 0) {
-                                    vue.listaTempProd = data.productos.map(producto => ({
-                                        codigo: producto.codigo || producto.codigo_barra,
-                                        codigo_pp: producto.codigo || producto.codigo_barra,
-                                        nombre: producto.nombre,
-                                        descripcion: producto.descripcion || producto.nombre,
-                                        cnt: producto.cantidad,
-                                        precio: producto.precio_venta || 0,
-                                        precio2: producto.precio2 || 0,
-                                        precio_unidad: producto.precio_venta || 0,
-                                        costo: producto.costo || 0,
-                                        value: `${producto.codigo || producto.codigo_barra} - ${producto.nombre}`
-                                    }));
+                                    // 🔹 Detectar duplicados
+                                    const codigosCont = {};
+                                    data.productos.forEach(p => {
+                                        const cod = p.codigo || p.codigo_barra;
+                                        codigosCont[cod] = (codigosCont[cod] || 0) + 1;
+                                    });
+
+                                    vue.listaTempProd = data.productos.map(producto => {
+                                        const codigo = producto.codigo || producto.codigo_barra;
+                                        const esDuplicado = codigosCont[codigo] > 1;
+                                        return {
+                                            codigo: codigo,
+                                            codigo_pp: codigo,
+                                            idproducto: producto.idproductosv2, // 🔹 ID real
+                                            nombre: producto.nombre,
+                                            descripcion: producto.descripcion || producto.nombre,
+                                            cnt: producto.cantidad,
+                                            precio: producto.precio_venta || 0,
+                                            precio2: producto.precio2 || 0,
+                                            precio_unidad: producto.precio_venta || 0,
+                                            costo: producto.costo || 0,
+                                            value: `${codigo} - ${producto.nombre}${esDuplicado ? ' ⚠ DUP (ID:' + producto.idproductosv2 + ')' : ''}`
+                                        };
+                                    });
                                 }
                             })
                             .catch(error => {
@@ -1179,8 +1191,21 @@ if (isset($_GET["guia"])) {
                                 .then(resp => {
                                     if (resp.success && resp.productos.length > 0) {
                                         const producto = resp.productos[0];
-                                        
-                                        app.producto.productoid = producto.codigo || producto.codigo_barra;
+
+                                        // 🔹 ADVERTENCIA SI HAY DUPLICADOS
+                                        if (resp.productos.length > 1) {
+                                            const codigosCont = {};
+                                            resp.productos.forEach(p => {
+                                                const cod = p.codigo || p.codigo_barra;
+                                                codigosCont[cod] = (codigosCont[cod] || 0) + 1;
+                                            });
+                                            const codigo = producto.codigo || producto.codigo_barra;
+                                            if (codigosCont[codigo] > 1) {
+                                                console.warn('⚠ DUPLICADO DETECTADO: Código ' + codigo + ' - Usando ID: ' + producto.idproductosv2);
+                                            }
+                                        }
+
+                                        app.producto.productoid = producto.idproductosv2 || producto.codigo || producto.codigo_barra; // 🔹 USAR ID REAL
                                         app.producto.descripcion = (producto.codigo || producto.codigo_barra) + " | " + producto.nombre;
                                         app.producto.nom_prod = producto.descripcion || producto.nombre;
                                         app.producto.cantidad = '';
@@ -1394,9 +1419,19 @@ if (isset($_GET["guia"])) {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.productos.length > 0) {
+                        // 🔹 Detectar duplicados por código
+                        const codigosCont = {};
+                        data.productos.forEach(p => {
+                            const cod = p.codigo || p.codigo_barra;
+                            codigosCont[cod] = (codigosCont[cod] || 0) + 1;
+                        });
+
                         const mappedData = data.productos.map(producto => {
+                            const codigo = producto.codigo || producto.codigo_barra;
+                            const esDuplicado = codigosCont[codigo] > 1;
                             return {
-                                codigo: producto.codigo || producto.codigo_barra,
+                                codigo: codigo,
+                                idproducto: producto.idproductosv2, // 🔹 ID real
                                 nombre: producto.nombre,
                                 descripcion: producto.descripcion || producto.nombre,
                                 cnt: producto.cantidad,
@@ -1404,7 +1439,7 @@ if (isset($_GET["guia"])) {
                                 precio2: producto.precio2 || 0,
                                 precio_unidad: producto.precio_venta || 0,
                                 costo: producto.costo || 0,
-                                value: `${producto.codigo || producto.codigo_barra} - ${producto.nombre}`
+                                value: `${codigo} - ${producto.nombre}${esDuplicado ? ' ⚠ DUPLICADO (ID:' + producto.idproductosv2 + ')' : ''}`
                             };
                         });
                         response(mappedData);
@@ -1421,8 +1456,8 @@ if (isset($_GET["guia"])) {
         select: function(event, ui) {
             event.preventDefault();
             console.log(ui.item);
-            
-            app.producto.productoid = ui.item.codigo;
+
+            app.producto.productoid = ui.item.idproducto || ui.item.codigo; // 🔹 USAR ID REAL
             app.producto.descripcion = ui.item.codigo + " | " + ui.item.nombre;
             app.producto.nom_prod = ui.item.descripcion;
             app.producto.cantidad = '';
@@ -2085,15 +2120,32 @@ if (isset($_GET["guia"])) {
                         listaProductos.innerHTML = ""; // Limpiar lista previa
 
                         if (data.success && data.productos.length > 0) {
+                            // 🔹 VALIDACIÓN: Detectar productos duplicados por código
+                            const codigosEncontrados = {};
+                            data.productos.forEach(producto => {
+                                const codigo = producto.codigo ? producto.codigo : producto.codigo_barra;
+                                if (codigosEncontrados[codigo]) {
+                                    codigosEncontrados[codigo].push(producto);
+                                } else {
+                                    codigosEncontrados[codigo] = [producto];
+                                }
+                            });
+
                             data.productos.forEach(producto => {
                                 const codigo = producto.codigo ? producto.codigo : producto.codigo_barra;
                                 const item = document.createElement("li");
                                 item.classList.add("dropdown-item");
-                                item.innerHTML = `<strong>${codigo}</strong> - ${producto.nombre}`;
+
+                                // 🔹 Mostrar advertencia si hay duplicados
+                                const tieneDuplicado = codigosEncontrados[codigo].length > 1;
+                                const advertencia = tieneDuplicado ? ' <span style="color: red; font-weight: bold;">⚠ DUPLICADO</span>' : '';
+
+                                item.innerHTML = `<strong>${codigo}</strong> - ${producto.nombre} (ID: ${producto.idproductosv2})${advertencia}`;
                                 item.dataset.codigo = codigo;
                                 item.dataset.nombre = producto.nombre;
                                 item.dataset.cantidad = producto.cantidad;
                                 item.dataset.precio = producto.precio_venta;
+                                item.dataset.idproducto = producto.idproductosv2; // 🔹 Guardar el ID real
 
                                 // Resaltar al pasar el mouse
                                 item.addEventListener("mouseover", function () {
@@ -2199,12 +2251,12 @@ if (isset($_GET["guia"])) {
             }
 
             console.log("Dataset del producto seleccionado:", item.dataset);
-        
+
             // Set values in the input fields
             inputBuscar.value = `${item.dataset.codigo} - ${item.dataset.nombre}`;
-        
-            // Update Vue app data
-            app.producto.productoid = item.dataset.codigo;
+
+            // Update Vue app data - 🔹 USAR EL ID REAL DEL PRODUCTO
+            app.producto.productoid = item.dataset.idproducto || item.dataset.codigo; // 🔹 Priorizar ID numérico
             app.producto.descripcion = `${item.dataset.codigo} - ${item.dataset.nombre}`;
             app.producto.nom_prod = item.dataset.nombre;
             app.producto.cantidad = '';
@@ -2285,10 +2337,20 @@ $("#input_buscar_productos").autocomplete({
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.productos.length > 0) {
+                    // 🔹 Detectar duplicados por código
+                    const codigosCont = {};
+                    data.productos.forEach(p => {
+                        const cod = p.codigo || p.codigo_barra;
+                        codigosCont[cod] = (codigosCont[cod] || 0) + 1;
+                    });
+
                     const mappedData = data.productos.map(producto => {
+                        const codigo = producto.codigo || producto.codigo_barra;
+                        const esDuplicado = codigosCont[codigo] > 1;
                         return {
-                            codigo: producto.codigo || producto.codigo_barra,
-                            codigo_pp: producto.codigo || producto.codigo_barra,
+                            codigo: codigo,
+                            codigo_pp: codigo,
+                            idproducto: producto.idproductosv2, // 🔹 ID real del producto
                             nombre: producto.nombre,
                             descripcion: producto.descripcion || producto.nombre,
                             cnt: producto.cantidad,
@@ -2296,7 +2358,7 @@ $("#input_buscar_productos").autocomplete({
                             precio2: producto.precio2 || 0,
                             precio_unidad: producto.precio_venta || 0,
                             costo: producto.costo || 0,
-                            value: `${producto.codigo || producto.codigo_barra} - ${producto.nombre}`
+                            value: `${codigo} - ${producto.nombre}${esDuplicado ? ' ⚠ DUPLICADO (ID:' + producto.idproductosv2 + ')' : ''}`
                         };
                     });
                     response(mappedData);
@@ -2313,8 +2375,8 @@ $("#input_buscar_productos").autocomplete({
     select: function (event, ui) {
         event.preventDefault();
         console.log(ui.item);
-        
-        app.producto.productoid = ui.item.codigo;
+
+        app.producto.productoid = ui.item.idproducto || ui.item.codigo; // 🔹 USAR ID REAL
         app.producto.descripcion = ui.item.codigo_pp + " | " + ui.item.nombre;
         app.producto.nom_prod = ui.item.descripcion;
         app.producto.cantidad = '';

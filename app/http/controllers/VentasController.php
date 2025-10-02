@@ -1132,20 +1132,25 @@ class VentasController extends Controller
                 if ($tipoventa == 1) {
                     // Venta de productos
                     foreach ($array_detalle as $fila) {
-                        
-                        // Buscar siempre por código
-                        $codigo = $this->conexion->real_escape_string($fila['productoid']);
-                        $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE codigo = '{$codigo}' OR codigo_barra = '{$codigo}'";
 
-                        
+                        // 🔹 Buscar por ID numérico O por código
+                        $productoid = $this->conexion->real_escape_string($fila['productoid']);
+
+                        // Si es numérico, buscar por ID, sino por código
+                        if (is_numeric($productoid)) {
+                            $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE idproductosv2 = '{$productoid}'";
+                        } else {
+                            $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE codigo = '{$productoid}' OR codigo_barra = '{$productoid}'";
+                        }
+
                         $result = $c_venta->exeSQL($sql);
-                        
+
                         if ($result && $result->num_rows > 0) {
                             $stockData = $result->fetch_assoc();
-                            
+
                             // Obtener el ID numérico real del producto
                             $idProductoReal = $stockData['idproductosv2'];
-                            
+
                             if ($stockData['cantidad'] < $fila['cantidad']) {
                                 throw new Exception("Stock insuficiente para el producto: {$fila['descripcion']}");
                             }
@@ -1180,14 +1185,14 @@ class VentasController extends Controller
                             // Obtener el nombre del producto desde Productov2.php
                             $c_producto = new Productov2(); // Modificado: Instancia del modelo Productov2
                             $productoInfo = $c_producto->obtenerProductoPorId($idProductoReal); // Modificado: Obtener datos del producto
-                            
+
                             if (!$productoInfo) {
                                 throw new Exception("No se pudo obtener la información del producto con ID: {$idProductoReal}");
                             }
 
                             // Insertar movimiento en Reportes.php
                             $c_reporte = new Reportes(); // Modificado: Instancia del modelo Reportes
-                            
+
                             // Obtener usuario_id de la sesión
                             $user_id = $_SESSION['usuario_id'] ?? null;
                             if (!$user_id) {
@@ -1198,7 +1203,7 @@ class VentasController extends Controller
                             $c_reporte->RegistrarMovimiento(
                                 $user_id, // Usuario desde la sesión
                                 $idProductoReal, // ID del producto
-                                $codigo, // Código del producto
+                                $productoInfo['CODIGO'], // 🔹 Código del producto desde la BD
                                 $productoInfo['NOMBRE'], // Nombre del producto
                                 "Salida", // Tipo de movimiento "Salida"
                                 "Venta", // Subtipo de movimiento "Venta"
@@ -1208,21 +1213,27 @@ class VentasController extends Controller
                 
                             // ELIMINADO: No actualizar stock aquí, ya se actualiza en ProductoVenta::insertar()
                         } else {
-                            // Si no se encuentra el producto, intentar buscar por otros campos
-                            $codigo = $this->conexion->real_escape_string($fila['productoid']);
-                            $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE 
-                                   codigo = '{$codigo}' OR 
-                                   codigo_barra = '{$codigo}' OR 
-                                   nombre LIKE '%{$codigo}%'";
-                            
+                            // 🔹 Si no se encuentra el producto, intentar buscar por otros campos
+                            $productoid = $this->conexion->real_escape_string($fila['productoid']);
+
+                            // Si es numérico, buscar por ID, sino por código/nombre
+                            if (is_numeric($productoid)) {
+                                $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE idproductosv2 = '{$productoid}'";
+                            } else {
+                                $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE
+                                       codigo = '{$productoid}' OR
+                                       codigo_barra = '{$productoid}' OR
+                                       nombre LIKE '%{$productoid}%'";
+                            }
+
                             $result = $c_venta->exeSQL($sql);
-                            
+
                             if ($result && $result->num_rows > 0) {
                                 $stockData = $result->fetch_assoc();
-                                
+
                                 // Continuar con el mismo proceso que arriba...
                                 $idProductoReal = $stockData['idproductosv2'];
-                                
+
                                 if ($stockData['cantidad'] < $fila['cantidad']) {
                                     throw new Exception("Stock insuficiente para el producto: {$fila['descripcion']}");
                                 }

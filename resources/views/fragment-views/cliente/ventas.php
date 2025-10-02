@@ -1138,10 +1138,10 @@ $("#datatable_filter input").on("keyup", function () {
                         rowHTML += '<tr>' +
                             '<td class="text-center">' + elm.cantidad + '</td>' +
                             '<td>' + elm.codigo + '</td>' +
-                            '<td>' + elm.nombre + '</td>' +
+                            '<td>' + (elm.descripcion || elm.nombre) + '</td>' +
                             '<td class="text-right">' + elm.precio + '</td>' +
                             '<td class="text-right">' + (elm.precio * elm.cantidad).toFixed(2) + '</td>' +
-                            '<td class="text-right">' + ((elm.precio - elm.costo) * elm.cantidad).toFixed(2) + '</td>' +
+                            '<td class="text-right">' + ((elm.precio - (elm.costo || 0)) * elm.cantidad).toFixed(2) + '</td>' +
                             '</tr>';
                     })
                     $("#modal_detalle").html('' +

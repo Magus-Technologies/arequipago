@@ -778,11 +778,14 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                         <div class="row mb-3">
                             <div class="col-sm-4">
                                 <label for="codigo_producto">Código del Producto (Generado o Escaneado)</label>
-                            </div>            
+                            </div>
 
                             <div class="col-sm-4">
-                                <input type="text" id="codigo_producto" required placeholder="Escanear o ingresar código" class="form-contro"/>    
-                            </div>    
+                                <input type="text" id="codigo_producto" required placeholder="Escanear o ingresar código" class="form-contro"/>
+                            </div>
+                            <div class="col-sm-4">
+                                <span id="mensaje_duplicado_codigo" style="color: red; font-weight: bold; display: none;"></span>
+                            </div>
                         </div> 
         
                         <div id="unidad_medida_wrapper" style="display: none;">
@@ -2637,8 +2640,52 @@ function mostrarDetallesProducto(idProducto) {
         });
 
         $("#buscadorProductos").on("keyup", buscadorProductos); // Evento al escribir en la barra de búsqueda
-        
+
+        // 🔹 VALIDACIÓN DE CÓDIGO DUPLICADO
+        $("#codigo_producto").on("blur", function() {
+            const codigo = $(this).val().trim();
+            const mensajeDuplicado = $("#mensaje_duplicado_codigo");
+
+            if (codigo === "") {
+                mensajeDuplicado.hide();
+                return;
+            }
+
+            // Hacer petición AJAX para verificar si el código ya existe
+            $.ajax({
+                url: "/arequipago/verificar-codigo-duplicado",
+                type: "POST",
+                data: { codigo: codigo },
+                success: function(response) {
+                    if (response.existe && response.productos.length > 0) {
+                        // Construir lista de productos duplicados
+                        let listaProductos = "";
+                        response.productos.forEach(function(prod) {
+                            listaProductos += "• ID: " + prod.idproductosv2 + " - " + prod.nombre + " (Stock: " + prod.cantidad + ")<br>";
+                        });
+
+                        // Mostrar mensaje en etiqueta roja
+                        mensajeDuplicado.text("⚠ CÓDIGO DUPLICADO en " + response.productos.length + " producto(s)");
+                        mensajeDuplicado.show();
+
+                        // Mostrar alerta visual con detalles
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Código Duplicado',
+                            html: "<strong>Este código ya existe en " + response.productos.length + " producto(s):</strong><br><br>" + listaProductos,
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        mensajeDuplicado.hide();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error al verificar código:", error);
+                }
+            });
+        });
+
         // Asegúrate de eliminar cualquier manejador previo del evento 'change' para evitar duplicados
-       
+
     })
 </script>

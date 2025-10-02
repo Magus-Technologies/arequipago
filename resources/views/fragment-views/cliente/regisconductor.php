@@ -1411,6 +1411,9 @@ require_once "app/models/Distrito.php";
                 url: '/arequipago/ajs/registrar/conductor',
                 type: 'POST',
                 data: formData,
+                headers: {
+                    'token-app': localStorage.getItem("_token")
+                },
                 processData: false,
                 contentType: false,
                 success: function (response) {
@@ -1418,7 +1421,7 @@ require_once "app/models/Distrito.php";
                     if (response.success) {
 
                         console.log("exito");
-                        
+
                         Swal.fire({
                             icon: 'success',
                             title: '¡Éxito!',
@@ -1428,11 +1431,11 @@ require_once "app/models/Distrito.php";
                             // Llamar a CleanField después de que el usuario cierre la alerta
                             cleanField();
                         });
-                        
+
                         var id_conductor = response.data.id_conductor;
                         window.location.href = '/arequipago/pago-inscripcion?id=' + id_conductor;
                         return;
-                        
+
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -1441,7 +1444,7 @@ require_once "app/models/Distrito.php";
                             confirmButtonText: 'Aceptar'
                         });
 
-                        
+
                     }
                 },
                 error: function (xhr, status, error) {

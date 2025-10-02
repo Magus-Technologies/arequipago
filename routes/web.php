@@ -175,6 +175,7 @@ Route::get("/generateBarcode", "ProductosController@generateBarCode");
 Route::post("/deleteProducts", "ProductosController@deleteProducts");
 Route::get("/getDataSelets", "ProductosController@getEditsSeletProducto");
 Route::get("/consultar-productos-venta", "VentasController@buscarProductoController");
+Route::post("/verificar-codigo-duplicado", "ProductosController@verificarCodigoDuplicado");
 
 route::post("/busquedaPorDni", "ConductorController@buscarPorDni");
 route::post("/paymentMade", "ConductorController@paymentMade");
