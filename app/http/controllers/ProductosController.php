@@ -2167,4 +2167,53 @@ private function esCategoríaCelular($categoriaNormalizada) {
         }
     }
 
+    /**
+     * Verificar si un código de producto ya existe en la base de datos
+     * @return JSON con productos que tienen el mismo código
+     */
+    public function verificarCodigoDuplicado()
+    {
+        header('Content-Type: application/json');
+
+        if (!isset($_POST['codigo']) || empty(trim($_POST['codigo']))) {
+            echo json_encode([
+                'existe' => false,
+                'productos' => []
+            ]);
+            return;
+        }
+
+        $codigo = trim($_POST['codigo']);
+
+        try {
+            // Buscar productos con el mismo código o código de barras
+            $sql = "SELECT idproductosv2, nombre, codigo, codigo_barra, cantidad
+                    FROM productosv2
+                    WHERE codigo = ? OR codigo_barra = ?";
+
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->bind_param("ss", $codigo, $codigo);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $productos = [];
+            while ($row = $result->fetch_assoc()) {
+                $productos[] = $row;
+            }
+
+            echo json_encode([
+                'existe' => count($productos) > 0,
+                'productos' => $productos
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en verificarCodigoDuplicado: " . $e->getMessage());
+            echo json_encode([
+                'existe' => false,
+                'productos' => [],
+                'error' => 'Error al verificar código'
+            ]);
+        }
+    }
+
 }

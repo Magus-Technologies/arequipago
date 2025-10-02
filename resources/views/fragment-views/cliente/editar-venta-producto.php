@@ -903,19 +903,54 @@ if (isset($_GET["coti"])) {
             }
         });
         $("#input_buscar_productos").autocomplete({
-            source: _URL + "/ajs/cargar/productos",
-            minLength: 1,
+            source: function(request, response) {
+                const searchTerm = request.term;
+                fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.productos.length > 0) {
+                            // 🔹 Detectar duplicados por código
+                            const codigosCont = {};
+                            data.productos.forEach(p => {
+                                const cod = p.codigo || p.codigo_barra;
+                                codigosCont[cod] = (codigosCont[cod] || 0) + 1;
+                            });
+
+                            const mappedData = data.productos.map(producto => {
+                                const codigo = producto.codigo || producto.codigo_barra;
+                                const esDuplicado = codigosCont[codigo] > 1;
+                                return {
+                                    codigo: codigo,
+                                    idproducto: producto.idproductosv2, // 🔹 ID real del producto
+                                    descripcion: producto.descripcion || producto.nombre,
+                                    cnt: producto.cantidad,
+                                    precio: producto.precio_venta || 0,
+                                    costo: producto.costo || 0,
+                                    value: `${codigo} - ${producto.nombre}${esDuplicado ? ' ⚠ DUPLICADO (ID:' + producto.idproductosv2 + ')' : ''}`
+                                };
+                            });
+                            response(mappedData);
+                        } else {
+                            response([]);
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error en la búsqueda:", error);
+                        response([]);
+                    });
+            },
+            minLength: 2,
             select: function(event, ui) {
                 event.preventDefault();
                 console.log(ui.item);
-                app.producto.productoid = ui.item.codigo
-                app.producto.descripcion = ui.item.codigo + " | " + ui.item.descripcion
-                app.producto.nom_prod = ui.item.descripcion
-                app.producto.cantidad = ''
-                app.producto.stock = ui.item.cnt
-                app.producto.precio = ui.item.precio
-                app.producto.codigo = ui.item.codigo
-                app.producto.costo = ui.item.costo
+                app.producto.productoid = ui.item.idproducto || ui.item.codigo; // 🔹 USAR ID REAL
+                app.producto.descripcion = ui.item.codigo + " | " + ui.item.descripcion;
+                app.producto.nom_prod = ui.item.descripcion;
+                app.producto.cantidad = '';
+                app.producto.stock = ui.item.cnt;
+                app.producto.precio = ui.item.precio;
+                app.producto.codigo = ui.item.codigo;
+                app.producto.costo = ui.item.costo;
                 $('#input_buscar_productos').val("");
             }
         });
