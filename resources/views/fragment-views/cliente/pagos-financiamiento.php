@@ -397,6 +397,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 <option value="QR">QR</option>
                 <option value="Tarjeta">Tarjeta</option>
                 <option value="Pago Bono">Pago Bono</option>
+                <option value="Caja Arequipa">Caja Arequipa</option>
                 <option value="Pago Efectivo" disabled>Pago Efectivo (Próximamente)</option>
             </select>
         </div>
@@ -694,15 +695,17 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
     // Función para seleccionar una fila y colocar su contenido en el selectBoxDetalle
     let cuotasSeleccionadas = [];
+    let financiamientoActual = null; // ✅ NUEVO: Variable global para guardar el financiamiento actual
 
     function seleccionarFinanciamiento(fila) {
         let financiamientoData = $(fila).data('financiamiento');
+        financiamientoActual = financiamientoData; // ✅ NUEVO: Guardar financiamiento actual
         console.log('Datos del financiamiento seleccionados:', financiamientoData);
         let producto = financiamientoData.producto.nombre || "Sin nombre"; // Obtener nombre del producto
         let monto = financiamientoData.financiamiento.monto_total || "0.00"; // Obtener monto total
         let moneda = financiamientoData.financiamiento.moneda || "S/.";
        // Cambié esto: Se agrega contenido dinámico a #selectBoxDetalle
-        $("#selectBoxDetalle").html(`<span>Producto: ${producto} - Monto: ${moneda} ${monto}</span>`); 
+        $("#selectBoxDetalle").html(`<span>Producto: ${producto} - Monto: ${moneda} ${monto}</span>`);
 
         // Cambié esto: Ocultar la tabla detalleSelect al seleccionar una fila
         $("#detalleSelect").hide();
@@ -713,9 +716,19 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
          // AÑADIDO: Limpiar el array global cuotasSeleccionadas cuando se cambia de financiamiento
         cuotasSeleccionadas = []; // Limpiar el array al seleccionar un nuevo financiamiento
         console.log("Cuotas seleccionadas limpiadas al cambiar de financiamiento:", cuotasSeleccionadas);
-        
+
         // Cargar cuotas dinámicamente
         cargarCuotas(financiamientoData);
+    }
+
+    // ✅ NUEVA FUNCIÓN: Recargar cuotas cuando cambie el método de pago
+    function recargarCuotasPorMetodoPago() {
+        if (financiamientoActual) {
+            console.log('Recargando cuotas por cambio de método de pago...');
+            cuotasSeleccionadas = []; // Limpiar selección de cuotas
+            cargarCuotas(financiamientoActual); // Recargar cuotas con el nuevo cálculo
+            calcularTotal(); // Recalcular total
+        }
     }
 
     let monedaActual = "S/.";
@@ -770,14 +783,22 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
             // ✅ NUEVO: Obtener valores de comisión y descuento desde la cuota
             let montoCuotaBase = parseFloat(cuota.monto_cuota_base) || parseFloat(cuota.monto);
-            let comisionCanalDigital = parseFloat(cuota.comision_canal_digital) || 0;
-            
+
+            // ✅ MODIFICADO: Solo aplicar comisión si el método de pago es "Caja Arequipa"
+            let metodoPagoSeleccionado = $("#metodo_pago").val();
+            let comisionCanalDigital = (metodoPagoSeleccionado === "Caja Arequipa")
+                ? (parseFloat(cuota.comision_canal_digital) || 0)
+                : 0;
+
             // ✅ NUEVO: Obtener descuento del producto (viene desde el financiamiento)
             let descuentoCuotaProducto = parseFloat(financiamientoData.producto?.descuento_cuota) || 0;
-            
+
             // ✅ NUEVO: Calcular descuento aplicado (el menor entre el descuento del producto y la comisión)
-            let descuentoAplicado = Math.min(descuentoCuotaProducto, comisionCanalDigital);
-            
+            // Si no hay comisión (método != Caja Arequipa), el descuento también es 0
+            let descuentoAplicado = (comisionCanalDigital > 0)
+                ? Math.min(descuentoCuotaProducto, comisionCanalDigital)
+                : 0;
+
             // ✅ NUEVO: Calcular monto final que pagará el cliente
             let montoFinalCuota = montoCuotaBase + comisionCanalDigital - descuentoAplicado;
 
@@ -1018,6 +1039,10 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         } else {
             seccionEfectivo.style.display = "none";
         }
+
+        // ✅ NUEVO: Recargar cuotas cuando cambie el método de pago
+        // Esto recalculará si se debe aplicar la comisión de Caja Arequipa o no
+        recargarCuotasPorMetodoPago();
     }
 
     function calcularTotal() {
