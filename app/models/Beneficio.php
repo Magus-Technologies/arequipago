@@ -202,31 +202,34 @@ class Beneficio
     public function obtenerTodos($filtros = [])
     {
         try {
-            $sql = "SELECT * FROM beneficios";
+            $sql = "SELECT b.*, p.moneda
+                    FROM beneficios b
+                    LEFT JOIN planes_financiamiento p ON b.plan_financiamiento_id = p.idplan_financiamiento
+                    WHERE 1=1";
             $params = [];
             $types = "";
 
             // Aplicar filtros
             if (!empty($filtros['categoria'])) {
-                $sql .= " AND categoria = ?";
+                $sql .= " AND b.categoria = ?";
                 $params[] = $filtros['categoria'];
                 $types .= "i";
             }
 
             if (!empty($filtros['plan_financiamiento_id'])) {
-                $sql .= " AND plan_financiamiento_id = ?";
+                $sql .= " AND b.plan_financiamiento_id = ?";
                 $params[] = $filtros['plan_financiamiento_id'];
                 $types .= "i";
             }
 
             if (!empty($filtros['disponible'])) {
-                $sql .= " AND disponible = ?";
+                $sql .= " AND b.disponible = ?";
                 $params[] = $filtros['disponible'];
                 $types .= "i";
             }
 
             if (!empty($filtros['busqueda'])) {
-                $sql .= " AND (nombre LIKE ? OR descripcion LIKE ? OR marca LIKE ? OR modelo LIKE ?)";
+                $sql .= " AND (b.nombre LIKE ? OR b.descripcion LIKE ? OR b.marca LIKE ? OR b.modelo LIKE ?)";
                 $busqueda = '%' . $filtros['busqueda'] . '%';
                 $params[] = $busqueda;
                 $params[] = $busqueda;
@@ -235,7 +238,7 @@ class Beneficio
                 $types .= "ssss";
             }
 
-            $sql .= " ORDER BY fecha_creacion DESC";
+            $sql .= " ORDER BY b.fecha_creacion DESC";
 
             $stmt = $this->conectar->prepare($sql);
 

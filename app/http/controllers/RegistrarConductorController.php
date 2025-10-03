@@ -541,21 +541,21 @@ public function buscarConductor()
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Obtener el tipo de vehículo del parámetro GET
             $tipoVehiculo = isset($_GET['tipo']) ? $_GET['tipo'] : 'auto';
-            
+
             // Validar que el tipo sea válido
             if (!in_array($tipoVehiculo, ['auto', 'moto'])) {
                 $tipoVehiculo = 'auto';
             }
-            
+
             // Crear instancia del modelo
             $conductorModel = new Conductor();
-            
+
             // Obtener el número de unidad libre para Lima y tipo específico
             $numeroLibre = $conductorModel->obtenerNumUnidadLimaPorTipo($tipoVehiculo);
-            
+
             // Establecer cabecera para JSON
             header('Content-Type: application/json');
-            
+
             // Devolver el número como JSON
             echo json_encode(['numeroLibre' => $numeroLibre]);
         } else {
@@ -564,7 +564,41 @@ public function buscarConductor()
             echo json_encode(['error' => 'Método no permitido']);
         }
     }
-    
+
+    public function verificarConductorExiste() {
+        // Verificar que la solicitud sea POST
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Obtener el número de documento del POST
+            $nroDocumento = isset($_POST['nro_documento']) ? trim($_POST['nro_documento']) : '';
+
+            if (empty($nroDocumento)) {
+                header('Content-Type: application/json');
+                echo json_encode(['existe' => false, 'error' => 'Número de documento vacío']);
+                return;
+            }
+
+            // Crear instancia del modelo
+            $conductorModel = new Conductor();
+
+            // Buscar si existe el conductor
+            $idConductor = $conductorModel->buscarPorDocumento($nroDocumento);
+
+            // Establecer cabecera para JSON
+            header('Content-Type: application/json');
+
+            // Devolver resultado
+            if ($idConductor) {
+                echo json_encode(['existe' => true, 'id_conductor' => $idConductor]);
+            } else {
+                echo json_encode(['existe' => false]);
+            }
+        } else {
+            // Si no es POST, devolver error
+            header('HTTP/1.1 405 Method Not Allowed');
+            echo json_encode(['error' => 'Método no permitido']);
+        }
+    }
+
     private function procesarLogoYango($id_conductor)
     {
         try {
