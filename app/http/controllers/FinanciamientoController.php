@@ -1,6 +1,8 @@
 <?php
 
 require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MPDF
+// NUEVO: Agregar después de require_once "app/models/Financiamiento.php";
+require_once "app/models/ScoreService.php";
 
 use Mpdf\Mpdf;
 
@@ -930,6 +932,28 @@ class FinanciamientoController extends Controller
                 $vuelto = $_POST['vuelto'] ?? null;
                 $cuotasJson = $_POST['cuotas'] ?? '[]';
                 $cuotasSeleccionadas = json_decode($cuotasJson, true);
+
+                // ✅ NUEVO: Calcular y agregar el descuento_aplicado a cada cuota
+                foreach ($cuotasSeleccionadas as &$cuota) {
+                    // Obtener información de la cuota desde la BD
+                    $financiamientoModel = new Financiamiento();
+                    $cuotaInfo = $financiamientoModel->obtenerInfoCuota($cuota['idCuota']);
+                    
+                    if ($cuotaInfo) {
+                        // Obtener el descuento_cuota del producto
+                        $descuentoCuotaProducto = isset($cuotaInfo['descuento_cuota']) ? floatval($cuotaInfo['descuento_cuota']) : 0.00;
+                        
+                        // El descuento aplicado es el menor entre la comisión y el descuento del producto
+                        $comisionCanalDigital = isset($cuotaInfo['comision_canal_digital']) ? floatval($cuotaInfo['comision_canal_digital']) : 0.00;
+                        $descuentoAplicado = min($descuentoCuotaProducto, $comisionCanalDigital);
+                        
+                        // Agregar al array de cuota
+                        $cuota['descuento_aplicado'] = $descuentoAplicado;
+                        $cuota['comision_canal_digital'] = $comisionCanalDigital;
+                        $cuota['monto_cuota_base'] = isset($cuotaInfo['monto_cuota_base']) ? $cuotaInfo['monto_cuota_base'] : $cuota['monto'];
+                    }
+                }
+                unset($cuota); // Romper la referencia
                 
                 // Obtener el rol del usuario desde la sesión 🌎
                 $rolUsuario = $_SESSION['id_rol'] ?? null; 
@@ -1013,6 +1037,29 @@ class FinanciamientoController extends Controller
                     }
                     
                     $financiamientoModel->newDetallePago($cuotasSeleccionadas, $idPago);
+
+                    // ===== NUEVO: Aplicar puntos si el pago es directo (roles 1 y 3) =====
+                    if ($rolUsuario == 1 || $rolUsuario == 3) {
+                        $scoreService = new ScoreService();
+                        
+                        // Preparar cuotas con fechas para el servicio de puntos
+                        $cuotasConFechas = [];
+                        foreach ($cuotasSeleccionadas as $cuota) {
+                            $cuotasConFechas[] = [
+                                'idCuota' => $cuota['idCuota'],
+                                'fechaPago' => date('Y-m-d'), // Fecha actual del registro
+                                'fechaVencimiento' => $cuota['fechaVencimiento']
+                            ];
+                        }
+                        
+                        $scoreService->aplicarPuntosEnRegistroDirecto(
+                            $idPago,
+                            $idConductor,
+                            $idCliente,
+                            $cuotasConFechas
+                        );
+                    }
+                    // ===== FIN NUEVO =====
 
                     $reportController = new ReportFinanciamientoController();
                     $pdfBase64 = $reportController->generateNotaVenta(
@@ -1183,7 +1230,7 @@ class FinanciamientoController extends Controller
             }
         }
 
-                public function obtenerFinanciamientoParaEditar()
+        public function obtenerFinanciamientoParaEditar()
         {
             // Agregar logs para depuración
             error_log("Método obtenerFinanciamientoParaEditar llamado");
@@ -1350,253 +1397,253 @@ class FinanciamientoController extends Controller
             }
         }
 
-    public function getFinanciamientos_pendientes()
-    {
-        $financiamientoModel = new Financiamiento();
-        $financiamientos = $financiamientoModel->getAllFinanciamientos();
+        public function getFinanciamientos_pendientes()
+        {
+            $financiamientoModel = new Financiamiento();
+            $financiamientos = $financiamientoModel->getAllFinanciamientos();
 
-        $pendientes = 0;
-        foreach ($financiamientos as $fin) {
-            if ($fin['aprobado'] !== null && $fin['aprobado'] !== '' && $fin['aprobado'] == 0) { 
-                $pendientes++;
+            $pendientes = 0;
+            foreach ($financiamientos as $fin) {
+                if ($fin['aprobado'] !== null && $fin['aprobado'] !== '' && $fin['aprobado'] == 0) { 
+                    $pendientes++;
+                }
             }
+
+            header('Content-Type: application/json');
+            echo json_encode(['pendientes' => $pendientes]);
         }
 
-        header('Content-Type: application/json');
-        echo json_encode(['pendientes' => $pendientes]);
-    }
-
       
-    // Método para obtener los financiamientos pendientes y rechazados
-    public function getFinanciamientosAprobar() {
+        // Método para obtener los financiamientos pendientes y rechazados
+        public function getFinanciamientosAprobar() {
 
-        $financiamientoModel = new Financiamiento(); // 🚀 Cambio: instanciado aquí
-        $conductorModel = new Conductor(); // 🚀 Cambio: instanciado aquí
-        $clienteModel = new Cliente(); // 🚀 Cambio: instanciado aquí
-        $productoModel = new Productov2();
-        // Obtener todos los financiamientos
-        $financiamientos = $financiamientoModel->getAllFinanciamientos();
-        
-        $pendientes = [];
-        $rechazados = [];
-        
-        foreach ($financiamientos as $financiamiento) {
-            // Procesar solo si aprobado = 0 (pendiente) o aprobado = 2 (rechazado)
-            if ($financiamiento['aprobado'] === null) {
-                continue;
+            $financiamientoModel = new Financiamiento(); // 🚀 Cambio: instanciado aquí
+            $conductorModel = new Conductor(); // 🚀 Cambio: instanciado aquí
+            $clienteModel = new Cliente(); // 🚀 Cambio: instanciado aquí
+            $productoModel = new Productov2();
+            // Obtener todos los financiamientos
+            $financiamientos = $financiamientoModel->getAllFinanciamientos();
+            
+            $pendientes = [];
+            $rechazados = [];
+            
+            foreach ($financiamientos as $financiamiento) {
+                // Procesar solo si aprobado = 0 (pendiente) o aprobado = 2 (rechazado)
+                if ($financiamiento['aprobado'] === null) {
+                    continue;
+                }
+                
+                // Obtener información del cliente o conductor asociado
+                if (!empty($financiamiento['id_conductor'])) {
+                    $conductor = $conductorModel->obtenerDetalleConductor($financiamiento['id_conductor']);
+                    $financiamiento['conductor'] = $conductor;
+                }
+                
+                if (!empty($financiamiento['id_cliente'])) {
+                    $cliente = $clienteModel->getClienteById($financiamiento['id_cliente']);
+                    $financiamiento['cliente'] = $cliente;
+                }
+                
+                // Obtener información del producto
+                if (!empty($financiamiento['idproductosv2'])) {
+                    $producto = $productoModel->obtenerProductoPorId($financiamiento['idproductosv2']); 
+                    $financiamiento['producto'] = $producto;
+                }
+                
+                // Clasificar según estado
+                if ($financiamiento['aprobado'] == 0) {
+                    $pendientes[] = $financiamiento;
+                } elseif ($financiamiento['aprobado'] == 2) {
+                    $rechazados[] = $financiamiento;
+                }
+            }
+            
+            // Enviar respuesta JSON
+            header('Content-Type: application/json');
+            echo json_encode([
+                'pendientes' => $pendientes,
+                'rechazados' => $rechazados
+            ]);
+        }
+    
+        // Método para obtener detalles de un financiamiento específico
+        public function getDetalleFinanciamiento() {
+            $id = $_POST['id'] ?? 0;
+            
+            if (!$id) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
+                return;
+            }
+            
+            // Obtener el financiamiento
+            $financiamiento = $this->financiamientoModel->getFinanciamientoById($id);
+            
+            if (!$financiamiento) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
+                return;
             }
             
             // Obtener información del cliente o conductor asociado
             if (!empty($financiamiento['id_conductor'])) {
-                $conductor = $conductorModel->obtenerDetalleConductor($financiamiento['id_conductor']);
+                $conductor = $this->conductorModel->obtenerDetalleConductor($financiamiento['id_conductor']);
                 $financiamiento['conductor'] = $conductor;
             }
             
             if (!empty($financiamiento['id_cliente'])) {
-                $cliente = $clienteModel->getClienteById($financiamiento['id_cliente']);
+                $cliente = $this->clienteModel->getClienteById($financiamiento['id_cliente']);
                 $financiamiento['cliente'] = $cliente;
             }
             
             // Obtener información del producto
             if (!empty($financiamiento['idproductosv2'])) {
-                $producto = $productoModel->obtenerProductoPorId($financiamiento['idproductosv2']); 
+                $producto = $this->productoModel->obtenerProductoPorId($financiamiento['idproductosv2']);
                 $financiamiento['producto'] = $producto;
             }
             
-            // Clasificar según estado
-            if ($financiamiento['aprobado'] == 0) {
-                $pendientes[] = $financiamiento;
-            } elseif ($financiamiento['aprobado'] == 2) {
-                $rechazados[] = $financiamiento;
+            // Enviar respuesta JSON
+            header('Content-Type: application/json');
+            echo json_encode($financiamiento);
+        }
+    
+        // Método para aprobar un financiamiento
+        public function financiamientoAprobado() {
+            
+            $id = $_POST['id'] ?? 0;
+            
+
+            if (!$id) {
+            
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
+                return;
             }
-        }
-        
-        // Enviar respuesta JSON
-        header('Content-Type: application/json');
-        echo json_encode([
-            'pendientes' => $pendientes,
-            'rechazados' => $rechazados
-        ]);
-    }
-    
-    // Método para obtener detalles de un financiamiento específico
-    public function getDetalleFinanciamiento() {
-        $id = $_POST['id'] ?? 0;
-        
-        if (!$id) {
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
-            return;
-        }
-        
-        // Obtener el financiamiento
-        $financiamiento = $this->financiamientoModel->getFinanciamientoById($id);
-        
-        if (!$financiamiento) {
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
-            return;
-        }
-        
-        // Obtener información del cliente o conductor asociado
-        if (!empty($financiamiento['id_conductor'])) {
-            $conductor = $this->conductorModel->obtenerDetalleConductor($financiamiento['id_conductor']);
-            $financiamiento['conductor'] = $conductor;
-        }
-        
-        if (!empty($financiamiento['id_cliente'])) {
-            $cliente = $this->clienteModel->getClienteById($financiamiento['id_cliente']);
-            $financiamiento['cliente'] = $cliente;
-        }
-        
-        // Obtener información del producto
-        if (!empty($financiamiento['idproductosv2'])) {
-            $producto = $this->productoModel->obtenerProductoPorId($financiamiento['idproductosv2']);
-            $financiamiento['producto'] = $producto;
-        }
-        
-        // Enviar respuesta JSON
-        header('Content-Type: application/json');
-        echo json_encode($financiamiento);
-    }
-    
-    // Método para aprobar un financiamiento
-    public function financiamientoAprobado() {
-        
-        $id = $_POST['id'] ?? 0;
-        
 
-        if (!$id) {
-           
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
-            return;
-        }
+            // Obtener el financiamiento
+            $financiamiento = $this->financiamientoModel->getFinanciamientoById($id);
 
-        // Obtener el financiamiento
-        $financiamiento = $this->financiamientoModel->getFinanciamientoById($id);
+            if (!$financiamiento) {
+                
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
+                return;
+            }
 
-        if (!$financiamiento) {
+            // Obtener información del producto
+            $idProducto = $financiamiento['idproductosv2'];
+            $cantidadProducto = $financiamiento['cantidad_producto'];
+            $usuarioId = $financiamiento['usuario_id'];
+
+            // Consultar datos del producto
+            $queryProducto = "SELECT nombre, codigo, codigo_barra, razon_social, cantidad FROM productosv2 WHERE idproductosv2 = $idProducto";
+            $resultProducto = $this->conexion->query($queryProducto);
+            $producto = $resultProducto->fetch_assoc();
+
+            if (!$producto) {
             
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
-            return;
-        }
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Producto no encontrado']);
+                return;
+            }
 
-        // Obtener información del producto
-        $idProducto = $financiamiento['idproductosv2'];
-        $cantidadProducto = $financiamiento['cantidad_producto'];
-        $usuarioId = $financiamiento['usuario_id'];
-
-        // Consultar datos del producto
-        $queryProducto = "SELECT nombre, codigo, codigo_barra, razon_social, cantidad FROM productosv2 WHERE idproductosv2 = $idProducto";
-        $resultProducto = $this->conexion->query($queryProducto);
-        $producto = $resultProducto->fetch_assoc();
-
-        if (!$producto) {
-          
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Producto no encontrado']);
-            return;
-        }
-
-        // Verificar si hay stock suficiente
-        if ($producto['cantidad'] < $cantidadProducto) {
-           
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Stock insuficiente para aprobar el financiamiento']);
-            return;
-        }
-
-        // Preparar datos para registrar movimiento
-        $codigoProducto = $producto['codigo'] ?: $producto['codigo_barra'];
-        $nombreProducto = $producto['nombre'];
-        $razonSocial = $producto['razon_social'];
-
-        // Registrar movimiento
-        $this->reportesModel->registrarMovimiento(
-            $usuarioId,
-            $idProducto, 
-            $codigoProducto, 
-            $nombreProducto, 
-            "Salida", 
-            "financiamiento", 
-            $cantidadProducto, 
-            $razonSocial
-        );
-
-        // Descontar stock del producto
-        $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
-        $queryUpdateStock = "UPDATE productosv2 SET cantidad = $nuevaCantidad WHERE idproductosv2 = $idProducto";
-        $resultUpdateStock = $this->conexion->query($queryUpdateStock);
-
-        if (!$resultUpdateStock) {
+            // Verificar si hay stock suficiente
+            if ($producto['cantidad'] < $cantidadProducto) {
             
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el stock del producto']);
-            return;
-        }
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Stock insuficiente para aprobar el financiamiento']);
+                return;
+            }
 
-        // Actualizar estado del financiamiento a aprobado
-        $queryUpdateFinanciamiento = "UPDATE financiamiento SET aprobado = 1 WHERE idfinanciamiento = $id";
-        $resultUpdateFinanciamiento = $this->conexion->query($queryUpdateFinanciamiento);
+            // Preparar datos para registrar movimiento
+            $codigoProducto = $producto['codigo'] ?: $producto['codigo_barra'];
+            $nombreProducto = $producto['nombre'];
+            $razonSocial = $producto['razon_social'];
 
-        if (!$resultUpdateFinanciamiento) {
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el estado del financiamiento']);
-            return;
-        }
+            // Registrar movimiento
+            $this->reportesModel->registrarMovimiento(
+                $usuarioId,
+                $idProducto, 
+                $codigoProducto, 
+                $nombreProducto, 
+                "Salida", 
+                "financiamiento", 
+                $cantidadProducto, 
+                $razonSocial
+            );
 
-        // Registrar comisión por financiamiento aprobado
-        $this->registrarComisionFinanciamiento($financiamiento);
+            // Descontar stock del producto
+            $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
+            $queryUpdateStock = "UPDATE productosv2 SET cantidad = $nuevaCantidad WHERE idproductosv2 = $idProducto";
+            $resultUpdateStock = $this->conexion->query($queryUpdateStock);
 
-        // Responder éxito
-       
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'success', 'message' => 'Financiamiento aprobado correctamente']);
+            if (!$resultUpdateStock) {
+                
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el stock del producto']);
+                return;
+            }
+
+            // Actualizar estado del financiamiento a aprobado
+            $queryUpdateFinanciamiento = "UPDATE financiamiento SET aprobado = 1 WHERE idfinanciamiento = $id";
+            $resultUpdateFinanciamiento = $this->conexion->query($queryUpdateFinanciamiento);
+
+            if (!$resultUpdateFinanciamiento) {
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el estado del financiamiento']);
+                return;
+            }
+
+            // Registrar comisión por financiamiento aprobado
+            $this->registrarComisionFinanciamiento($financiamiento);
+
+            // Responder éxito
         
-       
-    }
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'success', 'message' => 'Financiamiento aprobado correctamente']);
+            
+        
+        }
 
         // Método para rechazar un financiamiento
-    public function rechazarFinanciamiento() {
+        public function rechazarFinanciamiento() {
 
-        $id = $_POST['id'] ?? 0;
-      
-        if (!$id) {
-            
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
-            return;
-        }
-
-        // Verificar si el financiamiento existe
-        $queryVerificar = "SELECT idfinanciamiento FROM financiamiento WHERE idfinanciamiento = $id";
-        $resultVerificar = $this->conexion->query($queryVerificar);
+            $id = $_POST['id'] ?? 0;
         
-        if ($resultVerificar->num_rows === 0) {
+            if (!$id) {
+                
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
+                return;
+            }
+
+            // Verificar si el financiamiento existe
+            $queryVerificar = "SELECT idfinanciamiento FROM financiamiento WHERE idfinanciamiento = $id";
+            $resultVerificar = $this->conexion->query($queryVerificar);
             
+            if ($resultVerificar->num_rows === 0) {
+                
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
+                return;
+            }
+
+            // Actualizar el estado del financiamiento a rechazado (2)
+            $queryActualizar = "UPDATE financiamiento SET aprobado = 2 WHERE idfinanciamiento = $id";
+            $resultActualizar = $this->conexion->query($queryActualizar);
+
+            if (!$resultActualizar) {
+            
+                header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'message' => 'Error al rechazar el financiamiento']);
+                return;
+            }
+
+            // Responder éxito
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
-            return;
+            echo json_encode(['status' => 'success', 'message' => 'Financiamiento rechazado correctamente']);
+            
         }
-
-        // Actualizar el estado del financiamiento a rechazado (2)
-        $queryActualizar = "UPDATE financiamiento SET aprobado = 2 WHERE idfinanciamiento = $id";
-        $resultActualizar = $this->conexion->query($queryActualizar);
-
-        if (!$resultActualizar) {
-           
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Error al rechazar el financiamiento']);
-            return;
-        }
-
-        // Responder éxito
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'success', 'message' => 'Financiamiento rechazado correctamente']);
-        
-    }
 
      // Método para reactivar un financiamiento
     public function reactivaFinanciamiento() {

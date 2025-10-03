@@ -706,6 +706,9 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
         // Cambié esto: Ocultar la tabla detalleSelect al seleccionar una fila
         $("#detalleSelect").hide();
+        // ✅ NUEVO: Marcar la fila como seleccionada para referencia posterior
+        $("#detalleSelect tbody tr").removeClass('selected');
+        $(fila).addClass('selected');
 
          // AÑADIDO: Limpiar el array global cuotasSeleccionadas cuando se cambia de financiamiento
         cuotasSeleccionadas = []; // Limpiar el array al seleccionar un nuevo financiamiento
@@ -765,12 +768,35 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             fechaLimite.setDate(fechaLimite.getDate() - 2); // 2 días antes
             let esFechaFutura = fechaLimite > fechaActual; // Verificar si aún no está en el período de pago
 
+            // ✅ NUEVO: Obtener valores de comisión y descuento desde la cuota
+            let montoCuotaBase = parseFloat(cuota.monto_cuota_base) || parseFloat(cuota.monto);
+            let comisionCanalDigital = parseFloat(cuota.comision_canal_digital) || 0;
+            
+            // ✅ NUEVO: Obtener descuento del producto (viene desde el financiamiento)
+            let descuentoCuotaProducto = parseFloat(financiamientoData.producto?.descuento_cuota) || 0;
+            
+            // ✅ NUEVO: Calcular descuento aplicado (el menor entre el descuento del producto y la comisión)
+            let descuentoAplicado = Math.min(descuentoCuotaProducto, comisionCanalDigital);
+            
+            // ✅ NUEVO: Calcular monto final que pagará el cliente
+            let montoFinalCuota = montoCuotaBase + comisionCanalDigital - descuentoAplicado;
+
             if (cuotaPagada) ultimoPagado = index; // Actualizar el índice si la cuota está pagada
 
             let cuotaDiv = $('<div class="form-group mb-2 d-flex align-items-center"></div>');
 
-            // Línea modificada: usamos cuota.numero_cuota en lugar de index + 1
-            let spanInfo = $(`<span class="me-2"><strong>Cuota ${cuota.numero_cuota}: ${moneda} ${cuota.monto}</strong></span>`); 
+            let spanInfo = $(`
+                <div class="me-2" style="flex: 1;">
+                    <div style="font-size: 1.1em; margin-bottom: 8px;"><strong>Cuota ${cuota.numero_cuota}</strong></div>
+                    <div style="font-size: 0.95em; color: #555; margin-left: 15px; line-height: 1.6;">
+                        <div style="margin-bottom: 4px;">• Cuota base: ${moneda} ${montoCuotaBase.toFixed(2)}</div>
+                        ${comisionCanalDigital > 0 ? `<div style="color: #dc3545; margin-bottom: 4px;">• Comisión canal digital: ${moneda} ${comisionCanalDigital.toFixed(2)}</div>` : ''}
+                        ${descuentoAplicado > 0 ? `<div style="color: #28a745; margin-bottom: 4px;">• Descuento aplicado (subsidiado): ${moneda} ${descuentoAplicado.toFixed(2)}</div>` : ''}
+                        <div style="font-weight: bold; color: #000; font-size: 1.05em; margin-top: 6px;">• Total a pagar: ${moneda} ${montoFinalCuota.toFixed(2)}</div>
+                    </div>
+                </div>
+            `);
+
             cuotaDiv.append(spanInfo);
 
             let spanVencimiento = $(`<span class="me-2">Vencimiento: ${cuota.fecha_vencimiento}</span>`);
@@ -843,6 +869,9 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             listaCuotasDiv.append(cuotaDiv);
         });
 
+        // NUEVO: Resetear el select de moneda efectivo a su valor por defecto
+        $("#moneda_efectivo").val("Elegir moneda");
+
         calcularTotal();
     }
 
@@ -860,11 +889,31 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             // MODIFICADO: Verificamos si la cuota ya existe antes de agregarla
             let existingIndex = cuotasSeleccionadas.findIndex(cuota => cuota.idCuota === data.idCuota);
             if (existingIndex === -1) {
-                cuotasSeleccionadas.push(data);
+                // Obtener el financiamiento actual desde el DOM
+                let financiamientoData = $("#detalleSelect tbody tr.selected").data('financiamiento');
+                if (financiamientoData && financiamientoData.producto) {
+                    let descuentoCuotaProducto = parseFloat(financiamientoData.producto.descuento_cuota) || 0;
+                    let comisionCanalDigital = parseFloat(data.comision_canal_digital) || 0;
+                    let montoCuotaBase = parseFloat(data.monto_cuota_base) || parseFloat(data.monto);
+                    
+                    // Calcular descuento aplicado
+                    let descuentoAplicado = Math.min(descuentoCuotaProducto, comisionCanalDigital);
+                    
+                    // Agregar al objeto de cuota
+                    let cuotaIndex = cuotasSeleccionadas.findIndex(c => c.idCuota === data.idCuota);
+                    if (cuotaIndex !== -1) {
+                        cuotasSeleccionadas[cuotaIndex].descuento_aplicado = descuentoAplicado;
+                        cuotasSeleccionadas[cuotaIndex].comision_canal_digital = comisionCanalDigital;
+                        cuotasSeleccionadas[cuotaIndex].monto_cuota_base = montoCuotaBase;
+                    }
+                }
+                cuotasSeleccionadas.push(data);                
             }
         } else {
             cuotasSeleccionadas = cuotasSeleccionadas.filter(cuota => cuota.idCuota !== data.idCuota);
         }
+
+
 
         // AÑADIDO: Llamamos a validarSecuenciaCheckbox después de actualizar cuotasSeleccionadas
         //validarSecuenciaCheckbox(checkbox, esCategoriaVehiculo);
@@ -960,42 +1009,60 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         let metodo = document.getElementById("metodo_pago").value;
         let seccionEfectivo = document.getElementById("seccion_efectivo");
 
-        seccionEfectivo.style.display = (metodo === "Efectivo") ? "block" : "none";
+        if (metodo === "Efectivo") {
+            seccionEfectivo.style.display = "block";
+            // NUEVO: Resetear select de moneda y limpiar campos cuando se muestra la sección
+            $("#moneda_efectivo").val("");
+            $("#efectivo_recibido").val("");
+            $("#vuelto").val("");
+        } else {
+            seccionEfectivo.style.display = "none";
+        }
     }
 
     function calcularTotal() {
 
         console.log("Moneda actual usada:", monedaActual);
 
-        let total = 0; // Inicializar total´
-          
-        // Recorrer los checkboxes marcados y sumar las cuotas seleccionadas
+        let total = 0; // Inicializar total
+        
+        // ✅ MODIFICADO: Recorrer los checkboxes marcados y sumar usando el atributo data-id
         $(".form-group input[type='checkbox']:checked").each(function () {
-            // Obtener el texto con el monto y la moneda
-            let cuotaTexto = $(this).closest(".form-group").find("strong").text();
-            let cuotaMonto = 0;
-
-            // Detectar si es en soles o dólares usando expresiones regulares
-            if (cuotaTexto.includes("S/.")) {
-                cuotaMonto = parseFloat(cuotaTexto.match(/S\/\. (\d+\.\d+)/)[1]) || 0; // Si es soles
-            } else if (cuotaTexto.includes("$")) {
-                cuotaMonto = parseFloat(cuotaTexto.match(/\$ (\d+\.\d+)/)[1]) || 0; // Si es dólares
+            // Obtener los datos del checkbox
+            let data = JSON.parse($(this).attr("data-id"));
+            
+            // ✅ NUEVO: Buscar el "Total a pagar" en el texto del contenedor
+            let contenedor = $(this).closest(".form-group");
+            let textoTotal = contenedor.find("div:contains('Total a pagar')").text();
+            
+            // ✅ NUEVO: Extraer el monto del "Total a pagar"
+            let montoMatch = textoTotal.match(/Total a pagar:\s*[S\/\.\$]+\s*([\d,]+\.?\d*)/);
+            if (montoMatch) {
+                let cuotaMonto = parseFloat(montoMatch[1].replace(',', '')) || 0;
+                total += cuotaMonto;
+                console.log(`Cuota ${data.idCuota}: S/. ${cuotaMonto}`);
+            } else {
+                // ✅ FALLBACK: Si no se encuentra el total, usar el monto del data-id
+                let cuotaMonto = parseFloat(data.monto) || 0;
+                total += cuotaMonto;
+                console.log(`Cuota ${data.idCuota} (fallback): S/. ${cuotaMonto}`);
             }
-
-            total += cuotaMonto; // Sumar el monto de la cuota al total
         });
 
-        // MODIFICADO: Sumar valores de mora de los checkboxes marcados (sin importar si están deshabilitados)
+        // ✅ MODIFICADO: Sumar valores de mora de los checkboxes marcados
         $(".form-group input[type='checkbox']:checked").each(function () {
             let moraInput = $(this).closest('.form-group').find('.mora-input');
-            if (moraInput.length > 0) {
+            if (moraInput.length > 0 && moraInput.is(':visible')) {
                 let moraValor = parseFloat(moraInput.val()) || 0;
-                total += moraValor; // Sumar el valor de mora
+                total += moraValor;
+                console.log(`Mora agregada: S/. ${moraValor}`);
             }
         });
 
         // Asignar el total calculado al campo de total a pagar
         $("#total_a_pagar").val(`${monedaActual} ${total.toFixed(2)}`);
+        
+        console.log(`Total calculado: ${monedaActual} ${total.toFixed(2)}`);
     }
 
     // Asignar el evento onchange a los checkboxes y inputs de mora
@@ -2164,12 +2231,25 @@ function enviarPDFPorWhatsApp() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                // NUEVO: Mostrar loader mientras se procesa la aprobación
+                Swal.fire({
+                    title: 'Procesando aprobación',
+                    text: 'Por favor espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
                 $.ajax({
                     url: '/arequipago/aprobarPagoPendiente',
                     type: 'POST',
                     data: { idPago: idPago },
                     dataType: 'json',
                     success: function(response) {
+                        // NUEVO: Cerrar el loader
+                        Swal.close();
+                        
                         if (response.success) {
                             Swal.fire(
                                 '¡Aprobado!',
@@ -2188,6 +2268,9 @@ function enviarPDFPorWhatsApp() {
                         }
                     },
                     error: function() {
+                        // NUEVO: Cerrar el loader en caso de error
+                        Swal.close();
+                        
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',

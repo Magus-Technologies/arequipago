@@ -353,13 +353,23 @@ mysqli_stmt_close($stmt);
                                     NULL as puntaje_nuevo,
                                     -- INICIO DE LA LÓGICA CORREGIDA --
                                     CASE
+                                        -- Si es pago puntual y ya tiene puntos aplicados, mostrar ganancia
+                                        WHEN cf.fecha_pago IS NOT NULL 
+                                            AND cf.fecha_pago <= cf.fecha_vencimiento 
+                                            AND cf.puntos_aplicados = 1
+                                        THEN
+                                            -IF(
+                                                (SELECT COUNT(*) FROM financiamiento f2 WHERE f2.$campoId = f.$campoId AND f2.estado IN ('En Progreso', 'En progreso')) > 1,
+                                                3, -- Ganó 3 puntos
+                                                5  -- Ganó 5 puntos
+                                            )
+                                        -- Si es pago con retraso o cuota vencida, aplicar pérdida
                                         WHEN (cf.fecha_pago > cf.fecha_vencimiento) OR (cf.fecha_vencimiento < CURDATE() AND cf.fecha_pago IS NULL)
                                         THEN
-                                            -- Subconsulta para contar financiamientos y aplicar la regla
                                             IF(
                                                 (SELECT COUNT(*) FROM financiamiento f2 WHERE f2.$campoId = f.$campoId) > 1,
-                                                3, -- Si tiene más de 1 financiamiento, resta 3 puntos
-                                                5  -- Si tiene solo 1, resta 5 puntos
+                                                3, -- Pierde 3 puntos
+                                                5  -- Pierde 5 puntos
                                             )
                                         ELSE 0
                                     END as puntos_perdidos,
