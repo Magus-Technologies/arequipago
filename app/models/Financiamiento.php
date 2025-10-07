@@ -1506,26 +1506,76 @@
     public function obtenerInfoCuota($idCuota)
     {
         try {
-            $query = "SELECT 
-                        cf.*, 
+            $query = "SELECT
+                        cf.*,
                         f.idproductosv2,
                         p.descuento_cuota
                     FROM cuotas_financiamiento cf
                     INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                     INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                     WHERE cf.idcuotas_financiamiento = ?";
-            
+
             $stmt = $this->conectar->prepare($query);
             $stmt->bind_param('i', $idCuota);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             return $result->fetch_assoc();
-            
+
         } catch (Exception $e) {
             error_log("Error en obtenerInfoCuota: " . $e->getMessage());
             return null;
         }
     }
-    
+
+    /**
+     * ✅ OPTIMIZACIÓN: Obtener información de múltiples cuotas en una sola consulta
+     * @param array $idsCuotas Array de IDs de cuotas
+     * @return array Array asociativo indexado por ID de cuota
+     */
+    public function obtenerInfoCuotasBatch($idsCuotas)
+    {
+        try {
+            if (empty($idsCuotas)) {
+                return [];
+            }
+
+            // Crear placeholders para el IN clause
+            $placeholders = implode(',', array_fill(0, count($idsCuotas), '?'));
+
+            $query = "SELECT
+                        cf.idcuotas_financiamiento,
+                        cf.monto,
+                        cf.monto_cuota_base,
+                        cf.comision_canal_digital,
+                        f.idproductosv2,
+                        p.descuento_cuota
+                    FROM cuotas_financiamiento cf
+                    INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                    INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                    WHERE cf.idcuotas_financiamiento IN ($placeholders)";
+
+            $stmt = $this->conectar->prepare($query);
+
+            // Bind de parámetros dinámicamente
+            $types = str_repeat('i', count($idsCuotas));
+            $stmt->bind_param($types, ...$idsCuotas);
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            // Crear array asociativo indexado por idcuotas_financiamiento
+            $cuotasInfo = [];
+            while ($row = $result->fetch_assoc()) {
+                $cuotasInfo[$row['idcuotas_financiamiento']] = $row;
+            }
+
+            return $cuotasInfo;
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerInfoCuotasBatch: " . $e->getMessage());
+            return [];
+        }
+    }
+
 }

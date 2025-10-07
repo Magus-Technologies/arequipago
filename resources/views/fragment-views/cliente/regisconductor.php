@@ -1117,6 +1117,9 @@ require_once "app/models/Distrito.php";
                         formData.append('photo', this.conductor.photoFile);
                     }
 
+                    // DEBUG: Ver valor de fechaNac antes de enviar
+                    console.log('DEBUG - fechaNac antes de enviar:', this.conductor.fechaNac);
+
                     // Agregar datos del conductor
                     formData.append('tipo_doc', this.conductor.tipo_doc);
                     formData.append('n_document', this.conductor.num_doc);
@@ -1184,6 +1187,12 @@ require_once "app/models/Distrito.php";
                     formData.append('polo', this.kit.polo ? '1' : '0');
                     formData.append('fotocheck', this.kit.fotocheck ? '1' : '0');
                     formData.append('talla', this.kit.polo ? this.kit.talla : '');
+
+                    // DEBUG: Ver todo el FormData
+                    console.log('DEBUG - Todos los datos del FormData:');
+                    for (let pair of formData.entries()) {
+                        console.log(pair[0] + ': ' + pair[1]);
+                    }
 
                     // Mostrar loading
                     Swal.fire({

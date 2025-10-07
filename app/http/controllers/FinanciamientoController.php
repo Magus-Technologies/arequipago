@@ -924,6 +924,9 @@ class FinanciamientoController extends Controller
         public function newPagofinance()
         {
             if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $tiempoInicio = microtime(true); // 🔍 DEBUG: Inicio
+                error_log("🔍 [TIMING] Inicio newPagofinance: " . date('H:i:s'));
+
                 $documentoIdentidad = $_POST['documento_identidad'] ?? null;
                 $metodoPago = $_POST['metodo_pago'] ?? null;
                 $totalPagar = $_POST['total_pagar'] ?? null;
@@ -933,20 +936,31 @@ class FinanciamientoController extends Controller
                 $cuotasJson = $_POST['cuotas'] ?? '[]';
                 $cuotasSeleccionadas = json_decode($cuotasJson, true);
 
-                // ✅ NUEVO: Calcular y agregar el descuento_aplicado a cada cuota
+                error_log("🔍 [TIMING] Después de parsear datos: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+                // ✅ OPTIMIZADO: Calcular y agregar el descuento_aplicado a cada cuota EN BATCH
+                $financiamientoModel = new Financiamiento();
+
+                // Extraer todos los IDs de cuotas
+                $idsCuotas = array_column($cuotasSeleccionadas, 'idCuota');
+
+                // Obtener información de TODAS las cuotas en UNA SOLA consulta
+                $cuotasInfo = $financiamientoModel->obtenerInfoCuotasBatch($idsCuotas);
+
+                // Ahora iterar y asignar la información
                 foreach ($cuotasSeleccionadas as &$cuota) {
-                    // Obtener información de la cuota desde la BD
-                    $financiamientoModel = new Financiamiento();
-                    $cuotaInfo = $financiamientoModel->obtenerInfoCuota($cuota['idCuota']);
-                    
-                    if ($cuotaInfo) {
+                    $idCuota = $cuota['idCuota'];
+
+                    if (isset($cuotasInfo[$idCuota])) {
+                        $cuotaInfo = $cuotasInfo[$idCuota];
+
                         // Obtener el descuento_cuota del producto
                         $descuentoCuotaProducto = isset($cuotaInfo['descuento_cuota']) ? floatval($cuotaInfo['descuento_cuota']) : 0.00;
-                        
+
                         // El descuento aplicado es el menor entre la comisión y el descuento del producto
                         $comisionCanalDigital = isset($cuotaInfo['comision_canal_digital']) ? floatval($cuotaInfo['comision_canal_digital']) : 0.00;
                         $descuentoAplicado = min($descuentoCuotaProducto, $comisionCanalDigital);
-                        
+
                         // Agregar al array de cuota
                         $cuota['descuento_aplicado'] = $descuentoAplicado;
                         $cuota['comision_canal_digital'] = $comisionCanalDigital;
@@ -954,7 +968,9 @@ class FinanciamientoController extends Controller
                     }
                 }
                 unset($cuota); // Romper la referencia
-                
+
+                error_log("🔍 [TIMING] Después de obtener info cuotas batch: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
                 // Obtener el rol del usuario desde la sesión 🌎
                 $rolUsuario = $_SESSION['id_rol'] ?? null; 
 
@@ -963,15 +979,17 @@ class FinanciamientoController extends Controller
                     return;
                 }
     
-                $financiamientoModel = new Financiamiento();
+                error_log("🔍 [TIMING] ANTES de actualizarCuotas: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
 
                 // Verificar si el usuario tiene permisos para actualizar cuotas 🌎
-                if ($rolUsuario == 1 || $rolUsuario == 3) { 
-                    $resultado = $financiamientoModel->actualizarCuotas($cuotasSeleccionadas); 
-                } else { 
+                if ($rolUsuario == 1 || $rolUsuario == 3) {
+                    $resultado = $financiamientoModel->actualizarCuotas($cuotasSeleccionadas);
+                } else {
                     // Si es rol 2, no actualiza las cuotas pero devuelve éxito para continuar 🌎
-                    $resultado = ['success' => true, 'message' => 'Cuotas pendientes de aprobación']; 
-                } 
+                    $resultado = ['success' => true, 'message' => 'Cuotas pendientes de aprobación'];
+                }
+
+                error_log("🔍 [TIMING] DESPUÉS de actualizarCuotas: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms"); 
 
                 // Verificamos si los datos necesarios están completos
                 if (!$documentoIdentidad || !$metodoPago || empty($cuotasSeleccionadas)) {
@@ -1039,9 +1057,11 @@ class FinanciamientoController extends Controller
                     $financiamientoModel->newDetallePago($cuotasSeleccionadas, $idPago);
 
                     // ===== NUEVO: Aplicar puntos si el pago es directo (roles 1 y 3) =====
+                    error_log("🔍 [TIMING] ANTES de aplicar puntos: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
                     if ($rolUsuario == 1 || $rolUsuario == 3) {
                         $scoreService = new ScoreService();
-                        
+
                         // Preparar cuotas con fechas para el servicio de puntos
                         $cuotasConFechas = [];
                         foreach ($cuotasSeleccionadas as $cuota) {
@@ -1051,7 +1071,7 @@ class FinanciamientoController extends Controller
                                 'fechaVencimiento' => $cuota['fechaVencimiento']
                             ];
                         }
-                        
+
                         $scoreService->aplicarPuntosEnRegistroDirecto(
                             $idPago,
                             $idConductor,
@@ -1059,17 +1079,26 @@ class FinanciamientoController extends Controller
                             $cuotasConFechas
                         );
                     }
+
+                    error_log("🔍 [TIMING] DESPUÉS de aplicar puntos: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
                     // ===== FIN NUEVO =====
+
+                    error_log("🔍 [TIMING] ANTES de generar PDF: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
 
                     $reportController = new ReportFinanciamientoController();
                     $pdfBase64 = $reportController->generateNotaVenta(
                         $idConductor ?: $idCliente, // MODIFICADO: Usamos el operador ternario para pasar el id disponible
-                        $idAsesor, 
-                        $cuotasSeleccionadas, 
-                        $idPago, 
+                        $idAsesor,
+                        $cuotasSeleccionadas,
+                        $idPago,
                         $monedaEfectivo
                     );
-                    
+
+                    error_log("🔍 [TIMING] DESPUÉS de generar PDF: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+                    $tiempoTotal = round((microtime(true) - $tiempoInicio) * 1000, 2);
+                    error_log("🔍 [TIMING] TOTAL newPagofinance: {$tiempoTotal}ms");
+
                     echo json_encode([
                         'success' => true,
                         'message' => ($rolUsuario == 2) ? 'Pago registrado como pendiente' : 'Pago realizado con éxito',

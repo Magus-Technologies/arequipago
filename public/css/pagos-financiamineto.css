@@ -1,8 +1,45 @@
 
 
     .btn-custom {
-        margin-top: -50px;
-        /* Ajusta este valor según lo necesites */
+        background-color: #007bff;
+        color: white !important;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-custom:hover {
+        background-color: #0056b3;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+        text-decoration: none;
+    }
+
+    .btn-custom:active {
+        transform: translateY(0);
+        color: white !important;
+    }
+
+    .btn-custom:focus {
+        color: white !important;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+    }
+
+    /* Responsivo para móviles */
+    @media (max-width: 768px) {
+        .btn-custom {
+            margin-top: 10px;
+            width: 100%;
+        }
     }
 
     .switch-container {
@@ -350,4 +387,31 @@
         #detalleSelect tbody tr:hover {
             background-color: #f5f5f5;
             cursor: pointer;
+        }
+
+        /* ✅ NUEVO: Scroll para la lista de cuotas cuando hay muchas */
+        #lista_cuotas {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 10px;
+        }
+
+        /* Personalizar scrollbar */
+        #lista_cuotas::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #lista_cuotas::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        #lista_cuotas::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        #lista_cuotas::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }

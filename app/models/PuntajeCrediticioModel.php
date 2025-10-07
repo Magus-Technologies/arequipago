@@ -578,17 +578,17 @@ mysqli_stmt_close($stmt);
     public function registrarHistorialPuntaje($puntajeCrediticioId, $puntajeAnterior, $puntajeNuevo, $puntosPerdidos, $motivo, $idCuota = null)
     {
         try {
-            $sqlHistorial = "INSERT INTO historial_puntaje 
-                            (id_puntaje_crediticio, id_cuota, puntaje_anterior, puntaje_nuevo, puntos_perdidos, motivo) 
+            $sqlHistorial = "INSERT INTO historial_puntaje
+                            (id_puntaje_crediticio, id_cuota, puntaje_anterior, puntaje_nuevo, puntos_perdidos, motivo)
                             VALUES (?, ?, ?, ?, ?, ?)";
-            
+
             $stmt = mysqli_prepare($this->conexion, $sqlHistorial);
-            mysqli_stmt_bind_param($stmt, 'iiiisi', 
-                $puntajeCrediticioId, 
-                $idCuota, 
-                $puntajeAnterior, 
-                $puntajeNuevo, 
-                $puntosPerdidos, 
+            mysqli_stmt_bind_param($stmt, 'iiiisi',
+                $puntajeCrediticioId,
+                $idCuota,
+                $puntajeAnterior,
+                $puntajeNuevo,
+                $puntosPerdidos,
                 $motivo
             );
             mysqli_stmt_execute($stmt);
@@ -598,6 +598,68 @@ mysqli_stmt_close($stmt);
 
         } catch (Exception $e) {
             throw new Exception("Error al registrar historial: " . $e->getMessage());
+        }
+    }
+
+    // ✅ NUEVA FUNCIÓN: Registrar múltiples historiales en BATCH (OPTIMIZADO)
+    public function registrarHistorialPuntajeBatch($registros)
+    {
+        try {
+            $tiempoInicio = microtime(true);
+            error_log("🔍 [PuntajeModel] Inicio registrarHistorialPuntajeBatch - Registros: " . count($registros));
+
+            if (empty($registros)) {
+                return true;
+            }
+
+            // Construir la consulta con múltiples VALUES
+            $values = [];
+            $params = [];
+
+            foreach ($registros as $registro) {
+                $values[] = "(?, ?, ?, ?, ?, ?)";
+                $params[] = $registro['puntajeCrediticioId'];
+                $params[] = $registro['idCuota'];
+                $params[] = $registro['puntajeAnterior'];
+                $params[] = $registro['puntajeNuevo'];
+                $params[] = $registro['puntosPerdidos'];
+                $params[] = $registro['motivo'];
+            }
+
+            // error_log("🔍 [PuntajeModel] Construyendo query - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+            $sqlHistorial = "INSERT INTO historial_puntaje
+                            (id_puntaje_crediticio, id_cuota, puntaje_anterior, puntaje_nuevo, puntos_perdidos, motivo)
+                            VALUES " . implode(', ', $values);
+
+            // error_log("🔍 [PuntajeModel] Query: " . substr($sqlHistorial, 0, 200) . "...");
+            // error_log("🔍 [PuntajeModel] ANTES de mysqli_prepare - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+            $stmt = mysqli_prepare($this->conexion, $sqlHistorial);
+
+            // error_log("🔍 [PuntajeModel] DESPUÉS de mysqli_prepare - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+            // Crear tipos dinámicamente: iiiisi por cada registro
+            $types = str_repeat('iiiisi', count($registros));
+
+            // error_log("🔍 [PuntajeModel] ANTES de bind_param - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+            mysqli_stmt_bind_param($stmt, $types, ...$params);
+
+            error_log("🔍 [PuntajeModel] ANTES de execute - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+            mysqli_stmt_execute($stmt);
+
+            error_log("🔍 [PuntajeModel] DESPUÉS de execute - Tiempo: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
+
+            mysqli_stmt_close($stmt);
+
+            $tiempoTotal = round((microtime(true) - $tiempoInicio) * 1000, 2);
+            // error_log("🔍 [PuntajeModel] TOTAL registrarHistorialPuntajeBatch: {$tiempoTotal}ms");
+
+            return true;
+
+        } catch (Exception $e) {
+            // error_log("❌ [PuntajeModel] ERROR en registrarHistorialPuntajeBatch: " . $e->getMessage());
+            throw new Exception("Error al registrar historial batch: " . $e->getMessage());
         }
     }
 

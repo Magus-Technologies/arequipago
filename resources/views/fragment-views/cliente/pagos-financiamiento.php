@@ -331,14 +331,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         <!-- Buscar conductor -->
         <div class="form-section mb-4 p-3 border rounded shadow-sm">
             <h5><i class="fa fa-search"></i> Buscar Conductor</h5>
-            <div class="row align-items-end">
-                <div class="col-md-8 mb-3">
-                    <label for="buscar_dni">DNI o documento de indentidad del Conductor</label>
-                    <input type="text" id="buscar_dni" class="form-control" oninput="resetAll()"
-                        placeholder="Ingrese DNI o documento de identidad" >
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <label for="buscar_dni">DNI o documento de identidad</label>
                 </div>
-                <div class="col-md-4 text-md-right">
-                    <button class="btn btn-custom w-100" onclick="getIdI()"><i class="fa fa-search"></i> Buscar</button>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-9 col-lg-10">
+                    <input type="text" id="buscar_dni" class="form-control" oninput="resetAll()"
+                        placeholder="Ingrese DNI o documento de identidad">
+                </div>
+                <div class="col-md-3 col-lg-2">
+                    <button class="btn btn-custom w-100" onclick="getIdI()">
+                        <i class="fa fa-search"></i> Buscar
+                    </button>
                 </div>
             </div>
 
@@ -721,13 +727,62 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         cargarCuotas(financiamientoData);
     }
 
-    // ✅ NUEVA FUNCIÓN: Recargar cuotas cuando cambie el método de pago
+    // ✅ OPTIMIZADO: Recargar cuotas cuando cambie el método de pago SIN perder selecciones
     function recargarCuotasPorMetodoPago() {
         if (financiamientoActual) {
             console.log('Recargando cuotas por cambio de método de pago...');
-            cuotasSeleccionadas = []; // Limpiar selección de cuotas
-            cargarCuotas(financiamientoActual); // Recargar cuotas con el nuevo cálculo
-            calcularTotal(); // Recalcular total
+
+            // ✅ GUARDAR las cuotas seleccionadas COMPLETAS antes de recargar
+            let cuotasSeleccionadasGuardadas = JSON.parse(JSON.stringify(cuotasSeleccionadas)); // Deep copy
+            let idsCuotasSeleccionadas = cuotasSeleccionadasGuardadas.map(c => c.idCuota);
+
+            console.log('Cuotas seleccionadas guardadas:', idsCuotasSeleccionadas);
+
+            // Recargar cuotas con el nuevo cálculo
+            cargarCuotas(financiamientoActual);
+
+            // ✅ RESTAURAR las selecciones después de un pequeño delay
+            setTimeout(() => {
+                // Primero limpiamos el array
+                cuotasSeleccionadas = [];
+
+                $('.form-group input[type="checkbox"]').each(function() {
+                    let checkbox = $(this);
+                    let data = JSON.parse(checkbox.attr('data-id'));
+
+                    // Si esta cuota estaba seleccionada, marcarla de nuevo
+                    if (idsCuotasSeleccionadas.includes(data.idCuota)) {
+                        checkbox.prop('checked', true);
+
+                        // ✅ Agregar de nuevo al array cuotasSeleccionadas
+                        let cuotaGuardada = cuotasSeleccionadasGuardadas.find(c => c.idCuota === data.idCuota);
+                        if (cuotaGuardada) {
+                            // Mantener la mora si tenía
+                            data.mora = cuotaGuardada.mora || 0;
+                            cuotasSeleccionadas.push(data);
+                        }
+
+                        // Mostrar input de mora si corresponde
+                        let moraContainer = checkbox.closest('.form-group').find('.mora-container');
+                        if (moraContainer.length > 0) {
+                            moraContainer.show();
+
+                            // Restaurar valor de mora
+                            let moraInput = moraContainer.find('.mora-input');
+                            if (moraInput.length > 0 && cuotaGuardada && cuotaGuardada.mora) {
+                                moraInput.val(cuotaGuardada.mora);
+                            }
+                        }
+
+                        console.log('✅ Cuota restaurada:', data.idCuota);
+                    }
+                });
+
+                // Recalcular total después de restaurar
+                calcularTotal();
+
+                console.log('✅ Cuotas seleccionadas después de restaurar:', cuotasSeleccionadas);
+            }, 100);
         }
     }
 
@@ -1863,14 +1918,17 @@ function enviarPDFPorWhatsApp() {
         // Limpiar el div de cuotas
         document.getElementById("lista_cuotas").innerHTML = "";
 
-        // Restablecer método de pago y moneda a valores por defecto
-        document.getElementById("metodo_pago").value = "Seleccione..."; // Ajustar si el select tiene otro id
-        document.getElementById("moneda_efectivo").value = "Elegir moneda"; // Ajustar según los valores reales de tu select
+        // ✅ ARREGLADO: Restablecer método de pago correctamente con value=""
+        document.getElementById("metodo_pago").value = ""; // Valor vacío que corresponde a "Seleccione..."
+        document.getElementById("moneda_efectivo").value = ""; // Valor vacío
 
         // Ocultar y limpiar el contenedor de pago en efectivo
         const contenedorPagoEfectivo = document.getElementById("seccion_efectivo"); // Ajustar ID si es diferente
         contenedorPagoEfectivo.style.display = "none"; // Ocultar el contenedor
         contenedorPagoEfectivo.querySelectorAll("input").forEach(input => input.value = "");
+
+        // ✅ NUEVO: Limpiar también el total a pagar
+        document.getElementById("total_a_pagar").value = "";
     }
 
     /**
