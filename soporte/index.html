@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soporte - Arequipago</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* Header Hero */
+        .hero {
+            /* background: linear-gradient(135deg, #2E217A 0%, #1a0e4d 100%); */
+            background-color: #2E217A;
+            padding: 80px 20px 120px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 100px;
+            /* background: linear-gradient(to bottom, transparent, #f5f7fa); */
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            max-width: 180px;
+            height: auto;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f4f750 0%, #fff59d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 2;
+            font-weight: 300;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: -80px auto 80px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        /* Contact Info Card */
+        .contact-card {
+            background: white;
+            border-radius: 25px;
+            padding: 45px;
+            position: sticky;
+            top: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .contact-card h2 {
+            color: #2E217A;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .contact-card .greeting {
+            color: #f4f750;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .contact-card p {
+            color: #666;
+            line-height: 1.9;
+            margin-bottom: 35px;
+            font-size: 0.95rem;
+        }
+
+        .contact-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(244, 247, 80, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .contact-item:hover::before {
+            left: 100%;
+        }
+
+        .contact-item:hover {
+            transform: translateX(10px) scale(1.02);
+            background: linear-gradient(135deg, #f4f750 0%, #e8eb3a 100%);
+            border-color: #2E217A;
+        }
+
+        .contact-item .icon-wrapper {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #2E217A 0%, #4a3494 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #f4f750;
+            transition: all 0.3s ease;
+        }
+
+        .contact-item:hover .icon-wrapper {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .contact-item .text-content {
+            flex: 1;
+        }
+
+        .contact-item .label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .contact-item:hover .label {
+            color: #2E217A;
+        }
+
+        .contact-item .value {
+            color: #333;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        /* Form Container */
+        .form-container {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-container h2 {
+            color: #2E217A;
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .form-subtitle {
+            color: #777;
+            margin-bottom: 40px;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2E217A;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2E217A;
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .form-group textarea {
+            min-height: 160px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #f4f750 0%, #d4d730 100%);
+            color: #2E217A;
+            padding: 18px 50px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(46, 33, 122, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .submit-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Success/Error Messages */
+        .success-message,
+        .error-message {
+            display: none;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 500;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+            color: white;
+        }
+
+        /* Footer */
+        .footer {
+            /* background: linear-gradient(135deg, #2E217A 0%, #1a0e4d 100%); */
+            background-color: #2E217A;
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+            margin-top: 80px;
+            position: relative;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            /* background: linear-gradient(to top, #2E217A, transparent); */
+        }
+
+        .footer p {
+            margin: 8px 0;
+            opacity: 0.9;
+        }
+
+        .social-links {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .social-links a {
+            width: 50px;
+            height: 50px;
+            background: rgba(244, 247, 80, 0.1);
+            border: 2px solid #f4f750;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f4f750;
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: #f4f750;
+            color: #2E217A;
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-card {
+                position: relative;
+                top: 0;
+                display: none; /* Ocultar en tablets y móviles */
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .form-container {
+                padding: 35px;
+            }
+
+            /* Mostrar el mensaje de bienvenida en el formulario para móviles */
+            .mobile-welcome {
+                display: block;
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 12px;
+                margin-bottom: 30px;
+                border-left: 4px solid #2E217A;
+            }
+
+            .mobile-welcome h3 {
+                color: #2E217A;
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+
+            .mobile-welcome p {
+                color: #666;
+                line-height: 1.7;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 60px 20px 100px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .container {
+                margin-top: -60px;
+            }
+
+            .form-container,
+            .contact-card {
+                padding: 30px 25px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Ocultar mensaje móvil en desktop */
+        .mobile-welcome {
+            display: none;
+        }
+
+        /* Loading animation */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(46, 33, 122, 0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 25px;
+            border: 6px solid rgba(244, 247, 80, 0.3);
+            border-top: 6px solid #f4f750;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #f4f750;
+        }
+
+        .loading-subtext {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Enviando mensaje...</div>
+            <div class="loading-subtext">Por favor espera un momento</div>
+        </div>
+    </div>
+
+    <!-- Hero Header -->
+    <div class="hero">
+        <div class="logo-container">
+            <img src="logoArequipa.avif" alt="Logo Arequipago" class="logo">
+        </div>
+        <h1>Contáctanos</h1>
+        <p>Estamos aquí para ayudarte en cada paso</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="grid-layout">
+            <!-- Contact Information -->
+            <div class="contact-card">
+                <div class="greeting">¡Hola! 👋</div>
+                <p>Déjanos tus datos y cuéntanos tu inquietud. Te daremos una respuesta en un plazo de hasta <strong>24 horas hábiles</strong>. Nuestro equipo de soporte está listo para asistirte con cualquier duda o problema que tengas con la aplicación.</p>
+
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <div class="icon-wrapper">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="text-content">
+                            <div class="label">Email</div>
+                            <div class="value">soporte@arequipago-ventas.pe</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-item">
+                        <div class="icon-wrapper">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="text-content">
+                            <div class="label">Teléfono</div>
+                            <div class="value">+51 993 570 000</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-item">
+                        <div class="icon-wrapper">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="text-content">
+                            <div class="label">Horario</div>
+                            <div class="value">Lunes a Viernes<br>9:00 AM - 6:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="form-container">
+                <!-- Mensaje de bienvenida para móviles -->
+                <div class="mobile-welcome">
+                    <h3>¡Hola! 👋</h3>
+                    <p>Déjanos tus datos y cuéntanos tu inquietud. Te daremos una respuesta en un plazo de hasta <strong>24 horas hábiles</strong>. Nuestro equipo de soporte está listo para asistirte con cualquier duda o problema que tengas con la aplicación.</p>
+                </div>
+
+                <h2>Formulario de Soporte</h2>
+                <p class="form-subtitle">Completa el siguiente formulario y nos pondremos en contacto contigo lo antes posible.</p>
+
+                <div class="success-message" id="successMessage">
+                    <i class="fas fa-check-circle"></i> ¡Mensaje enviado exitosamente! Te responderemos pronto.
+                </div>
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-circle"></i> Hubo un error al enviar el mensaje. Por favor, intenta nuevamente.
+                </div>
+
+                <form id="contactForm" method="POST" action="procesar_contacto.php">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombre"><i class="fas fa-user"></i> Nombre *</label>
+                            <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="apellido"><i class="fas fa-user"></i> Apellido *</label>
+                            <input type="text" id="apellido" name="apellido" required placeholder="Tu apellido">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email"><i class="fas fa-envelope"></i> Correo Electrónico *</label>
+                        <input type="email" id="email" name="email" required placeholder="ejemplo@correo.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono"><i class="fas fa-phone"></i> Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="+51 999 999 999">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tipo_consulta"><i class="fas fa-list"></i> Tipo de Consulta *</label>
+                        <select id="tipo_consulta" name="tipo_consulta" required>
+                            <option value="">Selecciona una opción</option>
+                            <option value="soporte_tecnico">🔧 Soporte Técnico</option>
+                            <option value="consulta_general">💬 Consulta General</option>
+                            <option value="problema_app">📱 Problema con la App</option>
+                            <option value="sugerencia">💡 Sugerencia</option>
+                            <option value="facturacion">💰 Facturación</option>
+                            <option value="otro">📋 Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="asunto"><i class="fas fa-heading"></i> Asunto *</label>
+                        <input type="text" id="asunto" name="asunto" required placeholder="Breve descripción del asunto">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mensaje"><i class="fas fa-comment-dots"></i> Escribe tu mensaje *</label>
+                        <textarea id="mensaje" name="mensaje" required placeholder="Describe tu consulta o problema con el mayor detalle posible..."></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        <span><i class="fas fa-paper-plane"></i> Enviar Mensaje</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p style="font-size: 1.1rem; font-weight: 600;">&copy; 2025 Arequipago</p>
+        <p>Sistema de Gestión y Soporte</p>
+        <p style="opacity: 0.7; font-size: 0.9rem;">Todos los derechos reservados</p>
+
+        <div class="social-links">
+            <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+            <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+        </div>
+    </div>
+
+    <script>
+        // Manejo del formulario
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const successMessage = document.getElementById('successMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const submitBtn = this.querySelector('.submit-btn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+
+            // Mostrar loading overlay
+            loadingOverlay.classList.add('active');
+            submitBtn.disabled = true;
+
+            // Petición AJAX al servidor
+            fetch('procesar_contacto.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Ocultar loading overlay
+                loadingOverlay.classList.remove('active');
+                submitBtn.disabled = false;
+
+                if (data.success) {
+                    successMessage.style.display = 'block';
+                    errorMessage.style.display = 'none';
+                    this.reset();
+
+                    // Scroll suave al mensaje
+                    successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Ocultar mensaje después de 5 segundos
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 5000);
+                } else {
+                    errorMessage.style.display = 'block';
+                    successMessage.style.display = 'none';
+                    errorMessage.textContent = data.message || 'Hubo un error al enviar el mensaje. Por favor, intenta nuevamente.';
+                    errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            })
+            .catch(error => {
+                // Ocultar loading overlay
+                loadingOverlay.classList.remove('active');
+                submitBtn.disabled = false;
+                errorMessage.style.display = 'block';
+                successMessage.style.display = 'none';
+                errorMessage.textContent = 'Error de conexión. Por favor, intenta nuevamente.';
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+
+        // Validación en tiempo real con efectos visuales
+        document.querySelectorAll('input[required], textarea[required], select[required]').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.style.borderColor = '#f44336';
+                    this.style.background = '#ffebee';
+                } else {
+                    this.style.borderColor = '#4CAF50';
+                    this.style.background = '#f1f8f4';
+                }
+            });
+
+            field.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.style.borderColor = '#e0e0e0';
+                    this.style.background = '#f8f9fa';
+                }
+            });
+        });
+
+        // Validación de email
+        document.getElementById('email').addEventListener('blur', function() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.value && !emailRegex.test(this.value)) {
+                this.style.borderColor = '#f44336';
+                this.style.background = '#ffebee';
+            }
+        });
+    </script>
+</body>
+</html>

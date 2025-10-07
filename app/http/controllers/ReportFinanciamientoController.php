@@ -221,29 +221,36 @@ class ReportFinanciamientoController extends Controller
                     $montoCuotaBase = $detalleCuota['monto_cuota_base'] ?? $cuotaSeleccionada['monto'];
                     $comisionCanalDigital = $detalleCuota['comision_canal_digital'] ?? 0.00;
                     $descuentoAplicado = $detalleCuota['descuento_aplicado'] ?? 0.00;
-                    
+
+                    // ✅ ARREGLADO: Solo aplicar comisión si el método de pago es "Caja Arequipa"
+                    $metodoPago = $pago['metodo_pago'] ?? '';
+                    if ($metodoPago !== 'Caja Arequipa') {
+                        $comisionCanalDigital = 0.00;
+                        $descuentoAplicado = 0.00;
+                    }
+
                     // ✅ NUEVO: Calcular monto final que pagó el cliente
                     $montoFinalCuota = $montoCuotaBase + $comisionCanalDigital - $descuentoAplicado;
-                    
+
                     // Agregar el monto de la cuota al total
                     $montoTotal += $cuotaSeleccionada['monto'];
-                    
+
                     // ✅ MODIFICADO: Generar HTML con detalle de comisión
                     $detalleCuotasHTML .= "<div class='cuota-item'>
                                             <span>Cuota N° {$detalleCuota['numero_cuota']} (Base)</span>
                                             <span>{$monedaFinanciamiento} " . number_format($montoCuotaBase, 2) . "</span>
                                         </div>";
-                    
-                    // ✅ NUEVO: Mostrar comisión si existe
-                    if ($comisionCanalDigital > 0) {
+
+                    // ✅ ARREGLADO: Solo mostrar comisión si método es "Caja Arequipa" Y comisión > 0
+                    if ($metodoPago === 'Caja Arequipa' && $comisionCanalDigital > 0) {
                         $detalleCuotasHTML .= "<div class='cuota-item' style='font-size: 10px; color: #666;'>
                                                 <span>&nbsp;&nbsp;+ Comisión canal digital</span>
                                                 <span>{$monedaFinanciamiento} " . number_format($comisionCanalDigital, 2) . "</span>
                                             </div>";
                     }
-                    
-                    // ✅ NUEVO: Mostrar descuento aplicado si existe
-                    if ($descuentoAplicado > 0) {
+
+                    // ✅ ARREGLADO: Solo mostrar descuento si método es "Caja Arequipa" Y descuento > 0
+                    if ($metodoPago === 'Caja Arequipa' && $descuentoAplicado > 0) {
                         $detalleCuotasHTML .= "<div class='cuota-item' style='font-size: 10px; color: #28a745;'>
                                                 <span>&nbsp;&nbsp;- Descuento aplicado</span>
                                                 <span>{$monedaFinanciamiento} " . number_format($descuentoAplicado, 2) . "</span>
