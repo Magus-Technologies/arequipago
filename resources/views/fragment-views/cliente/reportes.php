@@ -351,37 +351,6 @@
                                     <div class="card-body">
                                         <h5 class="card-title">Filtros Específicos</h5>
                                         
-                                        <!-- Filtro por Categoría -->
-                                        <div class="mb-3">
-                                            <label class="form-label">Categoría de Producto</label>
-                                            <div id="categorias-container" class="mb-3">
-                                                <div class="spinner-border text-primary" role="status">
-                                                    <span class="visually-hidden">Cargando...</span>
-                                                </div>
-                                                <p>Cargando categorías...</p>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" id="select-all-categorias" checked>
-                                                <label class="form-check-label" for="select-all-categorias">
-                                                    Seleccionar todas las categorías
-                                                </label>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Filtro por Productos -->
-                                        <div class="mb-3">
-                                            <label class="form-label">Productos</label>
-                                            <div id="productos-container" class="mb-3">
-                                                <p class="text-muted">Selecciona una categoría para ver los productos disponibles</p>
-                                            </div>
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" id="select-all-productos" checked>
-                                                <label class="form-check-label" for="select-all-productos">
-                                                    Seleccionar todos los productos
-                                                </label>
-                                            </div>
-                                        </div>
-                                        
                                         <!-- Filtro por Tipo de Venta -->
                                         <div class="mb-3">
                                             <label class="form-label">Tipo de Venta</label>
@@ -404,9 +373,64 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        
-                                        <!-- Filtros adicionales para Financiamiento -->
-                                        <div id="filtros-financiamiento" style="display: none;">
+
+                                        <!-- 🔴 AGREGA ESTE BLOQUE COMPLETO AQUÍ -->
+                                        <!-- Selector de tipo de filtro (solo visible cuando tipo_venta = financiamiento) -->
+                                        <div id="selector-tipo-filtro" style="display: none;">
+                                            <div class="mb-3">
+                                                <label class="form-label">Filtrar financiamientos por:</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipo_filtro_financiamiento" id="tipo_filtro_categorias" value="categorias_productos" checked>
+                                                    <label class="form-check-label" for="tipo_filtro_categorias">
+                                                        Categorías y Productos
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="tipo_filtro_financiamiento" id="tipo_filtro_grupos" value="grupos_variantes">
+                                                    <label class="form-check-label" for="tipo_filtro_grupos">
+                                                        Grupos y Variantes de Financiamiento
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- 🔴 FIN DEL BLOQUE A AGREGAR -->
+
+                                        <!-- Contenedor para filtros de Categorías y Productos -->
+                                        <div id="filtros-categorias-productos">
+                                            <!-- Filtro por Categoría -->
+                                            <div class="mb-3">
+                                                <label class="form-label">Categoría de Producto</label>
+                                                <div id="categorias-container" class="mb-3">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                    <p>Cargando categorías...</p>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="select-all-categorias" checked>
+                                                    <label class="form-check-label" for="select-all-categorias">
+                                                        Seleccionar todas las categorías
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Filtro por Productos -->
+                                            <div class="mb-3">
+                                                <label class="form-label">Productos</label>
+                                                <div id="productos-container" class="mb-3">
+                                                    <p class="text-muted">Selecciona una categoría para ver los productos disponibles</p>
+                                                </div>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="select-all-productos" checked>
+                                                    <label class="form-check-label" for="select-all-productos">
+                                                        Seleccionar todos los productos
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>  
+                                                                                
+                                        <!-- Filtros de Grupos y Variantes (solo visible cuando tipo_filtro = grupos_variantes) -->
+                                        <div id="filtros-grupos-variantes" style="display: none;">
                                             <!-- Filtro por Grupos de Financiamiento -->
                                             <div class="mb-3">
                                                 <label class="form-label">Grupos de Financiamiento</label>
@@ -435,6 +459,7 @@
                                                 </div>
                                             </div>
                                         </div>
+
                                         
                                         <!-- Filtro por Moneda -->
                                         <div class="mb-3">
@@ -556,6 +581,172 @@
                 $('.producto-checkbox').prop('checked', isChecked);
             }
 
+            // 🔴 REEMPLAZA ESTE BLOQUE COMPLETO
+            // Event handlers para tipo de venta y tipo de filtro
+            $('input[name="tipo_venta_categoria"]').on('change', function() {
+                const tipoVenta = $(this).val();
+                
+                if (tipoVenta === 'financiamiento') {
+                    // Mostrar selector de tipo de filtro
+                    $('#selector-tipo-filtro').show();
+                    
+                    // Leer el valor actual del tipo de filtro
+                    const tipoFiltro = $('input[name="tipo_filtro_financiamiento"]:checked').val();
+                    
+                    if (tipoFiltro === 'grupos_variantes') {
+                        $('#filtros-categorias-productos').hide();
+                        $('#filtros-grupos-variantes').show();
+                        loadGruposFinanciamiento();
+                    } else {
+                        $('#filtros-categorias-productos').show();
+                        $('#filtros-grupos-variantes').hide();
+                    }
+                } else {
+                    // Ocultar selector y filtros de financiamiento
+                    $('#selector-tipo-filtro').hide();
+                    $('#filtros-grupos-variantes').hide();
+                    
+                    // Mostrar filtros de categorías y productos
+                    $('#filtros-categorias-productos').show();
+                }
+            });
+
+            $('input[name="tipo_filtro_financiamiento"]').on('change', function() {
+                const tipoFiltro = $(this).val();
+                
+                if (tipoFiltro === 'grupos_variantes') {
+                    $('#filtros-categorias-productos').hide();
+                    $('#filtros-grupos-variantes').show();
+                    loadGruposFinanciamiento();
+                } else {
+                    $('#filtros-categorias-productos').show();
+                    $('#filtros-grupos-variantes').hide();
+                }
+            });
+
+            // Event handlers para grupos y variantes
+            $('#select-all-grupos').on('change', toggleAllGrupos);
+            $('#select-all-variantes').on('change', toggleAllVariantes);
+
+            function toggleAllGrupos() {
+                const isChecked = $(this).prop('checked');
+                $('.grupo-checkbox').prop('checked', isChecked);
+                if (isChecked) {
+                    loadVariantesPorGrupo();
+                }
+            }
+
+            function toggleAllVariantes() {
+                const isChecked = $(this).prop('checked');
+                $('.variante-checkbox').prop('checked', isChecked);
+            }
+
+            // Función para cargar grupos de financiamiento
+            function loadGruposFinanciamiento() {
+                $.ajax({
+                    url: '/arequipago/get-grupos-financiamiento',
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        const gruposContainer = $('#grupos-container');
+                        gruposContainer.empty();
+                        
+                        if (response.success && response.data.length > 0) {
+                            const checkboxContainer = $('<div class="empleado-checkbox-container"></div>');
+                            
+                            response.data.forEach(function(grupo) {
+                                const checkboxDiv = $(`
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input grupo-checkbox" type="checkbox" 
+                                            id="grupo-${grupo.idplan_financiamiento}" value="${grupo.idplan_financiamiento}" checked>
+                                        <label class="form-check-label" for="grupo-${grupo.idplan_financiamiento}">
+                                            ${grupo.nombre_plan}
+                                        </label>
+                                    </div>
+                                `);
+                                checkboxContainer.append(checkboxDiv);
+                            });
+                            
+                            gruposContainer.append(checkboxContainer);
+                            
+                            $('.grupo-checkbox').on('change', function() {
+                                updateSelectAllGruposCheckbox();
+                                loadVariantesPorGrupo();
+                            });
+                            
+                            // Cargar variantes inicialmente
+                            loadVariantesPorGrupo();
+                        } else {
+                            gruposContainer.html('<div class="alert alert-warning">No se encontraron grupos de financiamiento.</div>');
+                        }
+                    },
+                    error: function() {
+                        $('#grupos-container').html('<div class="alert alert-danger">Error al cargar grupos de financiamiento.</div>');
+                    }
+                });
+            }
+
+            // Función para cargar variantes por grupo
+            function loadVariantesPorGrupo() {
+                const gruposSeleccionados = [];
+                $('.grupo-checkbox:checked').each(function() {
+                    gruposSeleccionados.push($(this).val());
+                });
+                
+                if (gruposSeleccionados.length === 0) {
+                    $('#variantes-container').html('<p class="text-muted">Selecciona al menos un grupo para ver las variantes</p>');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/arequipago/get-variantes-por-grupo',
+                    method: 'POST',
+                    data: { grupos: gruposSeleccionados },
+                    dataType: 'json',
+                    success: function(response) {
+                        const variantesContainer = $('#variantes-container');
+                        variantesContainer.empty();
+                        
+                        if (response.success && response.data.length > 0) {
+                            const checkboxContainer = $('<div class="empleado-checkbox-container"></div>');
+                            
+                            response.data.forEach(function(variante) {
+                                const checkboxDiv = $(`
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input variante-checkbox" type="checkbox" 
+                                            id="variante-${variante.idgrupos_variantes}" value="${variante.idgrupos_variantes}" checked>
+                                        <label class="form-check-label" for="variante-${variante.idgrupos_variantes}">
+                                            ${variante.nombre_variante}
+                                        </label>
+                                    </div>
+                                `);
+                                checkboxContainer.append(checkboxDiv);
+                            });
+                            
+                            variantesContainer.append(checkboxContainer);
+                            
+                            $('.variante-checkbox').on('change', function() {
+                                updateSelectAllVariantesCheckbox();
+                            });
+                        } else {
+                            variantesContainer.html('<div class="alert alert-warning">No se encontraron variantes para los grupos seleccionados.</div>');
+                        }
+                    },
+                    error: function() {
+                        $('#variantes-container').html('<div class="alert alert-danger">Error al cargar las variantes.</div>');
+                    }
+                });
+            }
+
+            function updateSelectAllGruposCheckbox() {
+                const allChecked = $('.grupo-checkbox:checked').length === $('.grupo-checkbox').length;
+                $('#select-all-grupos').prop('checked', allChecked);
+            }
+
+            function updateSelectAllVariantesCheckbox() {
+                const allChecked = $('.variante-checkbox:checked').length === $('.variante-checkbox').length;
+                $('#select-all-variantes').prop('checked', allChecked);
+            }
 
             // Handle report card selection
             function selectReportType() {
@@ -819,38 +1010,56 @@
                         metodosPago.push($(this).val());
                     });
                     filterData.metodos_pago = metodosPago;
-                } else if (selectedReportType === 'ventas-por-categoria') {
-                    // Filtros específicos para ventas por categoría
-                    const categoriasSeleccionadas = [];
-                    $('.categoria-checkbox:checked').each(function() {
-                        categoriasSeleccionadas.push($(this).val());
-                    });
-                    filterData.categorias = categoriasSeleccionadas;
-                    
-                    const productosSeleccionados = [];
-                    $('.producto-checkbox:checked').each(function() {
-                        productosSeleccionados.push($(this).val());
-                    });
-                    filterData.productos = productosSeleccionados;
-                    
-                    filterData.tipo_venta = $('input[name="tipo_venta_categoria"]:checked').val();
-                    filterData.moneda = $('input[name="moneda_categoria"]:checked').val();
-                    
-                    // Solo agregar filtros de financiamiento si el tipo de venta es financiamiento o todos
-                    if (filterData.tipo_venta === 'financiamiento' || filterData.tipo_venta === 'todos') {
-                        const gruposSeleccionados = [];
-                        $('.grupo-checkbox:checked').each(function() {
-                            gruposSeleccionados.push($(this).val());
-                        });
-                        filterData.grupos = gruposSeleccionados;
+                    } else if (selectedReportType === 'ventas-por-categoria') {
+                        filterData.tipo_venta = $('input[name="tipo_venta_categoria"]:checked').val();
+                        filterData.moneda = $('input[name="moneda_categoria"]:checked').val();
                         
-                        const variantesSeleccionadas = [];
-                        $('.variante-checkbox:checked').each(function() {
-                            variantesSeleccionadas.push($(this).val());
-                        });
-                        filterData.variantes = variantesSeleccionadas;
+                        // Determinar qué tipo de filtro se está usando
+                        const tipoFiltro = $('input[name="tipo_filtro_financiamiento"]:checked').val();
+                        
+                        if (filterData.tipo_venta === 'financiamiento' && tipoFiltro === 'grupos_variantes') {
+                            // Usar filtros de grupos y variantes
+                            const gruposSeleccionados = [];
+                            $('.grupo-checkbox:checked').each(function() {
+                                gruposSeleccionados.push($(this).val());
+                            });
+                            filterData.grupos = gruposSeleccionados;
+                            
+                            const variantesSeleccionadas = [];
+                            $('.variante-checkbox:checked').each(function() {
+                                variantesSeleccionadas.push($(this).val());
+                            });
+                            filterData.variantes = variantesSeleccionadas;
+                            
+                            // 🔴 PONER LOS CONSOLE.LOG AQUÍ (después de capturar grupos y variantes)
+                            console.log('=== DEBUG FILTROS ===');
+                            console.log('Tipo de venta:', filterData.tipo_venta);
+                            console.log('Grupos seleccionados:', gruposSeleccionados);
+                            console.log('Variantes seleccionadas:', variantesSeleccionadas);
+                            console.log('filterData.grupos:', filterData.grupos);
+                            console.log('filterData.variantes:', filterData.variantes);
+                            console.log('====================');
+
+
+                            // No enviar categorías ni productos
+                            filterData.categorias = [];
+                            filterData.productos = [];
+                        } else {
+                            // Usar filtros de categorías y productos
+                            const categoriasSeleccionadas = [];
+                            $('.categoria-checkbox:checked').each(function() {
+                                categoriasSeleccionadas.push($(this).val());
+                            });
+                            filterData.categorias = categoriasSeleccionadas;
+                            
+                            const productosSeleccionados = [];
+                            $('.producto-checkbox:checked').each(function() {
+                                productosSeleccionados.push($(this).val());
+                            });
+                            filterData.productos = productosSeleccionados;
+                        }
                     }
-                }
+
                 // Make AJAX request for report data
                 $.ajax({
                     url: `/arequipago/${selectedReportType}`,
