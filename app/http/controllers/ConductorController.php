@@ -553,9 +553,26 @@ class ConductorController extends Controller
 
         //var_dump($datosInscripcion);
 
-        // Obtener estado de requisitos
+        // Obtener datos de requisitos (rutas de archivos)
         $requisito = new Requisito();
-        $estadoRequisitos = $requisito->obtenerEstadoRequisitos($id_conductor);
+        $datosRequisitos = $requisito->obtenerDatosRequisitos($id_conductor);
+        
+        // Si no hay datos, inicializar con valores vacíos
+        if (!$datosRequisitos) {
+            $datosRequisitos = [
+                'recibo_servicios' => null,
+                'carta_desvinculacion' => null,
+                'revision_tecnica' => null,
+                'soat_doc' => null,
+                'seguro_doc' => null,
+                'tarjeta_propiedad' => null,
+                'licencia_doc' => null,
+                'doc_identidad' => null,
+                'doc_otro1' => null,
+                'doc_otro2' => null,
+                'doc_otro3' => null,
+            ];
+        }
 
         //var_dump($estadoRequisitos);
 
@@ -578,7 +595,7 @@ class ConductorController extends Controller
             ['contacto_emergencia' => $contactoEmergencia->toArray()],
             ['vehiculo' => $datosVehiculo],
             ['inscripcion' => $datosInscripcion],
-            ['requisitos' => $estadoRequisitos],
+            ['requisitos' => $datosRequisitos],
             ['kit' => $datosKit],
             ['observacion' => $datosObservacion]
         );

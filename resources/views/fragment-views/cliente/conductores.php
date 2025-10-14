@@ -1990,7 +1990,27 @@ window.descargarCronogramaPDF = function() {
                         updateDocumentButton('#conductorVehiculoModal a:contains("Descargar Seguro")', requisitos.seguro_doc);
                         updateDocumentButton('#conductorVehiculoModal a:contains("Descargar Revisión Técnica")', requisitos.revision_tecnica);
 
-                        const additionalDocuments = {
+                        // Verificar si el conductor es de Lima
+                        // Nota: response.data.direccion.departamento devuelve el NOMBRE, no el ID
+                        const esLima = response.data.direccion && 
+                                      response.data.direccion.departamento && 
+                                      response.data.direccion.departamento.toUpperCase() === 'LIMA';
+                        
+                        // Debug: Ver qué departamento tiene el conductor
+                        console.log('Departamento del conductor:', response.data.direccion ? response.data.direccion.departamento : 'No tiene dirección');
+                        console.log('¿Es Lima?:', esLima);
+                        
+                        // Definir nombres de documentos según el departamento
+                        const additionalDocuments = esLima ? {
+                            // Documentos para Lima
+                            recibo_servicios: "Recibo de Servicios",
+                            soat_doc: "SOAT",
+                            tarjeta_propiedad: "Tarjeta de Propiedad",
+                            doc_otro1: "Cartilla Informativa",
+                            doc_otro2: "Credencial",
+                            doc_otro3: "Tarjeta Única de Circulación"
+                        } : {
+                            // Documentos para otros departamentos (Arequipa, La Libertad, etc.)
                             carta_desvinculacion: "Carta de Desvinculación",
                             recibo_servicios: "Recibo de Servicios",
                             soat_doc: "SOAT",

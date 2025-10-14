@@ -246,6 +246,23 @@ require_once "app/models/Distrito.php";
                                 <span v-if="errorCampos.direccionDomi" class="error-message">Este campo es requerido</span>
                             </div>
                         </div>
+                        
+                        <?php if (isset($_SESSION['id_rol']) && $_SESSION['id_rol'] == 3): ?>
+                        <!-- Enlace para Director: Gestionar Departamentos -->
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-info d-flex align-items-center justify-content-between" style="background-color: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 6px;">
+                                    <div>
+                                        <i class="fa fa-info-circle" style="color: #2196F3; margin-right: 8px;"></i>
+                                        <strong>Director:</strong> ¿Necesitas habilitar más departamentos?
+                                    </div>
+                                    <a href="/arequipago/config/departamentos" class="btn btn-sm" style="background-color: #2196F3; color: white; font-weight: 600; padding: 6px 16px; border-radius: 4px; text-decoration: none;">
+                                        <i class="fa fa-cog"></i> Gestionar Departamentos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <br>
                     <div class="form-section">
@@ -371,15 +388,27 @@ require_once "app/models/Distrito.php";
                     <h5>Detalle de Inscripción</h5>
                     <div class="row mb-4">
                         <div class="col-md-3">
-                            <label for="tipo_Serv">Tipo de Servicio <span style="color: red;">*</span></label>
+                            <label for="tipo_Serv">Tipo de Servicio <span style="color: red;">*</span> <span v-if="esLima" class="badge bg-info">Lima</span></label>
                             <select v-model="inscripcion.tipo_serv" name="tipo_serv" id="tipo_serv"
                                     :class="['form-select', 'custom-select', {'field-error': errorCampos.tipo_serv}]">
                                 <option value="none2">Seleccionar</option>
-                                <option value="setare">SETARE</option>
-                                <option value="Particular">Particular</option>
-                                <option value="Nuevo por tramitar">Nuevo por tramitar</option>
-                                <option value="vencido">Vencido</option>
-                                <option value="Traspaso">Traspaso</option>
+                                
+                                <!-- Opciones para Lima -->
+                                <template v-if="esLima">
+                                    <option value="Particular">Particular</option>
+                                    <!-- <option value="Taxi">Taxi</option> -->
+                                    <option value="Ejecutivo">Taxi Ejecutivo</option>
+                                    <option value="Independiente">Independiente</option>
+                                </template>
+                                
+                                <!-- Opciones para otros departamentos (Arequipa, La Libertad, etc.) -->
+                                <template v-else>
+                                    <option value="setare">SETARE</option>
+                                    <option value="Particular">Particular</option>
+                                    <option value="Nuevo por tramitar">Nuevo por tramitar</option>
+                                    <option value="vencido">Vencido</option>
+                                    <option value="Traspaso">Traspaso</option>
+                                </template>
                             </select>
                             <span v-if="errorCampos.tipo_serv" class="error-message">Este campo es requerido</span>
                         </div>
@@ -392,162 +421,198 @@ require_once "app/models/Distrito.php";
                     </div>
                     <br>
                     <div class="form-section">
-                        <h5>REQUISITOS</h5>
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <h5>REQUISITOS <span v-if="esLima" class="badge bg-info">Lima</span></h5>
+                        
+                        <!-- Recibo de servicios -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="recibo_serviciosc"> Recibo de servicios
-                                    </label>
-                                </div>
+                                <label for="recibo_servicio" class="form-label mb-0">Recibo de servicios</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="recibo_servicio" name="recibo_servicio" class="form-control"
-                                    required>
+                                <input type="file" id="recibo_servicio" name="recibo_servicio" class="form-control file-input-custom"
+                                    @change="handleFileChange('recibo_servicio', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.recibo_servicio" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.recibo_servicio }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <!-- Carta de desvinculación - SOLO para NO Lima -->
+                        <div v-if="!esLima" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="carta_desvinculacionc"> Carta de desvinculación
-                                    </label>
-                                </div>
+                                <label for="carta_desvinculacion" class="form-label mb-0">Carta de desvinculación</label>
                             </div>
                             <div class="col-md-5">
                                 <input type="file" id="carta_desvinculacion" name="carta_desvinculacion"
-                                    class="form-control" required>
+                                    class="form-control file-input-custom" @change="handleFileChange('carta_desvinculacion', $event)" 
+                                    accept=".pdf,.jpg,.jpeg,.png" :required="!esLima">
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.carta_desvinculacion" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.carta_desvinculacion }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <!-- Revisión técnica -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="revision_tecnicac"> Revisión técnica
-                                    </label>
-                                </div>
+                                <label for="revision_tecnica" class="form-label mb-0">Revisión técnica</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="revision_tecnica" name="revision_tecnica" class="form-control"
-                                    required>
+                                <input type="file" id="revision_tecnica" name="revision_tecnica" class="form-control file-input-custom"
+                                    @change="handleFileChange('revision_tecnica', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.revision_tecnica" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.revision_tecnica }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input Date -->
+                        <!-- SOAT -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="soatdocs" name="soatdocs"> SOAT F.V.
-                                    </label>
-                                </div>
+                                <label for="soatdoc" class="form-label mb-0">SOAT F.V.</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="soatdoc" name="soatdoc" class="form-control" required>
+                                <input type="file" id="soatdoc" name="soatdoc" class="form-control file-input-custom"
+                                    @change="handleFileChange('soatdoc', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.soatdoc" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.soatdoc }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input Date -->
+                        <!-- Seguro Vehicular -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="Seguro vehicular"> Seguro Vehicular
-                                    </label>
-                                </div>
+                                <label for="seguroDoc" class="form-label mb-0">Seguro Vehicular</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="seguroDoc" name="seguroDoc" class="form-control" required>
+                                <input type="file" id="seguroDoc" name="seguroDoc" class="form-control file-input-custom"
+                                    @change="handleFileChange('seguroDoc', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.seguroDoc" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.seguroDoc }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Tarjeta de propiedad -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="tarjeta_propiedadc"> Tarjeta de propiedad
-                                    </label>
-                                </div>
+                                <label for="tarjeta_propiedad" class="form-label mb-0">Tarjeta de propiedad</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="tarjeta_propiedad" name="tarjeta_propiedad" class="form-control"
-                                    required>
+                                <input type="file" id="tarjeta_propiedad" name="tarjeta_propiedad" class="form-control file-input-custom"
+                                    @change="handleFileChange('tarjeta_propiedad', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.tarjeta_propiedad" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.tarjeta_propiedad }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Licencia -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="licenciadocc"> Licencia
-                                    </label>
-                                </div>
+                                <label for="licenciadoc" class="form-label mb-0">Licencia</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="licenciadoc" name="licenciadoc" class="form-control" required>
+                                <input type="file" id="licenciadoc" name="licenciadoc" class="form-control file-input-custom"
+                                    @change="handleFileChange('licenciadoc', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.licenciadoc" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.licenciadoc }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Doc. de identidad -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="doc_identidad"> Doc. de identidad
-                                    </label>
-                                </div>
+                                <label for="docIdentidad" class="form-label mb-0">Doc. de identidad</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docIdentidad" name="docIdentidad" class="form-control" required>
+                                <input type="file" id="docIdentidad" name="docIdentidad" class="form-control file-input-custom"
+                                    @change="handleFileChange('docIdentidad', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.docIdentidad" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.docIdentidad }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <!-- Cartilla informativa - SOLO para Lima -->
+                        <div v-if="esLima" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="otro1"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro1" class="form-label mb-0">Cartilla informativa</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro1" name="docotro1" class="form-control">
+                                <input type="file" id="docotro1" name="docotro1" class="form-control file-input-custom"
+                                    @change="handleFileChange('docotro1', $event)" accept=".pdf,.jpg,.jpeg,.png" :required="esLima">
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.docotro1" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.docotro1 }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <!-- Credencial - SOLO para Lima -->
+                        <div v-if="esLima" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="otro2"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro2" class="form-label mb-0">Credencial</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro2" name="docotro2" class="form-control">
+                                <input type="file" id="docotro2" name="docotro2" class="form-control file-input-custom"
+                                    @change="handleFileChange('docotro2', $event)" accept=".pdf,.jpg,.jpeg,.png" :required="esLima">
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.docotro2" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.docotro2 }}
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <!-- Tarjeta única de circulación - SOLO para Lima -->
+                        <div v-if="esLima" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" name="otro3"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro3" class="form-label mb-0">Tarjeta única de circulación</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro3" name="docotro3" class="form-control">
+                                <input type="file" id="docotro3" name="docotro3" class="form-control file-input-custom"
+                                    @change="handleFileChange('docotro3', $event)" accept=".pdf,.jpg,.jpeg,.png" :required="esLima">
+                            </div>
+                            <div class="col-md-4">
+                                <span v-if="archivos.docotro3" class="badge bg-success">
+                                    <i class="fa fa-check-circle"></i> {{ archivos.docotro3 }}
+                                </span>
                             </div>
                         </div>
 
+                        <!-- Otros doc. (opcional) - SOLO para NO Lima -->
+                        <div v-if="!esLima" class="row mb-3 align-items-center">
+                            <div class="col-md-3">
+                                <label for="docotro1" class="form-label mb-0">Otros doc. (opcional)</label>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="file" id="docotro1_extra" class="form-control file-input-custom"
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">Opcional</span>
+                            </div>
+                        </div>
 
                     </div>
 
@@ -693,6 +758,19 @@ require_once "app/models/Distrito.php";
                     talla: '',
                     fotocheck: false
                 },
+                archivos: {
+                    recibo_servicio: '',
+                    carta_desvinculacion: '',
+                    revision_tecnica: '',
+                    soatdoc: '',
+                    seguroDoc: '',
+                    tarjeta_propiedad: '',
+                    licenciadoc: '',
+                    docIdentidad: '',
+                    docotro1: '',
+                    docotro2: '',
+                    docotro3: ''
+                },
                 listaDepartamentos: [],
                 listaProvincias: [],
                 listaDistritos: [],
@@ -719,6 +797,10 @@ require_once "app/models/Distrito.php";
                         return edad - 1 >= 18;
                     }
                     return edad >= 18;
+                },
+                // Verificar si el departamento seleccionado es Lima (ID: 19)
+                esLima() {
+                    return this.direccion.departamento == 19;
                 },
                 // Validar campos requeridos según backend
                 errorCampos() {
@@ -802,6 +884,10 @@ require_once "app/models/Distrito.php";
                     if (oldVal !== undefined) {
                         this.$set(this.touchedFields, 'departamento', true);
                         this.$set(this.touchedFields, 'provincia', true);
+                        
+                        // Resetear tipo de servicio cuando cambia el departamento
+                        // para evitar valores inválidos
+                        this.inscripcion.tipo_serv = 'none2';
                     }
 
                     if (newVal !== 'notdepartamento') {
@@ -880,6 +966,33 @@ require_once "app/models/Distrito.php";
                             this.conductor.photoPreview = e.target.result;
                         };
                         reader.readAsDataURL(file);
+                    }
+                },
+                handleFileChange(fieldName, event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        // Validar tamaño del archivo (máximo 5MB)
+                        const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+                        if (file.size > maxSize) {
+                            alert('El archivo es demasiado grande. El tamaño máximo es 5MB.');
+                            event.target.value = ''; // Limpiar el input
+                            this.archivos[fieldName] = '';
+                            return;
+                        }
+
+                        // Validar tipo de archivo
+                        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                        if (!allowedTypes.includes(file.type)) {
+                            alert('Tipo de archivo no permitido. Solo se aceptan PDF, JPG, JPEG y PNG.');
+                            event.target.value = ''; // Limpiar el input
+                            this.archivos[fieldName] = '';
+                            return;
+                        }
+
+                        // Guardar el nombre del archivo
+                        this.archivos[fieldName] = file.name;
+                    } else {
+                        this.archivos[fieldName] = '';
                     }
                 },
                 cargarDepartamentos() {
@@ -981,9 +1094,10 @@ require_once "app/models/Distrito.php";
                 },
                 actualizarNumeroUnidadConDepartamento() {
                     const tipoVehiculo = this.vehiculo.esMoto ? 'moto' : 'auto';
-                    if (this.direccion.departamento === '19') {
+                    // Comparar con == para que funcione con string o número
+                    if (this.direccion.departamento == 19) {
                         this.obtenerNumeroUnidadLima(tipoVehiculo);
-                    } else {
+                    } else if (this.direccion.departamento && this.direccion.departamento !== 'notdepartamento') {
                         this.obtenerNumeroUnidad(tipoVehiculo);
                     }
                 },

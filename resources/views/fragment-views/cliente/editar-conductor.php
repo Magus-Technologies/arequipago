@@ -653,176 +653,192 @@ $id_conductor = $_GET['id'] ?? null;
                     <h5>Detalle de Inscripción</h5>
                     <div class="row mb-4">
                         <div class="col-md-3">
-                            <label for="tipo_Serv">Tipo de Servicio</label>
+                            <label for="tipo_Serv">Tipo de Servicio <span id="badgeLima" class="badge bg-info" style="display:none;">Lima</span></label>
                             <select name="tipo_serv" id="tipo_serv" class="form-select custom-select">
                                 <option value="none2">Seleccionar</option>
-                                <option value="setare">SETARE</option>
-                                <option value="Particular">Particular</option>
-                                <option value="Nuevo">Nuevo por tramitar</option>
-                                <option value="vencido">Vencido</option>
-                                <option value="Traspaso">Traspaso</option>
+                                <!-- Las opciones se cargarán dinámicamente según el departamento -->
                             </select>
                         </div>
                         
                     </div>
                     <br>
                     <div class="form-section">
-                        <h5>REQUISITOS</h5>
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <h5>REQUISITOS <span id="badgeRequisitosLima" class="badge bg-info" style="display:none;">Lima</span></h5>
+                        
+                        <!-- Recibo de servicios -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="reciboService"> Recibo de servicios
-                                    </label>
-                                </div>
+                                <label for="recibo_servicio" class="form-label mb-0">Recibo de servicios</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="recibo_servicio" name="recibo_servicio" class="form-control"
-                                    required>
+                                <input type="file" id="recibo_servicio" name="recibo_servicio" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('recibo_servicio', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_recibo_servicio" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <!-- Carta de desvinculación - SOLO para NO Lima -->
+                        <div id="row_carta_desvinculacion" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="cartaDesvinculacion" > Carta de desvinculación
-                                    </label>
-                                </div>
+                                <label for="carta_desvinculacion" class="form-label mb-0">Carta de desvinculación</label>
                             </div>
                             <div class="col-md-5">
                                 <input type="file" id="carta_desvinculacion" name="carta_desvinculacion"
-                                    class="form-control" required>
+                                    class="form-control file-input-custom" onchange="handleFileChangeEdit('carta_desvinculacion', this)" 
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_carta_desvinculacion" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input File -->
+                        <!-- Revisión técnica -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="revisionTecnica"> Revisión técnica
-                                    </label>
-                                </div>
+                                <label for="revision_tecnica" class="form-label mb-0">Revisión técnica</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="revision_tecnica" name="revision_tecnica" class="form-control"
-                                    required>
+                                <input type="file" id="revision_tecnica" name="revision_tecnica" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('revision_tecnica', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_revision_tecnica" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input Date -->
+                        <!-- SOAT -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="soatdocs" name="soatdocs"> SOAT F.V.
-                                    </label>
-                                </div>
+                                <label for="soatdoc" class="form-label mb-0">SOAT F.V.</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="soatdoc" name="soatdoc" class="form-control" required>
+                                <input type="file" id="soatdoc" name="soatdoc" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('soatdoc', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_soatdoc" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input Date -->
+                        <!-- Seguro Vehicular -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="Segurovehicular"> Seguro Vehicular
-                                    </label>
-                                </div>
+                                <label for="seguroDoc" class="form-label mb-0">Seguro Vehicular</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="seguroDoc" name="seguroDoc" class="form-control" required>
+                                <input type="file" id="seguroDoc" name="seguroDoc" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('seguroDoc', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_seguroDoc" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Tarjeta de propiedad -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="tarjetapropedad"> Tarjeta de propiedad
-                                    </label>
-                                </div>
+                                <label for="tarjeta_propiedad" class="form-label mb-0">Tarjeta de propiedad</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="tarjeta_propiedad" name="tarjeta_propiedad" class="form-control"
-                                    required>
+                                <input type="file" id="tarjeta_propiedad" name="tarjeta_propiedad" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('tarjeta_propiedad', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_tarjeta_propiedad" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Licencia -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="licenciaC"> Licencia
-                                    </label>
-                                </div>
+                                <label for="licenciadoc" class="form-label mb-0">Licencia</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="licenciadoc" name="licenciadoc" class="form-control" required>
+                                <input type="file" id="licenciadoc" name="licenciadoc" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('licenciadoc', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_licenciadoc" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <!-- Checkbox + Input -->
+                        <!-- Doc. de identidad -->
+                        <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="doc_identidad"> Doc. de identidad
-                                    </label>
-                                </div>
+                                <label for="docIdentidad" class="form-label mb-0">Doc. de identidad</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docIdentidad" name="docIdentidad" class="form-control" required>
+                                <input type="file" id="docIdentidad" name="docIdentidad" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('docIdentidad', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_docIdentidad" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <!-- Campos dinámicos para Lima -->
+                        <div id="row_docotro1" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="otro1"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro1" class="form-label mb-0" id="label_docotro1">Otros doc. (opcional)</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro1" name="docotro1" class="form-control">
+                                <input type="file" id="docotro1" name="docotro1" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('docotro1', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_docotro1" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <div id="row_docotro2" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="otro2"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro2" class="form-label mb-0" id="label_docotro2">Otros doc. (opcional)</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro2" name="docotro2" class="form-control">
+                                <input type="file" id="docotro2" name="docotro2" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('docotro2', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_docotro2" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
+                        <div id="row_docotro3" class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <div class="form-check ms-3">
-                                    <label>
-                                        <input type="checkbox" id="otro3"> Otros doc.
-                                    </label>
-                                </div>
+                                <label for="docotro3" class="form-label mb-0" id="label_docotro3">Otros doc. (opcional)</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="file" id="docotro3" name="docotro3" class="form-control">
+                                <input type="file" id="docotro3" name="docotro3" class="form-control file-input-custom"
+                                    onchange="handleFileChangeEdit('docotro3', this)" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4">
+                                <span id="badge_docotro3" class="badge bg-success" style="display:none;">
+                                    <i class="fa fa-check-circle"></i> <span class="filename"></span>
+                                </span>
                             </div>
                         </div>
-
 
                     </div>
 
@@ -1648,18 +1664,19 @@ $id_conductor = $_GET['id'] ?? null;
                         // Observación
                         document.getElementById('comentarios').value = data.observacion.descripcion;
 
-                        // Requisitos
-                        setCheckboxState('reciboService', data.requisitos.recibo_servicios);
-                        setCheckboxState('cartaDesvinculacion', data.requisitos.carta_desvinculacion);
-                        setCheckboxState('revisionTecnica', data.requisitos.revision_tecnica);
-                        setCheckboxState('soatdocs', data.requisitos.soat_doc);
-                        setCheckboxState('licenciaC', data.requisitos.licencia_doc);
-                        setCheckboxState('Segurovehicular', data.requisitos.seguro_doc);
-                        setCheckboxState('tarjetapropedad', data.requisitos.tarjeta_propiedad);
-                        setCheckboxState('doc_identidad', data.requisitos.doc_identidad);
-                        setCheckboxState('otro1', data.requisitos.doc_otro1);
-                        setCheckboxState('otro2', data.requisitos.doc_otro2);
-                        setCheckboxState('otro3', data.requisitos.doc_otro3);
+                        // Requisitos - Mostrar badges de archivos existentes
+                        console.log('📄 Datos de requisitos recibidos:', data.requisitos);
+                        mostrarArchivoExistente('recibo_servicio', data.requisitos.recibo_servicios);
+                        mostrarArchivoExistente('carta_desvinculacion', data.requisitos.carta_desvinculacion);
+                        mostrarArchivoExistente('revision_tecnica', data.requisitos.revision_tecnica);
+                        mostrarArchivoExistente('soatdoc', data.requisitos.soat_doc);
+                        mostrarArchivoExistente('licenciadoc', data.requisitos.licencia_doc);
+                        mostrarArchivoExistente('seguroDoc', data.requisitos.seguro_doc);
+                        mostrarArchivoExistente('tarjeta_propiedad', data.requisitos.tarjeta_propiedad);
+                        mostrarArchivoExistente('docIdentidad', data.requisitos.doc_identidad);
+                        mostrarArchivoExistente('docotro1', data.requisitos.doc_otro1);
+                        mostrarArchivoExistente('docotro2', data.requisitos.doc_otro2);
+                        mostrarArchivoExistente('docotro3', data.requisitos.doc_otro3);
                     } else {
                         console.error('Failed to fetch conductor data:', data.message);
                     }
@@ -1699,6 +1716,148 @@ $id_conductor = $_GET['id'] ?? null;
             var checkbox = document.getElementById(id);
             if (checkbox) {
                 checkbox.checked = state === 1;
+            }
+        }
+
+        // Función para mostrar archivos existentes al cargar el formulario
+        function mostrarArchivoExistente(fieldName, archivoPath) {
+            const badge = document.getElementById('badge_' + fieldName);
+            
+            // Verificar si archivoPath es válido y es un string
+            if (archivoPath && archivoPath !== '' && archivoPath !== null && typeof archivoPath === 'string') {
+                // Extraer el nombre del archivo de la ruta
+                const nombreArchivo = archivoPath.split('/').pop();
+                
+                if (badge) {
+                    const filenameSpan = badge.querySelector('.filename');
+                    if (filenameSpan) {
+                        filenameSpan.textContent = nombreArchivo;
+                    }
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                // Ocultar badge si no hay archivo
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        // Función para manejar cambio de archivos y mostrar badge
+        function handleFileChangeEdit(fieldName, input) {
+            const file = input.files[0];
+            const badge = document.getElementById('badge_' + fieldName);
+            
+            if (file) {
+                // Validar tamaño del archivo (máximo 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+                if (file.size > maxSize) {
+                    alert('El archivo es demasiado grande. El tamaño máximo es 5MB.');
+                    input.value = ''; // Limpiar el input
+                    if (badge) badge.style.display = 'none';
+                    return;
+                }
+
+                // Validar tipo de archivo
+                const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Tipo de archivo no permitido. Solo se aceptan PDF, JPG, JPEG y PNG.');
+                    input.value = ''; // Limpiar el input
+                    if (badge) badge.style.display = 'none';
+                    return;
+                }
+
+                // Mostrar badge con nombre del archivo
+                if (badge) {
+                    const filenameSpan = badge.querySelector('.filename');
+                    if (filenameSpan) {
+                        filenameSpan.textContent = file.name;
+                    }
+                    badge.style.display = 'inline-flex';
+                }
+            } else {
+                // Ocultar badge si no hay archivo
+                if (badge) badge.style.display = 'none';
+            }
+        }
+
+        // Función para actualizar requisitos según departamento
+        function actualizarRequisitos() {
+            const departamentoSelect = document.getElementById('departamentose');
+            if (!departamentoSelect) return;
+            
+            const departamentoId = departamentoSelect.value;
+            const esLima = departamentoId == 19;
+            
+            // Badge de requisitos Lima
+            const badgeRequisitos = document.getElementById('badgeRequisitosLima');
+            if (badgeRequisitos) {
+                badgeRequisitos.style.display = esLima ? 'inline' : 'none';
+            }
+            
+            // Carta de desvinculación - solo para NO Lima
+            const rowCartaDesv = document.getElementById('row_carta_desvinculacion');
+            if (rowCartaDesv) {
+                rowCartaDesv.style.display = esLima ? 'none' : 'block';
+            }
+            
+            // Actualizar labels de docotro según departamento
+            const labelOtro1 = document.getElementById('label_docotro1');
+            const labelOtro2 = document.getElementById('label_docotro2');
+            const labelOtro3 = document.getElementById('label_docotro3');
+            
+            if (esLima) {
+                // Labels para Lima
+                if (labelOtro1) labelOtro1.textContent = 'Cartilla informativa';
+                if (labelOtro2) labelOtro2.textContent = 'Credencial';
+                if (labelOtro3) labelOtro3.textContent = 'Tarjeta única de circulación';
+            } else {
+                // Labels para otros departamentos
+                if (labelOtro1) labelOtro1.textContent = 'Otros doc. (opcional)';
+                if (labelOtro2) labelOtro2.textContent = 'Otros doc. (opcional)';
+                if (labelOtro3) labelOtro3.textContent = 'Otros doc. (opcional)';
+            }
+        }
+
+        // Función para actualizar opciones de Tipo de Servicio según departamento
+        function actualizarTipoServicio() {
+            const departamentoSelect = document.getElementById('departamentose');
+            const tipoServSelect = document.getElementById('tipo_serv');
+            const badgeLima = document.getElementById('badgeLima');
+            
+            if (!departamentoSelect || !tipoServSelect) return;
+            
+            const departamentoId = departamentoSelect.value;
+            const valorActual = tipoServSelect.value;
+            const esLima = departamentoId == 19;
+            
+            // Mostrar/ocultar badge Lima
+            if (badgeLima) {
+                badgeLima.style.display = esLima ? 'inline' : 'none';
+            }
+            
+            // Limpiar opciones actuales
+            tipoServSelect.innerHTML = '<option value="none2">Seleccionar</option>';
+            
+            if (esLima) {
+                // Opciones para Lima
+                tipoServSelect.innerHTML += '<option value="Particular">Particular</option>';
+                tipoServSelect.innerHTML += '<option value="Taxi">Taxi</option>';
+                tipoServSelect.innerHTML += '<option value="Ejecutivo">Ejecutivo</option>';
+                tipoServSelect.innerHTML += '<option value="Independiente">Independiente</option>';
+            } else {
+                // Opciones para otros departamentos
+                tipoServSelect.innerHTML += '<option value="setare">SETARE</option>';
+                tipoServSelect.innerHTML += '<option value="Particular">Particular</option>';
+                tipoServSelect.innerHTML += '<option value="Nuevo">Nuevo por tramitar</option>';
+                tipoServSelect.innerHTML += '<option value="vencido">Vencido</option>';
+                tipoServSelect.innerHTML += '<option value="Traspaso">Traspaso</option>';
+            }
+            
+            // Restaurar valor si existe en las nuevas opciones
+            if (valorActual && valorActual !== 'none2') {
+                const optionExists = Array.from(tipoServSelect.options).some(opt => opt.value === valorActual);
+                if (optionExists) {
+                    tipoServSelect.value = valorActual;
+                }
             }
         }
 
@@ -1862,12 +2021,109 @@ $id_conductor = $_GET['id'] ?? null;
             document.getElementById('label_fechSeguro').innerText = esMoto ? 'Fecha vencimiento Seguro' : 'Fecha vencimiento Seguro Vehicular';
         }
 
+        // Función para actualizar opciones de Tipo de Servicio según departamento
+        function actualizarTipoServicio() {
+            const departamentoSelect = document.getElementById('departamentose');
+            const tipoServSelect = document.getElementById('tipo_serv');
+            const badgeLima = document.getElementById('badgeLima');
+            
+            if (!departamentoSelect || !tipoServSelect) return;
+            
+            const departamentoId = departamentoSelect.value;
+            const valorActual = tipoServSelect.value;
+            const esLima = departamentoId == 19;
+            
+            // Mostrar/ocultar badge Lima
+            if (badgeLima) {
+                badgeLima.style.display = esLima ? 'inline' : 'none';
+            }
+            
+            // Limpiar opciones actuales
+            tipoServSelect.innerHTML = '<option value="none2">Seleccionar</option>';
+            
+            if (esLima) {
+                // Opciones para Lima
+                tipoServSelect.innerHTML += '<option value="Particular">Particular</option>';
+                tipoServSelect.innerHTML += '<option value="Taxi">Taxi</option>';
+                tipoServSelect.innerHTML += '<option value="Ejecutivo">Ejecutivo</option>';
+                tipoServSelect.innerHTML += '<option value="Independiente">Independiente</option>';
+            } else {
+                // Opciones para otros departamentos
+                tipoServSelect.innerHTML += '<option value="setare">SETARE</option>';
+                tipoServSelect.innerHTML += '<option value="Particular">Particular</option>';
+                tipoServSelect.innerHTML += '<option value="Nuevo">Nuevo por tramitar</option>';
+                tipoServSelect.innerHTML += '<option value="vencido">Vencido</option>';
+                tipoServSelect.innerHTML += '<option value="Traspaso">Traspaso</option>';
+            }
+            
+            // Restaurar valor si existe en las nuevas opciones
+            if (valorActual && valorActual !== 'none2') {
+                const optionExists = Array.from(tipoServSelect.options).some(opt => opt.value === valorActual);
+                if (optionExists) {
+                    tipoServSelect.value = valorActual;
+                }
+            }
+            
+            // Actualizar también los requisitos
+            actualizarRequisitos();
+        }
+
+        // Función para actualizar labels de requisitos según departamento
+        function actualizarRequisitos() {
+            const departamentoSelect = document.getElementById('departamentose');
+            if (!departamentoSelect) return;
+            
+            const departamentoId = departamentoSelect.value;
+            const esLima = departamentoId == 19;
+            
+            // Badge de requisitos Lima
+            const badgeRequisitos = document.getElementById('badgeRequisitosLima');
+            if (badgeRequisitos) {
+                badgeRequisitos.style.display = esLima ? 'inline' : 'none';
+            }
+            
+            // Carta de desvinculación - ocultar para Lima
+            const rowCarta = document.getElementById('row_carta_desvinculacion');
+            if (rowCarta) {
+                rowCarta.style.display = esLima ? 'none' : 'flex';
+            }
+            
+            // Actualizar labels de "Otros doc" según departamento
+            const labelDocotro1 = document.getElementById('label_docotro1');
+            const labelDocotro2 = document.getElementById('label_docotro2');
+            const labelDocotro3 = document.getElementById('label_docotro3');
+            
+            if (esLima) {
+                // Labels para Lima
+                if (labelDocotro1) labelDocotro1.textContent = 'Cartilla informativa';
+                if (labelDocotro2) labelDocotro2.textContent = 'Credencial';
+                if (labelDocotro3) labelDocotro3.textContent = 'Tarjeta única de circulación';
+            } else {
+                // Labels para otros departamentos
+                if (labelDocotro1) labelDocotro1.textContent = 'Otros doc. (opcional)';
+                if (labelDocotro2) labelDocotro2.textContent = 'Otros doc. (opcional)';
+                if (labelDocotro3) labelDocotro3.textContent = 'Otros doc. (opcional)';
+            }
+        }
+
         $(document).ready(function () {
 
             UploadDepartamentos();
             EnabledSelect();
             inicializarCategoriasLicencia();
             chargedData();
+            
+            // Actualizar tipo de servicio y requisitos cuando cambie el departamento
+            $('#departamentose').on('change', function() {
+                actualizarTipoServicio();
+                actualizarRequisitos();
+            });
+            
+            // Actualizar tipo de servicio y requisitos al cargar
+            setTimeout(function() {
+                actualizarTipoServicio();
+                actualizarRequisitos();
+            }, 1000);
 
             // NUEVO: Asegurar que las opciones originales de licencia se guarden al cargar la página
             setTimeout(function() {              
