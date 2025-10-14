@@ -389,3 +389,23 @@ Route::postBase("/beneficios", "FragmentController@beneficiosUsuarios");
 Route::get("/obtenerProductosVehiculos", "FinanciamientoController@obtenerProductosVehiculos");
 Route::get('/buscarProductosVehiculos','FinanciamientoController@buscarProductosVehiculos');
 Route::post('/entregarVehiculo','FinanciamientoController@entregarVehiculo');
+
+
+// =====================================================
+// RUTAS PARA CONFIGURACIÓN DE DEPARTAMENTOS (Solo Director - Rol 3)
+// =====================================================
+
+// Vista de configuración de departamentos
+Route::postBase("/config/departamentos", "FragmentController@configDepartamentos");
+
+// API para obtener todos los departamentos con su estado
+Route::get('/config/departamentos/obtener', 'DepartamentosConfigController@obtenerTodosDepartamentos');
+
+// API para cambiar el estado de un departamento
+Route::post('/config/departamentos/cambiar-estado', 'DepartamentosConfigController@cambiarEstadoDepartamento');
+
+// API para obtener historial de cambios
+Route::get('/config/departamentos/historial', 'DepartamentosConfigController@obtenerHistorial');
+
+// API para habilitar múltiples departamentos a la vez
+Route::post('/config/departamentos/habilitar-multiples', 'DepartamentosConfigController@habilitarMultiples');

@@ -12,13 +12,18 @@ class LocationController extends Controller{
     
 
     public function getDepartments(){
-        
-
         $departamentoModel = new Departamento();
 
-        $departments = $departamentoModel->obtenerDepartamentos();
+        // Verificar si se solicita todos los departamentos (para uso futuro)
+        // Ejemplo: /cargardireccion?todos=1
+        $todos = isset($_GET['todos']) && $_GET['todos'] == '1';
 
-     
+        if ($todos) {
+            $departments = $departamentoModel->obtenerTodosDepartamentos();
+        } else {
+            // Por defecto, solo Arequipa, La Libertad y Lima
+            $departments = $departamentoModel->obtenerDepartamentos();
+        }
         
         echo json_encode($departments);
         exit;

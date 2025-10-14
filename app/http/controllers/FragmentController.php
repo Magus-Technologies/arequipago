@@ -225,6 +225,11 @@ class FragmentController extends Controller
     public function pepeleraFinanciamientos(){
         return $this->view("fragment-views/cliente/financiamiento-eliminados");
     }
+
+    public function configDepartamentos(){
+        return $this->view("fragment-views/cliente/config-departamentos");
+    }
+
     // soporte
     public function soporteTickets()
     {

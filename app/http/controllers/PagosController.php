@@ -686,52 +686,96 @@ class PagosController extends Controller
     /**
      * Eliminar un pago rechazado
      */
-    public function eliminarPagoPendiente()
-    {
-        // Verificamos si hay una sesión activa
-        if (!isset($_SESSION['usuario_id'])) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Sesión no iniciada'
-            ]);
-            return;
-        }
-        
-        // Verificamos si se recibió el ID del pago
-        if (!isset($_POST['idPago']) || empty($_POST['idPago'])) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'ID de pago no especificado'
-            ]);
-            return;
-        }
-        
-        $idPago = $_POST['idPago'];
-        
-        try {
-            // Eliminamos el pago (las tablas relacionadas se eliminarán por cascade)
-            $query = "DELETE FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
-            
-            $stmt = mysqli_prepare($this->conectar, $query);
-            mysqli_stmt_bind_param($stmt, "i", $idPago);
-            $result = mysqli_stmt_execute($stmt);
-            
-            mysqli_stmt_close($stmt);
-            
-            if (!$result) {
-                throw new Exception("Error al eliminar el pago");
+   public function eliminarPagoPendiente()
+     {
+         // Verificamos si hay una sesión activa
+         if (!isset($_SESSION['usuario_id'])) {
+             echo json_encode([
+                 'success' => false,
+                 'message' => 'Sesión no iniciada'
+             ]);
+             return;
             }
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Pago eliminado correctamente'
-            ]);
-            
-        } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Error al eliminar el pago: ' . $e->getMessage()
-            ]);
+    
+            // Verificamos si se recibió el ID del pago
+            if (!isset($_POST['idPago']) || empty($_POST['idPago'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de pago no especificado'
+                ]);
+                return;
+            }
+    
+            $idPago = $_POST['idPago'];
+            $dbConnection = $this->conectar;
+    
+            // Iniciar transacción
+            mysqli_begin_transaction($dbConnection);
+   
+            try {
+                // 1. Obtener los id_cuota del detalle del pago antes de eliminarlo
+                $cuotasIds = [];
+                $querySelect = "SELECT id_cuota FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+                $stmtSelect = mysqli_prepare($dbConnection, $querySelect);
+                mysqli_stmt_bind_param($stmtSelect, "i", $idPago);
+                mysqli_stmt_execute($stmtSelect);
+                $resultSelect = mysqli_stmt_get_result($stmtSelect);
+                while ($row = mysqli_fetch_assoc($resultSelect)) {
+                    $cuotasIds[] = $row['id_cuota'];
+                }
+                mysqli_stmt_close($stmtSelect);
+   
+                // 2. Eliminar de la tabla pagos_pendientes_financiamientos (si aplica)
+                $queryDeletePendiente = "DELETE FROM pagos_pendientes_financiamientos WHERE idpagos_financiamiento = ?";
+                $stmtDeletePendiente = mysqli_prepare($dbConnection, $queryDeletePendiente);
+                mysqli_stmt_bind_param($stmtDeletePendiente, "i", $idPago);
+                mysqli_stmt_execute($stmtDeletePendiente);
+                mysqli_stmt_close($stmtDeletePendiente);
+   
+                // 3. Eliminar de la tabla detalle_pago_financiamiento
+                $queryDeleteDetalle = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+                $stmtDeleteDetalle = mysqli_prepare($dbConnection, $queryDeleteDetalle);
+                mysqli_stmt_bind_param($stmtDeleteDetalle, "i", $idPago);
+                mysqli_stmt_execute($stmtDeleteDetalle);
+                mysqli_stmt_close($stmtDeleteDetalle);
+   
+                // 4. Eliminar de la tabla pagos_financiamiento
+                $queryDeletePago = "DELETE FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+                $stmtDeletePago = mysqli_prepare($dbConnection, $queryDeletePago);
+                mysqli_stmt_bind_param($stmtDeletePago, "i", $idPago);
+                mysqli_stmt_execute($stmtDeletePago);
+                mysqli_stmt_close($stmtDeletePago);
+   
+                // 5. Actualizar el estado de las cuotas a 'En Progreso'
+                if (!empty($cuotasIds)) {
+                    $placeholders = implode(',', array_fill(0, count($cuotasIds), '?'));
+                    $query_update_cuotas = "UPDATE cuotas_financiamiento SET estado = 'En Progreso', fecha_pago = NULL WHERE idcuotas_financiamiento IN (
+ $placeholders)";
+   
+                    $stmtUpdate = mysqli_prepare($dbConnection, $query_update_cuotas);
+   
+                    $types = str_repeat('i', count($cuotasIds));
+                    mysqli_stmt_bind_param($stmtUpdate, $types, ...$cuotasIds);
+   
+                    mysqli_stmt_execute($stmtUpdate);
+                    mysqli_stmt_close($stmtUpdate);
+                }
+   
+                // Si todo fue exitoso, confirma los cambios
+                mysqli_commit($dbConnection);
+   
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Pago eliminado y cuotas revertidas correctamente'
+                ]);
+   
+            } catch (Exception $e) {
+                // Si algo falló, revierte todos los cambios
+                mysqli_rollback($dbConnection);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al eliminar el pago: ' . $e->getMessage()
+                ]);
+            }
         }
-    }
 }
