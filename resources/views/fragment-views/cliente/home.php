@@ -113,6 +113,22 @@ $row = $result->fetch_assoc(); // Obtener el resultado
 // Obtener el número de conductores
 $cantidad_conductores = $row['total_conductores'];
 
+// Consulta SQL para contar los registros de conductores
+$sql = "SELECT COUNT(*) AS total_conductores FROM conductores"; 
+$result = $conexion->query($sql); 
+$row = $result->fetch_assoc(); 
+
+// Obtener el número de conductores
+$cantidad_conductores = $row['total_conductores'];
+
+// 🆕 NUEVA CONSULTA: Contar clientes de la tabla clientes_financiar
+$sql_clientes = "SELECT COUNT(*) AS total_clientes FROM clientes_financiar";
+$result_clientes = $conexion->query($sql_clientes);
+$row_clientes = $result_clientes->fetch_assoc();
+
+// Obtener el número de clientes
+$cantidad_clientes = $row_clientes['total_clientes'];
+
 // Consulta para obtener el total de pagos de inscripción en el período seleccionado
 $sql_total_pagos_inscripcion = "SELECT SUM(monto) as total 
                                FROM pagos_inscripcion 
@@ -1289,33 +1305,60 @@ background: rgba(0, 0, 0, 0.8); /* 📌 Hace el fondo más oscuro */
 </div>
 
 <div class="row">
+    <!-- Tarjeta de Total de Conductores -->
     <div class="col-xl-3 col-md-12">
-        <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 
-                <div class=" card mini-stat bg-white text-dark"
-                    style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
-                    <!-- Nuevo cuadro agregado -->
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
-                                style="border-radius: 20px; background-color: #eed8fc;">
-                                <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/173-512.png') ?>"
-                                    alt="">
-                            </div>
-                            <h5 class="fw-light text-uppercase text-black text-end cantidad-conductores"
-                                style="font-size: 15px;">Cantidad de Conductores</h5>
-                            <!-- Reducido tamaño de letra con style -->
-                            <h1 class="fw-bolder text-end"><?= $cantidad_conductores ?></h1>
+        <a href="<?= URL::to('/conductores') ?>" style="text-decoration: none; color: inherit;">
+            <div class="card mini-stat bg-white text-dark" 
+                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                            style="border-radius: 20px; background-color: #eed8fc;">
+                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/173-512.png') ?>" alt="">
                         </div>
-                        <div class="pt-2">
-                            <div class="float-end">
-                                <a href="javascript:void(0)" class="text-white-50"><i class="mdi mdi-arrow-right h5"></i></a>
-                            </div>
-                            <p class="text-white-50 mb-0 mt-1"></p>
+                        <h5 class="fw-light text-uppercase text-black text-end cantidad-conductores" style="font-size: 15px;">Total de Conductores</h5>
+                        <h1 class="fw-bolder text-end"><?= $cantidad_conductores ?></h1>
+                    </div>
+                    <div class="pt-2">
+                        <div class="float-end">
+                            <a href="javascript:void(0)" class="text-white-50"><i class="mdi mdi-arrow-right h5"></i></a>
                         </div>
+                        <p class="text-white-50 mb-0 mt-1"></p>
                     </div>
                 </div>
+            </div>
+        </a>
     </div>
-</div>
+
+    <!-- Tarjeta de Total de Clientes -->
+    <div class="col-xl-3 col-md-12">
+        <a href="<?= URL::to('/ver-clientes') ?>" style="text-decoration: none; color: inherit;">
+            <div class="card mini-stat bg-white text-dark" 
+                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                             style="border-radius: 20px; background-color: #eed8fc;">
+                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/user-icon.png') ?>" alt="">
+                        </div>
+                        <h5 class="fw-light text-uppercase text-black text-end cantidad-conductores" style="font-size: 15px;">Total de Clientes</h5>
+                        <h1 class="fw-bolder text-end"><?= $cantidad_clientes ?></h1>
+                    </div>
+                    <div class="pt-2">
+                        <div class="float-end">
+                            <a href="javascript:void(0)" class="text-white-50"><i class="mdi mdi-arrow-right h5"></i></a>
+                        </div>
+                        <p class="text-white-50 mb-0 mt-1"></p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>  
 
 <!-- end row -->
 <div class="row">
