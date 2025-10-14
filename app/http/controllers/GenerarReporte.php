@@ -4483,57 +4483,66 @@ class GenerarReporte extends Controller
                 $condicionProductos = " AND p.idproductosv2 IN (" . implode(',', $productosEscapados) . ")";
             }
 
+            // Filtrar por estado aprobado (1 o NULL) y no eliminado
+            $condicionEstado = " AND (f.aprobado = 1 OR f.aprobado IS NULL) AND f.estado_eliminado = 0";
+            // 🔴 MODIFICADO: Solo aplicar filtro de grupos si se seleccionaron grupos específicos
             $condicionGrupos = '';
-            if (!empty($grupos)) {
-                $gruposEscapados = array_map('intval', $grupos);
+            if (!empty($grupos) && is_array($grupos) && count($grupos) > 0) {
+                // 🔴 CORREGIDO: grupo_financiamiento es VARCHAR, no INT
+                $gruposEscapados = array_map(function($grupo) {
+                    return "'" . $this->conexion->real_escape_string($grupo) . "'";
+                }, $grupos);
                 $condicionGrupos = " AND f.grupo_financiamiento IN (" . implode(',', $gruposEscapados) . ")";
             }
 
+            // 🔴 MODIFICADO: Solo aplicar filtro de variantes si se seleccionaron variantes específicas
+            // IMPORTANTE: Si no hay variantes seleccionadas, NO filtrar por variantes
             $condicionVariantes = '';
-            if (!empty($variantes)) {
+            if (!empty($variantes) && is_array($variantes) && count($variantes) > 0) {
                 $variantesEscapadas = array_map('intval', $variantes);
-                $condicionVariantes = " AND f.id_variante IN (" . implode(',', $variantesEscapadas) . ")";
+                // Incluir también financiamientos SIN variante (id_variante IS NULL)
+                $condicionVariantes = " AND (f.id_variante IN (" . implode(',', $variantesEscapadas) . ") OR f.id_variante IS NULL)";
             }
 
             $query = "SELECT
-                         f.idfinanciamiento,
-                         f.fecha_creacion,
-                         f.monto_total,
-                         f.cantidad_producto,
-                         f.grupo_financiamiento,
-                         f.id_variante,
-                         f.moneda,
-                         f.id_conductor,
-                         f.id_cliente,
-                         p.nombre as producto_nombre,
-                         p.categoria,
-                         p.precio_venta,
-                         CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) as nombre_vendedor,
-                         CASE 
-                             WHEN f.id_conductor IS NOT NULL THEN CONCAT(COALESCE(cond.nombres, ''), ' ', COALESCE(cond.apellido_paterno, ''), ' ', COALESCE(cond.apellido_materno, ''))
-                             WHEN f.id_cliente IS NOT NULL THEN CONCAT(COALESCE(cf.nombres, ''), ' ', COALESCE(cf.apellido_paterno, ''), ' ', COALESCE(cf.apellido_materno, ''))
-                             ELSE 'No registrado'
-                         END as nombre_cliente
-                     FROM
-                         financiamiento f
-                     JOIN
-                         productosv2 p ON f.idproductosv2 = p.idproductosv2
-                     LEFT JOIN
-                         usuarios u ON f.usuario_id = u.usuario_id
-                     LEFT JOIN
-                         conductores cond ON f.id_conductor = cond.id_conductor
-                     LEFT JOIN
-                         clientes_financiar cf ON f.id_cliente = cf.id
-                     WHERE
-                         DATE(f.fecha_creacion) BETWEEN '$fechaInicio' AND '$fechaFin'
-                         $condicionCategorias
-                         $condicionProductos
-                         $condicionGrupos
-                         $condicionVariantes
-                     GROUP BY f.idfinanciamiento
-                     ORDER BY
-                         p.categoria, p.nombre";
-
+                        f.idfinanciamiento,
+                        f.fecha_creacion,
+                        f.monto_total,
+                        f.cantidad_producto,
+                        f.grupo_financiamiento,
+                        f.id_variante,
+                        f.moneda,
+                        f.id_conductor,
+                        f.id_cliente,
+                        p.nombre as producto_nombre,
+                        p.categoria,
+                        p.precio_venta,
+                        CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) as nombre_vendedor,
+                        CASE 
+                            WHEN f.id_conductor IS NOT NULL THEN CONCAT(COALESCE(cond.nombres, ''), ' ', COALESCE(cond.apellido_paterno, ''), ' ', COALESCE(cond.apellido_materno, ''))
+                            WHEN f.id_cliente IS NOT NULL THEN CONCAT(COALESCE(cf.nombres, ''), ' ', COALESCE(cf.apellido_paterno, ''), ' ', COALESCE(cf.apellido_materno, ''))
+                            ELSE 'No registrado'
+                        END as nombre_cliente
+                    FROM
+                        financiamiento f
+                    JOIN
+                        productosv2 p ON f.idproductosv2 = p.idproductosv2
+                    LEFT JOIN
+                        usuarios u ON f.usuario_id = u.usuario_id
+                    LEFT JOIN
+                        conductores cond ON f.id_conductor = cond.id_conductor
+                    LEFT JOIN
+                        clientes_financiar cf ON f.id_cliente = cf.id
+                    WHERE
+                        DATE(f.fecha_creacion) BETWEEN '$fechaInicio' AND '$fechaFin'
+                        $condicionEstado
+                        $condicionCategorias
+                        $condicionProductos
+                        $condicionGrupos
+                        $condicionVariantes
+                    GROUP BY f.idfinanciamiento
+                    ORDER BY
+                        p.categoria, p.nombre";
 
             $resultado = $this->conexion->query($query);
 

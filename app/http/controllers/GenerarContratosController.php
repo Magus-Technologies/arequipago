@@ -535,6 +535,18 @@ class GenerarContratosController extends controller
     private function generarPlantillaContrato($categoria, $financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas)
     {
 
+        $idPersona = $tipoPersona === 'conductor' ? $financiamiento['id_conductor'] : $financiamiento['id_cliente'];
+        
+        if ($tipoPersona === 'conductor') {
+            $datosDireccion = $this->obtenerDatosDireccionConductor($idPersona);
+        } else {
+            $direccionClienteModel = new Cliente();
+            $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($idPersona);
+        }
+        
+        $provincia = $datosDireccion['provincia'] ?? 'AREQUIPA';
+        $provinciaCapitalizada = ucwords(strtolower($provincia));
+
         $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos";  // Usamos DIRECTORY_SEPARATOR
 
         // Formatear fecha y hora
@@ -543,6 +555,9 @@ class GenerarContratosController extends controller
         $dia = date('d', $fechaCreacion);
         $mes = date('m', $fechaCreacion);
         $anio = date('Y', $fechaCreacion);
+
+        // 🔧 NUEVO: Obtener el nombre del mes en español
+        $nombreMes = $this->obtenerNombreMes($mes);
 
         // Concatenar nombre completo de la persona (conductor o cliente)
         $nombrePersona = trim(
@@ -609,7 +624,6 @@ class GenerarContratosController extends controller
                     }
                 }
 
-//comentario de prueba 
                 // Reemplazar los valores en la plantilla
                 $plantillaChip = str_replace('<span id="hora">', $hora, $plantillaChip);
                 $plantillaChip = str_replace('<span id="dia">', $dia, $plantillaChip);
@@ -733,7 +747,9 @@ class GenerarContratosController extends controller
             'hora' => $hora,
             'dia' => $dia,
             'mes' => $mes,
+            'mes_nombre' => $nombreMes,  // 🆕 Nueva variable solo para contratos que lo necesiten
             'anio' => $anio,
+            'provincia' => $provinciaCapitalizada,
             'nombre_conductor' => $nombrePersona,
             'dni' => $persona['nro_documento'] ?? $persona['n_documento'] ?? '',
         
@@ -963,7 +979,11 @@ class GenerarContratosController extends controller
                 $sheet->setCellValue('G19', $datos['monto_pago']);
                 $sheet->setCellValue('D21', $datos['fecha_inscripcion']);
                 $sheet->setCellValue('C26', $datos['observacion']);
-                $sheet->setCellValue('B36', "$fechaActual"); // Mantiene la celda en B36
+                $provincia = $datosDireccion['provincia'] ?? 'AREQUIPA';
+                $provinciaUpper = strtoupper($provincia);
+                $sheet->setCellValue('A36', $provinciaUpper);
+                $sheet->setCellValue('B36', $fechaActual);
+                $sheet->getStyle('A36')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
                 $sheet->getStyle('B36')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
 
                 // Centrar el contenido de las celdas principales
@@ -1065,32 +1085,25 @@ class GenerarContratosController extends controller
                 $mpdf = new \Mpdf\Mpdf();
                 
                 
-                // Definir la fecha actual en formato "día/mes/año"
+                $provincia = $datosDireccion['provincia'] ?? 'AREQUIPA';
+                $provinciaUpper = strtoupper($provincia);
                 $fechaActual = date('d/m/Y'); 
 
-                // Generar el contenido de la plantilla (obtenemos las dos secciones por separado)
                 $htmlCompleto = $this->generarPlantillahtmltoPdf($datos);
 
-                // Dividimos el contenido en secciones (suponiendo que el separador es "<div style='page-break-after: always;'></div>")
                 $secciones = explode('<div style="page-break-after: always;"></div>', $htmlCompleto);
 
-                // Validamos que haya al menos dos secciones
                 $htmlSeccion1 = $secciones[0] ?? '';
                 $htmlSeccion2 = $secciones[1] ?? '';
 
-                // 1️⃣ Agregar la primera sección al PDF
                 $mpdf->WriteHTML($htmlSeccion1);
 
-                // Configurar el pie de página para la primera sección
-                $mpdf->SetHTMLFooter('<div style="text-align: left; font-weight: normal; border-top: none;">AREQUIPA, ' . $fechaActual . '</div>');
+                $mpdf->SetHTMLFooter('<div style="text-align: left; font-weight: normal; border-top: none;">' . $provinciaUpper . ', ' . $fechaActual . '</div>');
 
-                // 2️⃣ Agregar un salto de página manual antes de la segunda sección
                 $mpdf->AddPage();
 
-                // 3️⃣ Configurar el pie de página para la segunda sección
-                $mpdf->SetHTMLFooter('<div style="text-align: left; font-weight: normal; border-top: none;">AREQUIPA, ' . $fechaActual . '</div>');
+                $mpdf->SetHTMLFooter('<div style="text-align: left; font-weight: normal; border-top: none;">' . $provinciaUpper . ', ' . $fechaActual . '</div>');
 
-                // 4️⃣ Agregar la segunda sección al PDF
                 $mpdf->WriteHTML($htmlSeccion2);
 
 

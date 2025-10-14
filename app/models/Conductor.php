@@ -159,31 +159,32 @@ class Conductor
         }
     }
 
-public function obtenerNumDocFiltrado($searchTerm = '')
-{
-    try {
-         $sql = "SELECT id_conductor, nro_documento, nombres, apellido_paterno, apellido_materno, numeroCodFi
-                FROM conductores
-                WHERE nro_documento LIKE ?
-                LIMIT 10";
+    public function obtenerNumDocFiltrado($searchTerm = '')
+    {
+        try {
+            // Búsqueda exacta y parcial para número de documento
+            $sql = "SELECT id_conductor, nro_documento, nombres, apellido_paterno, apellido_materno, numeroCodFi
+                    FROM conductores
+                    WHERE nro_documento = ? OR nro_documento LIKE ?
+                    LIMIT 10";
+            
+            $stmt = $this->conectar->prepare($sql);
+            $searchTermLike = "%$searchTerm%";
+            $stmt->bind_param("ss", $searchTerm, $searchTermLike);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-        $stmt = $this->conectar->prepare($sql);
-        $searchTermLike = "%$searchTerm%";
-        $stmt->bind_param("s", $searchTermLike);
-        $stmt->execute();
-        $result = $stmt->get_result();
+            $conductores = [];
+            while ($row = $result->fetch_assoc()) {
+                $conductores[] = $row;
+            }
 
-        $conductores = [];
-        while ($row = $result->fetch_assoc()) {
-            $conductores[] = $row;
+            return $conductores;
+        } catch (Exception $e) {
+            error_log("Error en Conductor::obtenerNumDocFiltrado(): " . $e->getMessage());
+            throw $e;
         }
-
-        return $conductores;
-    } catch (Exception $e) {
-        error_log("Error en Conductor::obtenerNumDocFiltrado(): " . $e->getMessage());
-        throw $e;
     }
-}
 
     public function obtenerTodos() {
         try {

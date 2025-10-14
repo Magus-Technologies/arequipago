@@ -267,12 +267,6 @@ public function modificar($documento, $datos, $id_cliente)
     return $result;
 }
 
-    public function obtenerId()
-    {
-        $sql = "select ifnull(max(id_cliente) + 1, 1) as codigo from clientes";
-        $this->id_cliente = $this->conectar->get_valor_query($sql, 'codigo');
-    }
-
     public function obtenerPorCliente($id_cliente)
     {
         try {
@@ -1223,4 +1217,47 @@ public function obtenerDepartamentos()
         
         return $row['count'] > 0;
     }
+
+    public function obtenerClientesConCodigo($searchTerm = '', $pagina = 1, $cantidadPorPagina = 12)
+    {
+        try {
+            $offset = ($pagina - 1) * $cantidadPorPagina;
+
+            // Búsqueda exacta y parcial para documento
+            $sql = "SELECT 
+                        c.id, 
+                        c.n_documento AS nro_documento, 
+                        CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS datos, 
+                        COALESCE(c.num_cod_finan, '') AS codigo_asociado,
+                        c.nombres,
+                        c.apellido_paterno,
+                        c.apellido_materno,
+                        'cliente' AS tipo_registro
+                    FROM clientes_financiar c
+                    WHERE c.nombres LIKE ? 
+                    OR c.apellido_paterno LIKE ? 
+                    OR c.apellido_materno LIKE ? 
+                    OR c.num_cod_finan LIKE ?
+                    OR c.n_documento = ? 
+                    OR c.n_documento LIKE ?
+                    LIMIT ? OFFSET ?";
+            
+            $stmt = $this->conectar->prepare($sql);
+            $searchTermLike = "%$searchTerm%";
+            $stmt->bind_param("ssssssii", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTerm, $searchTermLike, $cantidadPorPagina, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $clientes = [];
+            while ($row = $result->fetch_assoc()) {
+                $clientes[] = $row;
+            }
+
+            return $clientes;
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerClientesConCodigo(): " . $e->getMessage());
+            throw $e;
+        }
+    }
+
 }

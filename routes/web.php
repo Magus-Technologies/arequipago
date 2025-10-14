@@ -345,6 +345,7 @@ Route::get('/obtenerFinanciamientoPorCliente', 'FinanciamientoController@obtener
 Route::get('/obtenerCuotasPorCliente', 'FinanciamientoController@obtenerCuotasPorCliente');
 Route::get('/obtenerClienteDetalle', 'FinanciamientoController@obtenerClienteDetalle'); 
 Route::get('/obtenerClientesAutocompletado', 'FinanciamientoController@obtenerClientesAutocompletado');
+Route::get('/obtenerNumDocClientesAutocompletado', 'FinanciamientoController@obtenerNumDocClientesAutocompletado');
 Route::get('/obtenerNumDocAutocompletado', 'FinanciamientoController@obtenerNumDocAutocompletado');
 
 Route::get('/obtenerProductos', 'FinanciamientoController@obtenerProductos');

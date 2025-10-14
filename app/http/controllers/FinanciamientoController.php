@@ -442,22 +442,59 @@ class FinanciamientoController extends Controller
         }
 
 
-    // Función para obtener clientes filtrados para autocompletado
-    public function obtenerClientesAutocompletado()
+        // MODIFICADO: Ahora busca tanto en conductores como en clientes
+        public function obtenerClientesAutocompletado()
         {
             try {
                 $conductorModel = new Conductor();
-        
-                // Obtener el término de búsqueda desde la solicitud GET
+                $clienteModel = new Cliente();
+
                 $searchTerm = isset($_GET['searchTerm']) ? $_GET['searchTerm'] : '';
-        
-                // Obtener los conductores filtrados
+
+                // Obtener conductores
                 $conductores = $conductorModel->obtenerConductoresConCodigo($searchTerm);
-        
-                // Devolver los resultados en formato JSON
-                echo json_encode($conductores);
+                
+                // Obtener clientes
+                $clientes = $clienteModel->obtenerClientesConCodigo($searchTerm);
+                
+                // Marcar tipo en conductores
+                foreach ($conductores as &$conductor) {
+                    $conductor['tipo_registro'] = 'conductor';
+                    if (!isset($conductor['datos'])) {
+                        $conductor['datos'] = trim(
+                            ($conductor['nombres'] ?? '') . ' ' . 
+                            ($conductor['apellido_paterno'] ?? '') . ' ' . 
+                            ($conductor['apellido_materno'] ?? '')
+                        );
+                    }
+                }
+                
+                // Marcar tipo y adaptar clientes
+                foreach ($clientes as &$cliente) {
+                    $cliente['tipo_registro'] = 'cliente';
+                    
+                    if (!isset($cliente['datos'])) {
+                        $cliente['datos'] = trim(
+                            ($cliente['nombres'] ?? '') . ' ' . 
+                            ($cliente['apellido_paterno'] ?? '') . ' ' . 
+                            ($cliente['apellido_materno'] ?? '')
+                        );
+                    }
+                    
+                    $cliente['numeroCodFi'] = $cliente['codigo_asociado'] ?? $cliente['num_cod_finan'] ?? '';
+                    $cliente['codigo_asociado'] = $cliente['numeroCodFi'];
+                    
+                    if (!isset($cliente['id_conductor'])) {
+                        $cliente['id_conductor'] = $cliente['id'];
+                    }
+                }
+                
+                $resultadosCombinados = array_merge($conductores, $clientes);
+
+                echo json_encode($resultadosCombinados);
                 exit;
             } catch (Exception $e) {
+                error_log("Error en obtenerClientesAutocompletado: " . $e->getMessage());
                 echo json_encode(['error' => 'Hubo un error al obtener los datos']);
                 exit;
             }
@@ -483,6 +520,76 @@ class FinanciamientoController extends Controller
             }
         }
 
+        public function obtenerNumDocClientesAutocompletado()
+        {
+            try {
+                $conductorModel = new Conductor();
+                $clienteModel = new Cliente();
+
+                $searchTerm = isset($_GET['searchTerm']) ? $_GET['searchTerm'] : '';
+
+                // Validación de longitud mínima
+                if (strlen($searchTerm) < 2) {
+                    echo json_encode([]);
+                    exit;
+                }
+
+                // Obtener conductores por número de documento
+                $conductores = $conductorModel->obtenerNumDocFiltrado($searchTerm);
+                
+                // Obtener clientes
+                $clientes = $clienteModel->obtenerClientesConCodigo($searchTerm);
+                
+                // Marcar tipo y adaptar estructura para CONDUCTORES
+                foreach ($conductores as &$conductor) {
+                    $conductor['tipo_registro'] = 'conductor';
+                    if (!isset($conductor['datos'])) {
+                        $conductor['datos'] = trim(
+                            ($conductor['nombres'] ?? '') . ' ' . 
+                            ($conductor['apellido_paterno'] ?? '') . ' ' . 
+                            ($conductor['apellido_materno'] ?? '')
+                        );
+                    }
+                }
+                
+                // Marcar tipo y adaptar estructura para CLIENTES
+                foreach ($clientes as &$cliente) {
+                    $cliente['tipo_registro'] = 'cliente';
+                    
+                    if (!isset($cliente['datos'])) {
+                        $cliente['datos'] = trim(
+                            ($cliente['nombres'] ?? '') . ' ' . 
+                            ($cliente['apellido_paterno'] ?? '') . ' ' . 
+                            ($cliente['apellido_materno'] ?? '')
+                        );
+                    }
+                    
+                    if (!isset($cliente['nombres']) && isset($cliente['datos'])) {
+                        $partesNombre = explode(' ', $cliente['datos']);
+                        $cliente['nombres'] = $partesNombre[0] ?? '';
+                        $cliente['apellido_paterno'] = $partesNombre[1] ?? '';
+                        $cliente['apellido_materno'] = $partesNombre[2] ?? '';
+                    }
+                    
+                    $cliente['numeroCodFi'] = $cliente['codigo_asociado'] ?? $cliente['num_cod_finan'] ?? '';
+                    $cliente['codigo_asociado'] = $cliente['numeroCodFi'];
+                    
+                    if (!isset($cliente['id_conductor'])) {
+                        $cliente['id_conductor'] = $cliente['id'];
+                    }
+                }
+                
+                $resultadosCombinados = array_merge($conductores, $clientes);
+
+                echo json_encode($resultadosCombinados);
+                exit;
+            } catch (Exception $e) {
+                error_log("Error en obtenerNumDocClientesAutocompletado: " . $e->getMessage());
+                echo json_encode(['error' => 'Hubo un error al obtener los datos: ' . $e->getMessage()]);
+                exit;
+            }
+        }
+        
         public function obtenerProductos()
         {
             try {

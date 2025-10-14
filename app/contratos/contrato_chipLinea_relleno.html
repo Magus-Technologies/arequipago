@@ -20,16 +20,33 @@
         .firmas {
             margin-top: 40px;
         }
+        .espacio-importante {
+            margin-top: 30px;
+        }
+        .firmas table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .firmas table td {
+            text-align: center;
+            padding: 10px;
+            width: 50%;
+            vertical-align: top;
+        }
+        .linea {
+            height: 1px;
+            background-color: transparent;
+        }
     </style>
 </head>
 <body>
     <h2>ACTA DE ENTREGA DE CHIP MAS PLAN MOVIL</h2>
     
-    <p>Siendo las 01:32 PM</span> hrs. del día 04</span>; Año 2025</span>; La empresa <strong>Arequipa Go E.I.R.L</strong> con <strong>RUC N° 20612112763</strong> con domicilio en URB. LA ESPERANZA MZA. L LOTE. 15 URB. ADEPA AREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE Y RIVERO hace entrega al <span id="persona"></span> EMER RODRIGO YARLEQUE ZAPATA</span> Identificado con N° 77425200</span>, N° licencia 6676776</span>,</p>
+    <p>Siendo las 01:32 PM</span> hrs. del día 04</span>; Año 2025</span>; La empresa <strong>Arequipa Go E.I.R.L</strong> con <strong>RUC N° 20612112763</strong> con domicilio en URB. LA ESPERANZA MZA. L LOTE. 15 URB. ADEPA AREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE Y RIVERO hace entrega al <span id="persona"></span> EMER RODRIGO YARLEQUE ZAPATA</span> Identificado con N° DNI: 77425200</span><span id="licencia_bloque"></span>,</p>
     
     <p>El <span id="persona_mayus"></span><span id="frase_afiliacion"></span> se le hace entrega de 1</span> (un) CHIP (nuevo), de la empresa <span id="operadora"></span> con las siguientes características:</p>
     
-    <p><strong>PLAN MENSUAL DE </span></strong></p>
+    <p><strong>PLAN MENSUAL DE S/0</span></strong></p>
     
     <p>El receptor declara conocer y asume la responsabilidad del adecuado uso del CHIP más PLAN MENSUAL, el cual es de s/ 0</span> (<span id="precio_letras"></span>) mensuales (con plan ilimitado)</p>
     
@@ -40,6 +57,8 @@
     
     <p>Nª <span id="numero_linea"></span></p>
     
+    <p>Los pagos serán los 24 de cada mes.</p>
+    
     <p>En caso de extravío, perdida o sustracción del equipo con la línea corporativa, el usuario será el único responsable y tendrá que hacer la cancelación total de la línea.</p>
     
     <p><strong>IMPORTANTE:</strong><br>
@@ -47,30 +66,24 @@
     
     <p>Si cancelan después de la fecha pactada se le cobrara una mora diaria de s/ 10.00 soles.</p>
     
-    <p><span id="clausula_conductor"></span></p>
-    
+    <span id="clausula_conductor"></span>
+
     <div class="firmas">
-        <table style="width: 100%; border: none; margin-top: 40px;">
+        <p class="espacio-importante"></p>
+        
+        <table>
             <tr>
-                <td style="text-align: center; padding: 10px; width: 50%;">
-                    <div style="border-top: 1px solid #000; margin-top: 40px; margin-bottom: 10px; width: 100%;"></div>
-                    <p>_________________________________________</p>
-                    <div style="text-align: left; margin-top: 10px;">
-                        <div><span id="nombre_conductor"></span></div>
-                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
-                        <div>DNI: <span id="dni_firma"></span></div>
-                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
-                    </div>
-                </td>
-                <td style="text-align: center; padding: 10px; width: 50%;">
-                    <div style="border-top: 1px solid #000; margin-top: 40px; margin-bottom: 10px; width: 100%;"></div>
+                <td>
+                    <div class="linea"></div> <!-- Línea de firma del conductor -->
                     <p>____________________________</p>
-                    <div style="text-align: left; margin-top: 10px;">
-                        <div>AREQUIPA GO E.I.R.L:</div>
-                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
-                        <div>RUC: 20612112763</div>
-                        <div style="border-bottom: 1px solid #000; min-height: 20px; margin-top: 5px; margin-bottom: 15px;"></div>
-                    </div>
+                    <p>Nombres y Apellidos: <span id="nombre_conductor"></span></p> <!-- Nombre del conductor -->
+                    <p>DNI: <span id="dni_firma"></span></p>
+                </td>
+                <td>
+                    <div class="linea"></div> <!-- Línea de firma de la empresa -->
+                    <p>____________________________</p>
+                    <p>La Empresa</p> <!-- Nombre de la empresa -->
+                    <p>. </p><!--Espacio vacío-->
                 </td>
             </tr>
         </table>
