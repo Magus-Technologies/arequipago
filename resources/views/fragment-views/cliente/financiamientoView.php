@@ -74,7 +74,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-search"></i></span>
                                         <input type="text" class="form-control" id="searchCliente"
-                                            placeholder="Buscar cliente por nombre, número de unidad o grupo"
+                                            placeholder="Buscar por nombre, documento, número de unidad o grupo"
                                             oninput="buscarClientes()">
                                     </div>
                                 </div>
@@ -316,6 +316,13 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         </strong><span id="modalClienteDireccion"></span></p>
                                                     <p><i class="fas fa-phone me-2"></i><strong>Teléfono: </strong><span
                                                             id="modalClienteTelefono"></span></p>
+                                                    
+                                                    <!-- NUEVO: Botón para descargar contrato de entrega (solo si vehículo fue entregado) -->
+                                                    <div id="btnDescargarContratoEntrega" style="display: none; margin-top: 15px;">
+                                                        <button type="button" class="btn btn-success btn-sm w-100" onclick="descargarContratoEntregaDesdeModal()">
+                                                            <i class="fas fa-file-download me-2"></i>Descargar Acta de Entrega
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1307,6 +1314,41 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }
                 calcularFinanciamiento(); // Recalcular el financiamiento al cambiar la moneda
             });
+        });
+
+        // NUEVO: Agregar eventos para recalcular cuando cambien campos importantes
+        const camposQueDisparanCalculo = ['tasaInteres', 'cuotaInicial', 'cuotas', 'montoSinIntereses', 'fechaInicio'];
+        
+        camposQueDisparanCalculo.forEach(campoId => {
+            const campo = document.getElementById(campoId);
+            if (campo) {
+                // Evento 'input' para recalcular mientras escribes
+                campo.addEventListener('input', function() {
+                    console.log(`🔄 Campo "${campoId}" cambió, recalculando...`);
+                    
+                    // Verificar que hay datos mínimos antes de calcular
+                    const montoSinIntereses = document.getElementById('montoSinIntereses').value;
+                    const hayMoneda = document.getElementById('monedaSoles').checked || document.getElementById('monedaDolares').checked;
+                    
+                    if (montoSinIntereses && hayMoneda) {
+                        calcularFinanciamiento();
+                    } else {
+                        console.log('⚠️ Faltan datos mínimos (monto sin intereses o moneda)');
+                    }
+                });
+                
+                // Evento 'change' para cuando terminas de editar (backup)
+                campo.addEventListener('change', function() {
+                    console.log(`✅ Campo "${campoId}" finalizado, recalculando...`);
+                    
+                    const montoSinIntereses = document.getElementById('montoSinIntereses').value;
+                    const hayMoneda = document.getElementById('monedaSoles').checked || document.getElementById('monedaDolares').checked;
+                    
+                    if (montoSinIntereses && hayMoneda) {
+                        calcularFinanciamiento();
+                    }
+                });
+            }
         });
 
 

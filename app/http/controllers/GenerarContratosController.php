@@ -224,6 +224,24 @@ class GenerarContratosController extends controller
                                 'nombre' => "contrato_vehiculo_{$idFinanciamiento}_{$nombrePersona}.xlsx"
                             ];
                         }
+                        
+                        // NUEVO: Generar acta de entrega si el vehículo ya fue entregado
+                        if (isset($financiamiento['vehiculo_entregado']) && $financiamiento['vehiculo_entregado'] == 1) {
+                            try {
+                                $cliente = $this->obtenerDatosClienteEntrega($financiamiento);
+                                $vehiculo = $this->obtenerDatosVehiculoEntrega($financiamiento);
+                                $html = $this->cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo);
+                                $pdfEntrega = $this->generarPDFEntrega($html);
+                                
+                                $pdfs[] = [
+                                    'content' => base64_encode($pdfEntrega),
+                                    'nombre' => "acta_entrega_vehiculo_{$idFinanciamiento}_{$nombrePersona}.pdf"
+                                ];
+                            } catch (\Exception $e) {
+                                error_log("Error generando acta de entrega para financiamiento ID $idFinanciamiento: " . $e->getMessage());
+                            }
+                        }
+                        
                         continue;
                     } catch (\Exception $e) {
                         error_log("Error generando contrato Excel de vehículo ID $idFinanciamiento: " . $e->getMessage());
@@ -1331,5 +1349,294 @@ class GenerarContratosController extends controller
             '09' => 'septiembre', '10' => 'octubre', '11' => 'noviembre', '12' => 'diciembre'
         ];
         return $meses[str_pad($numeroMes, 2, '0', STR_PAD_LEFT)] ?? 'enero';
+    }
+
+    // ========================================
+    // MÉTODOS PARA GENERAR CONTRATO DE ENTREGA DE VEHÍCULO
+    // ========================================
+
+    /**
+     * Método principal para generar contrato de entrega de vehículo
+     */
+    public function generarContratoEntregaVehiculo()
+    {
+        try {
+            // Recibir ID del financiamiento
+            $input = json_decode(file_get_contents('php://input'), true);
+            $idFinanciamiento = $input['id_financiamiento'] ?? null;
+            
+            // Validar ID
+            if (!$idFinanciamiento) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'ID de financiamiento no proporcionado'
+                ]);
+                return;
+            }
+            
+            // Obtener datos necesarios
+            $financiamiento = $this->obtenerDatosFinanciamientoEntrega($idFinanciamiento);
+            $cliente = $this->obtenerDatosClienteEntrega($financiamiento);
+            $vehiculo = $this->obtenerDatosVehiculoEntrega($financiamiento);
+            
+            // Cargar y llenar template
+            $html = $this->cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo);
+            
+            // Generar PDF
+            $pdf = $this->generarPDFEntrega($html);
+            
+            // Preparar nombre del archivo
+            $nombreCliente = trim(
+                ($cliente['nombres'] ?? '') . '_' . 
+                ($cliente['apellido_paterno'] ?? '') . '_' . 
+                ($cliente['apellido_materno'] ?? '')
+            );
+            $nombreCliente = preg_replace('/[^A-Za-z0-9_]/', '_', $nombreCliente);
+            $nombreArchivo = "acta_entrega_vehiculo_{$idFinanciamiento}_{$nombreCliente}.pdf";
+            
+            // Retornar PDF en base64
+            echo json_encode([
+                'success' => true,
+                'pdf' => base64_encode($pdf),
+                'nombre' => $nombreArchivo
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error en generarContratoEntregaVehiculo: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener datos del financiamiento por ID
+     */
+    private function obtenerDatosFinanciamientoEntrega($idFinanciamiento)
+    {
+        $financiamientoModel = new Financiamiento();
+        $financiamiento = $financiamientoModel->getFinanciamientoById($idFinanciamiento);
+        
+        if (!$financiamiento) {
+            throw new Exception("Financiamiento no encontrado con ID: $idFinanciamiento");
+        }
+        
+        return $financiamiento;
+    }
+
+    /**
+     * Obtener datos del cliente o conductor
+     */
+    private function obtenerDatosClienteEntrega($financiamiento)
+    {
+        $cliente = [];
+        $direccion = [];
+        
+        // Determinar si es conductor o cliente
+        if (!empty($financiamiento['id_conductor'])) {
+            // Es un conductor
+            $financiamientoModel = new Financiamiento();
+            $cliente = $financiamientoModel->getConductorById($financiamiento['id_conductor']);
+            
+            // Obtener dirección del conductor
+            $direccionConductorModel = new DireccionConductor();
+            $direccion = $direccionConductorModel->obtenerDatosDireccion($financiamiento['id_conductor']);
+        } else {
+            // Es un cliente
+            $clienteModel = new Cliente();
+            $cliente = $clienteModel->getClienteById($financiamiento['id_cliente']);
+            
+            // Obtener dirección del cliente
+            $direccion = $clienteModel->obtenerDatosDireccionCliente($financiamiento['id_cliente']);
+        }
+        
+        // Combinar datos del cliente con su dirección
+        $cliente['direccion'] = $direccion;
+        
+        return $cliente;
+    }
+
+    /**
+     * Obtener datos del vehículo (producto y características)
+     */
+    private function obtenerDatosVehiculoEntrega($financiamiento)
+    {
+        $vehiculo = [];
+
+        // PRIMERO: Intentar obtener datos del vehículo físico si es un conductor
+        if (!empty($financiamiento['id_conductor'])) {
+            $vehiculoModel = new Vehiculo();
+            $datosVehiculoFisico = $vehiculoModel->obtenerDatosVehiculo($financiamiento['id_conductor']);
+
+            if ($datosVehiculoFisico) {
+                // Si encontró vehículo físico, usar sus datos
+                $vehiculo['marca'] = $datosVehiculoFisico['marca'] ?? null;
+                $vehiculo['modelo'] = $datosVehiculoFisico['modelo'] ?? null;
+                $vehiculo['placa'] = $datosVehiculoFisico['placa'] ?? null;
+                $vehiculo['color'] = $datosVehiculoFisico['color'] ?? null;
+                $vehiculo['anio'] = $datosVehiculoFisico['anio'] ?? null;
+                // Nota: numero_chasis se obtendrá de las características del producto si existe
+
+                // Obtener características del producto para el número de chasis
+                $caracteristicasModel = new CaracteristicaProducto();
+                $caracteristicas = $caracteristicasModel->obtenerCaracteristicas($financiamiento['idproductosv2']);
+
+                if ($caracteristicas && is_array($caracteristicas)) {
+                    foreach ($caracteristicas as $caract) {
+                        if ($caract['nombre_caracteristicas'] === 'chasis') {
+                            $vehiculo['numero_chasis'] = $caract['valor_caracteristica'];
+                            break;
+                        }
+                    }
+                }
+
+                return $vehiculo;
+            }
+        }
+
+        // SEGUNDO: Si no hay vehículo físico, intentar con características del producto
+        $financiamientoModel = new Financiamiento();
+        $caracteristicasModel = new CaracteristicaProducto();
+
+        $producto = $financiamientoModel->obtenerProductoConCategoria($financiamiento['idproductosv2']);
+
+        if (!$producto) {
+            throw new Exception("Producto no encontrado con ID: " . $financiamiento['idproductosv2']);
+        }
+
+        // Obtener características del producto
+        $caracteristicas = $caracteristicasModel->obtenerCaracteristicas($financiamiento['idproductosv2']);
+
+        // Convertir características a array asociativo
+        $vehiculo['producto'] = $producto;
+
+        if ($caracteristicas && is_array($caracteristicas)) {
+            foreach ($caracteristicas as $caract) {
+                $vehiculo[$caract['nombre_caracteristicas']] = $caract['valor_caracteristica'];
+            }
+        }
+
+        return $vehiculo;
+    }
+
+    /**
+     * Formatear dirección completa
+     */
+    private function formatearDireccionEntrega($direccion)
+    {
+        if (!$direccion || !is_array($direccion)) {
+            return 'Dirección no disponible';
+        }
+        
+        $partes = [];
+        
+        if (!empty($direccion['direccion_detalle'])) {
+            $partes[] = $direccion['direccion_detalle'];
+        }
+        if (!empty($direccion['distrito'])) {
+            $partes[] = $direccion['distrito'];
+        }
+        if (!empty($direccion['provincia'])) {
+            $partes[] = $direccion['provincia'];
+        }
+        if (!empty($direccion['departamento'])) {
+            $partes[] = $direccion['departamento'];
+        }
+        
+        return !empty($partes) ? implode(', ', $partes) : 'Dirección no disponible';
+    }
+
+    /**
+     * Obtener nombre del mes en español (mayúsculas)
+     */
+    private function obtenerNombreMesEntrega($numeroMes)
+    {
+        $meses = [
+            '01' => 'ENERO', '02' => 'FEBRERO', '03' => 'MARZO', '04' => 'ABRIL',
+            '05' => 'MAYO', '06' => 'JUNIO', '07' => 'JULIO', '08' => 'AGOSTO',
+            '09' => 'SEPTIEMBRE', '10' => 'OCTUBRE', '11' => 'NOVIEMBRE', '12' => 'DICIEMBRE'
+        ];
+        
+        $mesFormateado = str_pad($numeroMes, 2, '0', STR_PAD_LEFT);
+        return $meses[$mesFormateado] ?? 'ENERO';
+    }
+
+    /**
+     * Cargar template HTML y llenar con datos
+     */
+    private function cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo)
+    {
+        $rutaTemplate = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "entrga_vehiculo.html";
+        
+        if (!file_exists($rutaTemplate)) {
+            throw new Exception("Template no encontrado: $rutaTemplate");
+        }
+        
+        $html = file_get_contents($rutaTemplate);
+        
+        // Preparar datos para reemplazo
+        $datos = [
+            // Datos del vehículo
+            'marca' => $vehiculo['marca'] ?? 'N/A',
+            'modelo' => $vehiculo['modelo'] ?? 'N/A',
+            'chasis' => $vehiculo['numero_chasis'] ?? 'N/A',
+            'placa' => $vehiculo['placa'] ?? 'N/A',
+            'color' => $vehiculo['color'] ?? 'N/A',
+            'anio' => $vehiculo['anio'] ?? 'N/A',
+            
+            // Datos del asociado
+            'nombre_asociado' => trim(
+                ($cliente['nombres'] ?? '') . ' ' . 
+                ($cliente['apellido_paterno'] ?? '') . ' ' . 
+                ($cliente['apellido_materno'] ?? '')
+            ),
+            'dni_asociado' => $cliente['nro_documento'] ?? $cliente['n_documento'] ?? 'N/A',
+            'domicilio_asociado' => $this->formatearDireccionEntrega($cliente['direccion'] ?? []),
+            'celular_asociado' => $cliente['telefono'] ?? 'N/A',
+            'correo_asociado' => $cliente['correo'] ?? 'N/A',
+            
+            // Fecha de firma
+            'dia_firma' => date('d'),
+            'mes_firma' => $this->obtenerNombreMesEntrega(date('m')),
+            'anio_firma' => date('Y'),
+            
+            // Datos para firma (repetidos para la sección de firmas)
+            'nombre_firma' => trim(
+                ($cliente['nombres'] ?? '') . ' ' . 
+                ($cliente['apellido_paterno'] ?? '') . ' ' . 
+                ($cliente['apellido_materno'] ?? '')
+            ),
+            'dni_firma' => $cliente['nro_documento'] ?? $cliente['n_documento'] ?? 'N/A'
+        ];
+        
+        // Reemplazar placeholders en el HTML
+        foreach ($datos as $campo => $valor) {
+            $html = str_replace("{{{$campo}}}", $valor, $html);
+        }
+        
+        return $html;
+    }
+
+    /**
+     * Generar PDF desde HTML
+     */
+    private function generarPDFEntrega($html)
+    {
+        try {
+            $mpdf = new \Mpdf\Mpdf([
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'margin_top' => 15,
+                'margin_bottom' => 15,
+                'format' => 'A4'
+            ]);
+            
+            $mpdf->WriteHTML($html);
+            
+            return $mpdf->Output('', 'S'); // Retornar como string
+        } catch (Exception $e) {
+            throw new Exception("Error al generar PDF: " . $e->getMessage());
+        }
     }
 }
