@@ -609,6 +609,19 @@
             }
             $stmtCuotas->close();
 
+            // --- NUEVO BLOQUE: Eliminar comisiones asociadas al financiamiento ---
+            $sqlComisiones = "DELETE FROM comisiones WHERE tipo_comision = 'financiamiento' AND referencia_id = ?";
+            $stmtComisiones = $this->conectar->prepare($sqlComisiones);
+            if (!$stmtComisiones) {
+                throw new Exception("Error al preparar la consulta de eliminación de comisiones: " . $this->conectar->error);
+            }
+
+            $stmtComisiones->bind_param("i", $id_financiamiento);
+            if (!$stmtComisiones->execute()) {
+                $stmtComisiones->close();
+                throw new Exception("Error al ejecutar la eliminación de comisiones: " . $stmtComisiones->error);
+            }
+            $stmtComisiones->close();
     
             $this->conectar->commit(); // Confirmar transacción
             return true;
@@ -854,7 +867,7 @@
                 WHEN u.nombres IS NULL THEN NULL
                 WHEN u.apellidos IS NULL THEN u.nombres
                 ELSE CONCAT(u.nombres, ' ', u.apellidos) 
-            END AS asesor,
+            END AS asesor,  
             c.numUnidad AS numUnidad,
             CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente  
         FROM pagos_financiamiento p
