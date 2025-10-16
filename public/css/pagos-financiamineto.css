@@ -1,417 +1,749 @@
+.btn-custom {
+  background-color: #007bff;
+  color: white !important;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-custom:hover {
+  background-color: #0056b3;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+  text-decoration: none;
+}
+
+.btn-custom:active {
+  transform: translateY(0);
+  color: white !important;
+}
+
+.btn-custom:focus {
+  color: white !important;
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
+}
+
+/* Responsivo para móviles */
+@media (max-width: 768px) {
+  .btn-custom {
+    margin-top: 10px;
+    width: 100%;
+  }
+}
+
+.switch-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.switch-label {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-right: 18px;
+}
+
+#regislabel {
+  margin-left: 18px;
+}
+
+/* Estilos personalizados para el switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  /* Ancho del switch */
+  height: 30px;
+  /* Alto del switch */
+}
+
+/* Ocultamos el input real */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Estilo del fondo del switch */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #be91db;
+  /* Color del switch apagado */
+  transition: 0.4s;
+  border-radius: 10px;
+  /* Bordes redondeados */
+}
+
+/* Elemento móvil del switch */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 3px;
+  /* Posición inicial a la izquierda */
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 19%;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Cuando el switch está activado */
+input:checked + .slider {
+  background-color: #be91db;
+  /* Color verde al activarse */
+}
+
+input:checked + .slider:before {
+  transform: translateX(30px);
+  /* Desplaza el círculo a la derecha */
+}
+
+.content-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 50vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.content {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  transition: transform 0.5s ease-in-out;
+  background: white;
+  padding: 20px;
+}
+
+.hidden-right {
+  transform: translateX(100%);
+}
+
+.hidden-left {
+  transform: translateX(-100%);
+}
+
+/* Agregado: Ocultar completamente después de la animación */
+.hidden {
+  display: none !important;
+  /* Hace que el div desaparezca completamente */
+}
+
+.table th {
+  background-color: #efe2f7;
+}
+
+.table tbody tr {
+  background-color: #f8f9fa; /* Color gris claro para las filas */
+}
+
+.table tbody tr:hover {
+  background-color: #e6e6e6; /* Color más oscuro al pasar el mouse */
+}
+
+.input-group-text {
+  background-color: #fcf8ff;
+}
+
+#cronogramaSelect {
+  /* Aplicado CSS solo al select por ID */
+  border-collapse: collapse;
+  margin-top: 5px; /* Espaciado con la caja */
+}
+#cronogramaSelect th,
+#cronogramaSelect td {
+  /* Estilo de celdas */
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+#cronogramaSelect th {
+  background-color: #edede6;
+}
+#cronogramaSelect tr:hover {
+  /* Resaltar al pasar el mouse */
+  background-color: #e0e0e0;
+}
+.fila-seleccionada {
+  /* Resaltar fila seleccionada */
+  background-color: rgb(37, 150, 190) !important;
+  color: white;
+}
+
+#detalleSelect {
+  /* Aplicado CSS solo al select por ID */
+  border-collapse: collapse;
+  margin-top: 5px; /* Espaciado con la caja */
+}
+#detalleSelect th,
+#detalleSelect td {
+  /* Estilo de celdas */
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+#detalleSelect tr:hover {
+  /* Resaltar al pasar el mouse */
+  background-color: #e0e0e0;
+}
+.fila-seleccionada {
+  /* Resaltar fila seleccionada */
+  background-color: rgb(37, 150, 190) !important;
+  color: white;
+}
+
+#selectBoxDetalle {
+  transition: background-color 0.5s ease-in-out; /* Transición suave para el color */
+}
+
+.palpitar {
+  background-color: yellow; /* Color amarillo que aplicaremos al "palpitar" */
+}
+
+#btnDescargar {
+  background-color: #02a499;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
+}
+
+#btnDescargar:hover {
+  background-color: #028f84;
+}
+
+#btnDescargar i {
+  margin-left: 5px;
+}
+
+.fixed-table-header {
+  position: fixed;
+  top: 0;
+  z-index: 999;
+  left: 0; /* Mantener */
+  width: auto !important; /* MODIFICADO: Cambiado de 100% a auto para respetar los anchos originales */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  table-layout: fixed;
+}
+
+.placeholder-header {
+  height: 0;
+  visibility: hidden;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  position: relative;
+  /* ELIMINADO: Quitar clases table-fixed que causan problemas */
+}
+
+.fixed-table-header th {
+  min-width: px;
+  padding-left: 0px;
+  padding-right: px;
+}
+
+.table th,
+.table td {
+  box-sizing: border-box; /* AÑADIDO: Asegurar que padding se incluya en el ancho */
+}
+
+#contenedorBotonPendientes {
+  position: fixed;
+  top: 150px;
+  right: 20px;
+  z-index: 1000;
+}
+
+#btnPagosPendientes {
+  background-color: #38a4f8;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 18px;
+  font-weight: 500;
+  box-shadow: 0 4px 10px rgba(56, 164, 248, 0.3);
+  position: relative;
+  padding-right: 30px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+#btnPagosPendientes i {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+#btnPagosPendientes:hover {
+  background-color: #1e93f5;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(56, 164, 248, 0.4);
+}
+
+#notificacionPendientes {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background-color: #e74c3c;
+  color: white;
+  border-radius: 50%;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#loaderModal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+#spinnerLoader {
+  width: 50px;
+  height: 50px;
+}
+
+#tablaPendientes th,
+#tablaRechazados th {
+  background-color: #f8f9fa;
+}
+
+#modalDetallesPago .modal-header {
+  background-color: #007bff;
+  color: white;
+}
+
+#modalCargaPagos .nav-tabs .nav-link.active {
+  font-weight: bold;
+  border-bottom: 3px solid #007bff;
+}
+
+#modalCargaPagos .tab-content {
+  padding-top: 20px;
+}
+
+#detallesCuotas {
+  margin-top: 20px;
+}
+
+#detallesCuotas .list-group-item {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Estilo para la fila seleccionada en la tabla de financiamientos */
+#detalleSelect tbody tr.selected {
+  background-color: #e3f2fd !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Efecto hover para las filas de la tabla */
+#detalleSelect tbody tr:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+/* ✅ NUEVO: Scroll para la lista de cuotas cuando hay muchas */
+#lista_cuotas {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 10px;
+}
+
+/* Personalizar scrollbar */
+#lista_cuotas::-webkit-scrollbar {
+  width: 8px;
+}
+
+#lista_cuotas::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#lista_cuotas::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+#lista_cuotas::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ===== ESTILOS PARA CENTRAR Y ALINEAR CORRECTAMENTE ===== */
+
+/* Asegurar que el contenedor de reportes esté centrado */
+#reportes {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 15px !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* Asegurar que el card esté centrado */
+#reportes .card {
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Asegurar que la tabla esté centrada */
+#reportes .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Eliminar cualquier transform que pueda desalinear */
+#reportes * {
+  transform: none !important;
+}
+
+/* Asegurar que el row esté centrado */
+#reportes .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Asegurar que las columnas no tengan padding excesivo */
+#reportes .col-12 {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Estilos para el contenedor de registrar pago */
+#registrarPago {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Asegurar que el container-custom esté centrado */
+.container-custom {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
 
 
-    .btn-custom {
-        background-color: #007bff;
-        color: white !important;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+/* ===== CORRECCIONES PARA ELIMINAR SCROLL Y FONDO GRIS ===== */
+
+/* Eliminar scroll innecesario */
+#reportes .card-body {
+    overflow: visible !important;
+}
+
+/* Eliminar fondo gris de DataTables */
+#tabla-reportes {
+    background-color: transparent !important;
+}
+
+#tabla-reportes thead th {
+    background-color: #efe2f7 !important;
+}
+
+#tabla-reportes tbody tr {
+    background-color: #ffffff !important;
+}
+
+#tabla-reportes tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Eliminar bordes y fondos innecesarios de DataTables */
+.dataTables_wrapper {
+    background-color: transparent !important;
+}
+
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    background-color: transparent !important;
+}
+
+/* Asegurar que no haya scroll horizontal */
+#tabla-reportes_wrapper {
+    overflow-x: visible !important;
+}
+
+.dataTables_scrollBody {
+    overflow: visible !important;
+}
+
+
+/* ===== ESTILOS RESPONSIVOS SIMPLES ===== */
+
+/* Card header sin fondo gris */
+.card-header.bg-white {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+/* Labels de formulario */
+label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+/* Inputs de fecha */
+input[type="date"].form-control {
+    font-size: 0.875rem;
+}
+
+/* Botones */
+#btnDescargar {
+    background-color: #02a499;
+    border: none;
+    white-space: nowrap;
+}
+
+#btnDescargar:hover {
+    background-color: #028f84;
+}
+
+/* Responsive para filtros */
+@media (max-width: 767px) {
+    .card-header.bg-white {
+        padding: 0.75rem;
     }
-
-    .btn-custom:hover {
-        background-color: #0056b3;
-        color: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
-        text-decoration: none;
+    
+    .card-header .row > div {
+        margin-bottom: 0.75rem;
     }
-
-    .btn-custom:active {
-        transform: translateY(0);
-        color: white !important;
+    
+    .card-header .row > div:last-child {
+        margin-bottom: 0;
     }
-
-    .btn-custom:focus {
-        color: white !important;
-        outline: none;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.5);
-    }
-
-    /* Responsivo para móviles */
-    @media (max-width: 768px) {
-        .btn-custom {
-            margin-top: 10px;
-            width: 100%;
-        }
-    }
-
-    .switch-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 20px;
-        margin-left: 28px;
-    }
-
-    .switch-label {
-        font-size: 1.2rem;
-        font-weight: bold;
-        margin-right: 18px;
-    }
-
-    #regislabel {
-        margin-left: 18px;
-    }
-
-
-
-
-    /* Estilos personalizados para el switch */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        /* Ancho del switch */
-        height: 30px;
-        /* Alto del switch */
-    }
-
-    /* Ocultamos el input real */
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    /* Estilo del fondo del switch */
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #be91db;
-        /* Color del switch apagado */
-        transition: 0.4s;
-        border-radius: 10px;
-        /* Bordes redondeados */
-    }
-
-    /* Elemento móvil del switch */
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 24px;
-        width: 24px;
-        left: 3px;
-        /* Posición inicial a la izquierda */
-        bottom: 3px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 19%;
-        box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Cuando el switch está activado */
-    input:checked+.slider {
-        background-color: #be91db;
-        /* Color verde al activarse */
-    }
-
-    input:checked+.slider:before {
-        transform: translateX(30px);
-        /* Desplaza el círculo a la derecha */
-    }
-
-    .content-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    
+    .d-flex.align-items-end {
         flex-direction: column;
-        height: 50vh;
-        overflow: hidden;
-        position: relative;
+        align-items: stretch !important;
     }
+    
+    .d-flex.align-items-end .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        margin-right: 0 !important;
+    }
+    
+    .d-flex.align-items-end .btn:last-child {
+        margin-bottom: 0;
+    }
+}
 
-    .content {
-        position: absolute;
-        width: 80%;
+/* Card header sin fondo gris */
+.card-header.bg-white {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #dee2e6;
+}
 
+/* Tabla - mantener estilos originales */
+#tabla-reportes {
+    margin-bottom: 0 !important;
+}
 
-        transition: transform 0.5s ease-in-out;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
+#tabla-reportes thead th {
+    background-color: #efe2f7 !important;
+}
 
-    .hidden-right {
-        transform: translateX(100%);
-    }
+#tabla-reportes tbody tr {
+    background-color: #f8f9fa;
+}
 
-    .hidden-left {
-        transform: translateX(-100%);
-    }
+#tabla-reportes tbody tr:hover {
+    background-color: #e6e6e6;
+}
 
-    /* Agregado: Ocultar completamente después de la animación */
-    .hidden {
-        display: none !important;
-        /* Hace que el div desaparezca completamente */
-    }
+/* DataTables wrapper sin fondo */
+.dataTables_wrapper {
+    padding: 1rem !important;
+    background-color: #ffffff !important;
+}
 
-    .table th {
-        background-color: #efe2f7;
-    }
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 1rem;
+}
 
-    .table tbody tr {
-        background-color: #f8f9fa; /* Color gris claro para las filas */
-    }
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+}
 
-    .table tbody tr:hover {
-        background-color: #e6e6e6; /* Color más oscuro al pasar el mouse */
-    }
+/* ===== RESPONSIVE DESIGN ===== */
 
-    .input-group-text {
-        background-color: #fcf8ff;
+/* Tablets y dispositivos medianos (768px - 991px) */
+@media (max-width: 991px) {
+    .page-title {
+        font-size: 1.1rem;
     }
+    
+    .card-reportes .card-header {
+        padding: 1rem !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
 
-    #cronogramaSelect { /* Aplicado CSS solo al select por ID */
-        border-collapse: collapse;
-        margin-top: 5px; /* Espaciado con la caja */
+/* Móviles (hasta 767px) */
+@media (max-width: 767px) {
+    .page-title-box {
+        padding: 12px 0;
     }
-    #cronogramaSelect th, #cronogramaSelect td { /* Estilo de celdas */
-        border: 1px solid #ccc;
-        padding: 8px;
-        text-align: center;
+    
+    .page-title {
+        font-size: 1rem;
     }
-    #cronogramaSelect th {
-        background-color: #edede6;
+    
+    .card-reportes {
+        border-radius: 8px !important;
     }
-    #cronogramaSelect tr:hover { /* Resaltar al pasar el mouse */
-        background-color: #e0e0e0;
+    
+    .card-reportes .card-header {
+        padding: 0.75rem !important;
     }
-    .fila-seleccionada { /* Resaltar fila seleccionada */
-        background-color: rgb(37, 150, 190) !important;
-        color: white;
+    
+    .form-label {
+        font-size: 0.8rem;
     }
-
-    #detalleSelect { /* Aplicado CSS solo al select por ID */
-        border-collapse: collapse;
-        margin-top: 5px; /* Espaciado con la caja */
+    
+    input[type="date"].form-control-sm {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
     }
-    #detalleSelect th, #detalleSelect td { /* Estilo de celdas */
-        border: 1px solid #ccc;
-        padding: 8px;
-        text-align: center;
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
     }
-    #detalleSelect tr:hover { /* Resaltar al pasar el mouse */
-        background-color: #e0e0e0;
-    }
-    .fila-seleccionada { /* Resaltar fila seleccionada */
-        background-color: rgb(37, 150, 190) !important;
-        color: white;
-    }
-
-    #selectBoxDetalle {
-    transition: background-color 0.5s ease-in-out; /* Transición suave para el color */
-    }
-
-    .palpitar {
-        background-color: yellow; /* Color amarillo que aplicaremos al "palpitar" */
-    }
-
-    #btnDescargar {
-        background-color: #02a499;
-        color: white;
-        border: none;
-        padding: 8px 24px; /* Más espacio horizontal para hacerlo alargado */
-        border-radius: 4px;
-        font-weight: 500;
-        transition: background-color 0.3s ease;
-        margin-left: 140px; /* Empuja el botón más a la derecha */
-        white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
-    }
-
-    #btnDescargar:hover {
-        background-color: #028f84;
-    }
-
-    #btnDescargar i {
-        margin-left: 5px;
-    }
-
-    .input-group { /* Agregado: aseguramos que el input esté centrado dentro de su columna */
-        width: 100%; /* Asegura que el input se ocupe del espacio completo disponible */
-    }
-
-    /* Ajustamos el margen para mover el input hacia la derecha */
-    #colInputBusqueda { /* Agregado: mueve la columna del input un poco a la derecha */
-        padding-right: 20px; /* Agregado: espacio entre el input y el botón */
-        transform: translateX(18%);
-    }
-
-    /* Estructura para alinear el input y el botón de manera correcta */
-    .row.align-items-center { /* Agregado: Alineación centrada para los elementos en la fila */
-        display: flex;
-        justify-content: center; /* Centra los elementos horizontalmente */
-        align-items: center; /* Centra los elementos verticalmente */
-    }
-
-    .fixed-table-header {
-        position: fixed;
-        top: 0;
-        z-index: 999;
-        left: 0; /* Mantener */
-        width: auto !important; /* MODIFICADO: Cambiado de 100% a auto para respetar los anchos originales */
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        table-layout: fixed;
-    }
-
-    .placeholder-header {
-        height: 0;
-        visibility: hidden;
-    }
-
-        
-    .table-responsive {
+    
+    /* Hacer la tabla scrolleable horizontalmente en móvil */
+    .card-body {
         overflow-x: auto;
-        position: relative;
-        /* ELIMINADO: Quitar clases table-fixed que causan problemas */
-    }
-
-    .fixed-table-header th {
-        min-width: px;
-        padding-left: 0px;
-        padding-right: px;
-    }
-
-    .table th, .table td {
-        box-sizing: border-box; /* AÑADIDO: Asegurar que padding se incluya en el ancho */
-    }
-
-    #contenedorBotonPendientes {
-        position: fixed;
-        top: 150px;
-        right: 20px;
-        z-index: 1000;
+        -webkit-overflow-scrolling: touch;
     }
     
-    #btnPagosPendientes {
-        background-color: #38a4f8;
-        color: white;
-        border: none;
-        border-radius: 20px;
-        padding: 12px 18px;
-        font-weight: 500;
-        box-shadow: 0 4px 10px rgba(56, 164, 248, 0.3);
-        position: relative;
-        padding-right: 30px;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
+    #tabla-reportes {
+        min-width: 800px;
     }
     
-    #btnPagosPendientes i {
-        font-size: 16px;
-        margin-right: 8px;
+    #tabla-reportes thead th,
+    #tabla-reportes tbody td {
+        font-size: 0.75rem !important;
+        padding: 0.5rem !important;
     }
     
-    #btnPagosPendientes:hover {
-        background-color: #1e93f5;
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(56, 164, 248, 0.4);
+    /* Ajustar DataTables en móvil */
+    .dataTables_wrapper {
+        padding: 0.5rem !important;
     }
     
-    #notificacionPendientes {
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        background-color: #e74c3c;
-        color: white;
-        border-radius: 50%;
-        min-width: 22px;
-        height: 22px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: bold;
-        padding: 0 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 0.75rem;
     }
+    
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        margin-top: 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
 
-    #loaderModal {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 200px;
-        }
-        
-        #spinnerLoader {
-            width: 50px;
-            height: 50px;
-        }
-        
-        #tablaPendientes th, #tablaRechazados th {
-            background-color: #f8f9fa;
-        }
-        
-        #modalDetallesPago .modal-header {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        #modalCargaPagos .nav-tabs .nav-link.active {
-            font-weight: bold;
-            border-bottom: 3px solid #007bff;
-        }
-        
-        #modalCargaPagos .tab-content {
-            padding-top: 20px;
-        }
-        
-        #detallesCuotas {
-            margin-top: 20px;
-        }
-        
-        #detallesCuotas .list-group-item {
-            display: flex;
-            justify-content: space-between;
-        }
+/* Móviles pequeños (hasta 575px) */
+@media (max-width: 575px) {
+    .container-fluid {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    .page-title {
+        font-size: 0.9rem;
+    }
+    
+    .card-reportes .card-header {
+        padding: 0.5rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.75rem;
+        margin-bottom: 0.15rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    /* Stack de botones en móviles pequeños */
+    .d-flex.gap-2 {
+        flex-direction: column !important;
+    }
+    
+    .d-flex.gap-2 .btn {
+        width: 100% !important;
+        margin-bottom: 0.25rem;
+    }
+}
 
-        /* Estilo para la fila seleccionada en la tabla de financiamientos */
-        #detalleSelect tbody tr.selected {
-            background-color: #e3f2fd !important;
-            transition: background-color 0.3s ease;
-        }
+/* Landscape en móviles */
+@media (max-width: 767px) and (orientation: landscape) {
+    .page-title-box {
+        padding: 8px 0;
+    }
+    
+    .card-reportes .card-header {
+        padding: 0.5rem !important;
+    }
+}
 
-        /* Efecto hover para las filas de la tabla */
-        #detalleSelect tbody tr:hover {
-            background-color: #f5f5f5;
-            cursor: pointer;
-        }
-
-        /* ✅ NUEVO: Scroll para la lista de cuotas cuando hay muchas */
-        #lista_cuotas {
-            max-height: 400px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-right: 10px;
-        }
-
-        /* Personalizar scrollbar */
-        #lista_cuotas::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #lista_cuotas::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        #lista_cuotas::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 10px;
-        }
-
-        #lista_cuotas::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
+/* Eliminar espacios innecesarios en móvil */
+@media (max-width: 767px) {
+    .row.g-3 {
+        --bs-gutter-y: 0.75rem;
+    }
+}

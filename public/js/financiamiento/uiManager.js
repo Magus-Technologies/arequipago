@@ -118,6 +118,30 @@ function seleccionarFinanciamiento(row) {
         }
     }
 
+    // NUEVO: Verificar si el vehículo ya fue entregado para mostrar botón de descarga
+    const btnDescargarContrato = document.getElementById("btnDescargarContratoEntrega");
+    if (btnDescargarContrato) {
+        // Lógica mejorada: Verificar si es vehículo por categoría del producto
+        let esVehiculo = false;
+        let vehiculoYaEntregado = false;
+        
+        if (financiamiento.producto) {
+            // Verificar si la categoría del producto es "Vehículo" o similar
+            const categoria = (financiamiento.producto.categoria || '').toLowerCase();
+            esVehiculo = categoria.includes('vehiculo') || categoria.includes('vehículo');
+            
+            // Verificar si ya fue entregado (idproductosv2 != 37)
+            vehiculoYaEntregado = (financiamiento.producto.idproductosv2 != 37);
+        }
+        
+        // Mostrar botón solo si es vehículo Y ya fue entregado
+        if (esVehiculo && vehiculoYaEntregado) {
+            btnDescargarContrato.style.display = "block";
+        } else {
+            btnDescargarContrato.style.display = "none";
+        }
+    }
+
     // Actualizar el "select box" con el nombre del producto seleccionado
     const selectBoxDetalle = document.getElementById("selectBoxDetalle");
     if (selectBoxDetalle) {
@@ -584,8 +608,8 @@ function giveVehicle(idProducto, idFinanciamiento) {
                     // Cerrar modal de detalles
                     $('#financingDetailsModal').modal('hide');
                     
-                    // Generar contrato con el ID correcto
-                    generarContratoInstant(idFinanciamiento);
+                    // NUEVO: Generar contrato de entrega de vehículo
+                    generarContratoEntregaVehiculo(idFinanciamiento);
                     
                     // Recargar lista de clientes
                     cargarClientes();
@@ -598,6 +622,81 @@ function giveVehicle(idProducto, idFinanciamiento) {
         error: function() {
             cerrarModalEntregarVehiculo();
             mostrarNotificacionError('Error al conectar con el servidor');
+        }
+    });
+}
+
+/**
+ * Descargar contrato de entrega desde el modal de detalles
+ */
+function descargarContratoEntregaDesdeModal() {
+    if (!idFinanciamientoSeleccionado) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se ha seleccionado un financiamiento'
+        });
+        return;
+    }
+    
+    // Llamar a la función de generación con el ID seleccionado
+    generarContratoEntregaVehiculo(idFinanciamientoSeleccionado);
+}
+
+/**
+ * Generar contrato de entrega de vehículo
+ */
+function generarContratoEntregaVehiculo(idFinanciamiento) {
+    // Mostrar indicador de carga
+    Swal.fire({
+        title: 'Generando contrato...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    $.ajax({
+        url: '/arequipago/generarContratoEntregaVehiculo',
+        type: 'POST',
+        data: JSON.stringify({ id_financiamiento: idFinanciamiento }),
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(response) {
+            Swal.close();
+            
+            if (response.success) {
+                // Descargar PDF
+                const linkSource = `data:application/pdf;base64,${response.pdf}`;
+                const downloadLink = document.createElement('a');
+                downloadLink.href = linkSource;
+                downloadLink.download = response.nombre;
+                downloadLink.click();
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: 'Contrato de entrega generado correctamente',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.error || 'Error al generar el contrato'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.close();
+            console.error('Error al generar contrato:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al conectar con el servidor'
+            });
         }
     });
 }

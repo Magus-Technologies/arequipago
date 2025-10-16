@@ -2,27 +2,47 @@ function calcularFinanciamiento() {
   console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
+  // NUEVO: Permitir cálculo para plan personalizado
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 42) {
+    console.log("🎨 PLAN PERSONALIZADO - Calculando con valores manuales");
+    // No hacer return, permitir que continúe el cálculo normal
+  }
+
   // REEMPLAZAR por:
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-    console.log("📱 CELULARES - Solo recalculando fechas para cambio de fecha de inicio");
+    console.log(
+      "📱 CELULARES - Solo recalculando fechas para cambio de fecha de inicio"
+    );
     recalcularSoloFechasCelular();
     return;
   }
 
   // Obtener valores de los inputs
   const montoRaw = document.getElementById("monto").value;
-  const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
+  const montoSinInteresesRaw =
+    document.getElementById("montoSinIntereses").value;
   const montoSinIntereses = parseFloat(montoSinInteresesRaw) || 0;
-  console.log("📊 montoSinInteresesRaw:", montoSinInteresesRaw, "-> parseado:", montoSinIntereses);
+  console.log(
+    "📊 montoSinInteresesRaw:",
+    montoSinInteresesRaw,
+    "-> parseado:",
+    montoSinIntereses
+  );
   const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
   const tasaInteresRaw = document.getElementById("tasaInteres").value;
- // Cambio: Usar frecuencia del select solo si está habilitado
+  // Cambio: Usar frecuencia del select solo si está habilitado
   const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
-  const frecuenciaPago = frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled ? 
-                        frecuenciaSelectCalc.value : 
-                        'semanal'; // valor por defecto
+  const frecuenciaPago =
+    frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled
+      ? frecuenciaSelectCalc.value
+      : "semanal"; // valor por defecto
 
-  console.log("🔄 Frecuencia utilizada en calcularFinanciamiento:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectCalc?.disabled);
+  console.log(
+    "🔄 Frecuencia utilizada en calcularFinanciamiento:",
+    frecuenciaPago,
+    "- Select habilitado:",
+    !frecuenciaSelectCalc?.disabled
+  );
   const tipoMoneda = obtenerTipoMoneda();
 
   console.log("Valores iniciales: ", {
@@ -71,7 +91,7 @@ function calcularFinanciamiento() {
       tasaInteres: isNaN(tasaInteres) ? "NaN" : tasaInteres,
       montoSinIntereses: montoSinIntereses,
       fechaInicio: fechaInicio,
-      frecuenciaPago: frecuenciaPago
+      frecuenciaPago: frecuenciaPago,
     });
     return; // Salir si hay problemas con los valores
   }
@@ -105,9 +125,14 @@ function calcularFinanciamiento() {
     // Para celulares: NUNCA recalcular, usar el valor original del monto_cuota
     valorCuota = parseFloat(planGlobal.monto_cuota) || 0;
     console.log("📱 CELULARES - Usando valor cuota FIJO del plan:", valorCuota);
-    
+
     // Si no hay monto_cuota en planGlobal, calcular una sola vez
-    if (valorCuota === 0 && planGlobal.monto && planGlobal.cuota_inicial && planGlobal.cantidad_cuotas) {
+    if (
+      valorCuota === 0 &&
+      planGlobal.monto &&
+      planGlobal.cuota_inicial &&
+      planGlobal.cantidad_cuotas
+    ) {
       const montoTotal = parseFloat(planGlobal.monto);
       const cuotaInicial = parseFloat(planGlobal.cuota_inicial);
       const cantCuotas = parseInt(planGlobal.cantidad_cuotas);
@@ -124,10 +149,15 @@ function calcularFinanciamiento() {
   // NUEVO: Para celulares, verificar que no se sobrescriba un valor ya establecido
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
     const valorActualInput = document.getElementById("valorCuota").value;
-    const valorActualNumerico = parseFloat(valorActualInput.replace(/[^\d.-]/g, ''));
-    
+    const valorActualNumerico = parseFloat(
+      valorActualInput.replace(/[^\d.-]/g, "")
+    );
+
     if (valorActualNumerico > 0 && valorActualNumerico !== valorCuota) {
-      console.log("📱 CELULARES - Manteniendo valor existente del input:", valorActualNumerico);
+      console.log(
+        "📱 CELULARES - Manteniendo valor existente del input:",
+        valorActualNumerico
+      );
       valorCuota = valorActualNumerico;
     }
   }
@@ -157,12 +187,12 @@ function calcularFinanciamiento() {
       "Plan vehicular semanal - Primera fecha ajustada al lunes:",
       primeraFechaVencimiento.toLocaleDateString()
     );
-  } else if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 36
-  ) {
+  } else if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
     // Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
-    console.log("🔧 BEFORE - Fecha original:", primeraFechaVencimiento.toLocaleDateString());
+    console.log(
+      "🔧 BEFORE - Fecha original:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
     const año = primeraFechaVencimiento.getFullYear();
     const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
     console.log("🔧 Creando fecha para año:", año, "mes:", mes, "día: 24");
@@ -171,14 +201,19 @@ function calcularFinanciamiento() {
       "🔧 AFTER - Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
       primeraFechaVencimiento.toLocaleDateString()
     );
-  } else if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 41
-  ) {
+  } else if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
     // Para financiamiento de celulares (ID 41): siempre día 30 del mes actual, excepto febrero que es 28
     const mesActual = primeraFechaVencimiento.getMonth();
-    console.log("🔧 FINANCIAMIENTO CELULARES - ANTES - Fecha original:", primeraFechaVencimiento.toLocaleDateString());
-    console.log("🔧 FINANCIAMIENTO CELULARES - Mes actual:", mesActual, "Día original:", primeraFechaVencimiento.getDate());
+    console.log(
+      "🔧 FINANCIAMIENTO CELULARES - ANTES - Fecha original:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+    console.log(
+      "🔧 FINANCIAMIENTO CELULARES - Mes actual:",
+      mesActual,
+      "Día original:",
+      primeraFechaVencimiento.getDate()
+    );
 
     if (mesActual === 1) {
       // Febrero - verificar si es año bisiesto
@@ -188,7 +223,10 @@ function calcularFinanciamiento() {
     } else {
       primeraFechaVencimiento.setDate(30);
     }
-    console.log("🔧 FINANCIAMIENTO CELULARES - DESPUÉS - Primera fecha ajustada al día 30 del mes actual:", primeraFechaVencimiento.toLocaleDateString());
+    console.log(
+      "🔧 FINANCIAMIENTO CELULARES - DESPUÉS - Primera fecha ajustada al día 30 del mes actual:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
   }
 
   // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después
@@ -216,6 +254,10 @@ function calcularFinanciamiento() {
   }
 
   fechasVencimiento.push(primeraFechaVencimiento);
+  // NUEVO: Guardar el día de la primera cuota para mantenerlo en todas las cuotas
+const diaOriginalPrimeraFecha = primeraFechaVencimiento.getDate();
+console.log("📅 Día original de la primera cuota:", diaOriginalPrimeraFecha);
+
   console.log(
     "Primera fecha de vencimiento:",
     primeraFechaVencimiento.toLocaleDateString()
@@ -234,10 +276,7 @@ function calcularFinanciamiento() {
       nuevaFecha.setMonth(nuevaFecha.getMonth() + 1); // 👈 MODIFICADO: avanzar al siguiente mes
 
       // NUEVO: Verificar si es plan corporativo de chips (ID 36)
-      if (
-        planGlobal &&
-        parseInt(planGlobal.idplan_financiamiento) === 36
-      ) {
+      if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
         // Para plan corporativo de chips: siempre día 24
         nuevaFecha.setDate(24);
       } else if (
@@ -252,18 +291,24 @@ function calcularFinanciamiento() {
           nuevaFecha.setDate(30);
         }
       } else {
-        // Lógica original para otros planes
-        if (nuevaFecha.getMonth() === 1) {
-          // 👈 MODIFICADO: Si es febrero
-          nuevaFecha.setDate(28); // 👈 MODIFICADO
-          if (new Date(nuevaFecha.getFullYear(), 1, 29).getMonth() === 1) {
-            // 👈 MODIFICADO: Año bisiesto
-            nuevaFecha.setDate(29); // 👈 MODIFICADO
-          }
-        } else {
-          nuevaFecha.setDate(30); // 👈 MODIFICADO: Para el resto de los meses, poner siempre el 30
-        }
+      // MODIFICADO: Para otros planes, mantener el día de la primera cuota
+      // Intentar establecer el día original
+      nuevaFecha.setDate(diaOriginalPrimeraFecha);
+      
+      // Verificar si el mes cambió (significa que el día no existe en ese mes)
+      // Por ejemplo: si pusiste día 31 pero el mes tiene 30 días
+      const mesEsperado = (fechaAnterior.getMonth() + 1) % 12;
+      if (nuevaFecha.getMonth() !== mesEsperado) {
+        // El día no existe en este mes, usar el último día del mes
+        nuevaFecha.setDate(0); // Esto establece el último día del mes anterior
+        nuevaFecha.setMonth(nuevaFecha.getMonth() + 1); // Avanzar al mes correcto
+        nuevaFecha.setDate(0); // Establecer el último día de ese mes
+        console.log(`⚠️ Día ${diaOriginalPrimeraFecha} no existe en este mes, usando último día: ${nuevaFecha.getDate()}`);
       }
+      
+      console.log(`📅 Cuota ${i + 1}: Usando día ${nuevaFecha.getDate()} del mes`);
+    }
+
     }
 
     fechasVencimiento.push(nuevaFecha); // ✅ Se usa nuevaFecha
@@ -294,8 +339,14 @@ function mostrarFechasVencimiento(
   moneda,
   numeroInicial
 ) {
-  console.log("🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas:", fechasVencimiento);
-  console.log("🔍 Plan actual:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
+  console.log(
+    "🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas:",
+    fechasVencimiento
+  );
+  console.log(
+    "🔍 Plan actual:",
+    planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno"
+  );
   const contenedorFechas = document.getElementById("contenedorFechas"); // Asegúrate de tener un contenedor para las fechas
   contenedorFechas.innerHTML = ""; // Limpiar el contenedor antes de agregar las nuevas fechas
 
@@ -303,9 +354,11 @@ function mostrarFechasVencimiento(
 
   // Si planGlobal tiene una fecha de inicio válida, ajustamos la primera al siguiente lunes
   // EXCEPCIÓN: Para plan corporativo de chips (ID 36) y financiamiento de celulares (ID 41), no ajustar fechas - ya están correctas
-  if (planGlobal?.fecha_inicio &&
-      !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) &&
-      !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41)) {
+  if (
+    planGlobal?.fecha_inicio &&
+    !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) &&
+    !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41)
+  ) {
     let primeraFecha = fechasVencimiento[0];
     let diaSemana = primeraFecha.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
     let diasHastaLunes = (8 - diaSemana) % 7; // Cuántos días faltan para el próximo lunes
@@ -415,25 +468,34 @@ function formatMoneda(valor, tipoMoneda) {
 
 function calcularCronogramaDinamico() {
   console.log("🚀 EJECUTANDO: calcularCronogramaDinamico() - Función dinámica");
-  console.log("🔍 Plan actual en calcularCronogramaDinamico:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
+  console.log(
+    "🔍 Plan actual en calcularCronogramaDinamico:",
+    planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno"
+  );
 
-  // PROTECCIÓN ABSOLUTA PARA CELULARES  
+  // PROTECCIÓN ABSOLUTA PARA CELULARES
   if (proteccionAbsolutaCelulares()) {
-    console.log("📱 CELULARES - Solo recalculando fechas por protección absoluta");
+    console.log(
+      "📱 CELULARES - Solo recalculando fechas por protección absoluta"
+    );
     recalcularSoloFechasCelular();
     return;
   }
-  
+
   // NUEVO: Para planes de celular, SOLO recalcular fechas, NO valores
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-    console.log("📱 CELULARES - Solo recalculando fechas, valores permanecen fijos");
+    console.log(
+      "📱 CELULARES - Solo recalculando fechas, valores permanecen fijos"
+    );
     recalcularSoloFechasCelular();
     return; // Salir completamente para evitar cualquier recálculo
   }
 
   // NUEVO: No ejecutar para plan corporativo ID 36
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
-    console.log("⏹️ SALTANDO calcularCronogramaDinamico() para plan corporativo ID 36");
+    console.log(
+      "⏹️ SALTANDO calcularCronogramaDinamico() para plan corporativo ID 36"
+    );
     return;
   }
 
@@ -473,7 +535,7 @@ function calcularCronogramaDinamico() {
       document.getElementById("valorCuota").value = valorCuota.toFixed(2);
       console.log("📱 CELULARES - Valor cuota calculado fijo:", valorCuota);
     }
-    
+
     // CRÍTICO: No permitir que se modifique más adelante
     return; // Salir de la función para evitar recálculos posteriores
   } else {
@@ -484,23 +546,38 @@ function calcularCronogramaDinamico() {
   // NUEVO: Verificar si hay cambios no deseados en cuota para celulares
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
     // Para celulares, forzar el valor original de la variante si existe
-    if (planGlobal.monto_cuota && parseFloat(planGlobal.monto_cuota) !== valorCuota) {
+    if (
+      planGlobal.monto_cuota &&
+      parseFloat(planGlobal.monto_cuota) !== valorCuota
+    ) {
       valorCuota = parseFloat(planGlobal.monto_cuota);
-      document.getElementById("valorCuota").value = formatMoneda(valorCuota, obtenerTipoMoneda());
-      console.log("📱 CELULARES - Restaurando valor cuota original:", valorCuota);
+      document.getElementById("valorCuota").value = formatMoneda(
+        valorCuota,
+        obtenerTipoMoneda()
+      );
+      console.log(
+        "📱 CELULARES - Restaurando valor cuota original:",
+        valorCuota
+      );
     }
   }
 
   let montoTotalInput = document.getElementById("monto");
   // CORREGIDO: Usar frecuencia del plan cuando el select esté deshabilitado
   const frecuenciaSelect = document.getElementById("frecuenciaPago");
-  let frecuencia = frecuenciaSelect && !frecuenciaSelect.disabled ? 
-                  frecuenciaSelect.value : 
-                  (planGlobal ? planGlobal.frecuencia_pago : 'mensual');
+  let frecuencia =
+    frecuenciaSelect && !frecuenciaSelect.disabled
+      ? frecuenciaSelect.value
+      : planGlobal
+      ? planGlobal.frecuencia_pago
+      : "mensual";
 
-
-  console.log("🔄 Frecuencia utilizada en cronograma dinámico:", frecuencia, "- Select habilitado:", !frecuenciaSelect?.disabled);
-
+  console.log(
+    "🔄 Frecuencia utilizada en cronograma dinámico:",
+    frecuencia,
+    "- Select habilitado:",
+    !frecuenciaSelect?.disabled
+  );
 
   // REEMPLÁZALO POR:
   if (!fechaInicio) {
@@ -610,40 +687,60 @@ function calcularCronogramaDinamico() {
 
   console.log("🔍 VERIFICANDO CONDICIONES PARA PRIMERA CUOTA:");
   console.log("🔍 planGlobal existe:", !!planGlobal);
-  console.log("🔍 planGlobal.idplan_financiamiento:", planGlobal ? planGlobal.idplan_financiamiento : "undefined");
-  console.log("🔍 parseInt(idplan):", planGlobal ? parseInt(planGlobal.idplan_financiamiento) : "undefined");
-  console.log("🔍 ¿Es ID 36?", planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36);
-  console.log("🔍 ¿Es ID 2,3,4?", planGlobal && [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento)));
+  console.log(
+    "🔍 planGlobal.idplan_financiamiento:",
+    planGlobal ? planGlobal.idplan_financiamiento : "undefined"
+  );
+  console.log(
+    "🔍 parseInt(idplan):",
+    planGlobal ? parseInt(planGlobal.idplan_financiamiento) : "undefined"
+  );
+  console.log(
+    "🔍 ¿Es ID 36?",
+    planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36
+  );
+  console.log(
+    "🔍 ¿Es ID 2,3,4?",
+    planGlobal && [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
+  );
 
-  if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 36
-  ) {
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
     // Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
     const año = primeraFechaVencimiento.getFullYear();
     const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
     primeraFechaVencimiento = new Date(año, mes, 24);
-  } else if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 41
-  ) {
+  } else if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
     // CORREGIDO: Para financiamiento de celulares (ID 41): siempre día 30 del mes actual
     const añoActual = primeraFechaVencimiento.getFullYear();
     const mesActual = primeraFechaVencimiento.getMonth();
 
-    console.log("🔧 FINANCIAMIENTO CELULARES - ANTES - Fecha original:", primeraFechaVencimiento.toLocaleDateString());
-    console.log("🔧 Año:", añoActual, "Mes:", mesActual, "Día original:", primeraFechaVencimiento.getDate());
+    console.log(
+      "🔧 FINANCIAMIENTO CELULARES - ANTES - Fecha original:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
+    console.log(
+      "🔧 Año:",
+      añoActual,
+      "Mes:",
+      mesActual,
+      "Día original:",
+      primeraFechaVencimiento.getDate()
+    );
 
     // Crear fecha para el día 30 del mes actual (no del siguiente)
     primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
 
     // Si es febrero, ajustar al día 28 (o 29 si es bisiesto)
-    if (mesActual === 1) { // Febrero
+    if (mesActual === 1) {
+      // Febrero
       const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
       primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
     }
 
-    console.log("🔧 DESPUÉS - Financiamiento celulares - Primera fecha ajustada al día 30 del mes actual:", primeraFechaVencimiento.toLocaleDateString());
+    console.log(
+      "🔧 DESPUÉS - Financiamiento celulares - Primera fecha ajustada al día 30 del mes actual:",
+      primeraFechaVencimiento.toLocaleDateString()
+    );
   }
 
   // NUEVO: Corregir fechas para planes especiales por ID - MOVIDO ANTES DE push()
@@ -712,10 +809,7 @@ function calcularCronogramaDinamico() {
       nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
 
       // NUEVO: Verificar si es plan corporativo de chips (ID 36)
-      if (
-        planGlobal &&
-        parseInt(planGlobal.idplan_financiamiento) === 36
-      ) {
+      if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
         // Para plan corporativo de chips: siempre día 24
         nuevaFecha.setDate(24);
       } else if (
@@ -756,7 +850,7 @@ function calcularCronogramaDinamico() {
     const valorCuotaFinal = parseFloat(planGlobal.monto_cuota) || valorCuota;
     document.getElementById("valorCuota").value = valorCuotaFinal.toFixed(2);
     console.log("📱 CELULARES - Valor cuota final asegurado:", valorCuotaFinal);
-    
+
     mostrarFechasVencimientoPlan(fechasVencimiento, valorCuotaFinal);
     return; // Evitar continuar con el flujo normal
   }
@@ -765,7 +859,10 @@ function calcularCronogramaDinamico() {
 }
 
 function mostrarFechasVencimientoPlan(fechasVencimiento, valorcuota) {
-  console.log("🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:", fechasVencimiento);
+  console.log(
+    "🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:",
+    fechasVencimiento
+  );
   const contenedorFechas = document.getElementById("contenedorFechas");
   contenedorFechas.innerHTML = "";
 
@@ -831,21 +928,30 @@ function obtenerProximoLunes(fecha) {
 }
 
 function calcularFinanciamientoConFechaIngreso(plan) {
-  console.log("🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular");
+  console.log(
+    "🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular"
+  );
   const cuotaInicial = parseFloat(plan.cuota_inicial);
 
   const tasaInteres = parseFloat(plan.tasa_interes) / 100;
 
   // Cambio: Usar la frecuencia actual del select si está disponible para planes vehiculares
   const frecuenciaSelect = document.getElementById("frecuenciaPago");
-  const frecuenciaPago = (frecuenciaSelect && !frecuenciaSelect.disabled) ? 
-                        frecuenciaSelect.value : 
-                        plan.frecuencia_pago;
+  const frecuenciaPago =
+    frecuenciaSelect && !frecuenciaSelect.disabled
+      ? frecuenciaSelect.value
+      : plan.frecuencia_pago;
 
-  console.log("🔄 Frecuencia utilizada:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelect?.disabled);
+  console.log(
+    "🔄 Frecuencia utilizada:",
+    frecuenciaPago,
+    "- Select habilitado:",
+    !frecuenciaSelect?.disabled
+  );
 
   // CORREGIDO: Determinar si es plan vehicular por tipo_vehicular
-  const esVehicular = plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
+  const esVehicular =
+    plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
 
   const montoSinIntereses = parseFloat(plan.monto_sin_interes);
 
@@ -882,8 +988,22 @@ function calcularFinanciamientoConFechaIngreso(plan) {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
   // Verificamos si la fecha de ingreso es posterior a la fecha de inicio
-  if (diffDays >= -1) {
-    // Si la fecha de ingreso es posterior a la fecha de inicio, calculamos cuántas cuotas se deben restar
+  // if (diffDays >= -1) {
+  // Si la fecha de ingreso es posterior a la fecha de inicio, calculamos cuántas cuotas se deben restar
+  // const diasIntervalo = frecuenciaPago === "semanal" ? 7 : 30;
+  // MODIFICADO: Permitir fechas de ingreso anteriores a la fecha de inicio del plan
+  // para planes que aún no han comenzado (fecha_inicio futura)
+  const fechaHoy = new Date();
+  const esPlanFuturo = fechaInicioObj > fechaHoy;
+
+  // Si el plan es futuro, usar la fecha de hoy como referencia
+  const fechaReferenciaObj = esPlanFuturo ? fechaHoy : fechaInicioObj;
+  const diffTimeAjustado = fechaIngresoObj - fechaReferenciaObj;
+  const diffDaysAjustado = Math.floor(diffTimeAjustado / (1000 * 60 * 60 * 24));
+
+  // Verificamos si la fecha de ingreso es válida
+  if (diffDaysAjustado >= -1) {
+    // Si la fecha de ingreso es posterior a la fecha de referencia, calculamos cuántas cuotas se deben restar
     const diasIntervalo = frecuenciaPago === "semanal" ? 7 : 30;
 
     const cuotasRestantes = Math.floor(diffDays / diasIntervalo);
@@ -924,10 +1044,7 @@ function calcularFinanciamientoConFechaIngreso(plan) {
 
     // NUEVO: Para plan corporativo de chips (ID 36), empezar siempre desde cuota 1
     let numeroInicial;
-    if (
-      planGlobal &&
-      parseInt(planGlobal.idplan_financiamiento) === 36
-    ) {
+    if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
       numeroInicial = 1; // Siempre empezar desde la primera cuota
       console.log("Plan corporativo CLARO (ID 36) - Iniciando desde cuota 1");
     } else {
@@ -935,10 +1052,7 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     }
 
     // NUEVO: Para plan corporativo de chips (ID 36), ajustar primera fecha al día 24
-    if (
-      planGlobal &&
-      parseInt(planGlobal.idplan_financiamiento) === 36
-    ) {
+    if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
       const año = primeraFechaVencimiento.getFullYear();
       const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
       primeraFechaVencimiento = new Date(año, mes, 24);
@@ -996,10 +1110,7 @@ function calcularFinanciamientoConFechaIngreso(plan) {
         nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
 
         // NUEVO: Verificar si es plan corporativo de chips (ID 36)
-        if (
-          planGlobal &&
-          parseInt(planGlobal.idplan_financiamiento) === 36
-        ) {
+        if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
           // Para plan corporativo de chips: siempre día 24
           nuevaFecha.setDate(24);
         } else if (nuevaFecha.getDate() !== diaInicio) {
@@ -1011,8 +1122,13 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     }
 
     // Mostrar el cronograma calculado usando el valor de la cuota correcta y el número de cuota inicial
-    console.log("📄 Llamando a mostrarFechasVencimiento desde calcularFinanciamientoConFechaIngreso");
-    console.log("📄 Fechas calculadas:", fechasVencimiento.map(f => f.toLocaleDateString()));
+    console.log(
+      "📄 Llamando a mostrarFechasVencimiento desde calcularFinanciamientoConFechaIngreso"
+    );
+    console.log(
+      "📄 Fechas calculadas:",
+      fechasVencimiento.map((f) => f.toLocaleDateString())
+    );
     mostrarFechasVencimiento(
       fechasVencimiento,
       valorCuota,
@@ -1020,7 +1136,10 @@ function calcularFinanciamientoConFechaIngreso(plan) {
       numeroInicial
     );
   } else {
-    alert("La fecha de ingreso no puede ser anterior a la fecha de inicio.");
+    const mensajeError = esPlanFuturo
+      ? "La fecha de ingreso no puede ser anterior a la fecha actual."
+      : "La fecha de ingreso no puede ser anterior a la fecha de inicio del plan.";
+    Swal.fire(mensajeError);
   }
 }
 
@@ -1045,11 +1164,17 @@ function recalcularMonto() {
     parseFloat(document.getElementById("tasaInteres").value) / 100;
   // Cambio: Usar frecuencia del select solo si está habilitado
   const frecuenciaSelectRecalc = document.getElementById("frecuenciaPago");
-  let frecuenciaPago = frecuenciaSelectRecalc && !frecuenciaSelectRecalc.disabled ? 
-                      frecuenciaSelectRecalc.value : 
-                      planGlobal.frecuencia_pago;
+  let frecuenciaPago =
+    frecuenciaSelectRecalc && !frecuenciaSelectRecalc.disabled
+      ? frecuenciaSelectRecalc.value
+      : planGlobal.frecuencia_pago;
 
-  console.log("🔄 Frecuencia utilizada en recalcularMonto:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectRecalc?.disabled);
+  console.log(
+    "🔄 Frecuencia utilizada en recalcularMonto:",
+    frecuenciaPago,
+    "- Select habilitado:",
+    !frecuenciaSelectRecalc?.disabled
+  );
   console.log("🔍 Valores iniciales recalcularMonto:", {
     precioVenta,
     montoSinIntereses,
@@ -1280,7 +1405,10 @@ function recalcularSoloFechasCelular() {
     return;
   }
 
-  console.log("📱 CELULARES - Recalculando SOLO fechas con fecha inicio:", fechaInicio);
+  console.log(
+    "📱 CELULARES - Recalculando SOLO fechas con fecha inicio:",
+    fechaInicio
+  );
 
   // Obtener valores FIJOS (sin recalcular)
   const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
@@ -1302,35 +1430,43 @@ function recalcularSoloFechasCelular() {
   let primeraFecha = new Date(fechaInicioObj);
   const mesInicio = primeraFecha.getMonth();
   const añoInicio = primeraFecha.getFullYear();
-  
+
   // Establecer al día 30 del mismo mes de la fecha de inicio
   primeraFecha = new Date(añoInicio, mesInicio, 30);
-  
+
   // Si es febrero, ajustar al día 28 o 29
   if (mesInicio === 1) {
-    const esBisiesto = (añoInicio % 4 === 0 && añoInicio % 100 !== 0) || (añoInicio % 400 === 0);
+    const esBisiesto =
+      (añoInicio % 4 === 0 && añoInicio % 100 !== 0) || añoInicio % 400 === 0;
     primeraFecha.setDate(esBisiesto ? 29 : 28);
   }
 
   fechasVencimiento.push(primeraFecha);
-  console.log("📱 CELULARES - Primera fecha establecida:", primeraFecha.toLocaleDateString());
+  console.log(
+    "📱 CELULARES - Primera fecha establecida:",
+    primeraFecha.toLocaleDateString()
+  );
 
   // Calcular fechas posteriores
   for (let i = 1; i < cantidadCuotas; i++) {
     let nuevaFecha = new Date(fechasVencimiento[i - 1]);
     nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-    
+
     // Siempre día 30, excepto febrero
     if (nuevaFecha.getMonth() === 1) {
       const añoActual = nuevaFecha.getFullYear();
-      const esBisiesto = (añoActual % 4 === 0 && añoActual % 100 !== 0) || (añoActual % 400 === 0);
+      const esBisiesto =
+        (añoActual % 4 === 0 && añoActual % 100 !== 0) || añoActual % 400 === 0;
       nuevaFecha.setDate(esBisiesto ? 29 : 28);
     } else {
       nuevaFecha.setDate(30);
     }
-    
+
     fechasVencimiento.push(nuevaFecha);
-    console.log(`📱 CELULARES - Fecha ${i + 1}:`, nuevaFecha.toLocaleDateString());
+    console.log(
+      `📱 CELULARES - Fecha ${i + 1}:`,
+      nuevaFecha.toLocaleDateString()
+    );
   }
 
   // Actualizar fecha de fin
@@ -1340,5 +1476,7 @@ function recalcularSoloFechasCelular() {
   // Mostrar cronograma con valores FIJOS
   mostrarFechasVencimientoPlan(fechasVencimiento, valorCuotaFijo);
 
-  console.log("📱 CELULARES - Recálculo de fechas completado, valores mantenidos fijos");
+  console.log(
+    "📱 CELULARES - Recálculo de fechas completado, valores mantenidos fijos"
+  );
 }

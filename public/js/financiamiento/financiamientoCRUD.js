@@ -143,21 +143,58 @@ function saveFinanciamiento(event) {
     }
   }
 
-  // Validaciones
-  if (
-    !grupoFinanciamiento ||
-    !cantidadProducto ||
-    !montoTotal ||
-    !cuotaInicial ||
-    !cuotas ||
-    !estado ||
-    !fechaInicio ||
-    !fechaFin ||
-    !fechaHoraActual ||
-    !numeroDocumento
-  ) {
-    Swal.fire("Error", "Todos los campos son obligatorios.", "error");
-    return;
+  // NUEVO: Validación especial para plan editable (ID 42)
+  const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
+  
+  if (esPlanPersonalizado) {
+    // Para planes personalizados, validar campos específicos
+    const camposPersonalizados = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Cantidad de producto': cantidadProducto,
+      'Monto total': montoTotal,
+      'Monto sin intereses': montoSinIntereses,
+      'Cuota inicial': cuotaInicial,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+    
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposPersonalizados)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+    
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+  } else {
+    // Validaciones normales para otros planes
+    if (
+      !grupoFinanciamiento ||
+      !cantidadProducto ||
+      !montoTotal ||
+      !cuotaInicial ||
+      !cuotas ||
+      !estado ||
+      !fechaInicio ||
+      !fechaFin ||
+      !fechaHoraActual ||
+      !numeroDocumento
+    ) {
+      Swal.fire("Error", "Todos los campos son obligatorios.", "error");
+      return;
+    }
   }
 
   // Validar que la cuota inicial no supere el monto total
@@ -190,12 +227,16 @@ function saveFinanciamiento(event) {
         id_cliente: idCliente, // Nueva propiedad
         id_producto: idProducto, // Ahora puede acceder a la variable idProducto del ámbito superior
         valorCuota: valorCuota,
+        monto_cuota: valorCuota, // NUEVO: Agregar monto_cuota para planes personalizados
         codigo_asociado: codigoAsociado,
         grupo_financiamiento: grupoFinanciamiento,
         cantidad_producto: cantidadProducto,
         monto_total: montoTotal,
         monto_inscrip: montoInscrip,
         monto_sin_intereses: montoSinIntereses,
+        monto_sin_interes: montoSinIntereses, // NUEVO: Agregar sin la "es" para el controlador
+        tasa_interes: tasa, // NUEVO: Agregar tasa_interes para planes personalizados
+        frecuencia_pago: Frecuencia, // NUEVO: Agregar frecuencia_pago para planes personalizados
         cuota_inicial: cuotaInicial,
         cuotas: cuotas,
         estado: estado,
@@ -614,6 +655,10 @@ if (
       cuotas,
       monto_recalculado,
       monto_sin_intereses,
+      monto_sin_interes: monto_sin_intereses, // NUEVO: Agregar sin la "es" para el controlador
+      monto_cuota: valor_cuota, // NUEVO: Agregar monto_cuota para planes personalizados
+      tasa_interes: tasa, // NUEVO: Agregar tasa_interes para planes personalizados
+      frecuencia_pago: frecuencia_pago, // NUEVO: Agregar frecuencia_pago para planes personalizados
       valor_cuota,
       estado,
       fecha_inicio,

@@ -11,10 +11,25 @@ function getAllPlanes() {
           '<option value=""  selected>Seleccione un grupo</option>'
         );
         // select.append('<option value="notGrupo">Sin grupo</option>'); // COMENTADO: Ocultar opción "Sin grupo"
+
         response.planes.forEach((plan) => {
           // CAMBIO: antes filtraba != 9 && != 12, ahora solo filtrará != 9 para que el 12 sí cargue
-          if (plan.estado === 'activo') { // CAMBIO: Solo filtrar por estado activo desde BD
-            let option = `<option value="${plan.idplan_financiamiento}">${plan.nombre_plan}</option>`;
+          if (plan.estado === "activo") {
+            // CAMBIO: Solo filtrar por estado activo desde BD
+            // NUEVO: Aplicar estilo especial al plan FINANCIAMIENTO EDITABLE (ID 42)
+            let estiloEspecial = "";
+            let iconoEspecial = "";
+
+            if (
+              plan.nombre_plan === "FINANCIAMIENTO EDITABLE" ||
+              plan.idplan_financiamiento === "42"
+            ) {
+              estiloEspecial =
+                ' style="background-color: #fff3cd; font-weight: bold;"';
+              iconoEspecial = "🎨 ";
+            }
+
+            let option = `<option value="${plan.idplan_financiamiento}"${estiloEspecial}>${iconoEspecial}${plan.nombre_plan}</option>`;
             select.append(option);
           }
         });
@@ -26,7 +41,6 @@ function getAllPlanes() {
   });
 }
 function selectPlan(idPlan) {
-  
   limpiarVarianteSeleccionada();
 
   // NUEVO: Limpiar valores originales al cambiar de plan
@@ -34,6 +48,15 @@ function selectPlan(idPlan) {
 
   // NUEVO: Limpiar valores originales al cambiar de plan
   valoresOriginalesPlan = null;
+
+  // NUEVO: Detectar si es plan editable (ID 42)
+  if (idPlan === "42" || idPlan === 42) {
+    console.log(
+      "🎨 Plan FINANCIAMIENTO EDITABLE detectado - Habilitando modo Manual"
+    );
+    habilitarModoPersonalizado();
+    return;
+  }
 
   $.ajax({
     url: "/arequipago/obtenerPlanFinanciamiento",
@@ -51,7 +74,6 @@ function selectPlan(idPlan) {
             proteccionAbsolutaCelulares();
           }, 100);
         }
-
 
         variantesGlobales = respuesta.variantes || []; // Almacenar variantes globalmente
 
@@ -142,8 +164,8 @@ function selectPlan(idPlan) {
         $("#tasaInteres").val(""); // Limpiar tasa de interés
         // MODIFICADO: No limpiar fechaInicio si es MotosYa
         if (parseInt(plan.idplan_financiamiento) !== 33) {
-            $("#fechaInicio").val("");
-            // No establecer disabled aquí, se manejará por manejarCambioFechaInicioPorDirector()
+          $("#fechaInicio").val("");
+          // No establecer disabled aquí, se manejará por manejarCambioFechaInicioPorDirector()
         } else {
           console.log("🏍️ No limpiando fechaInicio para MotosYa en selectPlan");
         }
@@ -274,34 +296,42 @@ function selectPlan(idPlan) {
         }
 
         // NUEVO: Lógica específica para MotosYa antes de verificar fechas vehiculares
-      // NUEVO: Lógica específica para MotosYa - AHORA CON CAMPOS VEHICULARES
-if (parseInt(plan.idplan_financiamiento) === 33) {
-  // Habilitar cantidad para edición manual
-  $("#cantidad").prop("disabled", false);
-  
-  // IMPORTANTE: NO hacer return aquí para que continúe con la lógica vehicular
-  console.log("🏍️ MotosYa detectado - continuando con lógica vehicular");
-}
+        // NUEVO: Lógica específica para MotosYa - AHORA CON CAMPOS VEHICULARES
+        if (parseInt(plan.idplan_financiamiento) === 33) {
+          // Habilitar cantidad para edición manual
+          $("#cantidad").prop("disabled", false);
 
+          // IMPORTANTE: NO hacer return aquí para que continúe con la lógica vehicular
+          console.log(
+            "🏍️ MotosYa detectado - continuando con lógica vehicular"
+          );
+        }
 
         // Verificar si el plan tiene fecha_inicio y fecha_fin definidas // ✅ NUEVO
-      // Verificar si el plan tiene fecha_inicio y fecha_fin definidas O si es MotosYa
-if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento) === 33) {
+        // Verificar si el plan tiene fecha_inicio y fecha_fin definidas O si es MotosYa
+        if (
+          (plan.fecha_inicio && plan.fecha_fin) ||
+          parseInt(plan.idplan_financiamiento) === 33
+        ) {
+          // Para planes vehiculares normales, usar sus fechas
+          if (
+            plan.fecha_inicio &&
+            plan.fecha_fin &&
+            parseInt(plan.idplan_financiamiento) !== 33
+          ) {
+            $("#fechaInicio").val(plan.fecha_inicio).prop("disabled", true);
+            $("#fechaFin").val(plan.fecha_fin);
+          }
 
-  // Para planes vehiculares normales, usar sus fechas
-  if (plan.fecha_inicio && plan.fecha_fin && parseInt(plan.idplan_financiamiento) !== 33) {
-    $("#fechaInicio").val(plan.fecha_inicio).prop("disabled", true);
-    $("#fechaFin").val(plan.fecha_fin);
-  }
+          // Crear el input de "Fecha de ingreso" debajo de "contenedorVehicular" PARA TODOS (incluyendo MotosYa)
+          const contenedorVehicular = $("#contenedorVehicular");
 
-  // Crear el input de "Fecha de ingreso" debajo de "contenedorVehicular" PARA TODOS (incluyendo MotosYa)
-  const contenedorVehicular = $("#contenedorVehicular");
+          // NUEVO: Solo mostrar campos vehiculares si realmente es vehicular
+          const esVehicular =
+            plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
 
-  // NUEVO: Solo mostrar campos vehiculares si realmente es vehicular
-  const esVehicular = plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
-
-  if (esVehicular || parseInt(plan.idplan_financiamiento) === 33) {
-    contenedorVehicular.html(`
+          if (esVehicular || parseInt(plan.idplan_financiamiento) === 33) {
+            contenedorVehicular.html(`
       <label for="fechaIngreso">Fecha de Ingreso</label>
       <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
 
@@ -314,13 +344,13 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
           <label for="entregarNo">No</label>
       </div>
     `);
-  } else {
-    // Para planes con fechas pero no vehiculares (como corporativo), solo mostrar fecha de ingreso
-    contenedorVehicular.html(`
+          } else {
+            // Para planes con fechas pero no vehiculares (como corporativo), solo mostrar fecha de ingreso
+            contenedorVehicular.html(`
       <label for="fechaIngreso">Fecha de Ingreso</label>
       <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
     `);
-  }
+          }
 
           // Calcular el monto total
           montoCalculado =
@@ -430,10 +460,14 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
           const montoSinIntereses = parseFloat(plan.monto_sin_interes) || 0;
           const cuotaInicial = parseFloat(plan.cuota_inicial) || 0;
           const cantidadCuotas = parseInt(plan.cantidad_cuotas) || 1;
-          const valorCuotaFijo = (montoSinIntereses - cuotaInicial) / cantidadCuotas;
-          
+          const valorCuotaFijo =
+            (montoSinIntereses - cuotaInicial) / cantidadCuotas;
+
           $("#valorCuota").val(valorCuotaFijo.toFixed(2));
-          console.log("📱 Plan celular - Cuota fija establecida:", valorCuotaFijo);
+          console.log(
+            "📱 Plan celular - Cuota fija establecida:",
+            valorCuotaFijo
+          );
         } else {
           $("#valorCuota").val(plan.monto_cuota);
         }
@@ -445,8 +479,11 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
             valorCuotaInput.readOnly = true;
             valorCuotaInput.style.backgroundColor = "#f8f9fa";
             valorCuotaInput.style.cursor = "not-allowed";
-            valorCuotaInput.title = "El valor de la cuota es fijo para financiamientos de celular";
-            console.log("📱 CELULARES - Campo valorCuota bloqueado para edición");
+            valorCuotaInput.title =
+              "El valor de la cuota es fijo para financiamientos de celular";
+            console.log(
+              "📱 CELULARES - Campo valorCuota bloqueado para edición"
+            );
           }
         }
 
@@ -499,45 +536,48 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
         }
 
         $("#fechaInicio")
-        .off("change")
-        .on("change", function() {
+          .off("change")
+          .on("change", function () {
             const rolUsuario = window.rolUsuarioActual || "1";
-            
+
             // Si es Director, usar la nueva función de recálculo inteligente
             if (rolUsuario === "3") {
-                recalcularPorCambioFechaInicio();
+              recalcularPorCambioFechaInicio();
             } else {
-                // Para otros roles, mantener lógica original
-                if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-                    recalcularSoloFechasCelular();
-                } else {
-                    calcularCronogramaDinamico();
-                }
+              // Para otros roles, mantener lógica original
+              if (
+                planGlobal &&
+                parseInt(planGlobal.idplan_financiamiento) === 41
+              ) {
+                recalcularSoloFechasCelular();
+              } else {
+                calcularCronogramaDinamico();
+              }
             }
-        });
-        
+          });
+
         // Inicializar permisos de fecha de inicio según rol
         manejarCambioFechaInicioPorDirector();
 
         // CRÍTICO: Activar protección continua para Directores
         setTimeout(() => {
-            protegerFechaInicioPorDirector();
+          protegerFechaInicioPorDirector();
         }, 500);
 
         manejarCambioCuotaInicial();
 
         // CRÍTICO: Activar protección continua para cuota inicial de Directores
         setTimeout(() => {
-            protegerCuotaInicialPorDirector();
+          protegerCuotaInicialPorDirector();
         }, 500);
-        
+
         setTimeout(() => {
           if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
             recalcularSoloFechasCelular();
           } else {
             calcularCronogramaDinamico();
           }
-        }, 4000); 
+        }, 4000);
 
         // Verificar y mantener campos especiales desbloqueados
         setTimeout(() => {
@@ -546,11 +586,11 @@ if ((plan.fecha_inicio && plan.fecha_fin) || parseInt(plan.idplan_financiamiento
 
         // Configurar permisos de fecha de inicio según rol del usuario
         setTimeout(() => {
-            manejarCambioFechaInicioPorDirector();
-            protegerFechaInicioPorDirector(); // Reactivar protección
-            manejarCambioCuotaInicial(); // NUEVO
-            protegerCuotaInicialPorDirector();
-          }, 4600);
+          manejarCambioFechaInicioPorDirector();
+          protegerFechaInicioPorDirector(); // Reactivar protección
+          manejarCambioCuotaInicial(); // NUEVO
+          protegerCuotaInicialPorDirector();
+        }, 4600);
 
         // MODIFICADO: No ejecutar verificarInputsVacios para MotosYa
         if (!plan.fecha_inicio || !plan.fecha_fin) {
@@ -736,8 +776,11 @@ function seleccionarVariante(index) {
     moneda: varianteSeleccionada.moneda,
     id_variante: varianteSeleccionada.id_variante,
     idplan_financiamiento: varianteSeleccionada.idplan_financiamiento, // NUEVO: Preservar el ID del plan
-    tipo_vehicular: varianteSeleccionada.tipo_vehicular, 
-    cobrar_mora: typeof planGlobal.cobrar_mora !== 'undefined' ? planGlobal.cobrar_mora : 1,
+    tipo_vehicular: varianteSeleccionada.tipo_vehicular,
+    cobrar_mora:
+      typeof planGlobal.cobrar_mora !== "undefined"
+        ? planGlobal.cobrar_mora
+        : 1,
   };
 
   // APLICAR PROTECCIÓN INMEDIATA PARA VARIANTES DE CELULARES
@@ -746,7 +789,7 @@ function seleccionarVariante(index) {
       proteccionAbsolutaCelulares();
     }, 100);
   }
-  
+
   // Manejar campo de verificación domiciliaria para la variante
   manejarVerificacionDomiciliaria(planGlobal);
 
@@ -789,11 +832,11 @@ function seleccionarVariante(index) {
   }
 
   // MODIFICADO: Lógica diferenciada para variantes de MotosYa
- // MODIFICADO: Para TODAS las variantes (incluyendo MotosYa), mostrar campos vehiculares
-if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
-  // Para variantes de MotosYa, TAMBIÉN crear contenedor vehicular
-  const contenedorVehicular = $("#contenedorVehicular");
-  contenedorVehicular.html(`
+  // MODIFICADO: Para TODAS las variantes (incluyendo MotosYa), mostrar campos vehiculares
+  if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
+    // Para variantes de MotosYa, TAMBIÉN crear contenedor vehicular
+    const contenedorVehicular = $("#contenedorVehicular");
+    contenedorVehicular.html(`
     <label for="fechaIngreso">Fecha de Ingreso</label>
     <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
 
@@ -806,14 +849,13 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
         <label for="entregarNo">No</label>
     </div>
   `);
-  
-  const hoy = new Date().toISOString().slice(0, 10);
-  $("#fechaIngreso").val(hoy).prop("readonly", true);
-  setTimeout(() => configurarAccesoFechaIngreso(), 50);
-  
-  console.log("🏍️ Variante MotosYa - contenedor vehicular CREADO");
-} else {
 
+    const hoy = new Date().toISOString().slice(0, 10);
+    $("#fechaIngreso").val(hoy).prop("readonly", true);
+    setTimeout(() => configurarAccesoFechaIngreso(), 50);
+
+    console.log("🏍️ Variante MotosYa - contenedor vehicular CREADO");
+  } else {
     // Para otras variantes, autocompletar fecha de ingreso si existe el elemento
     const fechaIngresoElement = document.getElementById("fechaIngreso");
     if (fechaIngresoElement) {
@@ -918,7 +960,7 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     const cuotaInic = parseFloat(variante.cuota_inicial) || 0;
     const cantCuotas = parseInt(variante.cantidad_cuotas) || 1;
     const valorCuotaFijo = (montoSinInt - cuotaInic) / cantCuotas;
-    
+
     $("#valorCuota").val(valorCuotaFijo.toFixed(2));
     console.log("📱 Variante celular - Cuota fija:", valorCuotaFijo);
   }
@@ -949,7 +991,6 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     aplicarMontoInscripcion(0, null);
   }
   $("#monto").val(variante.monto || "");
-
 
   // MODIFICADO: Desbloquear fecha de inicio solo si la variante no tiene fecha_inicio o fecha_fin
   if (!variante.fecha_inicio || !variante.fecha_fin) {
@@ -1031,10 +1072,10 @@ if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
 
   // Configurar permisos de fecha de inicio y cuota inicial para la variante seleccionada
   setTimeout(() => {
-      manejarCambioFechaInicioPorDirector();
-      protegerFechaInicioPorDirector();
-      manejarCambioCuotaInicial(); // NUEVO
-      protegerCuotaInicialPorDirector(); // NUEVO
+    manejarCambioFechaInicioPorDirector();
+    protegerFechaInicioPorDirector();
+    manejarCambioCuotaInicial(); // NUEVO
+    protegerCuotaInicialPorDirector(); // NUEVO
   }, 4600);
 
   // NUEVO: Forzar establecimiento de fecha para MotosYa al final
@@ -1233,8 +1274,8 @@ function verificarInputsVacios() {
 
   // CRÍTICO: Restaurar permisos de Director para fechaInicio y cuotaInicial después de aplicar estilos
   setTimeout(() => {
-      manejarCambioFechaInicioPorDirector();
-      manejarCambioCuotaInicial(); // NUEVO
+    manejarCambioFechaInicioPorDirector();
+    manejarCambioCuotaInicial(); // NUEVO
   }, 100);
 
   // Resaltar los campos clave que el usuario debe completar (solo si hay campos a resaltar)
@@ -1300,7 +1341,6 @@ function verificarInputsVacios() {
 
   // Bloquear inputs según el tipo de plan
   bloquearInputs();
-
 }
 
 function planMensual() {
@@ -1336,15 +1376,28 @@ function checkSelection() {
   const wrapperElement = document.querySelector(".glow-effect-wrapper"); // Cambiado: Se selecciona el div envolvente
 
   const selectElement = document.getElementById("grupo");
+  const selectedValue = selectElement.value;
+
+  // NUEVO: Detectar si es plan editable (ID 42)
+  if (selectedValue === "42" || selectedValue === 42) {
+    console.log("🎨 Plan FINANCIAMIENTO EDITABLE detectado en checkSelection");
+    wrapperElement.classList.remove("glow-active-wrapper");
+    habilitarModoPersonalizado();
+    return; // Salir para no ejecutar la lógica normal
+  }
 
   // Si la opción seleccionada es "Seleccione un grupo", activar el efecto de luz en el div
-  if (selectElement.value === "") {
+  if (selectedValue === "") {
     wrapperElement.classList.add("glow-active-wrapper"); // Cambiado: Agrega la clase al div envolvente
     revertirEstilosInputs();
     // Ocultar verificación domiciliaria cuando no hay grupo seleccionado
     manejarVerificacionDomiciliaria(null);
   } else {
     wrapperElement.classList.remove("glow-active-wrapper"); // Cambiado: Elimina la clase cuando cambia la opción
+
+    // Llamar a selectPlan para cargar los datos del plan
+    selectPlan(selectedValue);
+
     if (!camposMontoHabilitadosUnaVez) {
       const camposMontoEspeciales = ["monto", "montoSinIntereses"];
       camposMontoEspeciales.forEach((id) => {
@@ -1437,8 +1490,8 @@ function NotGrupo() {
 
     // CRÍTICO: Restaurar permisos de Director para fechaInicio y cuotaInicial
     setTimeout(() => {
-        manejarCambioFechaInicioPorDirector();
-        manejarCambioCuotaInicial(); // NUEVO
+      manejarCambioFechaInicioPorDirector();
+      manejarCambioCuotaInicial(); // NUEVO
     }, 100);
 
     // Resaltar los campos clave que el usuario debe completar
@@ -1842,64 +1895,76 @@ function validarCodigoAsociadoAntesDeeGuardar() {
  * basado en si el plan o variante es vehicular
  */
 function manejarVerificacionDomiciliaria(planOVariante) {
-    const contenedor = document.getElementById("contenedorVerificacionDomiciliaria");
-    
-    if (!contenedor) return;
-    
-    // Verificar si es vehicular (tiene tipo_vehicular definido)
-    const esVehicular = planOVariante && planOVariante.tipo_vehicular && 
-                       (planOVariante.tipo_vehicular === 'moto' || planOVariante.tipo_vehicular === 'vehiculo');
-    
-    if (esVehicular) {
-        contenedor.style.display = "block";
-        console.log("📋 Campo de verificación domiciliaria mostrado para tipo:", planOVariante.tipo_vehicular);
-    } else {
-        contenedor.style.display = "none";
-        // Limpiar selecciones cuando se oculta
-        const verificacionSi = document.getElementById("verificacionSi");
-        const verificacionNo = document.getElementById("verificacionNo");
-        if (verificacionSi) verificacionSi.checked = false;
-        if (verificacionNo) verificacionNo.checked = false;
-        console.log("📋 Campo de verificación domiciliaria ocultado (no es vehicular)");
-    }
+  const contenedor = document.getElementById(
+    "contenedorVerificacionDomiciliaria"
+  );
+
+  if (!contenedor) return;
+
+  // Verificar si es vehicular (tiene tipo_vehicular definido)
+  const esVehicular =
+    planOVariante &&
+    planOVariante.tipo_vehicular &&
+    (planOVariante.tipo_vehicular === "moto" ||
+      planOVariante.tipo_vehicular === "vehiculo");
+
+  if (esVehicular) {
+    contenedor.style.display = "block";
+    console.log(
+      "📋 Campo de verificación domiciliaria mostrado para tipo:",
+      planOVariante.tipo_vehicular
+    );
+  } else {
+    contenedor.style.display = "none";
+    // Limpiar selecciones cuando se oculta
+    const verificacionSi = document.getElementById("verificacionSi");
+    const verificacionNo = document.getElementById("verificacionNo");
+    if (verificacionSi) verificacionSi.checked = false;
+    if (verificacionNo) verificacionNo.checked = false;
+    console.log(
+      "📋 Campo de verificación domiciliaria ocultado (no es vehicular)"
+    );
+  }
 }
 
 // NUEVA FUNCIÓN: Configurar frecuencia de pago según tipo vehicular
 function configurarFrecuenciaPago(planOVariante) {
-    const frecuenciaSelect = document.getElementById("frecuenciaPago");
-    
-    if (!frecuenciaSelect) return;
-    
-    // Verificar si es vehicular (tiene tipo_vehicular con valor)
-    const esVehicular = planOVariante && planOVariante.tipo_vehicular !== null;
-    
-    if (esVehicular) {
-        // Es vehicular: desbloquear el select
-        frecuenciaSelect.disabled = false;
-        frecuenciaSelect.style.backgroundColor = "#ffffff";
-        frecuenciaSelect.style.color = "#212529";
-        frecuenciaSelect.style.cursor = "pointer";
-        frecuenciaSelect.style.pointerEvents = "auto";
-        
-        console.log("🔓 Frecuencia de pago desbloqueada para tipo vehicular:", planOVariante.tipo_vehicular);
-        
-        // Agregar event listener para recalcular cuando cambie la frecuencia
-        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia); // Evitar duplicados
-        frecuenciaSelect.addEventListener('change', manejarCambioFrecuencia);
-        
-    } else {
-        // No es vehicular: mantener bloqueado
-        frecuenciaSelect.disabled = true;
-        frecuenciaSelect.style.backgroundColor = "#e9ecef";
-        frecuenciaSelect.style.color = "#6c757d";
-        frecuenciaSelect.style.cursor = "not-allowed";
-        frecuenciaSelect.style.pointerEvents = "none";
-        
-        // Remover event listener
-        frecuenciaSelect.removeEventListener('change', manejarCambioFrecuencia);
-        
-        console.log("🔒 Frecuencia de pago bloqueada (no es vehicular)");
-    }
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+
+  if (!frecuenciaSelect) return;
+
+  // Verificar si es vehicular (tiene tipo_vehicular con valor)
+  const esVehicular = planOVariante && planOVariante.tipo_vehicular !== null;
+
+  if (esVehicular) {
+    // Es vehicular: desbloquear el select
+    frecuenciaSelect.disabled = false;
+    frecuenciaSelect.style.backgroundColor = "#ffffff";
+    frecuenciaSelect.style.color = "#212529";
+    frecuenciaSelect.style.cursor = "pointer";
+    frecuenciaSelect.style.pointerEvents = "auto";
+
+    console.log(
+      "🔓 Frecuencia de pago desbloqueada para tipo vehicular:",
+      planOVariante.tipo_vehicular
+    );
+
+    // Agregar event listener para recalcular cuando cambie la frecuencia
+    frecuenciaSelect.removeEventListener("change", manejarCambioFrecuencia); // Evitar duplicados
+    frecuenciaSelect.addEventListener("change", manejarCambioFrecuencia);
+  } else {
+    // No es vehicular: mantener bloqueado
+    frecuenciaSelect.disabled = true;
+    frecuenciaSelect.style.backgroundColor = "#e9ecef";
+    frecuenciaSelect.style.color = "#6c757d";
+    frecuenciaSelect.style.cursor = "not-allowed";
+    frecuenciaSelect.style.pointerEvents = "none";
+
+    // Remover event listener
+    frecuenciaSelect.removeEventListener("change", manejarCambioFrecuencia);
+
+    console.log("🔒 Frecuencia de pago bloqueada (no es vehicular)");
+  }
 }
 
 // NUEVA VARIABLE GLOBAL: Almacenar valores originales completos
@@ -1907,209 +1972,266 @@ let valoresOriginalesPlan = null;
 
 // FUNCIÓN CORREGIDA: Preservar la cantidad de cuotas restantes exacta
 function manejarCambioFrecuencia() {
-    const frecuenciaSeleccionada = this.value;
-    const cuotasInput = document.getElementById("cuotas");
-    const valorCuotaInput = document.getElementById("valorCuota");
-    
-    console.log("📅 Frecuencia cambiada a:", frecuenciaSeleccionada);
-    
-    if (!planGlobal) return;
-    
-    // Capturar número de cuota inicial
-    let numeroCuotaOriginal = 1;
-    const contenedorFechas = document.getElementById("contenedorFechas");
-    if (contenedorFechas && contenedorFechas.children && contenedorFechas.children.length > 0) {
-        const primerElemento = contenedorFechas.children[0];
-        if (primerElemento) {
-            const etiquetaCuota = primerElemento.querySelector("label");
-            if (etiquetaCuota) {
-                const textoEtiqueta = etiquetaCuota.textContent || "";
-                const coincidencia = textoEtiqueta.match(/Cuota\s+(\d+):/);
-                if (coincidencia && coincidencia[1]) {
-                    numeroCuotaOriginal = parseInt(coincidencia[1]);
-                }
-            }
+  const frecuenciaSeleccionada = this.value;
+  const cuotasInput = document.getElementById("cuotas");
+  const valorCuotaInput = document.getElementById("valorCuota");
+
+  console.log("📅 Frecuencia cambiada a:", frecuenciaSeleccionada);
+
+  if (!planGlobal) return;
+
+  // Capturar número de cuota inicial
+  let numeroCuotaOriginal = 1;
+  const contenedorFechas = document.getElementById("contenedorFechas");
+  if (
+    contenedorFechas &&
+    contenedorFechas.children &&
+    contenedorFechas.children.length > 0
+  ) {
+    const primerElemento = contenedorFechas.children[0];
+    if (primerElemento) {
+      const etiquetaCuota = primerElemento.querySelector("label");
+      if (etiquetaCuota) {
+        const textoEtiqueta = etiquetaCuota.textContent || "";
+        const coincidencia = textoEtiqueta.match(/Cuota\s+(\d+):/);
+        if (coincidencia && coincidencia[1]) {
+          numeroCuotaOriginal = parseInt(coincidencia[1]);
         }
+      }
     }
-    
-    // CORREGIDO: Almacenar valores originales SOLO la primera vez
-    if (!valoresOriginalesPlan) {
-        // Capturar el estado actual como valores originales
-        const cuotasRestantesActuales = parseInt(cuotasInput.value);
-        const valorCuotaActual = parseFloat(valorCuotaInput.value.replace(/[^0-9.-]+/g, ""));
-        
-        valoresOriginalesPlan = {
-            cuotas_restantes_originales: cuotasRestantesActuales,
-            monto_cuota_original: valorCuotaActual,
-            frecuencia_pago_original: planGlobal.frecuencia_pago,
-            // NUEVO: Almacenar también el monto total original para preservar consistencia
-            monto_total_original: cuotasRestantesActuales * valorCuotaActual
-        };
-        console.log("💾 Valores originales almacenados:", valoresOriginalesPlan);
-    }
-    
-    let nuevasCuotasRestantes, nuevoValorCuota;
-    
-    // CRÍTICO: Si vuelve a la frecuencia original, restaurar valores exactos
-    if (frecuenciaSeleccionada === valoresOriginalesPlan.frecuencia_pago_original) {
-        console.log("🔄 Restaurando valores exactos del estado original");
-        
-        // Restaurar exactamente los valores originales
-        nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
-        nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
-        
-        console.log("📊 Restaurado - Cuotas restantes exactas:", nuevasCuotasRestantes, "Valor cuota:", nuevoValorCuota);
-        
+  }
+
+  // CORREGIDO: Almacenar valores originales SOLO la primera vez
+  if (!valoresOriginalesPlan) {
+    // Capturar el estado actual como valores originales
+    const cuotasRestantesActuales = parseInt(cuotasInput.value);
+    const valorCuotaActual = parseFloat(
+      valorCuotaInput.value.replace(/[^0-9.-]+/g, "")
+    );
+
+    valoresOriginalesPlan = {
+      cuotas_restantes_originales: cuotasRestantesActuales,
+      monto_cuota_original: valorCuotaActual,
+      frecuencia_pago_original: planGlobal.frecuencia_pago,
+      // NUEVO: Almacenar también el monto total original para preservar consistencia
+      monto_total_original: cuotasRestantesActuales * valorCuotaActual,
+    };
+    console.log("💾 Valores originales almacenados:", valoresOriginalesPlan);
+  }
+
+  let nuevasCuotasRestantes, nuevoValorCuota;
+
+  // CRÍTICO: Si vuelve a la frecuencia original, restaurar valores exactos
+  if (
+    frecuenciaSeleccionada === valoresOriginalesPlan.frecuencia_pago_original
+  ) {
+    console.log("🔄 Restaurando valores exactos del estado original");
+
+    // Restaurar exactamente los valores originales
+    nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
+    nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
+
+    console.log(
+      "📊 Restaurado - Cuotas restantes exactas:",
+      nuevasCuotasRestantes,
+      "Valor cuota:",
+      nuevoValorCuota
+    );
+  } else {
+    // CORREGIDO: Para conversiones, usar el monto total como referencia fija
+    const montoTotalReferencia = valoresOriginalesPlan.monto_total_original;
+
+    console.log(
+      "🔄 Aplicando conversión matemática con monto total fijo:",
+      montoTotalReferencia
+    );
+
+    if (
+      valoresOriginalesPlan.frecuencia_pago_original === "semanal" &&
+      frecuenciaSeleccionada === "mensual"
+    ) {
+      // Convertir de semanal a mensual
+      const factorConversion = 4.33; // 52 semanas / 12 meses
+      nuevasCuotasRestantes = Math.round(
+        valoresOriginalesPlan.cuotas_restantes_originales / factorConversion
+      );
+      nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
+    } else if (
+      valoresOriginalesPlan.frecuencia_pago_original === "mensual" &&
+      frecuenciaSeleccionada === "semanal"
+    ) {
+      // Convertir de mensual a semanal
+      const factorConversion = 4.33; // 52 semanas / 12 meses
+      nuevasCuotasRestantes = Math.round(
+        valoresOriginalesPlan.cuotas_restantes_originales * factorConversion
+      );
+      nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
     } else {
-        // CORREGIDO: Para conversiones, usar el monto total como referencia fija
-        const montoTotalReferencia = valoresOriginalesPlan.monto_total_original;
-        
-        console.log("🔄 Aplicando conversión matemática con monto total fijo:", montoTotalReferencia);
-        
-        if (valoresOriginalesPlan.frecuencia_pago_original === "semanal" && frecuenciaSeleccionada === "mensual") {
-            // Convertir de semanal a mensual
-            const factorConversion = 4.33; // 52 semanas / 12 meses
-            nuevasCuotasRestantes = Math.round(valoresOriginalesPlan.cuotas_restantes_originales / factorConversion);
-            nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
-            
-        } else if (valoresOriginalesPlan.frecuencia_pago_original === "mensual" && frecuenciaSeleccionada === "semanal") {
-            // Convertir de mensual a semanal
-            const factorConversion = 4.33; // 52 semanas / 12 meses
-            nuevasCuotasRestantes = Math.round(valoresOriginalesPlan.cuotas_restantes_originales * factorConversion);
-            nuevoValorCuota = montoTotalReferencia / nuevasCuotasRestantes;
-        } else {
-            // Para casos edge, mantener proporcionalidad
-            nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
-            nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
-        }
-        
-        console.log("📊 Conversión - Nuevas cuotas:", nuevasCuotasRestantes, "Nuevo valor:", nuevoValorCuota);
+      // Para casos edge, mantener proporcionalidad
+      nuevasCuotasRestantes = valoresOriginalesPlan.cuotas_restantes_originales;
+      nuevoValorCuota = valoresOriginalesPlan.monto_cuota_original;
     }
-    
-    // Actualizar inputs y planGlobal
-    cuotasInput.value = nuevasCuotasRestantes;
-    const tipoMoneda = obtenerTipoMoneda();
-    valorCuotaInput.value = formatMoneda(nuevoValorCuota, tipoMoneda);
-    
-    planGlobal.frecuencia_pago = frecuenciaSeleccionada;
-    planGlobal.cantidad_cuotas = nuevasCuotasRestantes;
-    planGlobal.monto_cuota = nuevoValorCuota;
-    
-    // Recalcular fechas (resto del código igual)
-    const fechaIngresoElement = document.getElementById("fechaIngreso");
-    if (fechaIngresoElement && planGlobal.fecha_inicio) {
-        const fechaIngreso = fechaIngresoElement.value;
-        let fechasVencimiento = [];
-        const fechaIngresoObj = new Date(fechaIngreso + "T00:00:00");
-        let primeraFechaVencimiento = new Date(fechaIngresoObj);
-        
-        if (frecuenciaSeleccionada === "semanal") {
-            const fechaOriginalIngreso = new Date(fechaIngresoObj);
-            primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
-            
-            if (primeraFechaVencimiento.getTime() !== fechaOriginalIngreso.getTime()) {
-                const diasMovidos = Math.floor(
-                    (primeraFechaVencimiento - fechaOriginalIngreso) / (1000 * 60 * 60 * 24)
-                );
-                if (diasMovidos > 0) {
-                    console.log("📅 Fecha ajustada al lunes, días movidos:", diasMovidos);
-                }
-            }
-        }
-        
-        // CORREGIDO: Aplicar lógica específica para planes de celular en primera fecha
-        if (
-          planGlobal &&
-          parseInt(planGlobal.idplan_financiamiento) === 41 &&
-          frecuenciaSeleccionada === "mensual"
-        ) {
-          // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
-          const añoActual = primeraFechaVencimiento.getFullYear();
-          const mesActual = primeraFechaVencimiento.getMonth();
-          primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
 
-          // Si es febrero, ajustar al día 28
-          if (mesActual === 1) {
-            const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
-            primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
-          }
+    console.log(
+      "📊 Conversión - Nuevas cuotas:",
+      nuevasCuotasRestantes,
+      "Nuevo valor:",
+      nuevoValorCuota
+    );
+  }
 
-          console.log("📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:", primeraFechaVencimiento.toLocaleDateString());
-        }
+  // Actualizar inputs y planGlobal
+  cuotasInput.value = nuevasCuotasRestantes;
+  const tipoMoneda = obtenerTipoMoneda();
+  valorCuotaInput.value = formatMoneda(nuevoValorCuota, tipoMoneda);
 
-        fechasVencimiento.push(primeraFechaVencimiento);
+  planGlobal.frecuencia_pago = frecuenciaSeleccionada;
+  planGlobal.cantidad_cuotas = nuevasCuotasRestantes;
+  planGlobal.monto_cuota = nuevoValorCuota;
 
-        for (let i = 1; i < nuevasCuotasRestantes; i++) {
-            let fechaAnterior = fechasVencimiento[i - 1];
-            let nuevaFecha = new Date(fechaAnterior);
+  // Recalcular fechas (resto del código igual)
+  const fechaIngresoElement = document.getElementById("fechaIngreso");
+  if (fechaIngresoElement && planGlobal.fecha_inicio) {
+    const fechaIngreso = fechaIngresoElement.value;
+    let fechasVencimiento = [];
+    const fechaIngresoObj = new Date(fechaIngreso + "T00:00:00");
+    let primeraFechaVencimiento = new Date(fechaIngresoObj);
 
-            if (frecuenciaSeleccionada === "semanal") {
-                nuevaFecha.setDate(nuevaFecha.getDate() + 7);
-            } else {
-                const diaInicio = nuevaFecha.getDate();
-                nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+    if (frecuenciaSeleccionada === "semanal") {
+      const fechaOriginalIngreso = new Date(fechaIngresoObj);
+      primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
 
-                // CORREGIDO: Aplicar lógica específica para planes de celular en fechas posteriores
-                if (
-                  planGlobal &&
-                  parseInt(planGlobal.idplan_financiamiento) === 41
-                ) {
-                  // Para financiamiento de celulares (ID 41): siempre día 30, excepto febrero
-                  if (nuevaFecha.getMonth() === 1) {
-                    const esBisiesto = new Date(nuevaFecha.getFullYear(), 1, 29).getMonth() === 1;
-                    nuevaFecha.setDate(esBisiesto ? 29 : 28);
-                  } else {
-                    nuevaFecha.setDate(30);
-                  }
-                } else if (nuevaFecha.getDate() !== diaInicio) {
-                    nuevaFecha.setDate(diaInicio);
-                }
-            }
-
-            fechasVencimiento.push(new Date(nuevaFecha));
-        }
-        
-        document.getElementById("contenedorFechas").innerHTML = "";
-        mostrarFechasVencimiento(
-            fechasVencimiento,
-            nuevoValorCuota,
-            tipoMoneda,
-            numeroCuotaOriginal
+      if (
+        primeraFechaVencimiento.getTime() !== fechaOriginalIngreso.getTime()
+      ) {
+        const diasMovidos = Math.floor(
+          (primeraFechaVencimiento - fechaOriginalIngreso) /
+            (1000 * 60 * 60 * 24)
         );
-        
-        console.log("✅ Cronograma recalculado con número inicial:", numeroCuotaOriginal);
+        if (diasMovidos > 0) {
+          console.log("📅 Fecha ajustada al lunes, días movidos:", diasMovidos);
+        }
+      }
     }
+
+    // CORREGIDO: Aplicar lógica específica para planes de celular en primera fecha
+    if (
+      planGlobal &&
+      parseInt(planGlobal.idplan_financiamiento) === 41 &&
+      frecuenciaSeleccionada === "mensual"
+    ) {
+      // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
+      const añoActual = primeraFechaVencimiento.getFullYear();
+      const mesActual = primeraFechaVencimiento.getMonth();
+      primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
+
+      // Si es febrero, ajustar al día 28
+      if (mesActual === 1) {
+        const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
+        primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
+      }
+
+      console.log(
+        "📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:",
+        primeraFechaVencimiento.toLocaleDateString()
+      );
+    }
+
+    fechasVencimiento.push(primeraFechaVencimiento);
+
+    for (let i = 1; i < nuevasCuotasRestantes; i++) {
+      let fechaAnterior = fechasVencimiento[i - 1];
+      let nuevaFecha = new Date(fechaAnterior);
+
+      if (frecuenciaSeleccionada === "semanal") {
+        nuevaFecha.setDate(nuevaFecha.getDate() + 7);
+      } else {
+        const diaInicio = fechasVencimiento[0].getDate(); // MODIFICADO: Usar el día de la primera fecha
+        nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+
+        // CORREGIDO: Aplicar lógica específica para planes de celular en fechas posteriores
+        if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
+          // Para financiamiento de celulares (ID 41): siempre día 30, excepto febrero
+          if (nuevaFecha.getMonth() === 1) {
+            const esBisiesto =
+              new Date(nuevaFecha.getFullYear(), 1, 29).getMonth() === 1;
+            nuevaFecha.setDate(esBisiesto ? 29 : 28);
+          } else {
+            nuevaFecha.setDate(30);
+          }
+        } else {
+          // MODIFICADO: Mantener el día de la primera cuota
+          nuevaFecha.setDate(diaInicio);
+
+          // Verificar si el día existe en el mes
+          const mesEsperado = (fechaAnterior.getMonth() + 1) % 12;
+          if (nuevaFecha.getMonth() !== mesEsperado) {
+            // El día no existe, usar el último día del mes
+            nuevaFecha.setDate(0);
+            nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+            nuevaFecha.setDate(0);
+            console.log(
+              `⚠️ Día ${diaInicio} no existe en este mes, usando último día`
+            );
+          }
+        }
+      }
+
+      fechasVencimiento.push(new Date(nuevaFecha));
+    }
+
+    document.getElementById("contenedorFechas").innerHTML = "";
+    mostrarFechasVencimiento(
+      fechasVencimiento,
+      nuevoValorCuota,
+      tipoMoneda,
+      numeroCuotaOriginal
+    );
+
+    console.log(
+      "✅ Cronograma recalculado con número inicial:",
+      numeroCuotaOriginal
+    );
+  }
 }
 
 // NUEVA FUNCIÓN: Limpiar valores originales cuando se cambia de plan
 function limpiarValoresOriginalesPlan() {
-    valoresOriginalesPlan = null;
-    console.log("🗑️ Valores originales del plan limpiados");
+  valoresOriginalesPlan = null;
+  console.log("🗑️ Valores originales del plan limpiados");
 }
 
 // NUEVA FUNCIÓN: Verificar y mantener campos especiales según configuración del plan
 function verificarYMantenerCamposEspeciales() {
-  console.log("🔒 Verificando y manteniendo campos especiales según configuración del plan");
-  
+  console.log(
+    "🔒 Verificando y manteniendo campos especiales según configuración del plan"
+  );
+
   // Verificar si el plan actual es vehicular
-  const esVehicular = planGlobal && planGlobal.tipo_vehicular && 
-                     (planGlobal.tipo_vehicular === 'vehiculo' || planGlobal.tipo_vehicular === 'moto');
-  
+  const esVehicular =
+    planGlobal &&
+    planGlobal.tipo_vehicular &&
+    (planGlobal.tipo_vehicular === "vehiculo" ||
+      planGlobal.tipo_vehicular === "moto");
+
   const inputMontoInscripcion = document.getElementById("montoInscripcion");
-  
+
   if (esVehicular && inputMontoInscripcion) {
     // Para planes vehiculares, asegurar que esté bloqueado
     if (!inputMontoInscripcion.disabled || !inputMontoInscripcion.readOnly) {
       console.log("🔒 Bloqueando monto de inscripción para plan vehicular");
-      
+
       // Calcular el monto correcto según el tipo
       let montoCalculado = 0;
-      if (planGlobal.tipo_vehicular === 'moto') {
+      if (planGlobal.tipo_vehicular === "moto") {
         montoCalculado = 200; // S/.200 fijo para motos
-      } else if (planGlobal.tipo_vehicular === 'vehiculo' && planGlobal.monto_sin_interes) {
+      } else if (
+        planGlobal.tipo_vehicular === "vehiculo" &&
+        planGlobal.monto_sin_interes
+      ) {
         montoCalculado = parseFloat(planGlobal.monto_sin_interes) * 0.02; // 2% para vehículos
       }
-      
+
       // Aplicar el bloqueo
       inputMontoInscripcion.value = montoCalculado.toFixed(2);
       inputMontoInscripcion.readOnly = true;
@@ -2117,16 +2239,21 @@ function verificarYMantenerCamposEspeciales() {
       inputMontoInscripcion.style.backgroundColor = "#e9ecef";
       inputMontoInscripcion.style.cursor = "not-allowed";
       inputMontoInscripcion.style.pointerEvents = "none";
-      
-      console.log(`🔒 Monto de inscripción bloqueado en: ${montoCalculado.toFixed(2)}`);
+
+      console.log(
+        `🔒 Monto de inscripción bloqueado en: ${montoCalculado.toFixed(2)}`
+      );
     }
   }
-  
+
   // Mantener otros campos especiales desbloqueados si es necesario
-  if (planGlobal && [14, 15, 16].includes(parseInt(planGlobal.idplan_financiamiento))) {
+  if (
+    planGlobal &&
+    [14, 15, 16].includes(parseInt(planGlobal.idplan_financiamiento))
+  ) {
     const cuotasInput = document.getElementById("cuotas");
     const cuotaInicialInput = document.getElementById("cuotaInicial");
-    
+
     if (cuotasInput && cuotasInput.disabled) {
       cuotasInput.disabled = false;
       cuotasInput.readOnly = false;
@@ -2136,7 +2263,7 @@ function verificarYMantenerCamposEspeciales() {
       cuotasInput.style.cursor = "text";
       console.log("🔓 Manteniendo cuotas desbloqueado para plan especial");
     }
-    
+
     if (cuotaInicialInput && cuotaInicialInput.disabled) {
       cuotaInicialInput.disabled = false;
       cuotaInicialInput.readOnly = false;
@@ -2144,278 +2271,21 @@ function verificarYMantenerCamposEspeciales() {
       cuotaInicialInput.style.color = "#333333";
       cuotaInicialInput.style.pointerEvents = "auto";
       cuotaInicialInput.style.cursor = "text";
-      console.log("🔓 Manteniendo cuota inicial desbloqueada para plan especial");
-    }
-  }
-}
-
-
-function calcularFinanciamiento() {
-  console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
-  console.log("Entrando a calcularFinanciamiento...");
-
-  // PROTECCIÓN ABSOLUTA PARA CELULARES
-  if (proteccionAbsolutaCelulares()) {
-    console.log("📱 CELULARES - Función bloqueada por protección absoluta");
-    return;
-  }
-
-  // Obtener valores de los inputs
-  const montoRaw = document.getElementById("monto").value;
-  const montoSinInteresesRaw = document.getElementById("montoSinIntereses").value;
-  const montoSinIntereses = parseFloat(montoSinInteresesRaw) || 0;
-  console.log("📊 montoSinInteresesRaw:", montoSinInteresesRaw, "-> parseado:", montoSinIntereses);
-  const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
-  const tasaInteresRaw = document.getElementById("tasaInteres").value;
-
-  // CORREGIDO: Usar frecuencia del plan cuando el select esté deshabilitado
-  const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
-  const frecuenciaPago = frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled ? 
-                        frecuenciaSelectCalc.value : 
-                        (planGlobal ? planGlobal.frecuencia_pago : 'mensual');
-
-
-  console.log("🔄 Frecuencia utilizada en calcularFinanciamiento:", frecuenciaPago, "- Select habilitado:", !frecuenciaSelectCalc?.disabled);
-  const tipoMoneda = obtenerTipoMoneda();
-
-  console.log("Valores iniciales: ", {
-    montoRaw,
-    cuotaInicialRaw,
-    tasaInteresRaw,
-    frecuenciaPago,
-    tipoMoneda,
-  });
-
-  // Convertir valores a números y calcular el monto total con intereses
-  let montoTotal = montoSinIntereses * (1 + parseFloat(tasaInteresRaw) / 100);
-  console.log("Monto total calculado:", montoTotal);
-
-  const cuotaInicial = parseFloat(
-    cuotaInicialRaw
-      .replace(/S\/\.|US\$/, "")
-      .replace(",", "")
-      .trim()
-  );
-  const tasaInteres = parseFloat(tasaInteresRaw) / 100;
-  const fechaInicio = document.getElementById("fechaInicio").value;
-
-  console.log("Valores parseados: ", {
-    montoTotal,
-    cuotaInicial,
-    tasaInteres,
-    fechaInicio,
-  });
-
-  document.getElementById("monto").value = montoTotal.toFixed(2);
-
-  // Verificar si hay valores NaN o faltan datos críticos
-  if (
-    isNaN(montoTotal) ||
-    isNaN(cuotaInicial) ||
-    isNaN(tasaInteres) ||
-    montoSinIntereses <= 0 ||
-    !fechaInicio ||
-    !frecuenciaPago
-  ) {
-    console.error("Faltan valores o hay NaN en el cálculo, revisa los inputs");
-    console.error("Estado de valores:", {
-      montoTotal: isNaN(montoTotal) ? "NaN" : montoTotal,
-      cuotaInicial: isNaN(cuotaInicial) ? "NaN" : cuotaInicial,
-      tasaInteres: isNaN(tasaInteres) ? "NaN" : tasaInteres,
-      montoSinIntereses: montoSinIntereses,
-      fechaInicio: fechaInicio,
-      frecuenciaPago: frecuenciaPago
-    });
-    return; // Salir si hay problemas con los valores
-  }
-
-  // Validar que cuota inicial no sea mayor que monto total
-  if (cuotaInicial > montoTotal) {
-    console.warn("La cuota inicial no puede ser mayor que el monto total");
-    return;
-  }
-
-  // Obtener cantidad de cuotas
-  const cantidadCuotas = parseInt(document.getElementById("cuotas").value);
-  if (!cantidadCuotas || cantidadCuotas <= 0) {
-    console.warn("Cantidad de cuotas inválida");
-    return;
-  }
-
-  console.log("Cantidad de cuotas válida: ", cantidadCuotas);
-
-  // Calcular tasa de interés por período
-  const tasaPeriodo =
-    frecuenciaPago === "semanal" ? tasaInteres / 52 : tasaInteres / 12;
-
-  console.log("Tasa de interés por período: ", tasaPeriodo);
-
-  // ✅ Corregido: Ahora el cálculo de la cuota sigue la fórmula correctamente
-  const valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
-  console.log("Valor de la cuota calculado: ", valorCuota);
-
-  console.log("Valor de la cuota calculado: ", valorCuota);
-  const cuotaFormateada = formatMoneda(valorCuota, tipoMoneda);
-
-  // Mostrar resultado en el input
-  document.getElementById("valorCuota").value = cuotaFormateada;
-  console.log("Valor de la cuota seteado en el input");
-
-  // Calcular fechas de vencimiento
-  let fechasVencimiento = [];
-  const fechaInicioObj = new Date(fechaInicio + "T00:00:00");
-  const diasIntervalo = frecuenciaPago === "semanal" ? 7 : 30;
-
-  // NUEVO: Para planes de celular, ajustar la primera fecha al día 30
-  let primeraFechaVencimiento = new Date(fechaInicioObj);
-
-  // NUEVO: Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
-  if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 36
-  ) {
-    const año = primeraFechaVencimiento.getFullYear();
-    const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
-    primeraFechaVencimiento = new Date(año, mes, 24);
-    console.log(
-      "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
-      primeraFechaVencimiento.toLocaleDateString()
-    );
-  // DESPUÉS (código corregido):
-  } else if (
-    planGlobal &&
-    parseInt(planGlobal.idplan_financiamiento) === 41
-  ) {
-    // CORREGIDO: Para financiamiento de celulares (ID 41): día 30 del MES ACTUAL
-    const añoActual = primeraFechaVencimiento.getFullYear();
-    const mesActual = primeraFechaVencimiento.getMonth();
-
-    // CORREGIDO: Usar el mes actual para la primera cuota (NO sumar 1)
-    primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
-
-    // Si es febrero, ajustar al día 28 (o 29 en año bisiesto)
-    if (mesActual === 1) {
-      const esBisiesto = (añoActual % 4 === 0 && añoActual % 100 !== 0) || (añoActual % 400 === 0);
-      primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
-    }
-
-    console.log("📱 FINANCIAMIENTO CELULARES - Primera fecha ajustada al día 30 del MES ACTUAL:", primeraFechaVencimiento.toLocaleDateString());
-  }
-    else if (
-    planGlobal &&
-    planGlobal.grupo === "Vehicular" &&
-    frecuenciaPago === "semanal"
-  ) {
-    primeraFechaVencimiento = obtenerProximoLunes(fechaInicioObj);
-    console.log(
-      "Plan vehicular semanal - Primera fecha ajustada al lunes:",
-      primeraFechaVencimiento.toLocaleDateString()
-    );
-  }
-
-  // NUEVO: Para planes vehiculares semanales, ajustar al próximo lunes
-  if (
-    planGlobal &&
-    planGlobal.grupo === "Vehicular" &&
-    frecuenciaPago === "semanal"
-  ) {
-    primeraFechaVencimiento = obtenerProximoLunes(fechaInicioObj);
-    console.log(
-      "Plan vehicular semanal - Primera fecha ajustada al lunes:",
-      primeraFechaVencimiento.toLocaleDateString()
-    );
-  }
-
-  // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después (SIN ajustar al lunes)
-  if (planGlobal && planGlobal.idplan_financiamiento) {
-    const idPlan = parseInt(planGlobal.idplan_financiamiento);
-
-    if ([14, 15, 16].includes(idPlan)) {
       console.log(
-        "🔧 Plan especial detectado en calcularFinanciamiento, ID:",
-        idPlan
-      );
-
-      // Calcular fecha EXACTAMENTE una semana después de hoy (sin ajustar al lunes)
-      const fechaHoy = new Date();
-      const fechaEspecial = new Date(fechaHoy);
-      fechaEspecial.setDate(fechaEspecial.getDate() + 7); // Solo sumar 7 días
-
-      primeraFechaVencimiento = new Date(fechaEspecial);
-      console.log("🔧 Fecha hoy:", fechaHoy.toLocaleDateString());
-      console.log(
-        "🔧 Primera fecha ajustada (7 días después):",
-        primeraFechaVencimiento.toLocaleDateString()
+        "🔓 Manteniendo cuota inicial desbloqueada para plan especial"
       );
     }
   }
-
-  fechasVencimiento.push(primeraFechaVencimiento);
-
-  console.log("Calculando fechas de vencimiento...");
-  for (let i = 1; i < cantidadCuotas; i++) {
-
-    // ✅ Se empieza desde 1 porque ya agregamos la primera fecha
-    let fechaAnterior = fechasVencimiento[i - 1]; // ✅ Tomar la última fecha añadida
-    let nuevaFecha = new Date(fechaAnterior);
-
-    if (frecuenciaPago === "semanal") {
-      // Para planes semanales, simplemente sumar 7 días
-      nuevaFecha.setDate(nuevaFecha.getDate() + 7);
-    
-      } else {
-      // Para planes mensuales, avanzar al siguiente mes
-      let diaOriginal = nuevaFecha.getDate();
-      nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-      
-      // NUEVO: Verificar si es plan corporativo de chips (ID 36)
-      if (
-        planGlobal &&
-        parseInt(planGlobal.idplan_financiamiento) === 36
-      ) {
-        // Para plan corporativo de chips: siempre día 24
-        nuevaFecha.setDate(24);
-      } else if (
-        planGlobal &&
-        [2, 3, 4].includes(parseInt(planGlobal.idplan_financiamiento))
-      ) {
-        // Para planes de celular: siempre día 30, excepto febrero que es 28
-        if (nuevaFecha.getMonth() === 1) {
-          // Febrero
-          const esAnioBisiesto = (nuevaFecha.getFullYear() % 4 === 0 && nuevaFecha.getFullYear() % 100 !== 0) || (nuevaFecha.getFullYear() % 400 === 0);
-          nuevaFecha.setDate(esAnioBisiesto ? 29 : 28);
-        } else {
-          nuevaFecha.setDate(30);
-        }
-      } else {
-        // Para otros planes mensuales: mantener el día 30 como estándar
-        if (nuevaFecha.getMonth() === 1) {
-          // Si es febrero
-          const esAnioBisiesto = (nuevaFecha.getFullYear() % 4 === 0 && nuevaFecha.getFullYear() % 100 !== 0) || (nuevaFecha.getFullYear() % 400 === 0);
-          nuevaFecha.setDate(esAnioBisiesto ? 29 : 28);
-        } else {
-          // Para otros meses, usar día 30
-          nuevaFecha.setDate(30);
-        }
-      }
-    }
-
-    fechasVencimiento.push(nuevaFecha);
-    console.log(`Fecha ${i}: `, nuevaFecha.toLocaleDateString());
-  }
-
-  montoFormateado = montoTotal.toFixed(2); // ✅ Si formatMoneda falla, se usa el número sin formato
-  document.getElementById("monto").value = montoFormateado;
-
-  mostrarFechasVencimiento(fechasVencimiento, valorCuota, tipoMoneda);
-
-  // Actualizar fecha de fin
-  const fechaFin = fechasVencimiento[fechasVencimiento.length - 1];
-  const fechaFormateada = formatFechaInput(fechaFin);
-  document.getElementById("fechaFin").value = fechaFormateada;
-
-  console.log("Fecha fin calculada y seteada: ", fechaFormateada);
 }
+// ========================================
+// FUNCIÓN ELIMINADA: calcularFinanciamiento()
+// ========================================
+// FUNCIÓN ELIMINADA: calcularFinanciamiento()
+// ========================================
+// Esta función estaba duplicada y causaba conflictos.
+// La versión correcta y actualizada está en: public/js/financiamiento/financiamientoCalculator.js
+// NO AGREGAR CÓDIGO AQUÍ - Usar financiamientoCalculator.js para cualquier modificación
+// ========================================
 
 /**
  * Función para manejar cambios en la fecha de inicio por parte de Directores
@@ -2426,46 +2296,52 @@ function calcularFinanciamiento() {
  * Recalcula automáticamente el cronograma según el tipo de plan seleccionado
  */
 function manejarCambioFechaInicioPorDirector() {
-    const rolUsuario = window.rolUsuarioActual || "1";
-    const fechaInicioInput = document.getElementById("fechaInicio");
-    
-    if (!fechaInicioInput) return;
-    
-    // Solo permitir modificación a Directores (rol 3)
-    if (rolUsuario === "3") {
-        // CRÍTICO: Remover todos los atributos y estilos de bloqueo
-        fechaInicioInput.disabled = false;
-        fechaInicioInput.readOnly = false;
-        
-        // Remover clases conflictivas
-        fechaInicioInput.classList.remove('disabled-input');
-        
-        // CRÍTICO: Limpiar estilos inline que bloquean la interacción
-        fechaInicioInput.style.backgroundColor = "#ffffff";
-        fechaInicioInput.style.color = "#212529";
-        fechaInicioInput.style.border = "1px solid #ced4da";
-        fechaInicioInput.style.pointerEvents = "auto"; // CRÍTICO: Permitir interacción
-        fechaInicioInput.style.cursor = "pointer";
-        
-        fechaInicioInput.title = "Puedes modificar la fecha de inicio del grupo";
-        
-        console.log("✅ Director detectado - fecha de inicio COMPLETAMENTE habilitada");
-        
-        // Event listener para recalcular cuando cambie la fecha
-        fechaInicioInput.removeEventListener('change', recalcularPorCambioFechaInicio);
-        fechaInicioInput.addEventListener('change', recalcularPorCambioFechaInicio);
-    } else {
-        fechaInicioInput.disabled = true;
-        fechaInicioInput.readOnly = true;
-        fechaInicioInput.classList.add('disabled-input');
-        fechaInicioInput.style.backgroundColor = "#f8f9fa";
-        fechaInicioInput.style.color = "#6c757d";
-        fechaInicioInput.style.pointerEvents = "none";
-        fechaInicioInput.style.cursor = "not-allowed";
-        fechaInicioInput.title = "Solo los directores pueden modificar la fecha de inicio";
-        
-        console.log("🔒 Usuario sin permisos - fecha de inicio bloqueada");
-    }
+  const rolUsuario = window.rolUsuarioActual || "1";
+  const fechaInicioInput = document.getElementById("fechaInicio");
+
+  if (!fechaInicioInput) return;
+
+  // Solo permitir modificación a Directores (rol 3)
+  if (rolUsuario === "3") {
+    // CRÍTICO: Remover todos los atributos y estilos de bloqueo
+    fechaInicioInput.disabled = false;
+    fechaInicioInput.readOnly = false;
+
+    // Remover clases conflictivas
+    fechaInicioInput.classList.remove("disabled-input");
+
+    // CRÍTICO: Limpiar estilos inline que bloquean la interacción
+    fechaInicioInput.style.backgroundColor = "#ffffff";
+    fechaInicioInput.style.color = "#212529";
+    fechaInicioInput.style.border = "1px solid #ced4da";
+    fechaInicioInput.style.pointerEvents = "auto"; // CRÍTICO: Permitir interacción
+    fechaInicioInput.style.cursor = "pointer";
+
+    fechaInicioInput.title = "Puedes modificar la fecha de inicio del grupo";
+
+    console.log(
+      "✅ Director detectado - fecha de inicio COMPLETAMENTE habilitada"
+    );
+
+    // Event listener para recalcular cuando cambie la fecha
+    fechaInicioInput.removeEventListener(
+      "change",
+      recalcularPorCambioFechaInicio
+    );
+    fechaInicioInput.addEventListener("change", recalcularPorCambioFechaInicio);
+  } else {
+    fechaInicioInput.disabled = true;
+    fechaInicioInput.readOnly = true;
+    fechaInicioInput.classList.add("disabled-input");
+    fechaInicioInput.style.backgroundColor = "#f8f9fa";
+    fechaInicioInput.style.color = "#6c757d";
+    fechaInicioInput.style.pointerEvents = "none";
+    fechaInicioInput.style.cursor = "not-allowed";
+    fechaInicioInput.title =
+      "Solo los directores pueden modificar la fecha de inicio";
+
+    console.log("🔒 Usuario sin permisos - fecha de inicio bloqueada");
+  }
 }
 
 /**
@@ -2473,58 +2349,60 @@ function manejarCambioFechaInicioPorDirector() {
  * Detecta cualquier cambio en atributos/estilos y los revierte
  */
 function protegerFechaInicioPorDirector() {
-    const rolUsuario = window.rolUsuarioActual || "1";
-    
-    if (rolUsuario !== "3") return; // Solo para directores
-    
-    const fechaInicioInput = document.getElementById("fechaInicio");
-    if (!fechaInicioInput) return;
-    
-    // Configuración del observer
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes') {
-                const atributo = mutation.attributeName;
-                
-                // Si alguien intenta bloquear el campo, revertirlo inmediatamente
-                if (atributo === 'disabled' || atributo === 'readonly') {
-                    if (fechaInicioInput.disabled || fechaInicioInput.readOnly) {
-                        fechaInicioInput.disabled = false;
-                        fechaInicioInput.readOnly = false;
-                        console.log("🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio");
-                    }
-                }
-                
-                // Si cambian el estilo, restaurar permisos
-                if (atributo === 'style') {
-                    const estilosActuales = window.getComputedStyle(fechaInicioInput);
-                    if (estilosActuales.pointerEvents === 'none') {
-                        fechaInicioInput.style.pointerEvents = 'auto';
-                        fechaInicioInput.style.cursor = 'pointer';
-                        fechaInicioInput.style.backgroundColor = '#ffffff';
-                        fechaInicioInput.style.color = '#212529';
-                        console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción");
-                    }
-                }
-                
-                // Remover clases de bloqueo
-                if (atributo === 'class') {
-                    if (fechaInicioInput.classList.contains('disabled-input')) {
-                        fechaInicioInput.classList.remove('disabled-input');
-                        console.log("🛡️ PROTECCIÓN: Removida clase disabled-input");
-                    }
-                }
-            }
-        });
+  const rolUsuario = window.rolUsuarioActual || "1";
+
+  if (rolUsuario !== "3") return; // Solo para directores
+
+  const fechaInicioInput = document.getElementById("fechaInicio");
+  if (!fechaInicioInput) return;
+
+  // Configuración del observer
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes") {
+        const atributo = mutation.attributeName;
+
+        // Si alguien intenta bloquear el campo, revertirlo inmediatamente
+        if (atributo === "disabled" || atributo === "readonly") {
+          if (fechaInicioInput.disabled || fechaInicioInput.readOnly) {
+            fechaInicioInput.disabled = false;
+            fechaInicioInput.readOnly = false;
+            console.log(
+              "🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio"
+            );
+          }
+        }
+
+        // Si cambian el estilo, restaurar permisos
+        if (atributo === "style") {
+          const estilosActuales = window.getComputedStyle(fechaInicioInput);
+          if (estilosActuales.pointerEvents === "none") {
+            fechaInicioInput.style.pointerEvents = "auto";
+            fechaInicioInput.style.cursor = "pointer";
+            fechaInicioInput.style.backgroundColor = "#ffffff";
+            fechaInicioInput.style.color = "#212529";
+            console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción");
+          }
+        }
+
+        // Remover clases de bloqueo
+        if (atributo === "class") {
+          if (fechaInicioInput.classList.contains("disabled-input")) {
+            fechaInicioInput.classList.remove("disabled-input");
+            console.log("🛡️ PROTECCIÓN: Removida clase disabled-input");
+          }
+        }
+      }
     });
-    
-    // Observar cambios en atributos
-    observer.observe(fechaInicioInput, {
-        attributes: true,
-        attributeOldValue: true
-    });
-    
-    console.log("🛡️ Observer de protección activado para fechaInicio");
+  });
+
+  // Observar cambios en atributos
+  observer.observe(fechaInicioInput, {
+    attributes: true,
+    attributeOldValue: true,
+  });
+
+  console.log("🛡️ Observer de protección activado para fechaInicio");
 }
 
 /**
@@ -2532,60 +2410,70 @@ function protegerFechaInicioPorDirector() {
  * Detecta el tipo de plan y aplica la lógica de recálculo correspondiente
  */
 function recalcularPorCambioFechaInicio() {
-    console.log("📅 Director cambió la fecha de inicio - iniciando recálculo automático");
-    
-    if (!planGlobal || !planGlobal.idplan_financiamiento) {
-        console.warn("⚠️ No hay plan seleccionado para recalcular");
-        return;
+  console.log(
+    "📅 Director cambió la fecha de inicio - iniciando recálculo automático"
+  );
+
+  if (!planGlobal || !planGlobal.idplan_financiamiento) {
+    console.warn("⚠️ No hay plan seleccionado para recalcular");
+    return;
+  }
+
+  const idPlan = parseInt(planGlobal.idplan_financiamiento);
+
+  // Para planes de celular (ID 41): solo recalcular fechas, valores fijos
+  if (idPlan === 41) {
+    console.log(
+      "📱 CELULARES - Recalculando solo fechas (valores permanecen fijos)"
+    );
+    recalcularSoloFechasCelular();
+    return;
+  }
+
+  // Para planes vehiculares (con fecha_inicio y fecha_fin definidas)
+  if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
+    console.log("🚗 VEHICULAR - Recalculando con fechas de ingreso");
+
+    // Verificar si existe el input de fecha de ingreso
+    const fechaIngresoElement = document.getElementById("fechaIngreso");
+    if (fechaIngresoElement) {
+      calcularFinanciamientoConFechaIngreso(planGlobal);
+    } else {
+      calcularCronogramaDinamico();
     }
-    
-    const idPlan = parseInt(planGlobal.idplan_financiamiento);
-    
-    // Para planes de celular (ID 41): solo recalcular fechas, valores fijos
-    if (idPlan === 41) {
-        console.log("📱 CELULARES - Recalculando solo fechas (valores permanecen fijos)");
-        recalcularSoloFechasCelular();
-        return;
-    }
-    
-    // Para planes vehiculares (con fecha_inicio y fecha_fin definidas)
-    if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
-        console.log("🚗 VEHICULAR - Recalculando con fechas de ingreso");
-        
-        // Verificar si existe el input de fecha de ingreso
-        const fechaIngresoElement = document.getElementById("fechaIngreso");
-        if (fechaIngresoElement) {
-            calcularFinanciamientoConFechaIngreso(planGlobal);
-        } else {
-            calcularCronogramaDinamico();
-        }
-        return;
-    }
-    
-    // Para MotosYa (ID 33) o variantes (IDs 18, 19, 20)
-    if (idPlan === 33 || (planGlobal.id_variante && [18, 19, 20].includes(parseInt(planGlobal.id_variante)))) {
-        console.log("🏍️ MOTOSYA - Recalculando cronograma dinámico");
-        calcularCronogramaDinamico();
-        return;
-    }
-    
-    // Para planes especiales (Llantas, Aceites, Baterías - IDs 14, 15, 16)
-    if ([14, 15, 16].includes(idPlan)) {
-        console.log("🔧 PLAN ESPECIAL - Recalculando cronograma dinámico");
-        calcularCronogramaDinamico();
-        return;
-    }
-    
-    // Para plan corporativo de chips (ID 36) y plan de celular (ID 2, 3, 4)
-    if ([2, 3, 4, 36].includes(idPlan)) {
-        console.log("📞 PLAN CORPORATIVO/CELULAR - Recalculando cronograma dinámico");
-        calcularCronogramaDinamico();
-        return;
-    }
-    
-    // Para cualquier otro plan, usar cálculo dinámico por defecto
-    console.log("📊 PLAN GENERAL - Recalculando cronograma dinámico");
+    return;
+  }
+
+  // Para MotosYa (ID 33) o variantes (IDs 18, 19, 20)
+  if (
+    idPlan === 33 ||
+    (planGlobal.id_variante &&
+      [18, 19, 20].includes(parseInt(planGlobal.id_variante)))
+  ) {
+    console.log("🏍️ MOTOSYA - Recalculando cronograma dinámico");
     calcularCronogramaDinamico();
+    return;
+  }
+
+  // Para planes especiales (Llantas, Aceites, Baterías - IDs 14, 15, 16)
+  if ([14, 15, 16].includes(idPlan)) {
+    console.log("🔧 PLAN ESPECIAL - Recalculando cronograma dinámico");
+    calcularCronogramaDinamico();
+    return;
+  }
+
+  // Para plan corporativo de chips (ID 36) y plan de celular (ID 2, 3, 4)
+  if ([2, 3, 4, 36].includes(idPlan)) {
+    console.log(
+      "📞 PLAN CORPORATIVO/CELULAR - Recalculando cronograma dinámico"
+    );
+    calcularCronogramaDinamico();
+    return;
+  }
+
+  // Para cualquier otro plan, usar cálculo dinámico por defecto
+  console.log("📊 PLAN GENERAL - Recalculando cronograma dinámico");
+  calcularCronogramaDinamico();
 }
 
 /**
@@ -2593,47 +2481,53 @@ function recalcularPorCambioFechaInicio() {
  * Habilita/deshabilita el campo según el rol y añade listener para recálculo
  */
 function manejarCambioCuotaInicial() {
-    const rolUsuario = window.rolUsuarioActual || "1";
-    const cuotaInicialInput = document.getElementById("cuotaInicial");
-    
-    if (!cuotaInicialInput) return;
-    
-    // Solo permitir modificación a Directores (rol 3)
-    if (rolUsuario === "3") {
-        // CRÍTICO: Remover todos los atributos y estilos de bloqueo
-        cuotaInicialInput.disabled = false;
-        cuotaInicialInput.readOnly = false;
-        
-        // Remover clases conflictivas
-        cuotaInicialInput.classList.remove('disabled-input');
-        cuotaInicialInput.classList.remove('input-bloqueado-suave');
-        
-        // CRÍTICO: Limpiar estilos inline que bloquean la interacción
-        cuotaInicialInput.style.backgroundColor = "#ffffff";
-        cuotaInicialInput.style.color = "#212529";
-        cuotaInicialInput.style.border = "1px solid #ced4da";
-        cuotaInicialInput.style.pointerEvents = "auto";
-        cuotaInicialInput.style.cursor = "text";
-        
-        cuotaInicialInput.title = "Puedes modificar la cuota inicial del grupo";
-        
-        console.log("✅ Director detectado - cuota inicial COMPLETAMENTE habilitada");
-        
-        // Event listener para recalcular cuando cambie la cuota
-        cuotaInicialInput.removeEventListener('blur', recalcularPorCambioCuotaInicial);
-        cuotaInicialInput.addEventListener('blur', recalcularPorCambioCuotaInicial);
-    } else {
-        cuotaInicialInput.disabled = true;
-        cuotaInicialInput.readOnly = true;
-        cuotaInicialInput.classList.add('disabled-input');
-        cuotaInicialInput.style.backgroundColor = "#f8f9fa";
-        cuotaInicialInput.style.color = "#6c757d";
-        cuotaInicialInput.style.pointerEvents = "none";
-        cuotaInicialInput.style.cursor = "not-allowed";
-        cuotaInicialInput.title = "Solo los directores pueden modificar la cuota inicial";
-        
-        console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
-    }
+  const rolUsuario = window.rolUsuarioActual || "1";
+  const cuotaInicialInput = document.getElementById("cuotaInicial");
+
+  if (!cuotaInicialInput) return;
+
+  // Solo permitir modificación a Directores (rol 3)
+  if (rolUsuario === "3") {
+    // CRÍTICO: Remover todos los atributos y estilos de bloqueo
+    cuotaInicialInput.disabled = false;
+    cuotaInicialInput.readOnly = false;
+
+    // Remover clases conflictivas
+    cuotaInicialInput.classList.remove("disabled-input");
+    cuotaInicialInput.classList.remove("input-bloqueado-suave");
+
+    // CRÍTICO: Limpiar estilos inline que bloquean la interacción
+    cuotaInicialInput.style.backgroundColor = "#ffffff";
+    cuotaInicialInput.style.color = "#212529";
+    cuotaInicialInput.style.border = "1px solid #ced4da";
+    cuotaInicialInput.style.pointerEvents = "auto";
+    cuotaInicialInput.style.cursor = "text";
+
+    cuotaInicialInput.title = "Puedes modificar la cuota inicial del grupo";
+
+    console.log(
+      "✅ Director detectado - cuota inicial COMPLETAMENTE habilitada"
+    );
+
+    // Event listener para recalcular cuando cambie la cuota
+    cuotaInicialInput.removeEventListener(
+      "blur",
+      recalcularPorCambioCuotaInicial
+    );
+    cuotaInicialInput.addEventListener("blur", recalcularPorCambioCuotaInicial);
+  } else {
+    cuotaInicialInput.disabled = true;
+    cuotaInicialInput.readOnly = true;
+    cuotaInicialInput.classList.add("disabled-input");
+    cuotaInicialInput.style.backgroundColor = "#f8f9fa";
+    cuotaInicialInput.style.color = "#6c757d";
+    cuotaInicialInput.style.pointerEvents = "none";
+    cuotaInicialInput.style.cursor = "not-allowed";
+    cuotaInicialInput.title =
+      "Solo los directores pueden modificar la cuota inicial";
+
+    console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
+  }
 }
 
 /**
@@ -2641,49 +2535,51 @@ function manejarCambioCuotaInicial() {
  * Recalcula el financiamiento según el tipo de plan
  */
 function recalcularPorCambioCuotaInicial() {
-    console.log("💰 Director cambió la cuota inicial - iniciando recálculo");
-    
-    if (!planGlobal || !planGlobal.idplan_financiamiento) {
-        console.warn("⚠️ No hay plan seleccionado para recalcular");
-        return;
+  console.log("💰 Director cambió la cuota inicial - iniciando recálculo");
+
+  if (!planGlobal || !planGlobal.idplan_financiamiento) {
+    console.warn("⚠️ No hay plan seleccionado para recalcular");
+    return;
+  }
+
+  const cuotaInicialInput = document.getElementById("cuotaInicial");
+  const nuevaCuotaInicial = parseFloat(
+    cuotaInicialInput.value.replace(/[^\d.-]/g, "")
+  );
+
+  if (isNaN(nuevaCuotaInicial) || nuevaCuotaInicial < 0) {
+    console.warn("⚠️ Cuota inicial inválida");
+    return;
+  }
+
+  // Actualizar planGlobal con la nueva cuota inicial
+  planGlobal.cuota_inicial = nuevaCuotaInicial;
+
+  const idPlan = parseInt(planGlobal.idplan_financiamiento);
+
+  // Para planes de celular (ID 41): recalcular manteniendo la cuota fija
+  if (idPlan === 41) {
+    console.log("📱 CELULARES - Recalculando con nueva cuota inicial");
+    recalcularCelularesConNuevaCuotaInicial();
+    return;
+  }
+
+  // Para planes vehiculares
+  if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
+    console.log("🚗 VEHICULAR - Recalculando con nueva cuota inicial");
+
+    const fechaIngresoElement = document.getElementById("fechaIngreso");
+    if (fechaIngresoElement) {
+      calcularFinanciamientoConFechaIngreso(planGlobal);
+    } else {
+      calcularCronogramaDinamico();
     }
-    
-    const cuotaInicialInput = document.getElementById("cuotaInicial");
-    const nuevaCuotaInicial = parseFloat(cuotaInicialInput.value.replace(/[^\d.-]/g, ''));
-    
-    if (isNaN(nuevaCuotaInicial) || nuevaCuotaInicial < 0) {
-        console.warn("⚠️ Cuota inicial inválida");
-        return;
-    }
-    
-    // Actualizar planGlobal con la nueva cuota inicial
-    planGlobal.cuota_inicial = nuevaCuotaInicial;
-    
-    const idPlan = parseInt(planGlobal.idplan_financiamiento);
-    
-    // Para planes de celular (ID 41): recalcular manteniendo la cuota fija
-    if (idPlan === 41) {
-        console.log("📱 CELULARES - Recalculando con nueva cuota inicial");
-        recalcularCelularesConNuevaCuotaInicial();
-        return;
-    }
-    
-    // Para planes vehiculares
-    if (planGlobal.fecha_inicio && planGlobal.fecha_fin) {
-        console.log("🚗 VEHICULAR - Recalculando con nueva cuota inicial");
-        
-        const fechaIngresoElement = document.getElementById("fechaIngreso");
-        if (fechaIngresoElement) {
-            calcularFinanciamientoConFechaIngreso(planGlobal);
-        } else {
-            calcularCronogramaDinamico();
-        }
-        return;
-    }
-    
-    // Para otros planes, usar cálculo dinámico
-    console.log("📊 PLAN GENERAL - Recalculando con nueva cuota inicial");
-    calcularCronogramaDinamico();
+    return;
+  }
+
+  // Para otros planes, usar cálculo dinámico
+  console.log("📊 PLAN GENERAL - Recalculando con nueva cuota inicial");
+  calcularCronogramaDinamico();
 }
 
 /**
@@ -2691,162 +2587,108 @@ function recalcularPorCambioCuotaInicial() {
  * Mantiene el valor de cuota fijo y ajusta la cantidad de cuotas
  */
 function recalcularCelularesConNuevaCuotaInicial() {
-    if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
-        return;
-    }
-    
-    const montoTotal = parseFloat(planGlobal.monto) || 0;
-    const nuevaCuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
-    const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
-    
-    if (valorCuotaFijo === 0) {
-        console.warn("📱 CELULARES - No se puede recalcular sin valor de cuota");
-        return;
-    }
-    
-    // Calcular nueva cantidad de cuotas
-    const montoRestante = montoTotal - nuevaCuotaInicial;
-    const nuevaCantidadCuotas = Math.round(montoRestante / valorCuotaFijo);
-    
-    // Actualizar inputs
-    document.getElementById("cuotas").value = nuevaCantidadCuotas;
-    planGlobal.cantidad_cuotas = nuevaCantidadCuotas;
-    
-    console.log("📱 CELULARES - Nueva cantidad de cuotas:", nuevaCantidadCuotas);
-    console.log("📱 CELULARES - Valor cuota se mantiene:", valorCuotaFijo);
-    
-    // Recalcular solo las fechas
-    recalcularSoloFechasCelular();
+  if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
+    return;
+  }
+
+  const montoTotal = parseFloat(planGlobal.monto) || 0;
+  const nuevaCuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
+  const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
+
+  if (valorCuotaFijo === 0) {
+    console.warn("📱 CELULARES - No se puede recalcular sin valor de cuota");
+    return;
+  }
+
+  // Calcular nueva cantidad de cuotas
+  const montoRestante = montoTotal - nuevaCuotaInicial;
+  const nuevaCantidadCuotas = Math.round(montoRestante / valorCuotaFijo);
+
+  // Actualizar inputs
+  document.getElementById("cuotas").value = nuevaCantidadCuotas;
+  planGlobal.cantidad_cuotas = nuevaCantidadCuotas;
+
+  console.log("📱 CELULARES - Nueva cantidad de cuotas:", nuevaCantidadCuotas);
+  console.log("📱 CELULARES - Valor cuota se mantiene:", valorCuotaFijo);
+
+  // Recalcular solo las fechas
+  recalcularSoloFechasCelular();
 }
 
 /**
  * Observer para proteger el campo cuota inicial para Directores
  */
 function protegerCuotaInicialPorDirector() {
-    const rolUsuario = window.rolUsuarioActual || "1";
-    
-    if (rolUsuario !== "3") return;
-    
-    const cuotaInicialInput = document.getElementById("cuotaInicial");
-    if (!cuotaInicialInput) return;
-    
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes') {
-                const atributo = mutation.attributeName;
-                
-                if (atributo === 'disabled' || atributo === 'readonly') {
-                    if (cuotaInicialInput.disabled || cuotaInicialInput.readOnly) {
-                        cuotaInicialInput.disabled = false;
-                        cuotaInicialInput.readOnly = false;
-                        console.log("🛡️ PROTECCIÓN: Revertido intento de bloqueo en cuotaInicial");
-                    }
-                }
-                
-                if (atributo === 'style') {
-                    const estilosActuales = window.getComputedStyle(cuotaInicialInput);
-                    if (estilosActuales.pointerEvents === 'none') {
-                        cuotaInicialInput.style.pointerEvents = 'auto';
-                        cuotaInicialInput.style.cursor = 'text';
-                        cuotaInicialInput.style.backgroundColor = '#ffffff';
-                        cuotaInicialInput.style.color = '#212529';
-                        console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción en cuotaInicial");
-                    }
-                }
-                
-                if (atributo === 'class') {
-                    if (cuotaInicialInput.classList.contains('disabled-input') || 
-                        cuotaInicialInput.classList.contains('input-bloqueado-suave')) {
-                        cuotaInicialInput.classList.remove('disabled-input');
-                        cuotaInicialInput.classList.remove('input-bloqueado-suave');
-                        console.log("🛡️ PROTECCIÓN: Removidas clases de bloqueo en cuotaInicial");
-                    }
-                }
-            }
-        });
+  const rolUsuario = window.rolUsuarioActual || "1";
+
+  if (rolUsuario !== "3") return;
+
+  const cuotaInicialInput = document.getElementById("cuotaInicial");
+  if (!cuotaInicialInput) return;
+
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes") {
+        const atributo = mutation.attributeName;
+
+        if (atributo === "disabled" || atributo === "readonly") {
+          if (cuotaInicialInput.disabled || cuotaInicialInput.readOnly) {
+            cuotaInicialInput.disabled = false;
+            cuotaInicialInput.readOnly = false;
+            console.log(
+              "🛡️ PROTECCIÓN: Revertido intento de bloqueo en cuotaInicial"
+            );
+          }
+        }
+
+        if (atributo === "style") {
+          const estilosActuales = window.getComputedStyle(cuotaInicialInput);
+          if (estilosActuales.pointerEvents === "none") {
+            cuotaInicialInput.style.pointerEvents = "auto";
+            cuotaInicialInput.style.cursor = "text";
+            cuotaInicialInput.style.backgroundColor = "#ffffff";
+            cuotaInicialInput.style.color = "#212529";
+            console.log(
+              "🛡️ PROTECCIÓN: Restaurados estilos de interacción en cuotaInicial"
+            );
+          }
+        }
+
+        if (atributo === "class") {
+          if (
+            cuotaInicialInput.classList.contains("disabled-input") ||
+            cuotaInicialInput.classList.contains("input-bloqueado-suave")
+          ) {
+            cuotaInicialInput.classList.remove("disabled-input");
+            cuotaInicialInput.classList.remove("input-bloqueado-suave");
+            console.log(
+              "🛡️ PROTECCIÓN: Removidas clases de bloqueo en cuotaInicial"
+            );
+          }
+        }
+      }
     });
-    
-    observer.observe(cuotaInicialInput, {
-        attributes: true,
-        attributeOldValue: true
-    });
-    
-    console.log("🛡️ Observer de protección activado para cuotaInicial");
+  });
+
+  observer.observe(cuotaInicialInput, {
+    attributes: true,
+    attributeOldValue: true,
+  });
+
+  console.log("🛡️ Observer de protección activado para cuotaInicial");
 }
 
 if (typeof cronogramaDatos === "undefined") {
   var cronogramaDatos = []; // O usar let o const si está en un ámbito adecuado
 }
 
-// Función para mostrar las fechas de vencimiento de las cuotas
-function mostrarFechasVencimiento(
-  fechasVencimiento,
-  valorcuota,
-  moneda,
-  numeroInicial
-) {
-  console.log("🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas:", fechasVencimiento);
-  console.log("🔍 Plan actual:", planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno");
-  const contenedorFechas = document.getElementById("contenedorFechas"); // Asegúrate de tener un contenedor para las fechas
-  contenedorFechas.innerHTML = ""; // Limpiar el contenedor antes de agregar las nuevas fechas
-
-  cronogramaDatos = [];
-
-  // Si planGlobal tiene una fecha de inicio válida, ajustamos la primera al siguiente lunes
-  // EXCEPCIÓN: Para plan corporativo de chips (ID 36), no ajustar fechas - ya están correctas
-  if (planGlobal?.fecha_inicio && !(planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36)) {
-    let primeraFecha = fechasVencimiento[0];
-    let diaSemana = primeraFecha.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-    let diasHastaLunes = (8 - diaSemana) % 7; // Cuántos días faltan para el próximo lunes
-    primeraFecha.setDate(primeraFecha.getDate() + diasHastaLunes);
-    fechasVencimiento[0] = new Date(primeraFecha); // Reemplazar la primera fecha
-  }
-
-  let numeroCuotaInicial = 1; // Valor predeterminado
-  if (numeroInicial !== null && numeroInicial !== undefined) {
-    // MODIFICADO: Validación para numeroInicial
-    numeroCuotaInicial = numeroInicial; // MODIFICADO: Usar numeroInicial si existe
-  }
-
-  // Recorrer las fechas de vencimiento y mostrarlas
-  fechasVencimiento.forEach((fecha, index) => {
-    const fechaFormateada = formatFecha(fecha); // Asegúrate de tener una función para formatear la fecha
-    const numeroCuota = numeroCuotaInicial + index;
-    contenedorFechas.innerHTML += `
-                <div>
-                    <label>Cuota ${numeroCuota}:</label>
-                    <span>Valor: ${formatMoneda(
-                      valorcuota
-                    )} | Vencimiento: ${fechaFormateada}</span>
-                </div>
-            `;
-    // Almacenar los datos de cada cuota en el array cronogramaDatos
-    cronogramaDatos.push({
-      cuota: numeroCuota, // MODIFICADO: Usar numeroCuota calculado
-      valor: valorcuota,
-      vencimiento: fechaFormateada,
-    });
-  });
-  // Agregar botón para descargar cronograma (nuevo)
-  const botonDescargar = document.createElement("button"); // Crear el botón
-  botonDescargar.type = "button"; // Evitar que el botón actúe como un submit
-  botonDescargar.innerHTML = 'Cronograma <i class="fas fa-file-pdf"></i>'; // Icono y texto (Font Awesome)
-  botonDescargar.style.backgroundColor = "#d32f2f"; // Fondo rojo (Adobe Acrobat)
-  botonDescargar.style.color = "#FFFFFF"; // Texto blanco
-  botonDescargar.style.border = "none"; // Sin borde
-  botonDescargar.style.padding = "10px 15px"; // Espaciado interno
-  botonDescargar.style.borderRadius = "5px"; // Bordes redondeados
-  botonDescargar.style.cursor = "pointer"; // Cambiar cursor al pasar sobre el botón
-  botonDescargar.style.marginTop = "10px"; // Espacio superior
-  botonDescargar.style.display = "inline-flex"; // Alinear icono y texto
-  botonDescargar.style.alignItems = "center"; // Centrar verticalmente el contenido
-  botonDescargar.style.gap = "8px"; // Espacio entre el icono y el texto
-
-  botonDescargar.addEventListener("click", () => {
-    generateCronograma(); // Mensaje temporal, reemplázalo con tu lógica de descarga
-  });
-  contenedorFechas.appendChild(botonDescargar); // Agregar el botón al contenedor de fechas
-}
+// ========================================
+// FUNCIÓN ELIMINADA: mostrarFechasVencimiento()
+// ========================================
+// Esta función estaba duplicada y causaba conflictos.
+// La versión correcta y actualizada está en: public/js/financiamiento/financiamientoCalculator.js
+// NO AGREGAR CÓDIGO AQUÍ - Usar financiamientoCalculator.js para cualquier modificación
+// ========================================
 
 function formatFechaInput(fecha) {
   const anio = fecha.getFullYear();
@@ -2860,13 +2702,14 @@ function validarCambioCuotaCelular() {
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
     const valorCuotaInput = document.getElementById("valorCuota");
     const valorActual = valorCuotaInput.value;
-    
+
     // Hacer el input de solo lectura para celulares
     valorCuotaInput.readOnly = true;
     valorCuotaInput.style.backgroundColor = "#f8f9fa";
     valorCuotaInput.style.cursor = "not-allowed";
-    valorCuotaInput.title = "El valor de la cuota es fijo para financiamientos de celular";
-    
+    valorCuotaInput.title =
+      "El valor de la cuota es fijo para financiamientos de celular";
+
     console.log("📱 CELULARES - Cuota bloqueada para edición:", valorActual);
   }
 }
@@ -2876,14 +2719,14 @@ function proteccionAbsolutaCelulares() {
   if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 41) {
     return false; // No es celular, permitir cambios
   }
-  
+
   // Es celular - calcular el valor correcto UNA sola vez
   const monto = parseFloat(planGlobal.monto) || 0;
   const cuotaInicial = parseFloat(planGlobal.cuota_inicial) || 0;
   const cantidadCuotas = parseInt(planGlobal.cantidad_cuotas) || 1;
-  
+
   const valorCuotaFijo = (monto - cuotaInicial) / cantidadCuotas;
-  
+
   // Forzar el valor correcto en el input
   const valorCuotaInput = document.getElementById("valorCuota");
   if (valorCuotaInput) {
@@ -2892,7 +2735,263 @@ function proteccionAbsolutaCelulares() {
     valorCuotaInput.style.backgroundColor = "#f8f9fa";
     valorCuotaInput.style.pointerEvents = "none";
   }
-  
+
   console.log("📱 PROTECCIÓN CELULARES - Valor fijo aplicado:", valorCuotaFijo);
   return true; // Es celular, bloquear otros cálculos
+}
+// FUNCIÓN DUPLICADA ELIMINADA - Ver función habilitarModoPersonalizado() más abajo
+
+// ========================================
+// FUNCIÓN PARA MODO PERSONALIZADO
+// ========================================
+function habilitarModoPersonalizado() {
+  console.log("🎨 ========== INICIANDO MODO PERSONALIZADO ==========");
+
+  // Limpiar el plan global
+  planGlobal = {
+    idplan_financiamiento: 42,
+    nombre_plan: "FINANCIAMIENTO EDITABLE",
+    cuota_inicial: 0,
+    monto_cuota: 0,
+    cantidad_cuotas: 0,
+    frecuencia_pago: "semanal",
+    moneda: "S/.",
+    tasa_interes: 0,
+    monto: null,
+    monto_sin_interes: null,
+    tipo_vehicular: null,
+    cobrar_mora: 1,
+    estado: "activo",
+  };
+  console.log("✅ planGlobal configurado:", planGlobal);
+
+  // Lista de campos que se deben habilitar
+  const camposEditables = [
+    "monto",
+    "montoSinIntereses",
+    "cuotaInicial",
+    "cuotas",
+    "tasaInteres",
+    "valorCuota",
+    "frecuenciaPago",
+    "fechaInicio",
+    "fechaFin",
+  ];
+
+  console.log("🔧 Habilitando campos:", camposEditables);
+
+  // Habilitar todos los campos
+  camposEditables.forEach((campo) => {
+    const elemento = document.getElementById(campo);
+    console.log(
+      `  - Campo "${campo}":`,
+      elemento ? "✅ Encontrado" : "❌ NO encontrado"
+    );
+
+    if (elemento) {
+      // Guardar estado anterior
+      const estadoAnterior = {
+        disabled: elemento.disabled,
+        readOnly: elemento.readOnly,
+        backgroundColor: elemento.style.backgroundColor,
+      };
+
+      // CRÍTICO: Remover TODAS las clases que bloquean los campos
+      elemento.classList.remove("disabled-input");
+      elemento.classList.remove("input-bloqueado-suave");
+
+      // FORZAR habilitación removiendo atributos
+      elemento.removeAttribute("disabled");
+      elemento.removeAttribute("readonly");
+
+      // Aplicar nuevos estilos con !important mediante setAttribute
+      elemento.disabled = false;
+      elemento.readOnly = false;
+      elemento.style.setProperty("background-color", "#ffffff", "important");
+      elemento.style.setProperty("color", "#000000", "important");
+      elemento.style.setProperty("cursor", "text", "important");
+      elemento.style.setProperty("pointer-events", "auto", "important");
+      elemento.style.setProperty("border", "1px solid #ced4da", "important");
+
+      console.log(`    Estado anterior:`, estadoAnterior);
+      console.log(
+        `    Estado nuevo: disabled=${elemento.disabled}, readOnly=${elemento.readOnly}`
+      );
+
+      // MODIFICADO: NO limpiar campos que ya tienen valores útiles
+      // Solo limpiar campos calculados (monto, valorCuota, fechaFin)
+      const camposALimpiar = ["monto", "valorCuota", "fechaFin"];
+      if (elemento.tagName !== "SELECT" && camposALimpiar.includes(campo)) {
+        elemento.value = "";
+        console.log(`    ✅ Campo "${campo}" limpiado`);
+      } else if (elemento.tagName !== "SELECT") {
+        console.log(
+          `    ℹ️ Campo "${campo}" mantiene su valor: ${elemento.value}`
+        );
+      }
+    }
+  });
+
+  // MODIFICADO: NO limpiar la moneda si ya está seleccionada
+  const monedaSoles = document.getElementById("monedaSoles");
+  const monedaDolares = document.getElementById("monedaDolares");
+
+  // Solo limpiar si NINGUNA moneda está seleccionada
+  const hayMonedaSeleccionada =
+    (monedaSoles && monedaSoles.checked) ||
+    (monedaDolares && monedaDolares.checked);
+
+  if (!hayMonedaSeleccionada) {
+    console.log(
+      "⚠️ No hay moneda seleccionada, el usuario deberá seleccionar una"
+    );
+  } else {
+    console.log(
+      "✅ Moneda ya seleccionada, manteniéndola:",
+      monedaSoles?.checked ? "Soles" : "Dólares"
+    );
+  }
+
+  // Limpiar contenedores
+  const contenedorFechas = document.getElementById("contenedorFechas");
+  const contenedorVehicular = document.getElementById("contenedorVehicular");
+  if (contenedorFechas) {
+    contenedorFechas.innerHTML = "";
+    console.log("✅ Contenedor de fechas limpiado");
+  }
+  if (contenedorVehicular) {
+    contenedorVehicular.innerHTML = "";
+    console.log("✅ Contenedor vehicular limpiado");
+  }
+
+  // Ocultar carrusel de variantes si existe la función
+  if (typeof ocultarCarruselVariantes === "function") {
+    ocultarCarruselVariantes();
+    console.log("✅ Carrusel de variantes ocultado");
+  }
+
+  // PROTECCIÓN: Crear un MutationObserver para evitar que otros scripts bloqueen los campos
+  console.log("🛡️ Activando protección contra bloqueos externos");
+
+  // Detener observadores anteriores si existen
+  if (window.observadorModoPersonalizado) {
+    window.observadorModoPersonalizado.disconnect();
+  }
+
+  // Crear nuevo observador
+  window.observadorModoPersonalizado = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "attributes") {
+        const elemento = mutation.target;
+        const campo = elemento.id;
+
+        // Solo proteger campos del modo personalizado
+        if (camposEditables.includes(campo)) {
+          // Si alguien intenta deshabilitar el campo, revertirlo
+          if (elemento.disabled || elemento.readOnly) {
+            console.log(`🛡️ PROTECCIÓN: Revirtiendo bloqueo en ${campo}`);
+            elemento.disabled = false;
+            elemento.readOnly = false;
+            elemento.classList.remove("disabled-input");
+            elemento.style.setProperty("pointer-events", "auto", "important");
+          }
+        }
+      }
+    });
+  });
+
+  // Observar cada campo
+  camposEditables.forEach((campo) => {
+    const elemento = document.getElementById(campo);
+    if (elemento) {
+      window.observadorModoPersonalizado.observe(elemento, {
+        attributes: true,
+        attributeFilter: ["disabled", "readonly", "class", "style"],
+      });
+    }
+  });
+
+  console.log("✅ Protección activada para", camposEditables.length, "campos");
+
+  // Mostrar mensaje informativo
+  Swal.fire({
+    icon: "info",
+    title: "Modo Personalizado Activado",
+    html: `
+            <p><strong>Todos los campos están habilitados para ingreso manual.</strong></p>
+            <ul style="text-align: left; margin-top: 15px;">
+                <li>✅ Ingresa el monto sin intereses</li>
+                <li>✅ Define la cuota inicial</li>
+                <li>✅ Establece la cantidad de cuotas</li>
+                <li>✅ Configura la tasa de interés</li>
+                <li>✅ Selecciona la frecuencia de pago</li>
+                <li>✅ Define las fechas de inicio y fin</li>
+            </ul>
+            <p style="margin-top: 15px;"><em>El sistema calculará automáticamente el cronograma.</em></p>
+        `,
+    confirmButtonText: "Entendido",
+    confirmButtonColor: "#3085d6",
+    timer: 8000,
+  });
+
+  console.log(
+    "✅ ========== MODO PERSONALIZADO ACTIVADO CORRECTAMENTE =========="
+  );
+
+  // NUEVO: Establecer fecha de inicio automáticamente con la fecha de hoy
+  const fechaInicioInput = document.getElementById("fechaInicio");
+  if (fechaInicioInput && !fechaInicioInput.value) {
+    const hoy = new Date();
+    const año = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+    const dia = String(hoy.getDate()).padStart(2, "0");
+    const fechaHoyFormateada = `${año}-${mes}-${dia}`;
+
+    fechaInicioInput.value = fechaHoyFormateada;
+    console.log(
+      "📅 Fecha de inicio establecida automáticamente:",
+      fechaHoyFormateada
+    );
+  }
+
+  // NUEVO: Disparar cálculo automático si hay datos suficientes
+  setTimeout(() => {
+    console.log("🔄 Intentando calcular financiamiento automáticamente...");
+
+    // Verificar si hay datos mínimos para calcular
+    const montoSinIntereses =
+      document.getElementById("montoSinIntereses").value;
+    const cuotaInicial = document.getElementById("cuotaInicial").value;
+    const cuotas = document.getElementById("cuotas").value;
+    const tasaInteres = document.getElementById("tasaInteres").value;
+    const fechaInicio = document.getElementById("fechaInicio").value;
+    const hayMoneda =
+      document.getElementById("monedaSoles").checked ||
+      document.getElementById("monedaDolares").checked;
+
+    console.log("📊 Datos disponibles:", {
+      montoSinIntereses,
+      cuotaInicial,
+      cuotas,
+      tasaInteres,
+      fechaInicio,
+      hayMoneda,
+    });
+
+    // Si hay monto sin intereses, moneda y al menos un campo más, intentar calcular
+    if (
+      montoSinIntereses &&
+      hayMoneda &&
+      (cuotaInicial || cuotas || tasaInteres)
+    ) {
+      console.log("✅ Hay datos suficientes, calculando...");
+      if (typeof calcularFinanciamiento === "function") {
+        calcularFinanciamiento();
+      }
+    } else {
+      console.log(
+        "⚠️ Faltan datos para calcular automáticamente. Completa los campos necesarios."
+      );
+    }
+  }, 500); // Esperar 500ms para que los campos se actualicen completamente
 }
