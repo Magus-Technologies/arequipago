@@ -28,13 +28,84 @@ class RegistrarFinanciamientoController extends Controller
 
             $fechasVencimiento = $datos['fechas_vencimiento'];
             
+// NUEVO: Detectar si es plan editable (ID 42)
+$esPlanPersonalizado = (isset($datos['grupo_financiamiento']) && 
+                        ($datos['grupo_financiamiento'] == '42' || 
+                         $datos['grupo_financiamiento'] == 42));
 
-            $camposRequeridos = ['id_producto', 'monto_total', 'grupo_financiamiento', 'cuotas', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_creacion', 'cantidad_producto'];
-            foreach ($camposRequeridos as $campo) {
-                if (empty($datos[$campo])) {
-                    throw new Exception("Falta el campo obligatorio: $campo");
-                }
+// NUEVO: Para planes personalizados, validar campos adicionales
+if ($esPlanPersonalizado) {
+    // Normalizar campos que pueden venir con nombres diferentes
+    if (isset($datos['monto_sin_intereses']) && !isset($datos['monto_sin_interes'])) {
+        $datos['monto_sin_interes'] = $datos['monto_sin_intereses'];
+    }
+    
+    // Normalizar frecuencia_pago (puede venir como 'frecuencia')
+    if (isset($datos['frecuencia']) && !isset($datos['frecuencia_pago'])) {
+        $datos['frecuencia_pago'] = $datos['frecuencia'];
+    }
+    
+    // Normalizar tasa_interes (puede venir como 'tasa')
+    if (isset($datos['tasa']) && !isset($datos['tasa_interes'])) {
+        $datos['tasa_interes'] = $datos['tasa'];
+    }
+    
+    // Normalizar monto_cuota (puede venir como 'valorCuota')
+    if (isset($datos['valorCuota']) && !isset($datos['monto_cuota'])) {
+        $datos['monto_cuota'] = $datos['valorCuota'];
+    }
+    
+    $camposPersonalizados = [
+        'monto_sin_interes' => 'Monto sin intereses',
+        'cuota_inicial' => 'Cuota inicial',
+        'monto_cuota' => 'Monto de cuota',
+        'tasa_interes' => 'Tasa de interés',
+        'frecuencia_pago' => 'Frecuencia de pago'
+    ];
+    
+    $camposFaltantes = [];
+    foreach ($camposPersonalizados as $campo => $nombre) {
+        // Verificar si el campo existe y no está vacío
+        $valor = isset($datos[$campo]) ? trim($datos[$campo]) : '';
+        
+        // Convertir a número si es necesario
+        if (in_array($campo, ['monto_sin_interes', 'cuota_inicial', 'monto_cuota', 'tasa_interes'])) {
+            $valor = floatval(str_replace(',', '', $valor));
+        }
+        
+        // Para frecuencia_pago, solo verificar que no esté vacío
+        if ($campo === 'frecuencia_pago') {
+            if ($valor === '' || $valor === null) {
+                $camposFaltantes[] = $nombre;
             }
+        } else {
+            // Para campos numéricos, verificar que no sean 0 o vacíos
+            if ($valor === '' || ($valor === 0 && $campo !== 'tasa_interes')) {
+                $camposFaltantes[] = $nombre;
+            }
+        }
+    }
+    
+    if (!empty($camposFaltantes)) {
+        throw new Exception("Para financiamientos personalizados, faltan los siguientes campos: " . implode(', ', $camposFaltantes));
+    }
+    
+    // Calcular monto total si no viene
+    if (empty($datos['monto_total'])) {
+        $cuotaInicial = floatval(str_replace(',', '', $datos['cuota_inicial']));
+        $montoCuota = floatval(str_replace(',', '', $datos['monto_cuota']));
+        $cantidadCuotas = intval($datos['cuotas']);
+        $datos['monto_total'] = $cuotaInicial + ($montoCuota * $cantidadCuotas);
+    }
+}
+
+$camposRequeridos = ['id_producto', 'monto_total', 'grupo_financiamiento', 'cuotas', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_creacion', 'cantidad_producto'];
+foreach ($camposRequeridos as $campo) {
+    if (empty($datos[$campo])) {
+        throw new Exception("Falta el campo obligatorio: $campo");
+    }
+}
+
 
 
             // NUEVO: Verificar que al menos uno de id_conductor o id_cliente esté presente

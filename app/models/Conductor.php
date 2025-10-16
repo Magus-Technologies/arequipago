@@ -413,12 +413,13 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
         // 🐱 Agregado: Caso especial para buscar financiamientos sin grupo
         $queryConductores .= "f.grupo_financiamiento = 'notGrupo' ";
     } else {
-        // 🐱 Mantenemos la lógica original de búsqueda
+        // 🐱 Mantenemos la lógica original de búsqueda + búsqueda por documento
         $queryConductores .= "(c.nombres LIKE ? 
            OR c.apellido_paterno LIKE ? 
            OR c.apellido_materno LIKE ?
            OR f.codigo_asociado LIKE ?
-           OR c.numUnidad LIKE ?) "; // 🐱 Agregado: Búsqueda por número de unidad
+           OR c.numUnidad LIKE ?
+           OR c.nro_documento LIKE ?) "; // ✅ AGREGADO: Búsqueda por número de documento
     }
         
     // 🔴 Aplicar ordenamiento a conductores
@@ -433,38 +434,46 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
     $queryConductores .= " LIMIT ? OFFSET ?";
     
     $stmt = $this->conectar->prepare($queryConductores);
-    if ($grupo_id) {
-        $stmt->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
-    } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
-        $stmt->bind_param('ii', $cantidadPorPagina, $offset);
-    } else {
-        $stmt->bind_param('sssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset); // ☁️ Corregido el número de 's', ahora son 5 parámetros 's'
-    }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
     
     $conductores = [];
     
-    // ☁️ Añadida verificación para asegurar que $result no es booleano
-    if ($result && $result !== true) { // ☁️ Verificar que $result no es booleano (false o true)
-        while ($row = $result->fetch_assoc()) {
-            // Procesar grupo de financiamiento igual que antes
-            $grupoFinanciamiento = $row['grupo_financiamiento'];
-            
-            $nombrePlan = '';
-            if ($grupoFinanciamiento) {
-                $queryPlan = "SELECT nombre_plan FROM planes_financiamiento WHERE idplan_financiamiento = ?";
-                $stmtPlan = $this->conectar->prepare($queryPlan);
-                $stmtPlan->bind_param('i', $grupoFinanciamiento);
-                $stmtPlan->execute();
-                $stmtPlan->bind_result($nombrePlan);
-                $stmtPlan->fetch();
-                $stmtPlan->close();
+    // ✅ Validar que la preparación fue exitosa
+    if (!$stmt) {
+        error_log("Error preparando consulta de conductores: " . $this->conectar->error);
+        error_log("Query: " . $queryConductores);
+        // Continuar sin conductores si hay error
+    } else {
+        if ($grupo_id) {
+            $stmt->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
+        } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
+            $stmt->bind_param('ii', $cantidadPorPagina, $offset);
+        } else {
+            $stmt->bind_param('ssssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset); // ✅ MODIFICADO: Ahora son 6 parámetros 's' (agregado nro_documento)
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // ☁️ Añadida verificación para asegurar que $result no es booleano
+        if ($result && $result !== true) { // ☁️ Verificar que $result no es booleano (false o true)
+            while ($row = $result->fetch_assoc()) {
+                // Procesar grupo de financiamiento igual que antes
+                $grupoFinanciamiento = $row['grupo_financiamiento'];
+                
+                $nombrePlan = '';
+                if ($grupoFinanciamiento) {
+                    $queryPlan = "SELECT nombre_plan FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+                    $stmtPlan = $this->conectar->prepare($queryPlan);
+                    $stmtPlan->bind_param('i', $grupoFinanciamiento);
+                    $stmtPlan->execute();
+                    $stmtPlan->bind_result($nombrePlan);
+                    $stmtPlan->fetch();
+                    $stmtPlan->close();
+                }
+                
+                $row['grupo_financiamiento'] = $nombrePlan;
+                $conductores[] = $row;
             }
-            
-            $row['grupo_financiamiento'] = $nombrePlan;
-            $conductores[] = $row;
         }
     }
     
@@ -490,11 +499,12 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
         // 🐱 Agregado: Caso especial para buscar financiamientos sin grupo
         $queryClientes .= "f.grupo_financiamiento = 'notGrupo' ";
     } else {
-        // 🐱 Mantenemos la lógica original de búsqueda
+        // 🐱 Mantenemos la lógica original de búsqueda + búsqueda por documento
         $queryClientes .= "(cl.nombres LIKE ? 
            OR cl.apellido_paterno LIKE ? 
            OR cl.apellido_materno LIKE ?
-           OR f.codigo_asociado LIKE ?) ";
+           OR f.codigo_asociado LIKE ?
+           OR cl.n_documento LIKE ?) "; // ✅ AGREGADO: Búsqueda por número de documento (campo n_documento en clientes_financiar)
     }
     
     $queryClientes .= " GROUP BY cl.id "; // ☁️ Añadido GROUP BY que faltaba
@@ -510,41 +520,48 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
     
     $stmtClientes = $this->conectar->prepare($queryClientes);
     
-     // 🐱 Modificado: Diferentes bind_param según el tipo de búsqueda
-     if ($grupo_id) {
-        $stmtClientes->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
-    } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
-        $stmtClientes->bind_param('ii', $cantidadPorPagina, $offset);
+    // ✅ Validar que la preparación fue exitosa
+    if (!$stmtClientes) {
+        error_log("Error preparando consulta de clientes: " . $this->conectar->error);
+        error_log("Query: " . $queryClientes);
+        // Continuar sin clientes si hay error
     } else {
-        $stmtClientes->bind_param('ssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
-    }
-    
-    $stmtClientes->execute();
-    $resultClientes = $stmtClientes->get_result();
-    
-    // ☁️ Añadida verificación para asegurar que $resultClientes no es booleano
-    if ($resultClientes && $resultClientes !== true) { // ☁️ Verificar que $resultClientes no es booleano (false o true)
-        while ($row = $resultClientes->fetch_assoc()) {
-            // Procesar igual que antes
-            $grupoFinanciamiento = $row['grupo_financiamiento'];
-            
-            $nombrePlan = '';
-            if ($grupoFinanciamiento) {
-                if ($grupoFinanciamiento === 'notGrupo') {
-                    $nombrePlan = 'Sin Grupo';
-                } else {
-                    $queryPlan = "SELECT nombre_plan FROM planes_financiamiento WHERE idplan_financiamiento = ?";
-                    $stmtPlan = $this->conectar->prepare($queryPlan);
-                    $stmtPlan->bind_param('i', $grupoFinanciamiento);
-                    $stmtPlan->execute();
-                    $stmtPlan->bind_result($nombrePlan);
-                    $stmtPlan->fetch();
-                    $stmtPlan->close();
+        // 🐱 Modificado: Diferentes bind_param según el tipo de búsqueda
+        if ($grupo_id) {
+            $stmtClientes->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
+        } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
+            $stmtClientes->bind_param('ii', $cantidadPorPagina, $offset);
+        } else {
+            $stmtClientes->bind_param('sssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset); // ✅ MODIFICADO: Ahora son 5 parámetros 's' (agregado nro_documento)
+        }
+        
+        $stmtClientes->execute();
+        $resultClientes = $stmtClientes->get_result();
+        
+        // ☁️ Añadida verificación para asegurar que $resultClientes no es booleano
+        if ($resultClientes && $resultClientes !== true) { // ☁️ Verificar que $resultClientes no es booleano (false o true)
+            while ($row = $resultClientes->fetch_assoc()) {
+                // Procesar igual que antes
+                $grupoFinanciamiento = $row['grupo_financiamiento'];
+                
+                $nombrePlan = '';
+                if ($grupoFinanciamiento) {
+                    if ($grupoFinanciamiento === 'notGrupo') {
+                        $nombrePlan = 'Sin Grupo';
+                    } else {
+                        $queryPlan = "SELECT nombre_plan FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+                        $stmtPlan = $this->conectar->prepare($queryPlan);
+                        $stmtPlan->bind_param('i', $grupoFinanciamiento);
+                        $stmtPlan->execute();
+                        $stmtPlan->bind_result($nombrePlan);
+                        $stmtPlan->fetch();
+                        $stmtPlan->close();
+                    }
                 }
+                
+                $row['grupo_financiamiento'] = $nombrePlan;
+                $conductores[] = $row;
             }
-            
-            $row['grupo_financiamiento'] = $nombrePlan;
-            $conductores[] = $row;
         }
     }
     
@@ -666,7 +683,8 @@ private function normalizeString($string) {
                     OR c.apellido_paterno LIKE ? 
                     OR c.apellido_materno LIKE ? 
                     OR f.codigo_asociado LIKE ?
-                    OR c.numUnidad LIKE ?) ";
+                    OR c.numUnidad LIKE ?
+                    OR c.nro_documento LIKE ?) "; // ✅ AGREGADO: Búsqueda por número de documento
             }
             
             $sqlConductores .= "GROUP BY c.id_conductor
@@ -680,7 +698,7 @@ private function normalizeString($string) {
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
                 // No necesita parámetros
             } else {
-                $stmtConductores->bind_param("sssss", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);
+                $stmtConductores->bind_param("ssssss", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike); // ✅ MODIFICADO: Ahora son 6 parámetros
             }
             
             $stmtConductores->execute();
@@ -701,8 +719,9 @@ private function normalizeString($string) {
             } else {
                 $sqlClientes .= "(cl.nombres LIKE ? 
                     OR cl.apellido_paterno LIKE ? 
-                    OR cl.apellido_materno LIKE ? 
-                    OR f.codigo_asociado LIKE ?) ";
+                    OR cl.apellido_materno LIKE ?
+                    OR f.codigo_asociado LIKE ?
+                    OR cl.n_documento LIKE ?) "; // ✅ AGREGADO: Búsqueda por número de documento (campo n_documento en clientes_financiar)
             }
             
             $sqlClientes .= "GROUP BY cl.id
@@ -716,7 +735,7 @@ private function normalizeString($string) {
             } else if ($searchTerm === "Sin Grupo" || $searchTerm === "sin grupo") {
                 // No necesita parámetros
             } else {
-                $stmtClientes->bind_param("ssss", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);
+                $stmtClientes->bind_param("sssss", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike); // ✅ MODIFICADO: Ahora son 5 parámetros
             }
             
             $stmtClientes->execute();

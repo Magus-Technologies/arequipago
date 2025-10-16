@@ -158,9 +158,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         </div>
 
 
-    <h3 class="mb-4">REPORTES DE PAGOS DE FINANCIAMIENTO</h3>
-    
-    <!-- Modal para enviar PDF por WhatsApp - Coloca este código en tu archivo HTML principal -->
+    <!-- Modal para enviar PDF por WhatsApp -->
     <div class="modal fade" id="modalWhatsappReportes" tabindex="-1" aria-labelledby="modalWhatsappLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -194,108 +192,66 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         </div>
     </div>
 
-    <!-- NUEVO: Filtro por fechas -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <label for="fechaInicio">Fecha de inicio:</label>
-            <input type="date" id="fechaInicio" class="form-control">
-        </div>
-        <div class="col-md-3">
-            <label for="fechaFin">Fecha de fin:</label>
-            <input type="date" id="fechaFin" class="form-control">
-        </div>
-        <div class="col-md-6 d-flex align-items-end">
-            <button id="filtrarFechas" class="btn btn-primary mr-2">
-                <i class="fa fa-filter"></i> Filtrar
-            </button>
-            <button id="limpiarFiltro" class="btn btn-secondary">
-                <i class="fa fa-undo"></i> Limpiar Filtro
-            </button>
+    <div class="page-title-box" style="padding: 12px 0;">
+        <div class="row align-items-center">
+            <div class="col-md-12">
+                <h6 class="page-title text-center">REPORTES DE PAGOS DE FINANCIAMIENTO</h6>
+            </div>
         </div>
     </div>
 
-    <!-- Campo de búsqueda -->
-    <div class="row mb-4">
-        <div class="col-md-8 offset-md-2">
-            <div class="row align-items-center"> 
-                <div class="col-md-9" id="colInputBusqueda">
-                    <div class="input-group me-2">
-                        <span class="input-group-text">
-                            <i class="fa fa-search"></i>
-                        </span>
-                        <input type="text" id="buscarReporte" class="form-control" placeholder="Buscar por conductor, asesor, monto o fecha...">
-                        
+    <div class="row">
+        <div class="col-12">
+            <div class="card" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+                <div class="card-header bg-white">
+                    <div class="row align-items-end">
+                        <!-- Filtros de Fecha -->
+                        <div class="col-md-3">
+                            <label for="fechaInicio">Fecha de inicio:</label>
+                            <input type="date" id="fechaInicio" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fechaFin">Fecha de fin:</label>
+                            <input type="date" id="fechaFin" class="form-control">
+                        </div>
+                        <!-- Botones de Acción -->
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button id="filtrarFechas" class="btn btn-primary me-2">
+                                <i class="fa fa-filter"></i> Filtrar
+                            </button>
+                            <button id="limpiarFiltro" class="btn btn-secondary">
+                                <i class="fa fa-undo"></i> Limpiar
+                            </button>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end justify-content-end">
+                            <button id="btnDescargar" class="btn btn-success" onclick="downloadData()">
+                                <i class="fas fa-download"></i> Descargar
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Columna para el botón -->
-                <div class="col-md-3 text-end">
-                    <!-- Botón de descarga agregado aquí -->
-                    <button id="btnDescargar" class="btn" onclick="downloadData()"> <!-- Agregado -->
-                            Descargar Reporte <i class="fas fa-download"></i> <!-- Agregado -->
-                    </button> <!-- Agregado -->
-                </div>
-
-            </div>    
-        </div>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-primary">
-                <tr>
-                    <th>Item</th>
-                    <th>Conductor</th>
-                    <th>Nº Unidad</th>
-                    <th>Asesor</th>
-                    <th>Monto</th>
-                    <th>Fecha Emisión</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-reportes">
-                <tr>
-                    <td colspan="7" class="text-center">Cargando datos...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div id="paginacion" class="mt-3"></div>
-
-    <!-- Modal para enviar por WhatsApp -->
-    <div class="modal fade" id="modalWhatsapp" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Enviar por WhatsApp</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="codigoPais" class="form-label">Código de país</label>
-                        <select class="form-select" id="codigoPais">
-                            <option value="51" selected>+51 Perú</option>
-                            <option value="1">+1 EE.UU.</option>
-                            <option value="34">+34 España</option>
-                            <option value="55">+55 Brasil</option>
-                            <option value="57">+57 Colombia</option>
-                            <option value="52">+52 México</option>
-                            <option value="54">+54 Argentina</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="numeroWhatsapp" class="form-label">Número de teléfono</label>
-                        <input type="tel" class="form-control" id="numeroWhatsapp" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-success" id="btnEnviarWhatsapp">Enviar</button>
+                <div class="card-body">
+                    <table id="tabla-reportes" class="table table-bordered dt-responsive nowrap text-center table-sm">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Conductor</th>
+                                <th>Nº Unidad</th>
+                                <th>Asesor</th>
+                                <th>Monto</th>
+                                <th>Fecha Emisión</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- DataTables llenará esto automáticamente -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+
 </div>
 
 <div id="registrarPago" class="content hidden-right">
@@ -1590,138 +1546,68 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         });
     }
 
-    function cargarReportes(page = 1, search = '', fechaInicio = '', fechaFin = '') {
-        $.ajax({
-            url: `/arequipago/getReportFinance`,
-            type: 'POST',
-            data: { page, search, fechaInicio, fechaFin },
-            success: function (response) {
-                let html = '';
-                                
-                // Parseamos el 'response' si es necesario (en caso de que llegue como string)
-                if (typeof response === 'string') {
-                    response = JSON.parse(response); // Modificación para convertir a objeto JSON si viene en string
-                }
+    // NOTA: Funciones cargarReportes, filtrarPorFechas y limpiarFiltro eliminadas
+    // Ahora se usa DataTables que maneja todo automáticamente
 
-                if (response.data.length > 0) {
-                    response.data.forEach((reporte, index) => {
-                        const itemNumber = (page - 1) * 10 + (index + 1) 
-                        
-                        
-                        
-                        html += `
-                            <tr data-id="${reporte.idpagos_financiamiento}"> <!-- Modificación: Se agregó el atributo data-id con el id del financiamiento -->
-                                <!-- LÍNEA NUEVA: Agregamos el checkbox al inicio de cada fila -->
-                                ${(ROL_USUARIO == 1 || ROL_USUARIO == 3) ? 
-                                    `<td>
-                                        <input type="checkbox" class="form-check-input pago-checkbox" value="${reporte.idpagos_financiamiento}">
-                                    </td>` : ''}    
-                                <td>${itemNumber}</td>
-                                <td>${reporte.conductor}</td>
-                                <td>${reporte.numUnidad || 'N/A'}</td> 
-                                <td>${reporte.asesor ?? 'No registrado'}</td> <!-- Modificado: Agregar mensaje 'No registrado' si el asesor es null -->
-                                <td>${reporte.moneda || ''} ${reporte.monto}</td> 
-                                <td>${reporte.fecha_pago}</td>
-                                <td>`;
-
-                        // ← MODIFICACIÓN: Agregado condicional para mostrar el botón eliminar solo si el rol es 1 o 3
-                        if (ROL_USUARIO == 1 || ROL_USUARIO == 3) {
-                            html += `        
-                                    <button class="btn btn-danger btn-sm" onclick="eliminarPago(${reporte.idpagos_financiamiento})">
-                                        <i class="fa fa-trash"></i>
-                                    </button>`;
-                            }  
-                        html += `            
-                                    <button class="btn btn-success btn-sm" onclick="descargarPago(${reporte.idpagos_financiamiento})">
-                                        <i class="fa fa-download"></i>
-                                    </button>
-                                    <button class="btn btn-info btn-sm" onclick="whatsappReport(${reporte.idpagos_financiamiento})">
-                                        <i class="fab fa-whatsapp"></i> <!-- Clase corregida: 'fab' es necesario para WhatsApp -->
-                                    </button>
-                                </td>
-                            </tr>`;
-                    });
-                } else {
-                    html = `<tr><td colspan="7" class="text-center">No se encontraron registros.</td></tr>`;
-                }
-                $('#tabla-reportes').html(html); // Modificación: Asegurarse de que el tbody esté limpio antes de renderizar
-                $('#paginacion').html(response.pagination || ''); // Modificación: Validar que exista 'pagination' y evitar un posible error si viene vacío
-
-                agregarSeleccionMasiva();
-            
-                // LÍNEA NUEVA: Agregar listeners para los checkboxes de las filas
-                $('.pago-checkbox').on('change', actualizarBotonEliminarSeleccionados);
-
-            },
-            error: function () {
-                Swal.fire('Error', 'No se pudieron cargar los reportes', 'error');
-            }
-        });
-    }
-    
-    // NUEVO: Función para filtrar por fechas
-    function filtrarPorFechas() {
+    // Función para descargar reporte en Excel
+    function downloadData() {
         const fechaInicio = $("#fechaInicio").val();
         const fechaFin = $("#fechaFin").val();
         
-        // Validar que ambas fechas estén seleccionadas
-        if (!fechaInicio || !fechaFin) {
-            Swal.fire('Atención', 'Por favor, seleccione ambas fechas para filtrar', 'warning');
-            return;
+        let url = '/arequipago/exportReportFinance';
+        let params = [];
+        
+        if (fechaInicio) params.push(`fechaInicio=${fechaInicio}`);
+        if (fechaFin) params.push(`fechaFin=${fechaFin}`);
+        
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         }
         
-        // Validar que la fecha de inicio no sea mayor que la fecha de fin
-        if (fechaInicio > fechaFin) {
-            Swal.fire('Error', 'La fecha de inicio no puede ser posterior a la fecha de fin', 'error');
-            return;
-        }
-        
-        // Llamar a cargarReportes con los parámetros de fecha
-        cargarReportes(1, '', fechaInicio, fechaFin);
-    }
-
-    // NUEVO: Función para limpiar el filtro
-    function limpiarFiltro() {
-        // Limpiar los campos de fecha
-        $("#fechaInicio").val('');
-        $("#fechaFin").val('');
-        
-        // Recargar todos los datos
-        cargarReportes(1, '');
+        window.location.href = url;
     }
 
 
-    function eliminarPago(id) {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Esta acción eliminará el pago de manera permanente.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/arequipago/deleteReportFinance',
-                    type: 'POST',
-                    data: { idpagos_financiamiento: id },
-                    success: function (response) {
-                        Swal.fire(
-                            'Eliminado',
-                            'El pago ha sido eliminado exitosamente.',
-                            'success'
-                        );
-                        cargarReportes(); // Recargar la tabla para reflejar los cambios
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'No se pudo eliminar el pago.', 'error');
+function eliminarPagoReporte(id) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción eliminará el pago de manera permanente.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/arequipago/deleteReportFinance',
+                type: 'POST',
+                data: { idpagos_financiamiento: id },
+                success: function (response) {
+                    Swal.fire(
+                        'Eliminado',
+                        'El pago ha sido eliminado exitosamente.',
+                        'success'
+                    );
+                    
+                    // Recargar DataTable
+                    if (typeof tablaReportes !== 'undefined') {
+                        tablaReportes.ajax.reload(null, false);
                     }
-                });
-            }
-        });
-    }
+                    
+                    // Actualizar contador de pagos pendientes si existe
+                    if (typeof pagosPendientesCantidad === 'function') {
+                        pagosPendientesCantidad();
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'No se pudo eliminar el pago.', 'error');
+                }
+            });
+        }
+    });
+}
     function descargarPago(idPago) {
         $.ajax({
             url: '/arequipago/downloadReportFinance',
@@ -2461,53 +2347,63 @@ function enviarPDFPorWhatsApp() {
         });
     }
     
-    // Función para eliminar un pago
-    function eliminarPago(idPago) {
-        Swal.fire({
-            title: '¿Eliminar pago?',
-            text: "Esta acción no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: '/arequipago/eliminarPagoPendiente',
-                    type: 'POST',
-                    data: { idPago: idPago },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire(
-                                '¡Eliminado!',
-                                'El pago ha sido eliminado correctamente.',
-                                'success'
-                            );
+  // Función para eliminar un pago
+function eliminarPago(idPago) {
+    Swal.fire({
+        title: '¿Eliminar pago?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/arequipago/eliminarPagoPendiente',
+                type: 'POST',
+                data: { idPago: idPago },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // ✅ NUEVO: Eliminar la fila del DOM inmediatamente
+                        $(`#filaRechazado_${idPago}`).fadeOut(400, function() {
+                            $(this).remove();
                             
-                            // Actualizar tabla
-                            cargarPagosRechazados();
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: response.message || 'Hubo un error al eliminar el pago'
-                            });
-                        }
-                    },
-                    error: function() {
+                            // ✅ NUEVO: Verificar si quedan filas en la tabla
+                            if ($('#cuerpoTablaRechazados tr').length === 0) {
+                                $('#cuerpoTablaRechazados').html('<tr><td colspan="6" class="text-center">No hay pagos rechazados</td></tr>');
+                            }
+                        });
+                        
+                        Swal.fire(
+                            '¡Eliminado!',
+                            'El pago ha sido eliminado correctamente.',
+                            'success'
+                        );
+                        
+                        // ✅ NUEVO: Actualizar contador
+                        pagosPendientesCantidad();
+                    } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Error de conexión al servidor'
+                            text: response.message || 'Hubo un error al eliminar el pago'
                         });
                     }
-                });
-            }
-        });
-    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error de conexión al servidor'
+                    });
+                }
+            });
+        }
+    });
+}
     
     $(document).ready(function () {
 
@@ -2767,9 +2663,119 @@ function enviarPDFPorWhatsApp() {
             }
         });
 
-        cargarReportes(); // Carga inicial
-        $('#buscarReporte').on('input', function () {
-            cargarReportes(1, $(this).val());
+        // Inicializar DataTable para reportes
+        let tablaReportes = $("#tabla-reportes").DataTable({
+            paging: true,
+            bFilter: true,
+            ordering: true,
+            searching: true,
+            destroy: true,
+            ajax: {
+                url: '/arequipago/getReportFinance',
+                method: "POST",
+                data: function(d) {
+                    // Agregar parámetros de filtro de fechas
+                    d.fechaInicio = $("#fechaInicio").val();
+                    d.fechaFin = $("#fechaFin").val();
+                },
+                dataSrc: function(json) {
+                    // Verificar si la respuesta es string y parsearla
+                    if (typeof json === 'string') {
+                        json = JSON.parse(json);
+                    }
+                    return json.data || [];
+                }
+            },
+            language: {
+                url: "ServerSide/Spanish.json",
+            },
+            columns: [
+                {
+                    data: null,
+                    class: "text-center",
+                    render: function(data, type, row, meta) {
+                        return meta.row + 1;
+                    }
+                },
+                {
+                    data: "conductor",
+                    class: "text-center",
+                },
+                {
+                    data: "numUnidad",
+                    class: "text-center",
+                    render: function(data) {
+                        return data || 'N/A';
+                    }
+                },
+                {
+                    data: "asesor",
+                    class: "text-center",
+                    render: function(data) {
+                        return data || 'No registrado';
+                    }
+                },
+                {
+                    data: null,
+                    class: "text-center",
+                    render: function(data, type, row) {
+                        return (row.moneda || '') + ' ' + row.monto;
+                    }
+                },
+                {
+                    data: "fecha_pago",
+                    class: "text-center",
+                },
+                {
+                    data: null,
+                    class: "text-center",
+                    render: function(data, type, row) {
+                        let botones = '';
+                        
+                        // Botón eliminar solo para roles 1 y 3
+                        if (ROL_USUARIO == 1 || ROL_USUARIO == 3) {
+                            botones += `<button class="btn btn-danger btn-sm" onclick="eliminarPagoReporte(${row.idpagos_financiamiento})">
+                                <i class="fa fa-trash"></i>
+                            </button> `;
+                        }
+                        
+                        botones += `<button class="btn btn-success btn-sm" onclick="descargarPago(${row.idpagos_financiamiento})">
+                            <i class="fa fa-download"></i>
+                        </button> `;
+                        
+                        botones += `<button class="btn btn-info btn-sm" onclick="whatsappReport(${row.idpagos_financiamiento})">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>`;
+                        
+                        return `<div class="btn-group btn-sm">${botones}</div>`;
+                    }
+                }
+            ]
+        });
+
+        // Evento para filtrar por fechas
+        $('#filtrarFechas').on('click', function() {
+            const fechaInicio = $("#fechaInicio").val();
+            const fechaFin = $("#fechaFin").val();
+            
+            if (!fechaInicio || !fechaFin) {
+                Swal.fire('Atención', 'Por favor, seleccione ambas fechas para filtrar', 'warning');
+                return;
+            }
+            
+            if (fechaInicio > fechaFin) {
+                Swal.fire('Error', 'La fecha de inicio no puede ser posterior a la fecha de fin', 'error');
+                return;
+            }
+            
+            tablaReportes.ajax.reload();
+        });
+
+        // Evento para limpiar filtro
+        $('#limpiarFiltro').on('click', function() {
+            $("#fechaInicio").val('');
+            $("#fechaFin").val('');
+            tablaReportes.ajax.reload();
         });
 
         console.log("Documento listo") // Depuración

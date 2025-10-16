@@ -390,6 +390,7 @@ Route::postBase("/beneficios", "FragmentController@beneficiosUsuarios");
 Route::get("/obtenerProductosVehiculos", "FinanciamientoController@obtenerProductosVehiculos");
 Route::get('/buscarProductosVehiculos','FinanciamientoController@buscarProductosVehiculos');
 Route::post('/entregarVehiculo','FinanciamientoController@entregarVehiculo');
+Route::post('/generarContratoEntregaVehiculo', 'GenerarContratosController@generarContratoEntregaVehiculo');
 
 
 // =====================================================

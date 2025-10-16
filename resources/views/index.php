@@ -37,7 +37,9 @@
     <!-- ============================================================== -->
     <!-- Start right Content here -->
     <!-- ============================================================== -->
-    <div id="contenedor-app" class="container">
+    <div id="contenedor-app" class="container"> <!-- cambiar a container-fluid si es necesario -->
+
+     
              
             
  <!-- End Page-content -->

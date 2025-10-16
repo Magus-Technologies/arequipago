@@ -457,3 +457,100 @@
             display: block;
         }
 
+
+        /* Estilos para inputs de archivo mejorados */
+        .file-input-custom {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-custom:hover {
+            border-color: #8b8c64;
+            background-color: #f8f9fa;
+        }
+
+        .file-input-custom:focus {
+            border-color: #8b8c64;
+            box-shadow: 0 0 0 0.2rem rgba(139, 140, 100, 0.25);
+        }
+
+        /* Estilos para badges de archivo cargado */
+        .badge {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            animation: fadeInScale 0.3s ease;
+        }
+
+        .badge.bg-success {
+            background-color: #28a745 !important;
+            color: white;
+        }
+
+        .badge i {
+            font-size: 14px;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Mejorar alineación de filas de requisitos */
+        .form-section .row.align-items-center {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .form-section .row.align-items-center:last-child {
+            border-bottom: none;
+        }
+
+        .form-section .row.align-items-center:hover {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        /* Estilo para labels de archivos */
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+
+        /* Estilos para el enlace de configuración de departamentos (Director) */
+        .alert-info {
+            animation: fadeInDown 0.5s ease;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-info .btn:hover {
+            background-color: #1976D2 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .alert-info .btn:active {
+            transform: translateY(0);
+        }
