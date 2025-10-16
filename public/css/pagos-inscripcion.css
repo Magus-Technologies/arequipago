@@ -82,32 +82,33 @@
         /* Desplaza el círculo a la derecha */
     }
 
-
-
-
-
+    /* Solución: Hacer el contenedor scrolleable con espacio al final */
 
     .content-container {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         flex-direction: column;
-        height: 50vh;
-        overflow: hidden;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: visible;
         position: relative;
+        padding-top: 20px;
+        padding-bottom: 100px;
     }
 
     .content {
-        position: absolute;
-        width: 80%;
-
-
+        position: relative;
+        width: calc(100% - 40px);
+        max-width: 1200px;
         transition: transform 0.5s ease-in-out;
         background: white;
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        margin: 20px auto;
     }
+
 
     .hidden-right {
         transform: translateX(100%);
@@ -161,7 +162,7 @@
     }
 
     .table-responsive {
-        max-height: 400px; /* Ajusta esto a la altura deseada */
+        max-height: 400px;
         overflow-y: auto;
         position: relative;
     }
@@ -172,3 +173,5 @@
         z-index: 2;
         background-color: #cfe2ff; /* Coincide con .table-primary de Bootstrap */
     }
+
+    /* Agrega este CSS al archivo pagos-inscripcion.css */

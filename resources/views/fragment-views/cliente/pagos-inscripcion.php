@@ -81,7 +81,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             <thead class="table-primary">
                 <tr>
                     <th>Item</th>
-                    <th>Conductor</th>
+                    <th>Cliente</th>
                     <th>Nº de unidad</th> 
                     <th>Asesor</th>
                     <th>Monto</th>
@@ -243,6 +243,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         </div>
     </div>
 </div>
+
 
 <script>
     function actualizarMetodoPago() {
@@ -878,8 +879,8 @@ function mostrarReportes(reportes) {
         html += `
         <tr>
             <td>${index + 1}</td>
-            <td>${reporte.nombre_conductor || 'No especificado'}</td>
-            <td>${reporte.num_unidad || "No asignado"}</td> {/* NUEVO: Agregada celda para mostrar el número de unidad */}
+            <td>${reporte.nombre_persona || 'No especificado'}</td>
+            <td>${reporte.num_unidad ? reporte.num_unidad : '-'}</td> {/* Mostrar '-' si es cliente (sin unidad) */}
             <td>${reporte.nombre_asesor || 'No especificado'}</td>
             <td>S/ ${parseFloat(reporte.monto).toFixed(2)}</td>
             <td>${formatearFecha(reporte.fecha_emision)}</td>
@@ -974,7 +975,7 @@ function filtrarTabla() {
 
     const reportesFiltrados = reportesGlobales.filter(reporte => {
         return (
-            (reporte.nombre_conductor && reporte.nombre_conductor.toLowerCase().includes(textoBusqueda)) ||
+            (reporte.nombre_persona && reporte.nombre_persona.toLowerCase().includes(textoBusqueda)) ||
             (reporte.nombre_asesor && reporte.nombre_asesor.toLowerCase().includes(textoBusqueda)) ||
             (reporte.monto && reporte.monto.toString().includes(textoBusqueda)) ||
             (reporte.fecha_emision && formatearFecha(reporte.fecha_emision).toLowerCase().includes(textoBusqueda))||
@@ -992,7 +993,7 @@ function downloadData() {
     
     // Make AJAX request to the controller
     $.ajax({
-        url: '/arequipago/reportPagos/',
+        url: '/arequipago/reportPagosUnificado/',
         method: 'GET',
         xhrFields: {
             responseType: 'blob' // Important for handling binary data (Excel file)
@@ -1002,7 +1003,11 @@ function downloadData() {
             var contentType = xhr.getResponseHeader('Content-Type');
             if (contentType && contentType.indexOf('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') === -1) {
                 console.error("Error: El tipo de contenido recibido no es Excel:", contentType);
-                alert("Error al generar el archivo Excel. Por favor, contacte al administrador.");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al generar el archivo Excel. Por favor, contacte al administrador.'
+                });
                 $("#btnDescargar").prop('disabled', false);
                 $("#btnDescargar").html('Descargar Reporte <i class="fas fa-download"></i>');
                 return;
@@ -1010,11 +1015,11 @@ function downloadData() {
             
             // Create a blob URL from the response
             var blob = new Blob([data], {type: contentType});
-            var url = window.URL.createObjectURL(blob);
+            var urlBlob = window.URL.createObjectURL(blob);
             
             // Create a temporary link element to trigger the download
             var a = document.createElement('a');
-            a.href = url;
+            a.href = urlBlob;
             
             // Get filename from Content-Disposition header or use default
             var filename = "reporte_pagos.xlsx";
@@ -1032,7 +1037,7 @@ function downloadData() {
             a.click();
             
             // Clean up
-            window.URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(urlBlob);
             document.body.removeChild(a);
             
             // Reset button state
@@ -1041,7 +1046,11 @@ function downloadData() {
         },
         error: function(xhr, status, error) {
             console.error("Error al descargar el reporte:", error);
-            alert("Ocurrió un error al generar el reporte. Por favor, intente nuevamente.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Ocurrió un error al generar el reporte. Por favor, intente nuevamente.'
+            });
             
             // Reset button state
             $("#btnDescargar").prop('disabled', false);

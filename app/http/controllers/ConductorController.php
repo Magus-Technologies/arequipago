@@ -1141,25 +1141,42 @@ class ConductorController extends Controller
         header('Content-Type: application/json');
         
         try {
-            // Modificamos la consulta para asegurar que se obtengan los datos del asesor correctamente
-            $sql = "SELECT 
-                    nv.idnotas_venta_inscripcion,
+            // Consulta para pagos de conductores (notas_venta_inscripcion)
+            $sqlConductores = "SELECT 
+                    nv.idnotas_venta_inscripcion AS id_pago,
                     nv.monto,
                     nv.fecha_emision,
                     nv.ruta,
                     nv.id_asesor,
-                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_conductor,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_persona,
                     c.numUnidad AS num_unidad,
-                    CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor
+                    CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
+                    'conductor' AS tipo_persona
                     FROM notas_venta_inscripcion nv
                     INNER JOIN conductores c ON nv.id_conductor = c.id_conductor
-                    LEFT JOIN usuarios u ON nv.id_asesor = u.usuario_id
-                    ORDER BY nv.fecha_emision DESC";
+                    LEFT JOIN usuarios u ON nv.id_asesor = u.usuario_id";
             
-            // Agregar logging para depuración
-            error_log("SQL Query: " . $sql);
+            // Consulta para pagos de clientes (cliente_pago)
+            $sqlClientes = "SELECT 
+                    cp.id AS id_pago,
+                    cp.monto_pagado AS monto,
+                    cp.fecha_pago AS fecha_emision,
+                    '' AS ruta,
+                    cp.usuario_id AS id_asesor,
+                    CONCAT(clf.nombres, ' ', clf.apellido_paterno, ' ', clf.apellido_materno) AS nombre_persona,
+                    '' AS num_unidad,
+                    CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
+                    'cliente' AS tipo_persona
+                    FROM cliente_pago cp
+                    INNER JOIN clientes_financiar clf ON cp.cliente_id = clf.id
+                    LEFT JOIN usuarios u ON cp.usuario_id = u.usuario_id";
             
-            $result = $this->conexion->query($sql);
+            // Combinar ambas consultas ordenadas por fecha
+            $sqlCombinada = "($sqlConductores) UNION ALL ($sqlClientes) ORDER BY fecha_emision DESC";
+            
+            error_log("SQL Query: " . $sqlCombinada);
+            
+            $result = $this->conexion->query($sqlCombinada);
             
             if (!$result) {
                 error_log("Error en la consulta: " . $this->conexion->error);
@@ -1168,15 +1185,12 @@ class ConductorController extends Controller
             
             $reportes = [];
             while ($row = $result->fetch_assoc()) {
-                // Logging para depuración
                 error_log("Fila encontrada: " . json_encode($row));
                 
-                // Asegurarse de que nombre_asesor no sea NULL
                 if (empty($row['nombre_asesor'])) {
-                    // Intentar obtener el nombre del asesor directamente
                     $idAsesor = $row['id_asesor'];
                     $sqlAsesor = "SELECT CONCAT(nombres, ' ', IFNULL(apellidos, '')) AS nombre_asesor 
-                                  FROM usuarios WHERE usuario_id = $idAsesor";
+                                FROM usuarios WHERE usuario_id = $idAsesor";
                     $resultAsesor = $this->conexion->query($sqlAsesor);
                     
                     if ($resultAsesor && $rowAsesor = $resultAsesor->fetch_assoc()) {
@@ -1449,6 +1463,214 @@ class ConductorController extends Controller
         $writer->save('php://output');
         exit; // Importante para evitar que se envíe contenido adicional
     }
+
+    public function reportPagosUnificado() {
+        // Desactivar la visualización de errores para evitar que se envíen al navegador
+        ini_set('display_errors', 0); 
+        
+        ob_clean(); 
+
+        // Crear un nuevo objeto Spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Reporte Pagos Unificado');
+        
+        // Establecer encabezados
+        $headers = ['Ítem', 'Persona', 'Documento', 'Nº Unidad', 'Asesor', 'Monto Inicial / Al contado', 'Cuotas Pagadas', 'Cuotas No Pagadas'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $col++;
+        }
+        
+        // Estilo para encabezados - Mejorado
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '02a499']
+            ]
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+        
+        // Estilo para datos
+        $dataStyle = [
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER]
+        ];
+        
+        // Estilo para números (derecha alineados)
+        $numberStyle = array_merge($dataStyle, [
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT, 'vertical' => Alignment::VERTICAL_CENTER],
+            'numberFormat' => ['formatCode' => '$#,##0.00']
+        ]);
+        
+        $row = 2;
+        $item = 1;
+        $conductoresProcesados = [];
+        
+        // ========== CONDUCTORES ==========
+        $queryConductores = "SELECT pi.id_conductor, 
+                            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
+                            c.nro_documento, c.numUnidad, pi.id_asesor, MAX(pi.monto) as monto
+                        FROM pagos_inscripcion pi
+                        JOIN conductores c ON pi.id_conductor = c.id_conductor
+                        GROUP BY pi.id_conductor, nombre_completo, c.nro_documento, c.numUnidad, pi.id_asesor
+                        ORDER BY c.apellido_paterno, c.apellido_materno, c.nombres";
+        
+        $resultConductores = mysqli_query($this->conexion, $queryConductores);
+        $usuarioModel = new Usuario();
+        
+        while ($conductor = mysqli_fetch_assoc($resultConductores)) {
+            // Evitar duplicados
+            if (in_array($conductor['id_conductor'], $conductoresProcesados)) {
+                continue;
+            }
+            $conductoresProcesados[] = $conductor['id_conductor'];
+            
+            // Obtener asesor
+            $asesorData = $usuarioModel->getData($conductor['id_asesor']);
+            $nombreAsesor = isset($asesorData['nombres']) ? $asesorData['nombres'] . ' ' . $asesorData['apellidos'] : 'No asignado';
+            
+            // Pago inicial (sin detalles)
+            $queryPagoInicial = "SELECT pi.* FROM pagos_inscripcion pi
+                                LEFT JOIN detalle_pago_inscripcion dpi ON pi.id_pago = dpi.idpagos_inscripcion
+                                WHERE pi.id_conductor = {$conductor['id_conductor']} AND dpi.id_detallepago IS NULL
+                                LIMIT 1";
+            $resultPagoInicial = mysqli_query($this->conexion, $queryPagoInicial);
+            $montoInicial = 0;
+            $fechaPagoInicial = '';
+
+            if ($pagoInicial = mysqli_fetch_assoc($resultPagoInicial)) {
+                $montoInicial = $pagoInicial['monto'];
+                $fechaPagoInicial = date('d/m/Y', strtotime($pagoInicial['fecha_pago']));
+            }
+            
+            // Cuotas pagadas
+            $queryCuotasPagadas = "SELECT cc.numero_cuota, cc.monto_cuota, cc.metodo_pago, cc.fecha_pago
+                                FROM detalle_pago_inscripcion dpi
+                                JOIN pagos_inscripcion pi ON dpi.idpagos_inscripcion = pi.id_pago
+                                JOIN conductor_cuotas cc ON dpi.id_cuota = cc.id_conductorcuota
+                                WHERE pi.id_conductor = {$conductor['id_conductor']} AND cc.estado_cuota = 'pagado'
+                                ORDER BY cc.numero_cuota";
+            $resultCuotasPagadas = mysqli_query($this->conexion, $queryCuotasPagadas);
+            
+            $cuotasPagadas = "";
+            while ($cuota = mysqli_fetch_assoc($resultCuotasPagadas)) {
+                $fechaPago = date('d/m/Y', strtotime($cuota['fecha_pago']));
+                $cuotasPagadas .= "Cuota {$cuota['numero_cuota']} S/.{$cuota['monto_cuota']} {$cuota['metodo_pago']} {$fechaPago}\n";
+            }
+            
+            // Cuotas no pagadas
+            $queryCuotasNoPagadas = "SELECT cc.numero_cuota, cc.monto_cuota, cc.fecha_vencimiento
+                                    FROM conductor_regfinanciamiento crf
+                                    JOIN conductor_cuotas cc ON crf.idconductor_regfinanciamiento = cc.idconductor_Financiamiento
+                                    WHERE crf.id_conductor = {$conductor['id_conductor']} AND cc.estado_cuota = 'pendiente'
+                                    ORDER BY cc.numero_cuota";
+            
+            $resultCuotasNoPagadas = mysqli_query($this->conexion, $queryCuotasNoPagadas);
+            
+            $cuotasNoPagadas = "";
+            if ($resultCuotasNoPagadas) {
+                if (mysqli_num_rows($resultCuotasNoPagadas) > 0) {
+                    while ($cuota = mysqli_fetch_assoc($resultCuotasNoPagadas)) {
+                        $fechaVencimiento = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
+                        $cuotasNoPagadas .= "Cuota {$cuota['numero_cuota']} S/.{$cuota['monto_cuota']} FV: {$fechaVencimiento}\n";
+                    }
+                } else {
+                    $cuotasNoPagadas = "No hay cuotas pendientes";
+                }
+            } else {
+                $cuotasNoPagadas = "No hay cuotas pendientes";
+            }
+            
+            // Llenar fila CONDUCTOR
+            $sheet->setCellValue('A' . $row, $item);
+            $sheet->setCellValue('B' . $row, $conductor['nombre_completo']);
+            $sheet->setCellValue('C' . $row, $conductor['nro_documento']);
+            $sheet->setCellValue('D' . $row, $conductor['numUnidad']);
+            $sheet->setCellValue('E' . $row, $nombreAsesor);
+            $sheet->setCellValue('F' . $row, ($montoInicial != 0) ? 'S/.' . $montoInicial . ' | Fecha: ' . $fechaPagoInicial : 'S/.' . $montoInicial);
+            $sheet->setCellValue('G' . $row, $cuotasPagadas);
+            $sheet->setCellValue('H' . $row, $cuotasNoPagadas);
+            
+            $sheet->getStyle('G' . $row)->getAlignment()->setWrapText(true);
+            $sheet->getStyle('H' . $row)->getAlignment()->setWrapText(true);
+            
+            $row++;
+            $item++;
+        }
+        
+        // ========== CLIENTES ==========
+        $queryClientes = "SELECT cp.id, 
+                        CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS nombre_completo,
+                        cf.n_documento,
+                        cp.monto_pagado,
+                        cp.fecha_pago,
+                        cp.usuario_id,
+                        u.nombres AS asesor_nombres,
+                        u.apellidos AS asesor_apellidos
+                FROM cliente_pago cp
+                JOIN clientes_financiar cf ON cp.cliente_id = cf.id
+                LEFT JOIN usuarios u ON cp.usuario_id = u.usuario_id
+                ORDER BY cp.fecha_pago DESC";
+        
+        $resultClientes = mysqli_query($this->conexion, $queryClientes);
+        
+        while ($cliente = mysqli_fetch_assoc($resultClientes)) {
+            $nombreAsesor = 'No asignado';
+            if (!empty($cliente['asesor_nombres'])) {
+                $nombreAsesor = $cliente['asesor_nombres'] . ' ' . (!empty($cliente['asesor_apellidos']) ? $cliente['asesor_apellidos'] : '');
+            }
+            
+            $fechaPago = date('d/m/Y', strtotime($cliente['fecha_pago']));
+            
+            // Llenar fila CLIENTE
+            $sheet->setCellValue('A' . $row, $item);
+            $sheet->setCellValue('B' . $row, $cliente['nombre_completo']);
+            $sheet->setCellValue('C' . $row, $cliente['n_documento']);
+            $sheet->setCellValue('D' . $row, 'N/A');
+            $sheet->setCellValue('E' . $row, $nombreAsesor);
+            $sheet->setCellValue('F' . $row, 'S/.' . number_format($cliente['monto_pagado'], 2) . ' | Fecha: ' . $fechaPago);
+            $sheet->setCellValue('G' . $row, 'Al Contado');
+            $sheet->setCellValue('H' . $row, 'N/A');
+            
+            $row++;
+            $item++;
+        }
+        
+        // Autoajustar anchos de columna
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        
+        // Crear el escritor para guardar el archivo
+        $writer = new Xlsx($spreadsheet);
+        
+        // Nombre del archivo
+        $filename = 'Reporte_Pagos_Completo_' . date('Y-m-d_H-i-s') . '.xlsx';
+        
+        // Asegurarse de que no haya salida previa
+        if (ob_get_length()) ob_end_clean();
+        
+        // Configurar encabezados para la descarga
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        header('Expires: 0');
+        header('Pragma: public');
+        
+        // Guardar el archivo al output
+        $writer->save('php://output');
+        exit;
+    }    
 
     /**
  * Función para generar un PDF a partir de HTML de una tabla usando mPDF

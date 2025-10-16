@@ -202,7 +202,7 @@ Route::post('/downloadReportFinance', 'ReportFinanciamientoController@downloadRe
 
 Route::post('/generateBoletaFinance', 'ReportFinanciamientoController@generateBoletaFinance');
 Route::get('/numUnidad','RegistrarConductorController@obtenerNumeroLibre');
-Route::get('/reportPagos', 'ConductorController@reportPagos');
+Route::get('/reportPagosUnificado', 'ConductorController@reportPagosUnificado');
 Route::post('/generatePdf', 'ConductorController@generatePdfFromTable');
 Route::post('/buscarClienteExiste', 'RegistrarFinanciamientoController@buscarClienteExiste');
 Route::post('/buscaroCrearCliente', 'RegistrarFinanciamientoController@buscarOCrearCliente');
