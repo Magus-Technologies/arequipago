@@ -34,6 +34,15 @@ Route::get('/obtenerFinanciamientoDetalle', 'GenerarContratosController@obtenerF
 Route::post('/guardarRegistroPago', 'RegistroPagoController@guardarRegistroPago');
 Route::post('/generarContratosRegistro', 'GenerarContratosController@generarContratosRegistro');
 
+// Rutas para pagos pendientes de inscripción
+Route::get('/listarPagosPendientesInscripcion', 'PagosPendientesInscripcionController@listarPagosPendientes');
+Route::get('/listarPagosRechazadosInscripcion', 'PagosPendientesInscripcionController@listarPagosRechazados');
+Route::get('/contarPagosPendientesInscripcion', 'PagosPendientesInscripcionController@contarPagosPendientes');
+Route::post('/aprobarPagoInscripcion', 'PagosPendientesInscripcionController@aprobarPago');
+Route::post('/rechazarPagoInscripcion', 'PagosPendientesInscripcionController@rechazarPago');
+Route::post('/reactivarPagoInscripcion', 'PagosPendientesInscripcionController@reactivarPago');
+Route::post('/eliminarPagoInscripcion', 'PagosPendientesInscripcionController@eliminarPago');
+
 
 Route::get('/downloadReport', 'ProductosController@downloadReport');
 

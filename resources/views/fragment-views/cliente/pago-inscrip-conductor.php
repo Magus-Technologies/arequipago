@@ -37,8 +37,10 @@ $id_conductor = $_GET['id'] ?? null;
         }
 
         .btn-secondary {
+            background-color: #6c757d;
             color: #FFFFFF;
             font-weight: 600;
+            border: none;
         }
 
         .btn-secondary:hover {
@@ -186,7 +188,7 @@ $id_conductor = $_GET['id'] ?? null;
         .custom-table {
             width: 100%;
             border-collapse: collapse;
-            background: #9C9A9A;
+            background: rgba(40, 40, 40, 0.85);
             color: white;
             border-radius: 8px;
             overflow: hidden;
@@ -201,12 +203,17 @@ $id_conductor = $_GET['id'] ?? null;
 
         .custom-table th {
             background: #f4f750;
-            color: #9C9A9A;
-            font-weight: 600;
+            color: #2c2c2c;
+            font-weight: 500;
         }
 
         .custom-table tr:hover {
             background: rgba(244, 247, 80, 0.2);
+        }
+        
+        /* Espaciado entre foto y tabla */
+        .table-responsive {
+            margin-top: 20px;
         }
 
         /* Mejoras responsivas */
@@ -523,11 +530,20 @@ $id_conductor = $_GET['id'] ?? null;
                     console.log('Parsed JSON:', result);
 
                     if (result && result.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: 'El registro de pago se ha guardado correctamente.'
-                        });
+                        // Verificar si requiere aprobación
+                        if (result.requiere_aprobacion) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pago Registrado',
+                                text: result.message || 'El pago ha sido registrado y está pendiente de aprobación por un director.'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Éxito',
+                                text: 'El registro de pago se ha guardado correctamente.'
+                            });
+                        }
 
                         document.getElementById('tipoPago').value = 'contado';
                         document.getElementById('informacionFinanciado').style.display = 'none';
@@ -546,8 +562,8 @@ $id_conductor = $_GET['id'] ?? null;
                         colorInput();
                         zero();
                         console.log('antes del error?');
-                        // Mostrar modal para ingresar número de WhatsApp
-                        if (result.pdf_base64) {
+                        // Mostrar modal para ingresar número de WhatsApp solo si hay PDF
+                        if (result.pdf_base64 && !result.requiere_aprobacion) {
                             $('#modalEnviarWhatsapp').modal('show'); // ✅ Se abre el modal solo si hay PDF
                             // Guardar el link del PDF en localStorage para compartirlo
                             localStorage.setItem('pdfBase64', result.pdf_base64);
@@ -1092,7 +1108,6 @@ $id_conductor = $_GET['id'] ?? null;
                 <button class="omit" onclick="omitir()">Omitir</button>
             </div>
         </div>
-
 
 </body>
 

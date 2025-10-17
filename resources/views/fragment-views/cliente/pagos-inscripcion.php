@@ -28,6 +28,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             style="background-color: black; padding: 10px;">
     </div> -->
     <div id="reportes" class="content text-center">
+    <div id="contenedorBotonPendientesInscripcion" class="boton-pendientes-flotante">
+        <button id="btnPagosPendientesInscripcion" onclick="verPagosPendientesInscripcion()">
+            <i class="fa fa-bell"></i> Pagos Pendientes
+            <span id="notificacionPendientesInscripcion" class="badge-notificacion" style="display: none;">0</span>
+        </button>
+    </div>
+
     <h3 class="mb-4">REPORTES DE PAGOS DE INSCRIPCIÓN</h3>
     
     <!-- NUEVO: Filtro por fechas -->
@@ -1148,4 +1155,486 @@ $(document).ready(function () {
         }
     });
 });
+</script>
+
+<!-
+- Modal de Gestión de Pagos Pendientes de Inscripción -->
+<div class="modal fade" id="modalGestionPagosInscripcion" tabindex="-1" aria-labelledby="modalGestionPagosInscripcionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalGestionPagosInscripcionLabel">Gestión de Pagos de Inscripción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loader -->
+                <div id="loaderModalInscripcion" style="display: none; text-align: center;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+                
+                <!-- Contenido de Tabs -->
+                <div id="contenidoTablasInscripcion">
+                    <ul class="nav nav-tabs" id="tabsInscripcion" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="pendientes-inscripcion-tab" data-bs-toggle="tab" data-bs-target="#pendientes-inscripcion" type="button" role="tab">Pagos Pendientes</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rechazados-inscripcion-tab" data-bs-toggle="tab" data-bs-target="#rechazados-inscripcion" type="button" role="tab">Pagos Rechazados</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="tabContentInscripcion">
+                        <!-- Tab Pagos Pendientes -->
+                        <div class="tab-pane fade show active" id="pendientes-inscripcion" role="tabpanel">
+                            <div class="table-responsive mt-3">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Conductor/Cliente</th>
+                                            <th>Documento</th>
+                                            <th>Tipo</th>
+                                            <th>Monto</th>
+                                            <th>Asesor</th>
+                                            <th>Fecha Solicitud</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoTablaPendientesInscripcion">
+                                        <!-- Se llenará con JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab Pagos Rechazados -->
+                        <div class="tab-pane fade" id="rechazados-inscripcion" role="tabpanel">
+                            <div class="table-responsive mt-3">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Conductor/Cliente</th>
+                                            <th>Documento</th>
+                                            <th>Tipo</th>
+                                            <th>Monto</th>
+                                            <th>Asesor</th>
+                                            <th>Fecha Rechazo</th>
+                                            <th>Observaciones</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cuerpoTablaRechazadosInscripcion">
+                                        <!-- Se llenará con JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variable de rol del usuario
+    const ROL_USUARIO = <?php echo json_encode($rol_usuario); ?>;
+
+    // Función para ver pagos pendientes de inscripción
+    function verPagosPendientesInscripcion() {
+        $('#modalGestionPagosInscripcion').modal('show');
+        $('#loaderModalInscripcion').show();
+        $('#contenidoTablasInscripcion').hide();
+        
+        cargarPagosPendientesInscripcion();
+        cargarPagosRechazadosInscripcion();
+    }
+
+    // Cargar pagos pendientes
+    function cargarPagosPendientesInscripcion() {
+        $.ajax({
+            url: '/arequipago/listarPagosPendientesInscripcion',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                $('#loaderModalInscripcion').hide();
+                $('#contenidoTablasInscripcion').show();
+                
+                if (response.success) {
+                    mostrarPagosPendientesInscripcion(response.data);
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            },
+            error: function() {
+                $('#loaderModalInscripcion').hide();
+                Swal.fire('Error', 'No se pudieron cargar los pagos pendientes', 'error');
+            }
+        });
+    }
+
+    // Cargar pagos rechazados
+    function cargarPagosRechazadosInscripcion() {
+        $.ajax({
+            url: '/arequipago/listarPagosRechazadosInscripcion',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    mostrarPagosRechazadosInscripcion(response.data);
+                }
+            }
+        });
+    }
+
+    // Mostrar pagos pendientes en la tabla
+    function mostrarPagosPendientesInscripcion(pagos) {
+        const tbody = $('#cuerpoTablaPendientesInscripcion');
+        tbody.empty();
+        
+        if (pagos.length === 0) {
+            tbody.append('<tr><td colspan="7" class="text-center">No hay pagos pendientes</td></tr>');
+            return;
+        }
+        
+        pagos.forEach(pago => {
+            const observaciones = JSON.parse(pago.observaciones || '{}');
+            const nombreCompleto = `${pago.cliente_nombres || ''} ${pago.cliente_apellidos || ''}`.trim();
+            const asesor = `${pago.usuario_nombres || ''} ${pago.usuario_apellidos || ''}`.trim();
+            
+            let acciones = '';
+            if (ROL_USUARIO == 3) {
+                acciones = `
+                    <button class="btn btn-info btn-sm" onclick="verDetallesPagoInscripcion(${pago.id})">
+                        <i class="fa fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="aprobarPagoInscripcion(${pago.id})">
+                        <i class="fa fa-check"></i> Aprobar
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="rechazarPagoInscripcion(${pago.id})">
+                        <i class="fa fa-times"></i> Rechazar
+                    </button>
+                `;
+            } else {
+                acciones = `
+                    <button class="btn btn-info btn-sm" onclick="verDetallesPagoInscripcion(${pago.id})">
+                        <i class="fa fa-eye"></i> Ver Detalles
+                    </button>
+                `;
+            }
+            
+            tbody.append(`
+                <tr>
+                    <td>${nombreCompleto || 'N/A'}</td>
+                    <td>${pago.cliente_documento || 'N/A'}</td>
+                    <td>${pago.tipo_inscripcion}</td>
+                    <td>S/ ${observaciones.monto_pago || '0.00'}</td>
+                    <td>${asesor}</td>
+                    <td>${pago.fecha_registro}</td>
+                    <td>${acciones}</td>
+                </tr>
+            `);
+        });
+    }
+
+    // Mostrar pagos rechazados en la tabla
+    function mostrarPagosRechazadosInscripcion(pagos) {
+        const tbody = $('#cuerpoTablaRechazadosInscripcion');
+        tbody.empty();
+        
+        if (pagos.length === 0) {
+            tbody.append('<tr><td colspan="8" class="text-center">No hay pagos rechazados</td></tr>');
+            return;
+        }
+        
+        pagos.forEach(pago => {
+            const observaciones = JSON.parse(pago.observaciones || '{}');
+            const nombreCompleto = `${pago.cliente_nombres || ''} ${pago.cliente_apellidos || ''}`.trim();
+            const asesor = `${pago.usuario_nombres || ''} ${pago.usuario_apellidos || ''}`.trim();
+            
+            let acciones = '';
+            if (ROL_USUARIO == 3) {
+                acciones = `
+                    <button class="btn btn-info btn-sm" onclick="verDetallesPagoInscripcion(${pago.id})">
+                        <i class="fa fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="reactivarPagoInscripcion(${pago.id})">
+                        <i class="fa fa-redo"></i> Reactivar
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="eliminarPagoInscripcion(${pago.id})">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+            } else {
+                acciones = `
+                    <button class="btn btn-info btn-sm" onclick="verDetallesPagoInscripcion(${pago.id})">
+                        <i class="fa fa-eye"></i> Ver Detalles
+                    </button>
+                `;
+            }
+            
+            tbody.append(`
+                <tr>
+                    <td>${nombreCompleto || 'N/A'}</td>
+                    <td>${pago.cliente_documento || 'N/A'}</td>
+                    <td>${pago.tipo_inscripcion}</td>
+                    <td>S/ ${observaciones.monto_pago || '0.00'}</td>
+                    <td>${asesor}</td>
+                    <td>${pago.fecha_aprobacion || 'N/A'}</td>
+                    <td>${observaciones.motivo_rechazo || 'Sin observaciones'}</td>
+                    <td>${acciones}</td>
+                </tr>
+            `);
+        });
+    }
+
+    // Ver detalles del pago
+    function verDetallesPagoInscripcion(id) {
+        $.ajax({
+            url: '/arequipago/listarPagosPendientesInscripcion',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    const pago = response.data.find(p => p.id == id);
+                    if (!pago) {
+                        // Buscar en rechazados
+                        $.ajax({
+                            url: '/arequipago/listarPagosRechazadosInscripcion',
+                            type: 'GET',
+                            dataType: 'json',
+                            success: function(responseRechazados) {
+                                if (responseRechazados.success) {
+                                    const pagoRechazado = responseRechazados.data.find(p => p.id == id);
+                                    if (pagoRechazado) {
+                                        mostrarDetallesPago(pagoRechazado);
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        mostrarDetallesPago(pago);
+                    }
+                }
+            }
+        });
+    }
+
+    function mostrarDetallesPago(pago) {
+        const observaciones = JSON.parse(pago.observaciones || '{}');
+        const nombreCompleto = `${pago.cliente_nombres || ''} ${pago.cliente_apellidos || ''}`.trim();
+        const asesor = `${pago.usuario_nombres || ''} ${pago.usuario_apellidos || ''}`.trim();
+        
+        let detallesHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Conductor/Cliente:</strong> ${nombreCompleto}</p>
+                    <p><strong>Documento:</strong> ${pago.cliente_documento || 'N/A'}</p>
+                    <p><strong>Tipo:</strong> ${pago.tipo_inscripcion}</p>
+                    <p><strong>Tipo de Pago:</strong> ${observaciones.tipo_pago || 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Monto Total:</strong> S/ ${observaciones.monto_pago || '0.00'}</p>
+                    <p><strong>Asesor:</strong> ${asesor}</p>
+                    <p><strong>Fecha Registro:</strong> ${pago.fecha_registro}</p>
+                    <p><strong>Estado:</strong> ${pago.estado}</p>
+                </div>
+            </div>
+        `;
+        
+        if (observaciones.tipo_pago === 'financiado') {
+            detallesHTML += `
+                <hr>
+                <h6>Detalles del Financiamiento</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Monto Inicial:</strong> S/ ${observaciones.monto_inicial || '0.00'}</p>
+                        <p><strong>Número de Cuotas:</strong> ${observaciones.numero_cuotas || 'N/A'}</p>
+                        <p><strong>Monto por Cuota:</strong> S/ ${observaciones.monto_cuota || '0.00'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tasa de Interés:</strong> ${observaciones.tasa_interes || '0'}%</p>
+                        <p><strong>Frecuencia de Pago:</strong> ${observaciones.frecuencia_pago || 'N/A'}</p>
+                        <p><strong>Fecha Inicio:</strong> ${observaciones.fecha_inicio || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (pago.estado === 'rechazado' && observaciones.motivo_rechazo) {
+            detallesHTML += `
+                <hr>
+                <p><strong>Motivo de Rechazo:</strong> ${observaciones.motivo_rechazo}</p>
+            `;
+        }
+        
+        Swal.fire({
+            title: 'Detalles del Pago',
+            html: detallesHTML,
+            width: '800px',
+            confirmButtonText: 'Cerrar'
+        });
+    }
+
+    // Aprobar pago
+    function aprobarPagoInscripcion(id) {
+        Swal.fire({
+            title: '¿Aprobar este pago?',
+            text: 'El pago será procesado y registrado definitivamente',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aprobar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/arequipago/aprobarPagoInscripcion',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: id }),
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire('Aprobado', response.message, 'success');
+                            cargarPagosPendientesInscripcion();
+                            actualizarContadorPendientesInscripcion();
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'No se pudo aprobar el pago', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Rechazar pago
+    function rechazarPagoInscripcion(id) {
+        Swal.fire({
+            title: '¿Rechazar este pago?',
+            text: 'Esta acción marcará el pago como rechazado',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, rechazar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/arequipago/rechazarPagoInscripcion',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ 
+                        id: id,
+                        observaciones: 'Pago rechazado'
+                    }),
+                    success: function(response) {
+                        console.log('Response rechazo:', response);
+                        if (response && response.success) {
+                            Swal.fire('Rechazado', response.message || 'Pago rechazado correctamente', 'success');
+                            cargarPagosPendientesInscripcion();
+                            cargarPagosRechazadosInscripcion();
+                            actualizarContadorPendientesInscripcion();
+                        } else {
+                            Swal.fire('Error', response.message || 'Error al rechazar el pago', 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'No se pudo rechazar el pago', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Reactivar pago
+    function reactivarPagoInscripcion(id) {
+        Swal.fire({
+            title: '¿Reactivar este pago?',
+            text: 'El pago volverá a estado pendiente',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, reactivar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/arequipago/reactivarPagoInscripcion',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: id }),
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire('Reactivado', response.message, 'success');
+                            cargarPagosPendientesInscripcion();
+                            cargarPagosRechazadosInscripcion();
+                            actualizarContadorPendientesInscripcion();
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'No se pudo reactivar el pago', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Eliminar pago
+    function eliminarPagoInscripcion(id) {
+        Swal.fire({
+            title: '¿Eliminar este pago?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/arequipago/eliminarPagoInscripcion',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: id }),
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire('Eliminado', response.message, 'success');
+                            cargarPagosPendientesInscripcion();
+                            cargarPagosRechazadosInscripcion();
+                            actualizarContadorPendientesInscripcion();
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire('Error', 'No se pudo eliminar el pago', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    // Actualizar contador de pendientes
+    function actualizarContadorPendientesInscripcion() {
+        $.ajax({
+            url: '/arequipago/contarPagosPendientesInscripcion',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.total > 0) {
+                    $('#notificacionPendientesInscripcion').text(response.total).show();
+                } else {
+                    $('#notificacionPendientesInscripcion').hide();
+                }
+            }
+        });
+    }
+
+    // Cargar contador al iniciar (agregar al document.ready existente)
+    $(document).ready(function() {
+        actualizarContadorPendientesInscripcion();
+    });
 </script>

@@ -582,6 +582,8 @@ public function guardarCliente($datos)
         
         $stmt = $this->conectar->prepare($query);
         if (!$stmt) {
+            error_log("Error al preparar query: " . $this->conectar->error);
+            $this->conectar->rollback();
             return false;
         }
         
@@ -621,11 +623,15 @@ public function guardarCliente($datos)
         );
         
         if (!$bindResult) {
+            error_log("Error al hacer bind_param: " . $stmt->error);
+            $this->conectar->rollback();
             return false;
         }
         
         $executeResult = $stmt->execute();
         if (!$executeResult) {
+            error_log("Error al ejecutar query: " . $stmt->error);
+            $this->conectar->rollback();
             return false;
         }
         
@@ -640,6 +646,7 @@ public function guardarCliente($datos)
     } catch (Exception $e) {
         // Revertir transacción en caso de error
         $this->conectar->rollback();
+        error_log("Excepción al guardar cliente: " . $e->getMessage());
         
         return false;
     }
