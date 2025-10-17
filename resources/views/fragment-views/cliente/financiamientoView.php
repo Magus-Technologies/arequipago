@@ -767,34 +767,58 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                 Financiamiento</h6>
                                         </div>
                                         <div class="card-body">
-                                            <div class="row mb-4">
-                                                <div class="col-md-4 mb-3 d-flex align-items-end">
-                                                    <div style="flex: 1;">
-                                                        <label for="grupo" class="form-label">Grupo de
-                                                            Financiamiento</label>
-                                                        <div class="input-group glow-effect-wrapper">
-                                                            <!-- Cambiado: Agregado div envolvente -->
-                                                            <span class="input-group-text"><i
-                                                                    class="fas fa-layer-group"></i></span>
-                                                            <select class="form-select" id="grupo" required
-                                                                onchange="checkSelection()">
-                                                                <option value="">Seleccione un grupo</option>
-                                                                <option value="Vehicular">Vehicular</option>
-                                                                <option value="Hipotecario">Hipotecario</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
+                                     <div class="row mb-4">
+   <div class="col-md-4 mb-3 d-flex align-items-end">
+    <div style="flex: 1;">
+        <label for="grupo" class="form-label">Grupo de
+            Financiamiento</label>
+        <div class="input-group glow-effect-wrapper">
+            <!-- Cambiado: Agregado div envolvente -->
+            <span class="input-group-text"><i
+                    class="fas fa-layer-group"></i></span>
+            <select class="form-select" id="grupo" required
+                onchange="checkSelection()">
+                <option value="">Seleccione un grupo</option>
+                <option value="Vehicular">Vehicular</option>
+                <option value="Hipotecario">Hipotecario</option>
+            </select>
+        </div>
+    </div>
 
-                                                    <!-- Ícono de información con Tooltip -->
-                                                    <span class="input-group-text tooltip-icon" id="info-tooltip-grupo"
-                                                        onclick="openToolTipGrupo()"
-                                                        title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
-                                                        <i class="fas fa-info-circle"></i>
-                                                    </span>
-                                                </div>
+    <!-- Ícono de información con Tooltip -->
+    <span class="input-group-text tooltip-icon" id="info-tooltip-grupo"
+        onclick="openToolTipGrupo()"
+        title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
+        <i class="fas fa-info-circle"></i>
+    </span>
+</div>
+
+<!-- NUEVO: Campo para nombre personalizado - AL LADO del select y ALINEADO -->
+<div class="col-md-8 mb-3" id="nombrePersonalizadoContainer" style="display: none;">
+
+    <div style="flex: 1;">
+        <label for="nombrePersonalizado" class="form-label">
+            <i class="fas fa-edit me-2"></i>Nombre del Plan Personalizado 
+            <span class="text-danger">*</span>
+        </label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-signature"></i></span>
+            <input type="text" class="form-control" id="nombrePersonalizado" 
+                   placeholder="Ej: Plan Especial Juan Pérez - Celular Samsung" 
+                   maxlength="100">
+        </div>
+    </div>
+</div>
+
+
+                                            </div>
+
+                                            <div class="row mb-4">
+
                                                 
                                                 <!-- Campo de verificación domiciliaria - solo para financiamientos vehiculares -->
                                                 <div class="col-md-6 mb-3" id="contenedorVerificacionDomiciliaria" style="display: none;">
+
                                                     <label for="verificacionDomiciliaria" class="form-label">¿Se ha verificado el domicilio?</label>
                                                     <div class="d-flex gap-4">
                                                         <div class="form-check">

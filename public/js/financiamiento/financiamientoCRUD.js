@@ -29,6 +29,20 @@ function saveFinanciamiento(event) {
   const codigoAsociado = $("#codigoAsociado").val();
   const grupoFinanciamiento = $("#grupo").val();
   const cantidadProducto = $("#cantidad").val();
+
+    // NUEVO: Obtener nombre personalizado si es plan editable
+  let nombrePersonalizado = null;
+  if (grupoFinanciamiento === "42" || grupoFinanciamiento === 42) {
+    nombrePersonalizado = $("#nombrePersonalizado").val().trim();
+    
+    // Validar que no esté vacío para plan editable
+    if (!nombrePersonalizado) {
+      Swal.fire("Error", "Debe ingresar un nombre para el plan personalizado.", "error");
+      return;
+    }
+  }
+
+
   let montoTotal = $("#monto").val(); // Obtenemos el valor del monto total
   const Frecuencia = $("#frecuenciaPago").val();
   let plan_telefono = $("#plan").val();
@@ -230,6 +244,7 @@ function saveFinanciamiento(event) {
         monto_cuota: valorCuota, // NUEVO: Agregar monto_cuota para planes personalizados
         codigo_asociado: codigoAsociado,
         grupo_financiamiento: grupoFinanciamiento,
+        nombre_personalizado: nombrePersonalizado,
         cantidad_producto: cantidadProducto,
         monto_total: montoTotal,
         monto_inscrip: montoInscrip,
@@ -320,6 +335,7 @@ function saveFinanciamiento(event) {
             valorCuota: valorCuota,
             codigo_asociado: codigoAsociado,
             grupo_financiamiento: grupoFinanciamiento,
+            nombre_personalizado: nombrePersonalizado,
             cantidad_producto: cantidadProducto,
             monto_total: montoTotal,
             monto_inscrip: montoInscrip,

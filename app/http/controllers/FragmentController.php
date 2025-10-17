@@ -235,5 +235,9 @@ class FragmentController extends Controller
     {
         return $this->view("fragment-views/soporte/tickets");
     }
+    public function viewVehiculos()
+    {
+        return $this->view("fragment-views/cliente/vehiculos-list");
+    }
         
 }

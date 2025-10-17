@@ -245,14 +245,74 @@ class PuntajeCrediticioController extends Controller
         }
     }
 
+    // Restablecer puntaje de un cliente específico a 100
+    public function restablecerPuntajeIndividual()
+    {
+        try {
+            header('Content-Type: application/json');
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Método no permitido");
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            $tipo = $input['tipo'] ?? '';
+            $id = $input['id'] ?? 0;
+
+            if (empty($tipo) || !in_array($tipo, ['cliente', 'conductor']) || !$id) {
+                throw new Exception("Parámetros inválidos");
+            }
+
+            // Obtener puntaje anterior
+            $puntajeAnterior = $this->obtenerPuntajeActual($tipo, $id);
+
+            // Restablecer puntaje a 100
+            $resultado = $this->puntajeModel->restablecerPuntajeIndividual($tipo, $id);
+
+            if (!$resultado['success']) {
+                throw new Exception($resultado['message']);
+            }
+
+            // Registrar en historial
+            $puntajeCrediticioId = $resultado['puntaje_crediticio_id'];
+            $motivo = "Restablecimiento manual del puntaje a 100 por acción administrativa";
+
+            $this->puntajeModel->registrarHistorialPuntaje(
+                $puntajeCrediticioId,
+                $puntajeAnterior,
+                100, // Puntaje nuevo
+                0,   // No hay puntos perdidos en un restablecimiento
+                $motivo
+            );
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Puntaje restablecido correctamente a 100 puntos',
+                'data' => [
+                    'puntaje_anterior' => $puntajeAnterior,
+                    'puntaje_nuevo' => 100,
+                    'retrasos_eliminados' => $resultado['retrasos_eliminados']
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     // Obtener resumen por rangos de puntaje
     public function obtenerResumenRangos()
     {
         try {
             header('Content-Type: application/json');
-            
+
             $resumen = $this->puntajeModel->obtenerResumenPorRangos();
-            
+
             echo json_encode([
                 'success' => true,
                 'data' => $resumen
