@@ -1638,6 +1638,12 @@ class FinanciamientoController extends Controller
                 $financiamiento['producto'] = $producto;
             }
             
+            // Obtener información del usuario que creó el financiamiento
+            if (!empty($financiamiento['usuario_id'])) {
+                $nombreUsuario = $this->financiamientoModel->obtenerUsuarioPorId($financiamiento['usuario_id']);
+                $financiamiento['usuario_creador'] = $nombreUsuario;
+            }
+            
             // Enviar respuesta JSON
             header('Content-Type: application/json');
             echo json_encode($financiamiento);

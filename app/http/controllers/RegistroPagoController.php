@@ -9,6 +9,7 @@ require_once "app/models/Usuario.php";
 require_once "app/models/PagoInscripcion.php";
 require_once 'app/models/Comision.php';
 require_once "app/models/Vehiculo.php";
+require_once "app/models/PagosPendientesInscripcion.php";
 
 use Mpdf\Mpdf;
 
@@ -36,11 +37,75 @@ class RegistroPagoController extends Controller
         $monto_pago = $data['monto_pago'];
         $monto_inicial = isset($data['monto_inicial']) ? $data['monto_inicial'] : null;
 
+        // Verificar el rol del usuario
+        $rol_usuario = $_SESSION['id_rol'] ?? null;
+        $requiere_aprobacion = ($rol_usuario == 1 || $rol_usuario == 2);
+
         $conductorPagoModel = new ConductorPagoModel();
 
         // Verificar si ya existe un registro para este conductor
         if ($conductorPagoModel->existeRegistro($id_conductor)) {
             echo json_encode(['success' => false, 'message' => 'Ya existe un registro de pago para este conductor']);
+            return;
+        }
+
+        // Si requiere aprobación (rol 1 o 2), registrar como pendiente
+        if ($requiere_aprobacion) {
+            $pagosPendientesModel = new PagosPendientesInscripcion();
+            $id_usuario_registro = $_SESSION['usuario_id'];
+            
+            // Preparar datos para registro pendiente
+            $cuotas_json = null;
+            if ($tipo_pago == 'financiado' && isset($data['cuotas']) && isset($data['fechas_vencimiento'])) {
+                $cuotas_array = [];
+                foreach ($data['cuotas'] as $index => $monto_cuota) {
+                    $cuotas_array[] = [
+                        'numero_cuota' => $index + 1,
+                        'monto' => $monto_cuota,
+                        'fecha_vencimiento' => $data['fechas_vencimiento'][$index],
+                        'monto_inicial' => $monto_inicial
+                    ];
+                }
+                $cuotas_json = json_encode($cuotas_array);
+            }
+            
+            // Crear observaciones con los datos del pago
+            $fecha_fin = null;
+            if (isset($data['fechas_vencimiento']) && is_array($data['fechas_vencimiento']) && count($data['fechas_vencimiento']) > 0) {
+                $fecha_fin = end($data['fechas_vencimiento']);
+            }
+            
+            $observaciones = json_encode([
+                'id_conductor' => $id_conductor,
+                'tipo_pago' => $tipo_pago,
+                'monto_pago' => $monto_pago,
+                'monto_inicial' => $monto_inicial,
+                'numero_cuotas' => $data['numero_cuotas'] ?? null,
+                'frecuencia_pago' => $data['frecuencia_pago'] ?? null,
+                'fecha_inicio' => isset($data['fechas_vencimiento'][0]) ? $data['fechas_vencimiento'][0] : null,
+                'fecha_fin' => $fecha_fin,
+                'monto_cuota' => $data['monto_cuota'] ?? null,
+                'tasa_interes' => $data['tasa_interes'] ?? null
+            ]);
+            
+            $id_pendiente = $pagosPendientesModel->registrarPagoPendiente(
+                'conductor',
+                null,
+                null,
+                $cuotas_json,
+                $id_usuario_registro,
+                $observaciones
+            );
+            
+            if ($id_pendiente) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Pago registrado como pendiente. Debe ser aprobado por un director.',
+                    'requiere_aprobacion' => true
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al registrar el pago pendiente']);
+            }
             return;
         }
 

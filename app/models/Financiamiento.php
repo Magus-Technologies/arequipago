@@ -1346,6 +1346,45 @@
         return (int)$fila['total'];
     }
 
+    // Función para obtener el nombre del usuario que creó el financiamiento
+    public function obtenerUsuarioPorId($usuario_id) {
+        try {
+            if (!$usuario_id) {
+                return null;
+            }
+
+            $sql = "SELECT nombres, apellidos FROM usuarios WHERE usuario_id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            
+            if ($stmt === false) {
+                throw new Exception("Error en prepare: " . $this->conectar->error);
+            }
+
+            $stmt->bind_param("i", $usuario_id);
+            
+            if (!$stmt->execute()) {
+                throw new Exception("Error en execute: " . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $usuario = $result->fetch_assoc();
+            
+            if ($usuario) {
+                // Concatenar nombres y apellidos, si apellidos es null solo devolver nombres
+                if (!empty($usuario['apellidos'])) {
+                    return trim($usuario['nombres'] . ' ' . $usuario['apellidos']);
+                } else {
+                    return trim($usuario['nombres']);
+                }
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            error_log("Error en obtenerUsuarioPorId: " . $e->getMessage());
+            return null;
+        }
+    }
+
     // Función para obtener financiamientos eliminados (papelera)
     public function getFinanciamientosEliminados() {
         try {
