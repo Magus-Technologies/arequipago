@@ -243,6 +243,18 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                                     GRUPOS FINANCIAMIENTO
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" onclick=""href="/arequipago/cotizaciones">
+                                    <i class="fas fa-piggy-bank"></i>
+                                    COTIZACIONES
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" onclick=""href="/arequipago/vehiculos">
+                                    <i class="fas fa-piggy-bank"></i>
+                                    VEHICULOS
+                                </a>
+                            </li>
 
                             <?php if ($id_rol == 3): ?>
                                 <li class="nav-item">

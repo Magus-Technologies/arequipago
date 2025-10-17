@@ -57,12 +57,20 @@ class PuntajeCrediticioModel
 
             if (!empty($filtros['busqueda'])) {
                 $whereConditions[] = "(
-                    (pc.tipo_cliente = 'cliente' AND CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) LIKE ?) OR
-                    (pc.tipo_cliente = 'conductor' AND CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ?)
+                    (pc.tipo_cliente = 'cliente' AND (
+                        CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) LIKE ? OR
+                        cf.n_documento LIKE ?
+                    )) OR
+                    (pc.tipo_cliente = 'conductor' AND (
+                        CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ? OR
+                        c.nro_documento LIKE ?
+                    ))
                 )";
                 $searchTerm = '%' . $filtros['busqueda'] . '%';
-                $whereValues[] = $searchTerm;
-                $whereValues[] = $searchTerm;
+                $whereValues[] = $searchTerm; // nombre cliente
+                $whereValues[] = $searchTerm; // documento cliente
+                $whereValues[] = $searchTerm; // nombre conductor
+                $whereValues[] = $searchTerm; // documento conductor
             }
 
             if (!empty($filtros['rango'])) {
@@ -571,6 +579,69 @@ mysqli_stmt_close($stmt);
 
         } catch (Exception $e) {
             throw new Exception("Error al actualizar puntaje crediticio: " . $e->getMessage());
+        }
+    }
+
+    // Restablecer puntaje de un cliente/conductor a 100
+    public function restablecerPuntajeIndividual($tipo, $id)
+    {
+        try {
+            $campoId = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
+
+            // Verificar si existe un registro
+            $sqlExiste = "SELECT id, puntaje_actual, total_retrasos FROM puntaje_crediticio WHERE tipo_cliente = ? AND $campoId = ?";
+            $stmt = mysqli_prepare($this->conexion, $sqlExiste);
+            mysqli_stmt_bind_param($stmt, 'si', $tipo, $id);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $existeRegistro = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$existeRegistro) {
+                // Si no existe registro, crear uno nuevo con puntaje 100
+                $sqlInsert = "INSERT INTO puntaje_crediticio
+                             (tipo_cliente, $campoId, puntaje_actual, total_financiamientos, total_retrasos)
+                             VALUES (?, ?, 100, 0, 0)";
+
+                $stmt = mysqli_prepare($this->conexion, $sqlInsert);
+                mysqli_stmt_bind_param($stmt, 'si', $tipo, $id);
+                mysqli_stmt_execute($stmt);
+                $nuevoId = mysqli_insert_id($this->conexion);
+                mysqli_stmt_close($stmt);
+
+                return [
+                    'success' => true,
+                    'puntaje_crediticio_id' => $nuevoId,
+                    'retrasos_eliminados' => 0
+                ];
+            }
+
+            // Guardar cantidad de retrasos antes de resetear
+            $retrasosEliminados = $existeRegistro['total_retrasos'];
+
+            // Actualizar registro existente: resetear a 100 y eliminar retrasos
+            $sqlUpdate = "UPDATE puntaje_crediticio
+                         SET puntaje_actual = 100,
+                             total_retrasos = 0,
+                             fecha_actualizacion = CURRENT_TIMESTAMP
+                         WHERE id = ?";
+
+            $stmt = mysqli_prepare($this->conexion, $sqlUpdate);
+            mysqli_stmt_bind_param($stmt, 'i', $existeRegistro['id']);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+            return [
+                'success' => true,
+                'puntaje_crediticio_id' => $existeRegistro['id'],
+                'retrasos_eliminados' => $retrasosEliminados
+            ];
+
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => "Error al restablecer puntaje: " . $e->getMessage()
+            ];
         }
     }
 

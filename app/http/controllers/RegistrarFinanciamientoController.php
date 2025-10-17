@@ -23,6 +23,12 @@ class RegistrarFinanciamientoController extends Controller
             $datos = $_POST;
             // Obtener valor de cobrar mora con valor por defecto
             $datos['cobrar_mora'] = isset($datos['cobrar_mora']) ? intval($datos['cobrar_mora']) : 1;
+
+                    // NUEVO: Obtener nombre personalizado si existe
+        $datos['nombre_personalizado'] = isset($datos['nombre_personalizado']) && !empty($datos['nombre_personalizado']) 
+            ? trim($datos['nombre_personalizado']) 
+            : null;
+
             // Obtener valor de verificación domiciliaria
             $verificacion_domiciliaria = isset($datos['verificacion_domiciliaria']) ? intval($datos['verificacion_domiciliaria']) : null;
 
@@ -368,7 +374,10 @@ foreach ($camposRequeridos as $campo) {
             'usuario_id' => $usuario_id,
             // 💥 Modificado: Agregar aprobado al array de datos
             'aprobado' => $aprobado,
-            'cobrar_mora' => $cobrar_mora
+            'cobrar_mora' => $cobrar_mora,
+             'nombre_personalizado' => isset($_POST['nombre_personalizado']) && !empty($_POST['nombre_personalizado']) 
+        ? trim($_POST['nombre_personalizado']) 
+        : null
         ];
     
         // ⏩ Modificado: Comprobar si conexión está disponible

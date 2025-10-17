@@ -36,18 +36,18 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
     <div class="container mt-4">
         <ul class="nav nav-tabs" id="financiamientoTabs">
             <li class="nav-item">
-                <a class="nav-link active tab-button-active" data-bs-toggle="tab" href="#planFinanciamiento">
+                <a class="nav-link" data-bs-toggle="tab" href="#planFinanciamiento">
                     <i class="fas fa-file-invoice-dollar me-2"></i>Grupo Financiamiento
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#asociarProducto">
+                <a class="nav-link active tab-button-active" data-bs-toggle="tab" href="#asociarProducto">
                     <i class="fas fa-list me-2"></i>Ver Grupos
                 </a>
             </li>
         </ul>
         <div class="tab-content mt-3">
-            <div class="tab-pane fade show active" id="planFinanciamiento">
+            <div class="tab-pane fade" id="planFinanciamiento">
 
                 <!-- Agregar al final del body -->
                 <div class="modal fade" id="modalVariante" tabindex="-1" aria-labelledby="modalVarianteLabel"
@@ -386,23 +386,22 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="asociarProducto">
+            <div class="tab-pane fade show active" id="asociarProducto">
                 <div class="form-section">
                     <h5 class="mb-3">
                         <i class="fas fa-layer-group me-2"></i>Lista de Grupos de Financiamiento
                     </h5>
                     <div class="table-responsive">
-                        <table id="tablaGrupos" class="table table-striped table-bordered">
-                            <thead class="table-dark">
+                        <table id="tablaGrupos" class="table table-striped table-bordered text-center">
+                            <thead style="background-color: #fcf34b; color: #000;">
                                 <tr>
-
                                     <th><i class="fas fa-file-invoice-dollar me-1"></i>Grupo de Financiamiento</th>
                                     <th><i class="fas fa-hand-holding-usd me-1"></i>Cuota Inicial</th>
                                     <th><i class="fas fa-money-bill-wave me-1"></i>Monto de Cuota</th>
                                     <th><i class="fas fa-list-ol me-1"></i>Cantidad de Cuotas</th>
                                     <th><i class="fas fa-calendar-alt me-1"></i>Frecuencia de Pago</th>
                                     <th><i class="fas fa-coins me-1"></i>Moneda</th>
-                                    <th><i class="fas fa-coins me-1"></i>Monto</th> <!-- 🔹 Nueva columna Monto -->
+                                    <th><i class="fas fa-coins me-1"></i>Monto</th>
                                     <th><i class="fas fa-coins me-1"></i>Monto S/Int.</th>
                                     <th><i class="fas fa-percentage me-1"></i>Tasa de Interés</th>
                                     <th><i class="fas fa-calendar-day me-1"></i>Fecha de Inicio</th>

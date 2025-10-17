@@ -1464,56 +1464,69 @@ class GenerarContratosController extends controller
     {
         $vehiculo = [];
 
-        // PRIMERO: Intentar obtener datos del vehículo físico si es un conductor
-        if (!empty($financiamiento['id_conductor'])) {
-            $vehiculoModel = new Vehiculo();
-            $datosVehiculoFisico = $vehiculoModel->obtenerDatosVehiculo($financiamiento['id_conductor']);
-
-            if ($datosVehiculoFisico) {
-                // Si encontró vehículo físico, usar sus datos
-                $vehiculo['marca'] = $datosVehiculoFisico['marca'] ?? null;
-                $vehiculo['modelo'] = $datosVehiculoFisico['modelo'] ?? null;
-                $vehiculo['placa'] = $datosVehiculoFisico['placa'] ?? null;
-                $vehiculo['color'] = $datosVehiculoFisico['color'] ?? null;
-                $vehiculo['anio'] = $datosVehiculoFisico['anio'] ?? null;
-                // Nota: numero_chasis se obtendrá de las características del producto si existe
-
-                // Obtener características del producto para el número de chasis
-                $caracteristicasModel = new CaracteristicaProducto();
-                $caracteristicas = $caracteristicasModel->obtenerCaracteristicas($financiamiento['idproductosv2']);
-
-                if ($caracteristicas && is_array($caracteristicas)) {
-                    foreach ($caracteristicas as $caract) {
-                        if ($caract['nombre_caracteristicas'] === 'chasis') {
-                            $vehiculo['numero_chasis'] = $caract['valor_caracteristica'];
-                            break;
-                        }
-                    }
-                }
-
-                return $vehiculo;
-            }
-        }
-
-        // SEGUNDO: Si no hay vehículo físico, intentar con características del producto
+        // Obtener SOLO los datos del producto del almacén (productosv2 y caracteristicas_producto)
+        // NO usar la tabla vehiculos porque esos son vehículos propios del conductor
         $financiamientoModel = new Financiamiento();
         $caracteristicasModel = new CaracteristicaProducto();
 
+        // Obtener el producto del almacén
         $producto = $financiamientoModel->obtenerProductoConCategoria($financiamiento['idproductosv2']);
 
         if (!$producto) {
             throw new Exception("Producto no encontrado con ID: " . $financiamiento['idproductosv2']);
         }
 
-        // Obtener características del producto
+        // Obtener características del producto del almacén
         $caracteristicas = $caracteristicasModel->obtenerCaracteristicas($financiamiento['idproductosv2']);
 
-        // Convertir características a array asociativo
+        // Agregar el nombre del producto
         $vehiculo['producto'] = $producto;
 
+        // Obtener marca y modelo directamente del producto (si existen)
+        if (isset($producto['marca']) && !empty($producto['marca'])) {
+            $vehiculo['marca'] = $producto['marca'];
+        }
+        if (isset($producto['modelo']) && !empty($producto['modelo'])) {
+            $vehiculo['modelo'] = $producto['modelo'];
+        }
+
+        // Convertir características a array asociativo
         if ($caracteristicas && is_array($caracteristicas)) {
             foreach ($caracteristicas as $caract) {
-                $vehiculo[$caract['nombre_caracteristicas']] = $caract['valor_caracteristica'];
+                $nombreCaract = strtolower($caract['nombre_caracteristicas']);
+
+                // Mapear nombres de características
+                switch ($nombreCaract) {
+                    case 'chasis':
+                        $vehiculo['numero_chasis'] = $caract['valor_caracteristica'];
+                        $vehiculo['chasis'] = $caract['valor_caracteristica'];
+                        break;
+                    case 'marca':
+                        // Solo sobrescribir si no hay marca en el producto
+                        if (!isset($vehiculo['marca'])) {
+                            $vehiculo['marca'] = $caract['valor_caracteristica'];
+                        }
+                        break;
+                    case 'modelo':
+                        // Solo sobrescribir si no hay modelo en el producto
+                        if (!isset($vehiculo['modelo'])) {
+                            $vehiculo['modelo'] = $caract['valor_caracteristica'];
+                        }
+                        break;
+                    case 'color':
+                        $vehiculo['color'] = $caract['valor_caracteristica'];
+                        break;
+                    case 'anio':
+                    case 'año':
+                        $vehiculo['anio'] = $caract['valor_caracteristica'];
+                        break;
+                    case 'placa':
+                        $vehiculo['placa'] = $caract['valor_caracteristica'];
+                        break;
+                    default:
+                        $vehiculo[$caract['nombre_caracteristicas']] = $caract['valor_caracteristica'];
+                        break;
+                }
             }
         }
 
@@ -1577,10 +1590,11 @@ class GenerarContratosController extends controller
         
         // Preparar datos para reemplazo
         $datos = [
-            // Datos del vehículo
+            // Datos del vehículo (producto del almacén)
+            'nombre_producto' => isset($vehiculo['producto']['nombre']) ? strtoupper($vehiculo['producto']['nombre']) : 'N/A',
             'marca' => $vehiculo['marca'] ?? 'N/A',
             'modelo' => $vehiculo['modelo'] ?? 'N/A',
-            'chasis' => $vehiculo['numero_chasis'] ?? 'N/A',
+            'chasis' => $vehiculo['numero_chasis'] ?? $vehiculo['chasis'] ?? 'N/A',
             'placa' => $vehiculo['placa'] ?? 'N/A',
             'color' => $vehiculo['color'] ?? 'N/A',
             'anio' => $vehiculo['anio'] ?? 'N/A',

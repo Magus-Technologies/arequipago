@@ -920,6 +920,87 @@ class Productov2
             throw $e;
         }
     }
-    
-    
+
+    /**
+     * Obtiene productos por categoría con sus características
+     * @param string $categoria Nombre de la categoría a filtrar
+     * @return array Array de productos con sus características
+     */
+    public function obtenerProductosPorCategoria($categoria)
+    {
+        try {
+            // Consulta para obtener productos por categoría
+            $sql = "SELECT
+                        p.idproductosv2,
+                        p.nombre,
+                        p.marca,
+                        p.modelo,
+                        p.codigo,
+                        p.cantidad,
+                        p.categoria,
+                        p.precio_venta,
+                        p.precio,
+                        p.ruc,
+                        p.razon_social,
+                        p.fecha_vencimiento,
+                        p.fecha_registro,
+                        p.tipo_producto,
+                        p.estado
+                    FROM productosv2 p
+                    WHERE LOWER(p.categoria) LIKE LOWER(?)
+                    AND p.estado = 1
+                    ORDER BY p.nombre ASC";
+
+            $stmt = $this->conectar->prepare($sql);
+            if (!$stmt) {
+                throw new Exception("Error al preparar la consulta: " . $this->conectar->error);
+            }
+
+            $categoriaParam = "%$categoria%";
+            $stmt->bind_param('s', $categoriaParam);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $productos = [];
+
+            // Obtener cada producto
+            while ($producto = $result->fetch_assoc()) {
+                // Obtener características del producto
+                $sqlCaracteristicas = "SELECT nombre_caracteristicas, valor_caracteristica
+                                        FROM caracteristicas_producto
+                                        WHERE idproductosv2 = ?";
+
+                $stmtCarac = $this->conectar->prepare($sqlCaracteristicas);
+                if (!$stmtCarac) {
+                    error_log("Error al preparar consulta de características: " . $this->conectar->error);
+                    continue;
+                }
+
+                $stmtCarac->bind_param('i', $producto['idproductosv2']);
+                $stmtCarac->execute();
+                $resultCarac = $stmtCarac->get_result();
+
+                // Agregar características como propiedades del producto
+                while ($caracteristica = $resultCarac->fetch_assoc()) {
+                    $nombreCarac = $caracteristica['nombre_caracteristicas'];
+                    $valorCarac = $caracteristica['valor_caracteristica'];
+
+                    // Agregar la característica al producto
+                    $producto[$nombreCarac] = $valorCarac;
+                }
+
+                $stmtCarac->close();
+                $productos[] = $producto;
+            }
+
+            $stmt->close();
+            return $productos;
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerProductosPorCategoria: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+
 }

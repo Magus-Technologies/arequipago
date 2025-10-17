@@ -176,9 +176,21 @@ class ProductosController extends Controller
         $precio_venta = $_POST['precio_venta']?? null;
         $moneda = $_POST['moneda'] ?? 'S/.';
         $descuento_cuota = $_POST['descuento_cuota'] ?? null;
-        
+
         $aro = $_POST['aro'] ?? null; // Nuevo campo: aro
         $perfil = $_POST['perfil'] ?? null; // Nuevo campo: perfil
+
+        // Campos opcionales: marca y modelo (pueden venir de producto general o de vehículo)
+        $marca = $_POST['marca_producto'] ?? $_POST['marca_vehiculo'] ?? null;
+        $modelo = $_POST['modelo_producto'] ?? $_POST['modelo_vehiculo'] ?? null;
+
+        // Campos específicos para vehículos (opcionales)
+        $vin = $_POST['vin_vehiculo'] ?? $_POST['vin'] ?? null;
+        $chasis = $_POST['chasis_vehiculo'] ?? $_POST['chasis'] ?? null;
+        $color = $_POST['color_vehiculo'] ?? $_POST['color'] ?? null;
+        $anio = $_POST['anio_vehiculo'] ?? $_POST['anio'] ?? null;
+        $placa = $_POST['placa_vehiculo'] ?? null;
+        $transmision = $_POST['transmision_vehiculo'] ?? null;
 
         // Generar código de barras automáticamente si no se proporciona uno (Nuevo cambio)
         $codigo_barra = null;
@@ -199,6 +211,8 @@ class ProductosController extends Controller
     
         $productoData = [
             'nombre' => $nombre,
+            'marca' => $marca,
+            'modelo' => $modelo,
             'tipo_producto' => $tipo_producto,
             'codigo' => $codigo,
             'cantidad_unidad' => $cantidad_unidad,
@@ -219,23 +233,31 @@ class ProductosController extends Controller
 
         // Ajustar para pasar datos en el orden correcto
         $idProducto = $productoModel->insertar( // Cambiado para capturar el ID del producto insertado
-            $productoData['nombre'], 
-            $productoData['codigo'], 
-            $productoData['cantidad'], 
-            $productoData['categoria'], 
-            $productoData['ruc'], 
-            $productoData['razon_social'], 
-            $productoData['fecha_vencimiento'], 
+            $productoData['nombre'],
+            $productoData['marca'],
+            $productoData['modelo'],
+            $productoData['codigo'],
+            $productoData['cantidad'],
+            $productoData['categoria'],
+            $productoData['ruc'],
+            $productoData['razon_social'],
+            $productoData['fecha_vencimiento'],
             $productoData['fecha_registro'],
-            $productoData['tipo_producto'], 
-            $productoData['cantidad_unidad'], 
-            $productoData['unidad_medida'], 
+            $productoData['tipo_producto'],
+            $productoData['cantidad_unidad'],
+            $productoData['unidad_medida'],
             $productoData['precio'],
             $productoData['guia_remision'],
-            $productoData['codigo_barra'], 
+            $productoData['codigo_barra'],
             $productoData['precio_venta'],
             $productoData['moneda'],
-            $productoData['descuento_cuota']
+            $productoData['descuento_cuota'],
+            $vin,
+            $chasis,
+            $color,
+            $anio,
+            $placa,
+            $transmision
         );
 
         // MODIFICADO: Verificar si la categoría es "celular" o "celulares" (sin importar mayúsculas, tildes, espacios o plural)
@@ -287,15 +309,17 @@ class ProductosController extends Controller
                 if ($operator){
                     $caracteristicas[] = ['nombre_caracteristica' => 'operadora', 'valor_caracteristica' => $operator];
                 }
-            } 
-             elseif (preg_match('/vehículo|vehiculos|vehiculos/i', $categoria)) { // Validar categoría 'Vehículo' (independiente de mayúsculas, tildes o plural) 
+            }
+             elseif (preg_match('/vehículo|vehiculos|vehiculos/i', $categoria)) { // Validar categoría 'Vehículo' (independiente de mayúsculas, tildes o plural)
                 $fecha_venc_soat = $_POST['fecha_venc_soat'] ?? null;
                 $fecha_venc_seguro = $_POST['fecha_venc_seguro'] ?? null;
                 $chasis = $_POST['chasis'] ?? null;
                 $vin = $_POST['vin'] ?? null;
                 $color = $_POST['color'] ?? null; // Agregado: Color para categoría Vehículo
-                $anio = $_POST['anio'] ?? null; 
-        
+                $anio = $_POST['anio'] ?? null;
+                $placa = $_POST['placa_vehiculo'] ?? null; // Agregado: Placa del vehículo
+                $transmision = $_POST['transmision_vehiculo'] ?? null; // Agregado: Transmisión del vehículo
+
                 if ($fecha_venc_soat) {
                     $caracteristicas[] = ['nombre_caracteristica' => 'fecha_venc_soat', 'valor_caracteristica' => $fecha_venc_soat];
                 }
@@ -313,6 +337,12 @@ class ProductosController extends Controller
                 }
                 if ($anio) {
                     $caracteristicas[] = ['nombre_caracteristica' => 'anio', 'valor_caracteristica' => $anio]; // Agregado: Guardar año
+                }
+                if ($placa) {
+                    $caracteristicas[] = ['nombre_caracteristica' => 'placa', 'valor_caracteristica' => $placa]; // Agregado: Guardar placa
+                }
+                if ($transmision) {
+                    $caracteristicas[] = ['nombre_caracteristica' => 'transmision', 'valor_caracteristica' => $transmision]; // Agregado: Guardar transmisión
                 }
             }
         
@@ -2072,6 +2102,8 @@ private function esCategoríaCelular($categoriaNormalizada) {
         return [
             'idproductosv2' => $productoExistente['ID_PRODUCTO'],
             'nombre' => $post['NOMBRE'] ?? '',
+            'marca' => $post['MARCA'] ?? null,
+            'modelo' => $post['MODELO'] ?? null,
             'codigo' => $post['CODIGO'] ?? null,
             'cantidad' => floatval($post['CANTIDAD'] ?? 0),
             'cantidad_unidad' => isset($post['CANTIDAD_UNIDAD']) ? floatval($post['CANTIDAD_UNIDAD']) : null,
@@ -2212,6 +2244,30 @@ private function esCategoríaCelular($categoriaNormalizada) {
                 'existe' => false,
                 'productos' => [],
                 'error' => 'Error al verificar código'
+            ]);
+        }
+    }
+
+    /**
+     * Obtener solo productos con categoría "Vehículos"
+     */
+    public function obtenerVehiculos()
+    {
+        try {
+            $productoModel = new Productov2();
+            $vehiculos = $productoModel->obtenerProductosPorCategoria('Vehiculo');
+
+            echo json_encode([
+                'success' => true,
+                'vehiculos' => $vehiculos
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerVehiculos: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener vehículos',
+                'vehiculos' => []
             ]);
         }
     }

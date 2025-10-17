@@ -67,6 +67,12 @@
             
             // Obtener valor de cobrar mora
             $cobrarMora = isset($datos['cobrar_mora']) ? $datos['cobrar_mora'] : 1;
+
+            // NUEVO: Obtener nombre personalizado
+$nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_personalizado'] !== '' 
+    ? $datos['nombre_personalizado'] 
+    : null;
+
             
                // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id y aprobado
             $query = "INSERT INTO financiamiento (
@@ -76,6 +82,7 @@
                 id_coti,       
                 codigo_asociado, 
                 grupo_financiamiento, 
+                nombre_personalizado,
                 cantidad_producto, 
                 monto_total, 
                 cuota_inicial, 
@@ -94,7 +101,7 @@
                 usuario_id,           -- 💥 Modificado: Campo añadido
                 aprobado,             -- 💥 Modificado: Campo añadido
             cobrar_mora           -- NUEVO: Campo para cobrar mora
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
 
             $stmt = $this->conectar->prepare($query);
 
@@ -104,13 +111,14 @@
 
             // 💥 Modificado: Actualizado bind_param para incluir usuario_id y aprobado
             $stmt->bind_param(
-                'iiiiissddissssssdsdddiii',
+                'iiiiissddissssssdsdddiiis',
                 $idConductor,
                 $idCliente,
                 $datos['id_producto'],
                 $idCoti,
                 $datos['codigo_asociado'],
                 $datos['grupo_financiamiento'],
+                $nombrePersonalizado,       
                 $datos['cantidad_producto'],
                 $datos['monto_total'],
                 $datos['cuota_inicial'],
@@ -128,7 +136,7 @@
                 $datos['tasa'],
                 $usuario_id,         
                 $aprobado,
-                $cobrarMora       
+                $cobrarMora
             );
 
             $resultado = $stmt->execute();
@@ -452,8 +460,8 @@
 
     public function obtenerProductoConCategoria($idProducto)
     {
-        $sql = "SELECT codigo, nombre, categoria, cantidad, cantidad_unidad, unidad_medida, tipo_producto, fecha_vencimiento, ruc, razon_social, precio, fecha_registro, guia_remision 
-            FROM productosv2 
+        $sql = "SELECT codigo, nombre, marca, modelo, categoria, cantidad, cantidad_unidad, unidad_medida, tipo_producto, fecha_vencimiento, ruc, razon_social, precio, fecha_registro, guia_remision
+            FROM productosv2
             WHERE idproductosv2 = ?";
         $stmt = $this->conectar->prepare($sql);
 

@@ -420,6 +420,8 @@
         function formatLabel(key) {
             const labels = {
                 'NOMBRE': 'Nombre del Producto',
+                'MARCA': 'Marca',
+                'MODELO': 'Modelo',
                 'CODIGO': 'Código',
                 'CANTIDAD': 'Cantidad',
                 'CANTIDAD_UNIDAD': 'Cantidad por Unidad',

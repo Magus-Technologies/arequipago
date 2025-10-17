@@ -185,6 +185,7 @@ Route::post("/deleteProducts", "ProductosController@deleteProducts");
 Route::get("/getDataSelets", "ProductosController@getEditsSeletProducto");
 Route::get("/consultar-productos-venta", "VentasController@buscarProductoController");
 Route::post("/verificar-codigo-duplicado", "ProductosController@verificarCodigoDuplicado");
+Route::get("/obtenerVehiculos", "ProductosController@obtenerVehiculos");
 
 route::post("/busquedaPorDni", "ConductorController@buscarPorDni");
 route::post("/paymentMade", "ConductorController@paymentMade");
@@ -321,6 +322,7 @@ Route::get('/obtenerHistorialPuntaje', 'PuntajeCrediticioController@obtenerHisto
 Route::post('/actualizarPuntajesCrediticios', 'PuntajeCrediticioController@actualizarPuntajesCrediticios');
 Route::get('/obtenerDetalleCliente', 'PuntajeCrediticioController@obtenerDetalleCliente');
 Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
+Route::post('/restablecerPuntajeIndividual', 'PuntajeCrediticioController@restablecerPuntajeIndividual');
 
 // RUTAS DE EXPORTACI N
 Route::get('/exportarPuntajes', 'PuntajeCrediticioController@exportarPuntajes');
@@ -420,3 +422,5 @@ Route::get('/config/departamentos/historial', 'DepartamentosConfigController@obt
 
 // API para habilitar múltiples departamentos a la vez
 Route::post('/config/departamentos/habilitar-multiples', 'DepartamentosConfigController@habilitarMultiples');
+
+Route::PostBase('vehiculos','FragmentController@viewVehiculos');

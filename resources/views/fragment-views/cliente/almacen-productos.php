@@ -21,191 +21,14 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 ?>
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        
-        input{
-            border-radius: 8px;
-            background-color: #EEEFEF;
-            border: 1px solid #CED4DA; /* Borde gris suave */
-            padding: 5px 1px; /* Espaciado interno */
-            font-size: 1rem; /* Tamaño de fuente */
-            font-family: 'Roboto', sans-serif;
-            padding-left: 9px;     
-        }
+    
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="<?= URL::to('/public/css/almacen-productos.css') ?>?v=<?= time() ?>">
 
-        .modal-title{
-            font-size: 25px;
-            color: black;
-        }
-
-        #modal-add-prod .form-control{
-            border-radius: 8px;
-            background-color: #EEEFEF;
-            border: 1px solid #CED4DA; /* Borde gris suave */
-            padding: 5px 1px; /* Espaciado interno */
-            font-size: 1rem; /* Tamaño de fuente */
-            font-family: 'Roboto', sans-serif;
-            padding-left: 9px;  
-            width: 193px;  
-        }
-
-        
-        #modal-add-prod #ruc-input{
-            width: 193px;
-        }
-
-        #modal-add-prod .form-select{
-            border-radius: 8px;
-            background-color: #EEEFEF;
-            border: 1px solid #CED4DA; /* Borde gris suave */
-            padding: 5px 1px; /* Espaciado interno */
-            font-size: 1rem; /* Tamaño de fuente */
-            font-family: 'Roboto', sans-serif;
-            padding-left: 9px;  
-            width: 193px;
-        }
-
-        
-
-        #modal-add-prod .btn {
-            background-color: #000000;
-            border-radius:8px;
-            border: none;
-            color: white;
-            font-family: 'Corbel' sans-serif;
-            font-size: 14px;
-            padding: 6px;
-            padding-left: 11px;  /* Espacio en el lado izquierdo */
-            padding-right: 11px; /* Espacio en el lado derecho */
-            border-radius: 20px;
-        }
-
-        #modal-add-prod .btn-primary{
-            background-color: #000000;
-            color: #F2E74B;
-            border-color: #6c757d;
-
-        }
-
-        .btnBorrar{
-            width: auto;
-            position: relative;
-            left: -10px;
-
-        }
-
-        #exampleModal .modal-backdrop {
-            z-index: 1054 !important;
-        }
-
-        #exampleModal .modal-header{
-            background-color: #d5d696;
-        }
-
-        #exampleModal .modal-body{
-            background-color: #f7f3e4;
-        }
-
-        #exampleModal .modal-footer{
-            background-color: #d5d696;
-        }
-
-        /* AGREGADO: Asegurar que el modal de tipo de producto aparezca encima */
-        #exampleModal {
-            z-index: 1060 !important; /* Aumentado el z-index para que aparezca encima del modal padre */
-        }
-
-        #exampleModalCategoria .modal-backdrop {
-            z-index: 1055 !important; /* Backdrop del modal de categoría */
-        }
-
-        .sliding-panel {
-        position: fixed;
-        top: 0;
-        right: -400px;
-        width: 400px;
-        height: 100%;
-        background-color: #fff;
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
-        transition: right 0.3s ease;
-        z-index: 2100;
-        }
-
-        .sliding-panel.open {
-            right: 0;
-            left: 50%; /* Asegura que el panel se quede centrado cuando esté abierto */
-            transform: translateX(-50%); /* Mantiene el panel centrado cuando esté abierto */
-            width: 900px;
-        }
-
-        .table-responsive { /* Agregado: clase para el contenedor de la tabla */
-            max-height: 400px; /* Altura máxima para el scroll vertical */
-            overflow-y: auto; /* Habilitar scroll vertical */
-            overflow-x: auto; /* Habilitar scroll horizontal */
-            position: relative;  
-        }
-
-        
-        .table thead tr { 
-            position: sticky; /* Hace que la cabecera se mantenga fija */
-            top: 0; /* Fija la cabecera en la parte superior del contenedor */
-            background-color: white; /* Asegura que la cabecera sea visible */
-            z-index: 2; /* Hace que la cabecera esté encima del contenido */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Sombra más sutil en el borde inferior de la cabecera */
-            border-bottom: 1px solid #e9ecef; /* Borde inferior de 1px con el color #e9ecef */
-        }
-
-        .panel-header {
-            background-color: #02a499; /* Cambié el color de fondo a #02a499 como pediste */
-            color: #fff;
-            padding: 10px;
-            text-align: center;
-            position: relative;
-        }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .panel-close {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .panel-body {
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        #excel-table th, #excel-table td {  /* Se aplica solo a la tabla con id 'excel-table' */
-            text-align: center;  /* Alineación de texto al centro */
-            vertical-align: middle;  /* Alineación vertical al centro */
-        }
-
-        /* Estilo para el botón de importación dentro del panel */
-        #import-btn {  /* Se aplica solo al botón con id 'import-btn' */
-            width: 20%;  /* El botón ocupará el 45% del ancho disponible */
-            margin-top: 35px;  /* Margen superior de 20px */
-            margin-left: auto;  /* Agregado: empuja el botón hacia la derecha */
-            margin-right: 0;  /* Asegura que no tenga margen a la derecha */
-            display: block; 
-        }
-
-        .delete-btn {
-            color: red;
-            cursor: pointer;
-        }
-
-        
-
-    </style>
+ 
 
 </head>
-
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -581,6 +404,14 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             <p id="detalle-nombre"></p>
                         </div>
                         <div class="mb-3">
+                            <label class="fw-bold">Marca:</label>
+                            <p id="detalle-marca"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold">Modelo:</label>
+                            <p id="detalle-modelo"></p>
+                        </div>
+                        <div class="mb-3">
                             <label class="fw-bold">Código:</label>
                             <p id="detalle-codigo"></p>
                         </div>
@@ -744,372 +575,309 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                 <form>
                     <div class="modal-body">
                         
+                        <!-- Sección 1: Información Básica del Producto -->
                         <div class="row mb-3">
-                            <div class="col-sm-4">
-                                <label for="nombre_producto">Nombre del Producto</label>
+                            <div class="col-md-8 ">
+                                <label for="nombre_producto" class="form-label">Nombre del Producto</label>
+                                <input type="text" id="nombre_producto" name="nombre_producto" class="form-control" required>
                             </div>
-                            <div class="col-sm-8">
-                                <input type="text" id="nombre_producto" name="nombre_producto" class="InputNProduc" required class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                        
-                            <div class="col-sm-4">
-                        
-                                <label for="Ltipo_producto">Tipo de producto:</label>
-
-                            </div>
-
-                            <div class="col-sm-8 d-flex" >
-                                <select name="tipo_producto" id="tipo_producto" required class="form-select me-2" onchange="verificarTipo()">
-                                    <option value="notTipo">Seleccionar</option>
-                                    <option value="fisico">Físico</option>
-                                    <option value="intangible">Intangible</option>
-                                    <!-- Los tipos de producto se cargarán aquí dinámicamente -->
-                                </select>
-                                <button type="button" onclick="abrirModalTipoProducto()" class="btn btn-primary">Nuevo tipo de producto</button>
-                            </div>
-
-                           
-           
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-sm-4">
-                                <label for="codigo_producto">Código del Producto (Generado o Escaneado)</label>
-                            </div>
-
-                            <div class="col-sm-4">
-                                <input type="text" id="codigo_producto" required placeholder="Escanear o ingresar código" class="form-contro"/>
-                            </div>
-                            <div class="col-sm-4">
+                              <div class="col-md-4">
+                                <label for="codigo_producto" class="form-label">Código del Producto</label>
+                                <input type="text" id="codigo_producto" class="form-control" required placeholder="Escanear o ingresar código"/>
                                 <span id="mensaje_duplicado_codigo" style="color: red; font-weight: bold; display: none;"></span>
                             </div>
-                        </div> 
-        
-                        <div id="unidad_medida_wrapper" style="display: none;">
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="cantidad_unidad">Cantidad por unidad</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input type="number" id="cantidad_unidad" name="cantidad_unidad" class="form-control">
+
+                        </div>
+
+                        <!-- Marca y Modelo (Opcionales) -->
+                        <!-- <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="marca_producto" class="form-label">Marca <span class="text-muted">(Opcional)</span></label>
+                                <input type="text" id="marca_producto" name="marca_producto" class="form-control" placeholder="Ingrese la marca">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="modelo_producto" class="form-label">Modelo <span class="text-muted">(Opcional)</span></label>
+                                <input type="text" id="modelo_producto" name="modelo_producto" class="form-control" placeholder="Ingrese el modelo">
+                            </div>
+                        </div> -->
+
+                        <div class="row mb-3">
+                          <div class="col-md-4">
+                                <label for="tipo_producto" class="form-label">Tipo de producto</label>
+                                <div class="d-flex gap-0">
+                                    <select name="tipo_producto" id="tipo_producto" required class="form-select" onchange="verificarTipo()">
+                                        <option value="notTipo">Seleccionar</option>
+                                        <option value="fisico">Físico</option>
+                                        <option value="intangible">Intangible</option>
+                                    </select>
+                                    <button type="button" onclick="abrirModalTipoProducto()" class="btn btn-primary btn-sm btn-add-option"><i class="fa fa-plus"></i></button>
                                 </div>
                             </div>
+                            <div class="col-md-4" id="cantidad">
+                                <label for="cantidad_producto" class="form-label">Cantidad</label>
+                                <input type="number" id="cantidad_producto" name="cantidad_producto" class="form-control">
+                            </div>
+                  <div class="col-md-4">
+    <label for="categoria_producto" class="form-label">Categoría</label>
+    <div class="d-flex gap-0">
+       <select name="categoria_producto" id="categoria_producto" class="form-select" onchange="mostrarIntfecha()">
+            <option value="seleccionar_categoría">Seleccionar Categoría</option>
+        </select>
+        <button type="button" onclick="abrirModalCategoria()" class="btn btn-primary btn-sm btn-add-option">
+            <i class="fa fa-plus"></i>
+        </button>
+    </div>
+</div>
+                        </div>
 
+                     
+
+                        <!-- Sección 2: Unidad de Medida (Condicional) -->
+                        <div id="unidad_medida_wrapper" style="display: none;">
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="unidad_medida">Unidad de medida</label>
+                                <div class="col-md-6">
+                                    <label for="cantidad_unidad" class="form-label">Cantidad por unidad</label>
+                                    <input type="number" id="cantidad_unidad" name="cantidad_unidad" class="form-control">
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="unidad_medida" class="form-label">Unidad de medida</label>
                                     <select name="unidad_medida" id="unidad_medida" class="form-select">
                                         <option value="notUM">Seleccionar</option>
                                         <option value="Litros">Litros</option>
                                         <option value="Galones (3.785 litros)">Galones (3.785 litros)</option>
                                         <option value="Kilogramos">Kilogramos</option>
                                         <option value="OZ">OZ</option>
-                                        <!-- Agregar más unidades según sea necesario -->
                                     </select>
                                 </div>
                             </div>
-
-                         </div>
-
-                    <div id="cantidad">
-                        <div class="row mb-3">
-                            <div class="col-sm-4">
-                                <label for="cantidad_producto">Cantidad</label>
-                            </div>
-                            <div class="col-sm-4">
-                                <input type="number" id="cantidad_producto" name="cantidad_producto" class="form-control">
-                            </div>
-                        </div>
-                    </div> 
-        
-                        <div class="row mb-3">
-                            <div class="col-sm-4">
-                                <label for="categoria_producto_label" id="categoria_producto_label">Categoría</label>
-                            </div>
-                            <div class="col-sm-8 d-flex">
-                                <select name="categoria_producto" id="categoria_producto" class="form-select me-2" onchange="mostrarIntfecha()">
-                                    <option value="seleccionar_categoría">Seleccionar Categoría</option>
-                                
-                                </select>
-                                <button type="button" onclick="abrirModalCategoria()" class="btn btn-primary">Nueva categoría</button>
-                            </div>    
                         </div>   
                         
+                        <!-- Sección 3: Detalles de Llantas (Condicional) -->
                         <div id="llantas_wrapper" style="display: none;">
+                            <hr class="my-3">
+                            <h6 class="mb-3 text-muted">Detalles de Llanta</h6>
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="aro">Aro</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="aro" class="form-label">Aro</label>
                                     <input id="aro" name="aro" class="form-control">
                                 </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="perfil">Perfil</label>
-                                </div>
-
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="perfil" class="form-label">Perfil</label>
                                     <input id="perfil" name="perfil" class="form-control">
                                 </div>
-                                
                             </div>
-                         </div>
+                        </div>
 
-                         <!-- Nuevo contenedor para Celular -->
-                        <div id="celular_wrapper" style="display: none;"> <!-- Nuevo contenedor -->
+                        <!-- Sección 4: Detalles de Celular (Condicional) -->
+                        <div id="celular_wrapper" style="display: none;">
+                            <hr class="my-3">
+                            <h6 class="mb-3 text-muted">Detalles del Celular</h6>
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="chip_linea">Chip de la línea</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="chip_linea" class="form-label">Chip de la línea</label>
                                     <input id="chip_linea" name="chip_linea" class="form-control">
                                 </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="marca_equipo">Marca de Equipo</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="marca_equipo" class="form-label">Marca de Equipo</label>
                                     <input id="marca_equipo" name="marca_equipo" class="form-control">
                                 </div>
                             </div>
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="modelo">Modelo</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="modelo" class="form-label">Modelo</label>
                                     <input id="modelo" name="modelo" class="form-control">
                                 </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="nro_imei">Nº IMEI</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="nro_imei" name="nro_imei" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="nro_serie">Nº IMEI 2</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="nro_serie" name="nro_serie" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="colorc">Color</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="colorc" class="form-label">Color</label>
                                     <input id="colorc" name="colorc" class="form-control">
                                 </div>
                             </div>
-
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="cargador">Cargador</label>
+                                <div class="col-md-6">
+                                    <label for="nro_imei" class="form-label">Nº IMEI</label>
+                                    <input id="nro_imei" name="nro_imei" class="form-control">
                                 </div>
-                                <div class="col-sm-4">
-                                    <input id="cargador" name="cargador" class="form-control">
+                                <div class="col-md-6">
+                                    <label for="nro_serie" class="form-label">Nº IMEI 2</label>
+                                    <input id="nro_serie" name="nro_serie" class="form-control">
                                 </div>
                             </div>
-
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="cable_usb">Cable USB</label>
+                                <div class="col-md-6">
+                                    <label for="cargador" class="form-label">Cargador</label>
+                                    <input id="cargador" name="cargador" class="form-control">
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="cable_usb" class="form-label">Cable USB</label>
                                     <input id="cable_usb" name="cable_usb" class="form-control">
                                 </div>
                             </div>
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="manual_usuario">Manual del Usuario</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="manual_usuario" class="form-label">Manual del Usuario</label>
                                     <input id="manual_usuario" name="manual_usuario" class="form-control">
                                 </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="estuche">Caja / Estuche</label>
-                                </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="estuche" class="form-label">Caja / Estuche</label>
                                     <input id="estuche" name="estuche" class="form-control">
                                 </div>
                             </div>
-                            <!-- Agregar más campos para Celular aquí -->
                         </div>
-                        <!-- Nuevo contenedor para Vehículo -->
-                        <div id="vehiculo_wrapper" style="display: none;"> <!-- Nuevo contenedor -->
+
+                        <!-- Sección 5: Detalles de Vehículo (Condicional) -->
+                        <div id="vehiculo_wrapper" style="display: none;">
+                            <hr class="my-3">
+                            <h6 class="mb-3 text-muted">Detalles del Vehículo</h6>
+
+                            <!-- Fila 1: Marca y Modelo -->
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="fecha_venc_soat">Fecha de Vencimiento de Soat</label>
+                                <div class="col-md-6">
+                                    <label for="marca_vehiculo" class="form-label">Marca</label>
+                                    <input id="marca_vehiculo" name="marca_vehiculo" class="form-control" placeholder="Ej: Toyota, Nissan">
                                 </div>
-                                <div class="col-sm-4">
-                                    <input id="fecha_venc_soat" name="fecha_venc_soat" type="date" class="form-control">
+                                <div class="col-md-6">
+                                    <label for="modelo_vehiculo" class="form-label">Modelo</label>
+                                    <input id="modelo_vehiculo" name="modelo_vehiculo" class="form-control" placeholder="Ej: Corolla, Sentra">
                                 </div>
                             </div>
 
+                            <!-- Fila 2: VIN y Chasis -->
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="fecha_venc_seguro">Fecha de Vencimiento del Seguro</label>
+                                <div class="col-md-6">
+                                    <label for="vin" class="form-label">VIN</label>
+                                    <input id="vin" name="vin" class="form-control" placeholder="Número de identificación vehicular">
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-md-6">
+                                    <label for="chasis" class="form-label">Nº de Motor</label>
+                                    <input id="chasis" name="chasis" class="form-control" placeholder="Número de motor/chasis">
+                                </div>
+                            </div>
+
+                            <!-- Fila 3: Color y Año -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="color" class="form-label">Color</label>
+                                    <input id="color" name="color" class="form-control" placeholder="Ej: Blanco, Negro">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="anio" class="form-label">Año</label>
+                                    <input id="anio" name="anio" type="number" min="1900" max="2099" class="form-control" placeholder="Ej: 2024">
+                                </div>
+                            </div>
+
+                            <!-- Fila 4: Placa y Transmisión -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="placa_vehiculo" class="form-label">Placa</label>
+                                    <input id="placa_vehiculo" name="placa_vehiculo" class="form-control" placeholder="Ej: ABC-123 o 'En trámite'">
+                                    <small class="form-text text-muted">Si no tiene placa, escriba "En trámite"</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="transmision_vehiculo" class="form-label">Transmisión</label>
+                                    <select id="transmision_vehiculo" name="transmision_vehiculo" class="form-select">
+                                        <option value="">Seleccionar</option>
+                                        <option value="Manual">Manual</option>
+                                        <option value="Automático">Automático</option>
+                                        <option value="Automática">Automática</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Fila 5: Fechas de Vencimiento -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="fecha_venc_soat" class="form-label">Fecha Vencimiento SOAT</label>
+                                    <input id="fecha_venc_soat" name="fecha_venc_soat" type="date" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="fecha_venc_seguro" class="form-label">Fecha Vencimiento Seguro</label>
                                     <input id="fecha_venc_seguro" name="fecha_venc_seguro" type="date" class="form-control">
                                 </div>
                             </div>
+                        </div>
 
+                        <!-- Sección 6: Detalles de Chip/Plan Móvil (Condicional) -->
+                        <div id="chip_plan_movil_wrapper" style="display: none;">
+                            <hr class="my-3">
+                            <h6 class="mb-3 text-muted">Detalles del Plan Móvil</h6>
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="chasis">Nº de Motor</label>
+                                <div class="col-md-6">
+                                    <label for="plan_mensual" class="form-label">Plan Mensual</label>
+                                    <input id="plan_mensual" name="plan_mensual" class="form-control">
                                 </div>
-                                <div class="col-sm-4">
-                                    <input id="chasis" name="chasis" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="vin">VIN (Número de Identificación del Vehículo)</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="vin" name="vin" class="form-control">
-                                </div>
-                            </div>
-
-                            <!-- Nuevos campos de Color y Año -->
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="color">Color del Vehículo</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="color" name="color" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="anio">Año del Vehículo</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="anio" name="anio" type="number" min="1900" max="2099" class="form-control">
+                                <div class="col-md-6">
+                                    <label for="operadora" class="form-label">Operadora</label>
+                                    <input id="operadora" name="operadora" class="form-control">
                                 </div>
                             </div>
                         </div>
-                        <!-- Nuevo contenedor para Chip Plan Móvil -->
-                        <div id="chip_plan_movil_wrapper" style="display: none;"> <!-- Nuevo contenedor -->
+                        <!-- Sección 7: Fecha de Vencimiento (Condicional) -->
+                        <div id="fecha_vencimiento_wrapper">
                             <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="plan_mensual">Plan Mensual</label>
+                                <div class="col-md-6">
+                                    <label id="lfecha_vencimiento" class="form-label" style="display: none">Fecha de Vencimiento</label>
+                                    <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control" style="display: none;">
                                 </div>
-                                <div class="col-sm-4">
-                                    <input id="plan_mensual" name="plan_mensual" class="form-control">                                    
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-sm-4">
-                                    <label for="operadora">Operadora</label>
-                                </div>
-                                <div class="col-sm-4">
-                                    <input id="operadora" name="operadora" class="form-control">                                    
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-3" id="fecha_vencimiento_wrapper">
-                            <div class="col-sm-4">
-                                    <label id="lfecha_vencimiento" style="display: none">Fecha de Vencimiento</label>
-                            </div> 
-                            <div class="col-sm-4">
-                                        <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" class="form-control" style="display: none;">
-                            </div>   
-                        </div>
-
-                        <div class="row mb-3" id="ruc">
-                            <div class="form-group col-sm-4">
-                                <label><span class="rojo"></span>RUC: </label>
-                            </div>
-                            <div class="form-group col-sm-8 d-flex">
-                                
-                                <input id="rucInput" required onkeypress="onlyNumber(event)" type="text" class="form-control me-2" maxlength="11" style="width: 193px;">
-                                <button type="button" onclick="consultarRUC()" class="btn btn-secondary"><i class="fa fa-search"></i></button>
-                                                                    
                             </div>
                         </div>
 
-                        <div class="row mb-3" id="razonsocial">
-                            <div class="form-group col-sm-4">
-                                <label>Razon Social: </label>
+                        <!-- Sección 8: Información del Proveedor -->
+                        <hr class="my-3">
+                        <h6 class="mb-3 text-muted">Información del Proveedor</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6" id="ruc">
+                                <label class="form-label">RUC</label>
+                                <div class="d-flex gap-2">
+                                    <input id="rucInput" required onkeypress="onlyNumber(event)" type="text" class="form-control" maxlength="11">
+                                    <button type="button" onclick="consultarRUC()" class="btn btn-secondary btn-sm"><i class="fa fa-search"></i></button>
+                                </div>
                             </div>
-                            <div class="form-group col-sm-4">
+                            <div class="col-md-6" id="razonsocial">
+                                <label class="form-label">Razón Social</label>
                                 <input id="razon" required type="text" class="form-control" readonly />
                             </div>
                         </div>
 
+                        <!-- Sección 9: Información de Precios -->
+                        <hr class="my-3">
+                        <h6 class="mb-3 text-muted">Información de Precios</h6>
                         <div class="row mb-3">
-                            <div class="form-group col-sm-4">
-                                <label>Precio: </label>
-                            </div>
-                            <div class="form-group col-sm-4">
-                                <input id="precio" required type="text" class="form-control"/>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="form-group col-sm-4">
-                                <label>Precio Venta: </label>
-                            </div>
-                            <div class="form-group col-sm-4">
-                                <input id="precioVenta" required type="text" class="form-control"/>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="form-group col-sm-4">
-                                <label>Moneda: </label>
-                            </div>
-                            <div class="form-group col-sm-4">
+                              <div class="col-md-3">
+                                <label for="moneda" class="form-label">Moneda</label>
                                 <select id="moneda" required class="form-select" onchange="actualizarPlaceholderDescuento()">
                                     <option value="S/.">S/.</option>
                                     <option value="$">$</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="form-group col-sm-4">
-                                <label>Descuento por cuota: </label>
+                            <div class="col-md-3">
+                                <label for="precio" class="form-label">Precio</label>
+                                <input id="precio" required type="text" class="form-control"/>
                             </div>
-                            <div class="form-group col-sm-4">
+                            <div class="col-md-3">
+                                <label for="precioVenta" class="form-label">Precio Venta</label>
+                                <input id="precioVenta" required type="text" class="form-control"/>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="descuentoCuota" class="form-label">Descuento por cuota</label>
                                 <input id="descuentoCuota" type="number" step="0.01" min="0" class="form-control" placeholder="0.00"/>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-sm-4">
-                                <label for="guia_remision">Guía Remisión:</label>
-                            </div>
-                            <div class="col-sm-4">
-                                <input id="guia_remision" name="guia_remision"  class="form-control">
-                            </div>
+                     
 
-                            <div class="col-sm-4">
-                                <div class="d-flex align-items-center">
-                                    <label class="mr-2" style="width: 50%;">Fecha de registro:</label>
-                                    <input id="fechaActual" style="width: 60%;" type="date" readonly>
-                                </div>
-                            </div>   
+                        <!-- Sección 10: Información Adicional -->
+                        <hr class="my-3">
+                        <h6 class="mb-3 text-muted">Información Adicional</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="guia_remision" class="form-label">Guía Remisión</label>
+                                <input id="guia_remision" name="guia_remision" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="fechaActual" class="form-label">Fecha de registro</label>
+                                <input id="fechaActual" type="date" class="form-control" readonly>
+                            </div>
                         </div>
                      
                 </form>  
@@ -1121,7 +889,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             </div>
         </div>
     </div>
-
+<!-- Select2 JS (debe estar después de jQuery) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 
     function onlyNumber(event) {
@@ -1638,6 +1407,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
     function guardarProducto() {
         // Obtener los datos del formulario
         var nombre = document.getElementById('nombre_producto').value;
+        var marca = document.getElementById('marca_producto').value;
+        var modelo = document.getElementById('modelo_producto').value;
 
         // Obtener el tipo de producto usando el texto visible
         var tipo_producto_select = document.getElementById('tipo_producto');
@@ -1645,6 +1416,16 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
         var codigo = document.getElementById('codigo_producto').value;
         var cantidad = document.getElementById('cantidad_producto').value;
+
+        // Validar que el código no contenga espacios
+        if (codigo.includes(' ')) {
+            const mensajeDuplicado = document.getElementById('mensaje_duplicado_codigo');
+            mensajeDuplicado.textContent = "⚠ EL CÓDIGO NO PUEDE CONTENER ESPACIOS";
+            mensajeDuplicado.style.color = "#dc3545";
+            mensajeDuplicado.style.display = "inline";
+            document.getElementById('codigo_producto').focus();
+            return;
+        }
 
         // Obtener la categoría usando el texto visible
         var categoria_select = document.getElementById('categoria_producto');
@@ -1781,6 +1562,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         // Enviar los datos al servidor mediante AJAX
         var formData = new FormData();
         formData.append('nombre_producto', nombre);
+        formData.append('marca_producto', marca);
+        formData.append('modelo_producto', modelo);
         formData.append('tipo_producto', tipo_producto_text); // Incluir tipo_producto (texto)
         formData.append('codigo_producto', codigo);
         formData.append('cantidad_producto', cantidad);
@@ -2080,6 +1863,8 @@ function mostrarDetallesProducto(idProducto) {
 
                 // Llenar los campos básicos
                 $('#detalle-nombre').text(producto.nombre || 'No disponible');
+                $('#detalle-marca').text(producto.marca || 'No especificada');
+                $('#detalle-modelo').text(producto.modelo || 'No especificado');
                 $('#detalle-codigo').text(producto.codigo || 'No disponible');
                 $('#detalle-cantidad').text(producto.cantidad || '0');
                 $('#detalle-categoria').text(producto.categoria || 'No disponible');
@@ -2298,50 +2083,71 @@ function mostrarDetallesProducto(idProducto) {
         });
     }
 
-    function actualizarSelectCategoriaProducto(nuevaCategoriaProducto) {
-        const select = document.getElementById('categoria_producto');
+function actualizarSelectCategoriaProducto(nuevaCategoriaProducto) {
+    const select = $('#categoria_producto'); // Usar jQuery
 
-        // Verificar si la nueva categoría ya existe en el select
-        let existe = false;
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value == nuevaCategoriaProducto.idcategoria_producto) {
-                existe = true;
-                break;
-            }
+    // Verificar si la nueva categoría ya existe
+    let existe = false;
+    select.find('option').each(function() {
+        if ($(this).val() == nuevaCategoriaProducto.idcategoria_producto) {
+            existe = true;
+            return false; // Salir del each
         }
+    });
 
-        // Si no existe, añadir la nueva categoría
-        if (!existe) {
-            const nuevaOpcion = document.createElement('option');
-            nuevaOpcion.value = nuevaCategoriaProducto.idcategoria_producto;
-            nuevaOpcion.textContent = nuevaCategoriaProducto.nombre;
-            select.appendChild(nuevaOpcion);
-        }
-    }
-
-    function cargarCategoriaProductos() {
-        $.ajax({
-            url: "/arequipago/cargarcategoriaproductos", // Ruta que llamará al controlador
-            method: "GET",
-            dataType: "json",
-            success: function (response) {
-                if (Array.isArray(response)) {
-                    var select = $('#categoria_producto');
-                    response.forEach(function(categoria) {
-                        select.append($('<option>', {
-                            value: categoria.idcategoria_producto,
-                            text: categoria.nombre
-                        }));
-                    });
-                } else {
-                    console.error("La respuesta no es un arreglo");
-                }
-            },
-            error: function () {
-                alert('Ocurrió un error al obtener las categorías de producto.');
-            }
+    // Si no existe, añadir la nueva categoría
+    if (!existe) {
+        const nuevaOpcion = $('<option>', {
+            value: nuevaCategoriaProducto.idcategoria_producto,
+            text: nuevaCategoriaProducto.nombre
         });
+        select.append(nuevaOpcion);
+        
+        // Actualizar Select2 para que reconozca la nueva opción
+        select.trigger('change.select2');
     }
+}
+
+function cargarCategoriaProductos() {
+    $.ajax({
+        url: "/arequipago/cargarcategoriaproductos",
+        method: "GET",
+        dataType: "json",
+        success: function (response) {
+            if (Array.isArray(response)) {
+                var select = $('#categoria_producto');
+                select.empty(); // Limpiar opciones anteriores
+                
+                // Agregar opción por defecto
+                select.append($('<option>', {
+                    value: 'seleccionar_categoría',
+                    text: 'Seleccionar Categoría'
+                }));
+                
+                // Agregar las categorías
+                response.forEach(function(categoria) {
+                    select.append($('<option>', {
+                        value: categoria.idcategoria_producto,
+                        text: categoria.nombre
+                    }));
+                });
+                
+                // Inicializar Select2 con scroll
+                select.select2({
+                    placeholder: "Seleccionar Categoría",
+                    allowClear: false,
+                    width: '100%',
+                    dropdownParent: $('#modal-add-prod') // Importante para que funcione en modales
+                });
+            } else {
+                console.error("La respuesta no es un arreglo");
+            }
+        },
+        error: function () {
+            alert('Ocurrió un error al obtener las categorías de producto.');
+        }
+    });
+}
 
     function timeActually() {
         // Crear un objeto Date con la fecha y hora actual
@@ -2641,6 +2447,25 @@ function mostrarDetallesProducto(idProducto) {
 
         $("#buscadorProductos").on("keyup", buscadorProductos); // Evento al escribir en la barra de búsqueda
 
+        // 🔹 VALIDACIÓN DE ESPACIOS EN CÓDIGO
+        $("#codigo_producto").on("input", function() {
+            const codigo = $(this).val();
+            const mensajeDuplicado = $("#mensaje_duplicado_codigo");
+
+            // Verificar si hay espacios en el código
+            if (codigo.includes(" ")) {
+                mensajeDuplicado.text("⚠ EL CÓDIGO NO PUEDE CONTENER ESPACIOS");
+                mensajeDuplicado.css("color", "#dc3545"); // Color rojo
+                mensajeDuplicado.show();
+                return;
+            } else {
+                // Si no hay espacios y el mensaje era de espacios, ocultarlo
+                if (mensajeDuplicado.text().includes("ESPACIOS")) {
+                    mensajeDuplicado.hide();
+                }
+            }
+        });
+
         // 🔹 VALIDACIÓN DE CÓDIGO DUPLICADO
         $("#codigo_producto").on("blur", function() {
             const codigo = $(this).val().trim();
@@ -2648,6 +2473,14 @@ function mostrarDetallesProducto(idProducto) {
 
             if (codigo === "") {
                 mensajeDuplicado.hide();
+                return;
+            }
+
+            // Verificar si hay espacios en el código (doble verificación)
+            if (codigo.includes(" ")) {
+                mensajeDuplicado.text("⚠ EL CÓDIGO NO PUEDE CONTENER ESPACIOS");
+                mensajeDuplicado.css("color", "#dc3545");
+                mensajeDuplicado.show();
                 return;
             }
 
