@@ -599,7 +599,7 @@
           </div>
           <div class="row mt-4">
             <div class="col-md-3">
-                <input type="text" class="form-control" placeholder="Buscar por nombre..." id="buscarTexto" onkeyup="buscarClientes()">
+                <input type="text" class="form-control" placeholder="Buscar por nombre o documento..." id="buscarTexto" onkeyup="buscarClientes()">
             </div>
             <div class="col-md-3">
                 <select class="form-select" id="filtroRango" onchange="filtrarPorRango()">
@@ -1134,11 +1134,21 @@
 
       // Función para actualizar puntajes
       function actualizarPuntajes() {
-          if (!confirm('¿Está seguro que desea actualizar todos los puntajes? Este proceso puede tomar algunos minutos.')) {
-              return;
-          }
+          Swal.fire({
+              icon: 'warning',
+              title: '¿Actualizar todos los puntajes?',
+              text: 'Este proceso puede tomar algunos minutos. ¿Desea continuar?',
+              showCancelButton: true,
+              confirmButtonColor: '#02a499',
+              cancelButtonColor: '#ec4561',
+              confirmButtonText: 'Sí, actualizar',
+              cancelButtonText: 'Cancelar'
+          }).then((result) => {
+              if (!result.isConfirmed) {
+                  return;
+              }
 
-          mostrarSpinner(true);
+              mostrarSpinner(true);
           
           $.ajax({
               url: "/arequipago/actualizarPuntajesCrediticios",
@@ -1160,6 +1170,7 @@
                   mostrarSpinner(false);
               }
           });
+          }); // Cierre del .then()
       }
 
       // Funciones de paginación
@@ -1248,13 +1259,24 @@
       }
 
       function mostrarError(mensaje) {
-          // Implementar notificación de error (puedes usar toastr o similar)
-          alert('Error: ' + mensaje);
+          Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: mensaje,
+              confirmButtonColor: '#ec4561',
+              confirmButtonText: 'Entendido'
+          });
       }
 
       function mostrarExito(mensaje) {
-          // Implementar notificación de éxito (puedes usar toastr o similar)
-          alert('Éxito: ' + mensaje);
+          Swal.fire({
+              icon: 'success',
+              title: '¡Éxito!',
+              text: mensaje,
+              confirmButtonColor: '#02a499',
+              confirmButtonText: 'Perfecto',
+              timer: 3000
+          });
       }
 
       // Función para ver detalle del cliente
@@ -1266,7 +1288,7 @@
               dataType: "json",
               success: function(response) {
                   if (response.success) {
-                      mostrarDetalleModal(response.data);
+                      mostrarDetalleModal(response.data, tipo, id);
                   } else {
                       mostrarError('Error al cargar los detalles');
                   }
@@ -1277,10 +1299,9 @@
           });
       }
 
-      // Función para mostrar modal de detalle (FALTABA ESTA FUNCIÓN COMPLETA)
-      function mostrarDetalleModal(data, tipo, id) {
-          console.log('Data recibida:', data);
-          const content = `
+      // Función para generar el contenido HTML del modal (NUEVA - Refactorizada)
+      function generarContenidoModal(data, tipo, id) {
+          return `
               <div class="row">
                   <div class="col-md-6">
                       <h6><i class="fas fa-user me-2"></i>Información Personal</h6>
@@ -1310,9 +1331,12 @@
                           <p><strong>Total Financiamientos:</strong> ${data.puntaje ? data.puntaje.total_financiamientos : 0}</p>
                           <p><strong>Total Retrasos:</strong> ${data.puntaje ? data.puntaje.total_retrasos : 0}</p>
                           <p><strong>Última Actualización:</strong> ${data.puntaje ? new Date(data.puntaje.fecha_actualizacion).toLocaleDateString() : 'N/A'}</p>
-                          <div class="mt-3">
-                              <button class="btn btn-sm btn-outline-primary" onclick="actualizarPuntajeIndividual('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor})">
+                          <div class="mt-3 d-flex gap-2">
+                              <button class="btn btn-sm btn-outline-primary" onclick="actualizarPuntajeIndividual('${tipo}', ${id})">
                                   <i class="fas fa-sync-alt me-1"></i>Actualizar Puntaje
+                              </button>
+                              <button class="btn btn-sm btn-outline-warning" onclick="restablecerPuntajeIndividual('${tipo}', ${id})">
+                                  <i class="fas fa-undo me-1"></i>Restablecer a 100
                               </button>
                           </div>
                       </div>
@@ -1347,7 +1371,7 @@
                                           <span class="badge bg-info">${f.cuotas} cuotas</span>
                                       </td>
                                       <td>
-                                          <span class="badge ${obtenerBadgeEstado(f.estado)}">${f.estado.toUpperCase()}</span>
+                                          <span class="badge bg-light ${obtenerBadgeEstado(f.estado)}">${f.estado.toUpperCase()}</span>
                                       </td>
                                       <td>${new Date(f.fecha_inicio).toLocaleDateString()}</td>
                                       <td>
@@ -1366,7 +1390,7 @@
                       </div>
                   `}
               </div>
-              
+
               <div class="mt-3 d-flex gap-2">
                   <button class="btn btn-primary btn-sm" onclick="verHistorial('${tipo}', ${id})">
                       <i class="fas fa-history me-1"></i>Ver Historial Completo
@@ -1376,17 +1400,23 @@
                         <i class="fas fa-download me-1"></i>Exportar Datos
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" onclick="console.log('Click Excel detectado'); exportarDatosCliente('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor}, 'excel'); return false;">
+                        <li><a class="dropdown-item" href="#" onclick="console.log('Click Excel detectado'); exportarDatosCliente('${tipo}', ${id}, 'excel'); return false;">
                             <i class="fas fa-file-excel me-1 text-success"></i>Exportar a Excel
                         </a></li>
-                        <li><a class="dropdown-item" href="#" onclick="console.log('Click PDF detectado'); exportarDatosCliente('${data.cliente.tipo_cliente || 'cliente'}', ${data.cliente.id || data.cliente.id_conductor}, 'pdf'); return false;">
+                        <li><a class="dropdown-item" href="#" onclick="console.log('Click PDF detectado'); exportarDatosCliente('${tipo}', ${id}, 'pdf'); return false;">
                             <i class="fas fa-file-pdf me-1 text-danger"></i>Exportar a PDF
                         </a></li>
                     </ul>
                 </div>
               </div>
           `;
-          
+      }
+
+      // Función para mostrar modal de detalle
+      function mostrarDetalleModal(data, tipo, id) {
+          console.log('Data recibida:', data);
+          const content = generarContenidoModal(data, tipo, id);
+
           $('#detalleContent').html(content);
           const modal = new bootstrap.Modal(document.getElementById('detalleModal'));
           modal.show();
@@ -1411,11 +1441,21 @@
 
       // Función para actualizar puntaje individual
       function actualizarPuntajeIndividual(tipo, id) {
-          if (!confirm('¿Está seguro que desea actualizar el puntaje de este cliente?')) {
-              return;
-          }
+          Swal.fire({
+              icon: 'question',
+              title: '¿Actualizar puntaje?',
+              text: '¿Está seguro que desea actualizar el puntaje de este cliente?',
+              showCancelButton: true,
+              confirmButtonColor: '#02a499',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, actualizar',
+              cancelButtonText: 'Cancelar'
+          }).then((result) => {
+              if (!result.isConfirmed) {
+                  return;
+              }
 
-          $.ajax({
+              $.ajax({
               url: "/arequipago/actualizarPuntajeIndividual",
               type: "POST",
               data: JSON.stringify({ tipo: tipo, id: id }),
@@ -1435,6 +1475,95 @@
               error: function() {
                   mostrarError('Error de conexión al actualizar puntaje');
               }
+          });
+          }); // Cierre del .then()
+      }
+
+      // Función para restablecer puntaje a 100
+      function restablecerPuntajeIndividual(tipo, id) {
+          // Primera confirmación
+          Swal.fire({
+              icon: 'warning',
+              title: '¿Restablecer puntaje a 100?',
+              html: `
+                  <p>Esta acción <strong>restablecerá el puntaje a 100 puntos</strong> y eliminará todos los retrasos registrados.</p>
+                  <p class="text-danger"><strong>⚠️ Esta es una acción administrativa crítica.</strong></p>
+                  <p>¿Está seguro de continuar?</p>
+              `,
+              showCancelButton: true,
+              confirmButtonColor: '#FFC107',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: 'Sí, restablecer',
+              cancelButtonText: 'Cancelar'
+          }).then((firstResult) => {
+              if (!firstResult.isConfirmed) {
+                  return;
+              }
+
+              // Segunda confirmación
+              Swal.fire({
+                  icon: 'question',
+                  title: 'Confirmación final',
+                  text: '¿Realmente desea restablecer el puntaje de este cliente a 100?',
+                  showCancelButton: true,
+                  confirmButtonColor: '#ec4561',
+                  cancelButtonColor: '#6c757d',
+                  confirmButtonText: 'Sí, confirmo',
+                  cancelButtonText: 'No, cancelar'
+              }).then((secondResult) => {
+                  if (!secondResult.isConfirmed) {
+                      return;
+                  }
+
+                  // Realizar la petición AJAX
+                  $.ajax({
+                      url: "/arequipago/restablecerPuntajeIndividual",
+                      type: "POST",
+                      data: JSON.stringify({ tipo: tipo, id: id }),
+                      contentType: "application/json",
+                      dataType: "json",
+                      success: function(response) {
+                          console.log('Respuesta recibida:', response);
+                          if (response.success) {
+                              // Primero actualizar los datos en background
+                              cargarClientes();
+
+                              // Luego mostrar el éxito y actualizar el modal
+                              Swal.fire({
+                                  icon: 'success',
+                                  title: '¡Puntaje restablecido!',
+                                  html: `
+                                      <p>El puntaje ha sido restablecido exitosamente.</p>
+                                      <p><strong>Puntaje anterior:</strong> ${response.data.puntaje_anterior}</p>
+                                      <p><strong>Puntaje nuevo:</strong> ${response.data.puntaje_nuevo}</p>
+                                      <p><strong>Retrasos eliminados:</strong> ${response.data.retrasos_eliminados}</p>
+                                  `,
+                                  confirmButtonColor: '#02a499'
+                              }).then(() => {
+                                  // Actualizar el contenido del modal que ya está abierto
+                                  $.ajax({
+                                      url: "/arequipago/obtenerDetalleCliente",
+                                      type: "GET",
+                                      data: { tipo: tipo, id: id },
+                                      dataType: "json",
+                                      success: function(detailResponse) {
+                                          if (detailResponse.success) {
+                                              // Actualizar solo el contenido del modal, sin cerrarlo ni abrirlo
+                                              $('#detalleContent').html(generarContenidoModal(detailResponse.data, tipo, id));
+                                          }
+                                      }
+                                  });
+                              });
+                          } else {
+                              mostrarError('Error al restablecer puntaje: ' + response.message);
+                          }
+                      },
+                      error: function(xhr, status, error) {
+                          console.error('Error en AJAX:', error);
+                          mostrarError('Error de conexión al restablecer puntaje');
+                      }
+                  });
+              });
           });
       }
 

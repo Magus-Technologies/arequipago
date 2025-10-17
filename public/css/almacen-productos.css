@@ -1,0 +1,165 @@
+
+        /* Estilos para que Select2 tenga el mismo alto que form-control/form-select */
+        .select2-container .select2-selection--single {
+            height: calc(1.5em + 0.75rem + 2px) !important; /* Misma altura que form-control de Bootstrap */
+            min-height: 38px !important;
+            padding: 0 !important;
+            border: 1px solid #ced4da !important;
+            border-radius: 0.25rem !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: normal !important;
+            padding: 0 0.75rem !important;
+            color: #495057 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100% !important;
+            top: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            margin-top: 0 !important;
+        }
+
+        /* Eliminar bordes entre select y botón para que queden pegados */
+        .d-flex.gap-0 .form-select {
+            border-right: none !important;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .d-flex.gap-0 .select2-container .select2-selection--single {
+            border-right: none !important;
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .d-flex.gap-0 .btn-add-option {
+            border-left: 1px solid #0d6efd !important;
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            min-width: 40px !important;
+            padding: 0.25rem 0.75rem !important;
+        }
+
+        /* Eliminar gap entre select y botón */
+        .d-flex.gap-0 {
+            gap: 0 !important;
+        }
+
+     
+
+
+        
+
+        #exampleModal .modal-backdrop {
+            z-index: 1054 !important;
+        }
+
+        #exampleModal .modal-header{
+            background-color: #d5d696;
+        }
+
+        #exampleModal .modal-body{
+            background-color: #f7f3e4;
+        }
+
+        #exampleModal .modal-footer{
+            background-color: #d5d696;
+        }
+
+        /* AGREGADO: Asegurar que el modal de tipo de producto aparezca encima */
+        #exampleModal {
+            z-index: 1060 !important; /* Aumentado el z-index para que aparezca encima del modal padre */
+        }
+
+        #exampleModalCategoria .modal-backdrop {
+            z-index: 1055 !important; /* Backdrop del modal de categoría */
+        }
+
+        .sliding-panel {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100%;
+        background-color: #fff;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+        transition: right 0.3s ease;
+        z-index: 2100;
+        }
+
+        .sliding-panel.open {
+            right: 0;
+            left: 50%; /* Asegura que el panel se quede centrado cuando esté abierto */
+            transform: translateX(-50%); /* Mantiene el panel centrado cuando esté abierto */
+            width: 900px;
+        }
+
+        .table-responsive { /* Agregado: clase para el contenedor de la tabla */
+            max-height: 400px; /* Altura máxima para el scroll vertical */
+            overflow-y: auto; /* Habilitar scroll vertical */
+            overflow-x: auto; /* Habilitar scroll horizontal */
+            position: relative;  
+        }
+
+        
+        .table thead tr { 
+            position: sticky; /* Hace que la cabecera se mantenga fija */
+            top: 0; /* Fija la cabecera en la parte superior del contenedor */
+            background-color: white; /* Asegura que la cabecera sea visible */
+            z-index: 2; /* Hace que la cabecera esté encima del contenido */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Sombra más sutil en el borde inferior de la cabecera */
+            border-bottom: 1px solid #e9ecef; /* Borde inferior de 1px con el color #e9ecef */
+        }
+
+        .panel-header {
+            background-color: #02a499; /* Cambié el color de fondo a #02a499 como pediste */
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .panel-close {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .panel-body {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #excel-table th, #excel-table td {  /* Se aplica solo a la tabla con id 'excel-table' */
+            text-align: center;  /* Alineación de texto al centro */
+            vertical-align: middle;  /* Alineación vertical al centro */
+        }
+
+        /* Estilo para el botón de importación dentro del panel */
+        #import-btn {  /* Se aplica solo al botón con id 'import-btn' */
+            width: 20%;  /* El botón ocupará el 45% del ancho disponible */
+            margin-top: 35px;  /* Margen superior de 20px */
+            margin-left: auto;  /* Agregado: empuja el botón hacia la derecha */
+            margin-right: 0;  /* Asegura que no tenga margen a la derecha */
+            display: block; 
+        }
+
+        .delete-btn {
+            color: red;
+            cursor: pointer;
+        }

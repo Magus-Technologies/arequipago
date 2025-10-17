@@ -1546,8 +1546,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         });
     }
 
-    // NOTA: Funciones cargarReportes, filtrarPorFechas y limpiarFiltro eliminadas
-    // Ahora se usa DataTables que maneja todo automáticamente
+    // Funciones para filtrar con DataTables
+    function filtrarPorFechas() {
+        if (typeof tablaReportes !== 'undefined') {
+            tablaReportes.ajax.reload();
+        }
+    }
+
+    function limpiarFiltro() {
+        $("#fechaInicio").val('');
+        $("#fechaFin").val('');
+        if (typeof tablaReportes !== 'undefined') {
+            tablaReportes.ajax.reload();
+        }
+    }
 
     // Función para descargar reporte en Excel
     function downloadData() {
@@ -2665,6 +2677,8 @@ function eliminarPago(idPago) {
 
         // Inicializar DataTable para reportes
         let tablaReportes = $("#tabla-reportes").DataTable({
+            serverSide: true,
+            processing: true,
             paging: true,
             bFilter: true,
             ordering: true,
@@ -2694,7 +2708,7 @@ function eliminarPago(idPago) {
                     data: null,
                     class: "text-center",
                     render: function(data, type, row, meta) {
-                        return meta.row + 1;
+                        return meta.settings._iDisplayStart + meta.row + 1;
                     }
                 },
                 {

@@ -49,14 +49,33 @@ function selectPlan(idPlan) {
   // NUEVO: Limpiar valores originales al cambiar de plan
   valoresOriginalesPlan = null;
 
-  // NUEVO: Detectar si es plan editable (ID 42)
-  if (idPlan === "42" || idPlan === 42) {
-    console.log(
-      "🎨 Plan FINANCIAMIENTO EDITABLE detectado - Habilitando modo Manual"
-    );
+  // NUEVO: Mostrar/ocultar campo de nombre personalizado
+  const nombrePersonalizadoContainer = document.getElementById('nombrePersonalizadoContainer');
+  const nombrePersonalizadoInput = document.getElementById('nombrePersonalizado');
+  
+   if (idPlan === "42" || idPlan === 42) {
+    // Mostrar el campo para plan editable
+    if (nombrePersonalizadoContainer) {
+      nombrePersonalizadoContainer.classList.add('d-flex', 'align-items-end');
+      nombrePersonalizadoContainer.style.display = '';
+      nombrePersonalizadoInput.required = true;
+      nombrePersonalizadoInput.value = ''; // Limpiar valor anterior
+    }
+
+    console.log("🎨 Plan FINANCIAMIENTO EDITABLE detectado - Habilitando modo Manual");
     habilitarModoPersonalizado();
     return;
+  } else {
+    // Ocultar el campo para otros planes
+    if (nombrePersonalizadoContainer) {
+      nombrePersonalizadoContainer.classList.remove('d-flex', 'align-items-end');
+      nombrePersonalizadoContainer.style.display = 'none';
+      nombrePersonalizadoInput.required = false;
+      nombrePersonalizadoInput.value = '';
+    }
   }
+
+
 
   $.ajax({
     url: "/arequipago/obtenerPlanFinanciamiento",

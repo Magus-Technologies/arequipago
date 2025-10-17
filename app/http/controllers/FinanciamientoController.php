@@ -1220,70 +1220,34 @@ class FinanciamientoController extends Controller
         }
 
         public function getReportFinance() {
-            
+
             $financiamiento = new Financiamiento();
-    
-            $page = isset($_POST['page']) ? (int)$_POST['page'] : 1;
-            $search = isset($_POST['search']) ? trim($_POST['search']) : '';
-            // NUEVO: Capturar fechas
+
+            // Parámetros de DataTables para server-side processing
+            $draw = isset($_POST['draw']) ? (int)$_POST['draw'] : 1;
+            $start = isset($_POST['start']) ? (int)$_POST['start'] : 0;
+            $length = isset($_POST['length']) ? (int)$_POST['length'] : 10;
+            $searchValue = isset($_POST['search']['value']) ? trim($_POST['search']['value']) : '';
+
+            // Parámetros de filtro de fechas
             $fechaInicio = isset($_POST['fechaInicio']) ? trim($_POST['fechaInicio']) : '';
             $fechaFin = isset($_POST['fechaFin']) ? trim($_POST['fechaFin']) : '';
-            $limit = 10;
-            $offset = ($page - 1) * $limit; 
-             
-             // MODIFICADO: Pasar parámetros de fecha
-            $resultados = $financiamiento->obtenerReportesPagos($offset, $limit, $search, $fechaInicio, $fechaFin);
-            $totalRegistros = $financiamiento->contarReportes($search, $fechaInicio, $fechaFin);
-            
-            // Paginación
-            $totalPaginas = ceil($totalRegistros / $limit);
-            $paginacion = '<nav><ul class="pagination justify-content-center">';
 
-            // Botón "Anterior"
-            if ($page > 1) {
-                $prevPage = $page - 1;
-                $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($prevPage, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>Anterior</button></li>";
-            } else {
-                $paginacion .= "<li class='page-item disabled'><span class='page-link'>Anterior</span></li>";
-            }
+            // Obtener datos paginados
+            $resultados = $financiamiento->obtenerReportesPagos($start, $length, $searchValue, $fechaInicio, $fechaFin);
 
-            $rango = 2; // Número de enlaces a cada lado de la página actual
+            // Contar total de registros sin filtrar
+            $totalRegistros = $financiamiento->contarReportes('', '', '');
 
-            // Enlaces de páginas
-            for ($i = 1; $i <= $totalPaginas; $i++) {
-                // Mostrar siempre la primera página, la última página, y las páginas en el rango de la actual
-                if ($i == 1 || $i == $totalPaginas || ($i >= $page - $rango && $i <= $page + $rango)) {
-                    if ($i == $page) {
-                        $paginacion .= "<li class='page-item active'><span class='page-link'>$i</span></li>";
-                    } else {
-                        $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($i, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>$i</button></li>";
-                    }
-                } 
-                // Mostrar puntos suspensivos si es necesario
-                elseif ($i == $page - $rango - 1 || $i == $page + $rango + 1) {
-                    $paginacion .= "<li class='page-item disabled'><span class='page-link'>...</span></li>";
-                }
-            }
+            // Contar total de registros con filtros aplicados
+            $totalFiltrados = $financiamiento->contarReportes($searchValue, $fechaInicio, $fechaFin);
 
-            // Botón "Siguiente"
-            if ($page < $totalPaginas) {
-                $nextPage = $page + 1;
-                $paginacion .= "<li class='page-item'><button class='page-link' onclick='cargarReportes($nextPage, \"$search\", \"$fechaInicio\", \"$fechaFin\")'>Siguiente</button></li>";
-            } else {
-                $paginacion .= "<li class='page-item disabled'><span class='page-link'>Siguiente</span></li>";
-            }
-
-            $paginacion .= '</ul></nav>';
-    
-            // Modificación: Enviar número de página y límite para que el frontend pueda hacer una numeración continua
+            // Respuesta en formato DataTables server-side
             echo json_encode([
-                'data' => $resultados,
-                'pagination' => $paginacion,
-                'page' => $page, // Modificación: Enviar el número de página actual
-                'limit' => $limit,
-                // NUEVO: Incluir fechas en la respuesta para mantener el filtro
-                'fechaInicio' => $fechaInicio,
-                'fechaFin' => $fechaFin
+                'draw' => $draw,
+                'recordsTotal' => $totalRegistros,
+                'recordsFiltered' => $totalFiltrados,
+                'data' => $resultados
             ]);
         }
 

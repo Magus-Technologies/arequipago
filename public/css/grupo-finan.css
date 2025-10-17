@@ -210,8 +210,8 @@
         /* Asegura que el encabezado de "Acciones" quede sobre las celdas */
         .table thead th:last-child {
             z-index: 5 !important; /* Aumentado y añadido !important para asegurar mayor prioridad */
-            background-color: #212529 !important; /* Usando el color estándar de .table-dark para consistencia */
-            color: white !important; /* Forzando el color del texto a blanco */
+            background-color: #fcf34b !important; /* Color amarillo para consistencia */
+            color: #000 !important; /* Texto negro */
         }
 
         /* Fijar el encabezado al hacer scroll vertical */
@@ -229,10 +229,10 @@
             z-index: 2;
         }
 
-        /* Asegura que el encabezado de "Acciones" en DataTables tenga fondo negro */
+        /* Asegura que el encabezado de "Acciones" en DataTables tenga fondo amarillo */
         table.dataTable thead th:last-child {
-            background-color: #212529 !important; /* Color estándar table-dark */
-            color: white !important;
+            background-color: #fcf34b !important; /* Color amarillo */
+            color: #000 !important;
             z-index: 5 !important; /* Mayor z-index para estar encima de todo */
         }
 
@@ -242,8 +242,8 @@
         .dataTables_scrollHead table.dataTable thead th:last-child {
             position: sticky !important; /* Fuerza posición sticky */
             right: 0 !important;
-            background-color: #212529 !important; /* Color negro para cabecera */
-            color: white !important;
+            background-color: #fcf34b !important; /* Color amarillo para cabecera */
+            color: #000 !important;
             z-index: 5 !important; /* Z-index elevado */
         }
 
@@ -251,8 +251,8 @@
         .dataTables_wrapper .dataTables_scrollHead .table th:last-child {
             position: sticky !important;
             right: 0 !important;
-            background-color: #212529 !important;
-            color: white !important;
+            background-color: #fcf34b !important;
+            color: #000 !important;
             z-index: 5 !important;
         }
 
