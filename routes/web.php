@@ -34,6 +34,15 @@ Route::get('/obtenerFinanciamientoDetalle', 'GenerarContratosController@obtenerF
 Route::post('/guardarRegistroPago', 'RegistroPagoController@guardarRegistroPago');
 Route::post('/generarContratosRegistro', 'GenerarContratosController@generarContratosRegistro');
 
+// Rutas para pagos pendientes de inscripción
+Route::get('/listarPagosPendientesInscripcion', 'PagosPendientesInscripcionController@listarPagosPendientes');
+Route::get('/listarPagosRechazadosInscripcion', 'PagosPendientesInscripcionController@listarPagosRechazados');
+Route::get('/contarPagosPendientesInscripcion', 'PagosPendientesInscripcionController@contarPagosPendientes');
+Route::post('/aprobarPagoInscripcion', 'PagosPendientesInscripcionController@aprobarPago');
+Route::post('/rechazarPagoInscripcion', 'PagosPendientesInscripcionController@rechazarPago');
+Route::post('/reactivarPagoInscripcion', 'PagosPendientesInscripcionController@reactivarPago');
+Route::post('/eliminarPagoInscripcion', 'PagosPendientesInscripcionController@eliminarPago');
+
 
 Route::get('/downloadReport', 'ProductosController@downloadReport');
 
@@ -312,7 +321,8 @@ Route::get('/obtenerClientesPuntaje', 'PuntajeCrediticioController@obtenerClient
 Route::get('/obtenerHistorialPuntaje', 'PuntajeCrediticioController@obtenerHistorialPuntaje');
 Route::post('/actualizarPuntajesCrediticios', 'PuntajeCrediticioController@actualizarPuntajesCrediticios');
 Route::get('/obtenerDetalleCliente', 'PuntajeCrediticioController@obtenerDetalleCliente');
-Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
+// DESHABILITADO: El puntaje se actualiza automáticamente. El botón ahora solo refresca datos desde el frontend.
+// Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
 Route::post('/restablecerPuntajeIndividual', 'PuntajeCrediticioController@restablecerPuntajeIndividual');
 
 // RUTAS DE EXPORTACI N

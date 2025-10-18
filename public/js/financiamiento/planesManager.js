@@ -559,8 +559,8 @@ function selectPlan(idPlan) {
           .on("change", function () {
             const rolUsuario = window.rolUsuarioActual || "1";
 
-            // Si es Director, usar la nueva función de recálculo inteligente
-            if (rolUsuario === "3") {
+            // Si es Director o Asesor, usar la nueva función de recálculo inteligente
+            if (rolUsuario === "3" || rolUsuario === "2") {
               recalcularPorCambioFechaInicio();
             } else {
               // Para otros roles, mantener lógica original
@@ -2320,8 +2320,8 @@ function manejarCambioFechaInicioPorDirector() {
 
   if (!fechaInicioInput) return;
 
-  // Solo permitir modificación a Directores (rol 3)
-  if (rolUsuario === "3") {
+  // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2)
+  if (rolUsuario === "3" || rolUsuario === "2") {
     // CRÍTICO: Remover todos los atributos y estilos de bloqueo
     fechaInicioInput.disabled = false;
     fechaInicioInput.readOnly = false;
@@ -2339,7 +2339,7 @@ function manejarCambioFechaInicioPorDirector() {
     fechaInicioInput.title = "Puedes modificar la fecha de inicio del grupo";
 
     console.log(
-      "✅ Director detectado - fecha de inicio COMPLETAMENTE habilitada"
+      "✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada"
     );
 
     // Event listener para recalcular cuando cambie la fecha
@@ -2357,7 +2357,7 @@ function manejarCambioFechaInicioPorDirector() {
     fechaInicioInput.style.pointerEvents = "none";
     fechaInicioInput.style.cursor = "not-allowed";
     fechaInicioInput.title =
-      "Solo los directores pueden modificar la fecha de inicio";
+      "Solo los directores y asesores pueden modificar la fecha de inicio";
 
     console.log("🔒 Usuario sin permisos - fecha de inicio bloqueada");
   }
@@ -2370,7 +2370,8 @@ function manejarCambioFechaInicioPorDirector() {
 function protegerFechaInicioPorDirector() {
   const rolUsuario = window.rolUsuarioActual || "1";
 
-  if (rolUsuario !== "3") return; // Solo para directores
+  // CAMBIO: Proteger para Directores (rol 3) Y Asesores (rol 2)
+  if (rolUsuario !== "3" && rolUsuario !== "2") return;
 
   const fechaInicioInput = document.getElementById("fechaInicio");
   if (!fechaInicioInput) return;
@@ -2505,8 +2506,8 @@ function manejarCambioCuotaInicial() {
 
   if (!cuotaInicialInput) return;
 
-  // Solo permitir modificación a Directores (rol 3)
-  if (rolUsuario === "3") {
+  // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2)
+  if (rolUsuario === "3" || rolUsuario === "2") {
     // CRÍTICO: Remover todos los atributos y estilos de bloqueo
     cuotaInicialInput.disabled = false;
     cuotaInicialInput.readOnly = false;
@@ -2525,7 +2526,7 @@ function manejarCambioCuotaInicial() {
     cuotaInicialInput.title = "Puedes modificar la cuota inicial del grupo";
 
     console.log(
-      "✅ Director detectado - cuota inicial COMPLETAMENTE habilitada"
+      "✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada"
     );
 
     // Event listener para recalcular cuando cambie la cuota
@@ -2543,7 +2544,7 @@ function manejarCambioCuotaInicial() {
     cuotaInicialInput.style.pointerEvents = "none";
     cuotaInicialInput.style.cursor = "not-allowed";
     cuotaInicialInput.title =
-      "Solo los directores pueden modificar la cuota inicial";
+      "Solo los directores y asesores pueden modificar la cuota inicial";
 
     console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
   }
@@ -2635,12 +2636,13 @@ function recalcularCelularesConNuevaCuotaInicial() {
 }
 
 /**
- * Observer para proteger el campo cuota inicial para Directores
+ * Observer para proteger el campo cuota inicial para Directores y Asesores
  */
 function protegerCuotaInicialPorDirector() {
   const rolUsuario = window.rolUsuarioActual || "1";
 
-  if (rolUsuario !== "3") return;
+  // CAMBIO: Proteger para Directores (rol 3) Y Asesores (rol 2)
+  if (rolUsuario !== "3" && rolUsuario !== "2") return;
 
   const cuotaInicialInput = document.getElementById("cuotaInicial");
   if (!cuotaInicialInput) return;

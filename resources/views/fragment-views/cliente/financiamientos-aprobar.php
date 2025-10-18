@@ -331,10 +331,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         
         let productoInfo = '';
         if (data.producto) {
+            // Usar codigo_barra si codigo es null o vacío
+            let codigoProducto = data.producto.CODIGO ? data.producto.CODIGO : (data.producto.CODIGO_BARRA ? data.producto.CODIGO_BARRA : 'N/A');
+            
             productoInfo = `
                 <p><strong>Nombre:</strong> ${data.producto.NOMBRE}</p>
                 <p><strong>Categoría:</strong> ${data.producto.CATEGORIA}</p>
-                <p><strong>Código:</strong> ${data.producto.CODIGO}</p>
+                <p><strong>Código:</strong> ${codigoProducto}</p>
                 <p><strong>Precio Venta:</strong> ${parseFloat(data.producto.PRECIO_VENTA).toFixed(2)}</p>
                 <p><strong>Stock Disponible:</strong> ${data.producto.CANTIDAD}</p>
             `;
@@ -352,6 +355,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             <p><strong>Fecha Fin:</strong> ${data.fecha_fin}</p>
             <p><strong>Fecha Creación:</strong> ${formatearFecha(data.fecha_creacion)}</p>
             <p><strong>Estado:</strong> ${data.aprobado == 0 ? 'Pendiente' : (data.aprobado == 2 ? 'Rechazado' : 'Otro')}</p>
+            ${data.usuario_creador ? `<p><strong>Creado por:</strong> ${data.usuario_creador}</p>` : ''}
         `;
         
         Swal.fire({

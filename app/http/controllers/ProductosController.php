@@ -2178,10 +2178,10 @@ private function esCategoríaCelular($categoriaNormalizada) {
         $celularModel->actualizarCaracteristicasCelular($datosCelular);
     }
 
-    private function procesarCaracteristicasGenerales($idProducto, $categoria, $post) 
+    private function procesarCaracteristicasGenerales($idProducto, $categoria, $post)
     {
         $caracteristicaModel = new CaracteristicaProducto();
-        
+
         // Eliminar características existentes
         $caracteristicaModel->eliminarCaracteristicasPorProducto($idProducto);
 
@@ -2190,8 +2190,14 @@ private function esCategoríaCelular($categoriaNormalizada) {
             $caracteristicas = json_decode($post['caracteristicas'], true);
             if (is_array($caracteristicas)) {
                 foreach ($caracteristicas as $caracteristica) {
-                    if (!empty($caracteristica['valor_caracteristica'])) {
+                    // CAMBIO: Guardar todas las características, incluso las vacías
+                    // Esto evita que se pierdan características al editar el producto
+                    if (!empty($caracteristica['nombre_caracteristica'])) {
                         $caracteristica['idproductosv2'] = $idProducto;
+                        // Asegurar que valor_caracteristica existe, aunque sea vacío
+                        if (!isset($caracteristica['valor_caracteristica'])) {
+                            $caracteristica['valor_caracteristica'] = '';
+                        }
                         $caracteristicaModel->insertarCaracteristica($caracteristica);
                     }
                 }

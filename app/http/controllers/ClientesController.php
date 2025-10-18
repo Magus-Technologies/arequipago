@@ -671,6 +671,8 @@ class ClientesController extends Controller
 
         public function guardarPago()
         {
+            require_once "app/models/PagosPendientesInscripcion.php";
+            
             $clienteModel = new Cliente();
             
             // Verificar que la solicitud sea POST
@@ -710,6 +712,10 @@ class ClientesController extends Controller
                 $vuelto = 0.00;
             }
             
+            // Verificar el rol del usuario
+            $rol_usuario = $_SESSION['id_rol'] ?? null;
+            $requiere_aprobacion = ($rol_usuario == 1 || $rol_usuario == 2);
+            
             // Preparar datos del pago
             $datosPago = [
                 'cliente_id' => intval($_POST['cliente_id']),
@@ -720,7 +726,42 @@ class ClientesController extends Controller
                 'usuario_id' => isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : null
             ];
             
-            // Guardar pago en la base de datos
+            // Si requiere aprobación (rol 1 o 2), registrar como pendiente
+            if ($requiere_aprobacion) {
+                $pagosPendientesModel = new PagosPendientesInscripcion();
+                $id_usuario_registro = $_SESSION['usuario_id'];
+                
+                // Crear observaciones con los datos del pago
+                $observaciones = json_encode([
+                    'id_cliente' => $datosPago['cliente_id'],
+                    'monto_pago' => $montoTotal,
+                    'metodo_pago' => $metodoPagoId,
+                    'monto_pagado' => $montoPagado,
+                    'vuelto' => $vuelto
+                ]);
+                
+                $id_pendiente = $pagosPendientesModel->registrarPagoPendiente(
+                    'cliente',
+                    null,
+                    null,
+                    null,
+                    $id_usuario_registro,
+                    $observaciones
+                );
+                
+                if ($id_pendiente) {
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Pago registrado como pendiente. Debe ser aprobado por un director.',
+                        'requiere_aprobacion' => true
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Error al registrar el pago pendiente']);
+                }
+                return;
+            }
+            
+            // Guardar pago en la base de datos (solo rol 3)
             $resultado = $clienteModel->guardarPago($datosPago);
 
             if ($resultado) {
