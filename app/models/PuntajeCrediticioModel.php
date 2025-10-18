@@ -232,13 +232,28 @@ class PuntajeCrediticioModel
             // Obtener puntaje crediticio
             $sqlPuntaje = "SELECT * FROM puntaje_crediticio WHERE tipo_cliente = ? AND " .
                           ($tipo === 'cliente' ? 'id_cliente' : 'id_conductor') . " = ?";
-                         
+
             $stmt = mysqli_prepare($this->conexion, $sqlPuntaje);
             mysqli_stmt_bind_param($stmt, 'si', $tipo, $id);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
             $data['puntaje'] = mysqli_fetch_assoc($result);
             mysqli_stmt_close($stmt);
+
+            // Obtener el último evento del historial para saber si fue un restablecimiento
+            if ($data['puntaje']) {
+                $sqlUltimoEvento = "SELECT fecha_evento, motivo, puntaje_anterior, puntaje_nuevo
+                                   FROM historial_puntaje
+                                   WHERE id_puntaje_crediticio = ?
+                                   ORDER BY fecha_evento DESC
+                                   LIMIT 1";
+                $stmt = mysqli_prepare($this->conexion, $sqlUltimoEvento);
+                mysqli_stmt_bind_param($stmt, 'i', $data['puntaje']['id']);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
+                $data['ultimo_evento'] = mysqli_fetch_assoc($result);
+                mysqli_stmt_close($stmt);
+            }
 
             // Obtener financiamientos activos
 $sqlFinanciamientos = "SELECT f.*, p.nombre as nombre_producto
@@ -1087,6 +1102,22 @@ mysqli_stmt_close($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $data['puntaje'] = mysqli_fetch_assoc($result) ?: ['puntaje_actual' => 100, 'total_financiamientos' => 0, 'total_retrasos' => 0]; // Default si no existe
     mysqli_stmt_close($stmt);
+
+    // Obtener el último evento del historial para saber si fue un restablecimiento
+    if ($data['puntaje'] && isset($data['puntaje']['id'])) {
+        $sqlUltimoEvento = "SELECT fecha_evento, motivo, puntaje_anterior, puntaje_nuevo
+                           FROM historial_puntaje
+                           WHERE id_puntaje_crediticio = ?
+                           ORDER BY fecha_evento DESC
+                           LIMIT 1";
+        $stmt = mysqli_prepare($this->conexion, $sqlUltimoEvento);
+        mysqli_stmt_bind_param($stmt, 'i', $data['puntaje']['id']);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $data['ultimo_evento'] = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+    }
+
     // Obtener financiamientos con detalles de producto, grupo y variante
     $sqlFinanciamientos = "SELECT f.*, p.nombre as nombre_producto,
     CASE

@@ -184,18 +184,21 @@ class PuntajeCrediticioController extends Controller
         }
     }
 
-    // Actualizar puntaje de un cliente específico
+    // MÉTODO DESHABILITADO: El puntaje se actualiza automáticamente cuando se pagan/vencen cuotas
+    // El botón "Refrescar Datos" ahora solo recarga la información sin modificar la BD
+    // Si se necesita forzar un recálculo, usar actualizarPuntajesCrediticios() para todos los clientes
+    /*
     public function actualizarPuntajeIndividual()
     {
         try {
             header('Content-Type: application/json');
-            
+
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception("Método no permitido");
             }
 
             $input = json_decode(file_get_contents('php://input'), true);
-            
+
             $tipo = $input['tipo'] ?? '';
             $id = $input['id'] ?? 0;
 
@@ -208,7 +211,7 @@ class PuntajeCrediticioController extends Controller
 
             // Calcular nuevo puntaje
             $nuevoPuntaje = $this->puntajeModel->calcularPuntajeIndividual($tipo, $id);
-            
+
             // Actualizar puntaje
             $puntajeCrediticioId = $this->puntajeModel->actualizarPuntajeCrediticio($tipo, $id, $nuevoPuntaje);
 
@@ -216,7 +219,7 @@ class PuntajeCrediticioController extends Controller
             if ($puntajeAnterior != $nuevoPuntaje['puntaje']) {
                 $puntosPerdidos = max(0, $puntajeAnterior - $nuevoPuntaje['puntaje']);
                 $motivo = "Actualización manual del sistema";
-                
+
                 $this->puntajeModel->registrarHistorialPuntaje(
                     $puntajeCrediticioId,
                     $puntajeAnterior,
@@ -244,6 +247,7 @@ class PuntajeCrediticioController extends Controller
             ]);
         }
     }
+    */
 
     // Restablecer puntaje de un cliente específico a 100
     public function restablecerPuntajeIndividual()

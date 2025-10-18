@@ -321,7 +321,8 @@ Route::get('/obtenerClientesPuntaje', 'PuntajeCrediticioController@obtenerClient
 Route::get('/obtenerHistorialPuntaje', 'PuntajeCrediticioController@obtenerHistorialPuntaje');
 Route::post('/actualizarPuntajesCrediticios', 'PuntajeCrediticioController@actualizarPuntajesCrediticios');
 Route::get('/obtenerDetalleCliente', 'PuntajeCrediticioController@obtenerDetalleCliente');
-Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
+// DESHABILITADO: El puntaje se actualiza automáticamente. El botón ahora solo refresca datos desde el frontend.
+// Route::post('/actualizarPuntajeIndividual', 'PuntajeCrediticioController@actualizarPuntajeIndividual');
 Route::post('/restablecerPuntajeIndividual', 'PuntajeCrediticioController@restablecerPuntajeIndividual');
 
 // RUTAS DE EXPORTACI N

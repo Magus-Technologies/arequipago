@@ -47,16 +47,18 @@ class Productov2
 
         
         public function insertar(
-            $nombre, 
-            $codigo, 
-            $cantidad, 
-            $categoria, 
-            $ruc, 
-            $razon_social, 
-            $fecha_vencimiento = null, 
+            $nombre,
+            $marca = null,
+            $modelo = null,
+            $codigo,
+            $cantidad,
+            $categoria,
+            $ruc,
+            $razon_social,
+            $fecha_vencimiento = null,
             $fecha_registro = null,
-            $tipo_producto, 
-            $cantidad_unidad = null, 
+            $tipo_producto,
+            $cantidad_unidad = null,
             $unidad_medida = null,
             $precio = null,
             $guia_remision = null,
@@ -115,26 +117,27 @@ class Productov2
                 $moneda = 'S/.'; // Valor por defecto
             }
 
-                $sql = "INSERT INTO productosv2 (nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, moneda, descuento_cuota, estado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
-        
+                $sql = "INSERT INTO productosv2 (nombre, marca, modelo, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, moneda, descuento_cuota, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
+
                 // Preparar la consulta
                 $stmt = $this->conectar->prepare($sql);
-        
-                // Enlazar par�metros en el orden correcto
-                $stmt->bind_param(
-                    "ssissssssssssssss",
-                    
 
-                    $nombre, 
-                    $codigo, 
-                    $cantidad, 
-                    $categoria, 
-                    $ruc, 
-                    $razon_social, 
-                    $fecha_vencimiento, 
-                    $tipo_producto, 
-                    $cantidad_unidad, 
+                // Enlazar parámetros en el orden correcto
+                $stmt->bind_param(
+                    "ssssissssssssssssss",
+
+                    $nombre,
+                    $marca,
+                    $modelo,
+                    $codigo,
+                    $cantidad,
+                    $categoria,
+                    $ruc,
+                    $razon_social,
+                    $fecha_vencimiento,
+                    $tipo_producto,
+                    $cantidad_unidad,
                     $unidad_medida,
                     $precio,
                     $fecha_registro,

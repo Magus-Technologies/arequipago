@@ -1,0 +1,534 @@
+
+      :root {
+          --color-primary: #ec4561;
+          --color-secondary: #38a4f8;
+          --color-accent: #fcf34b;
+          --color-success: #02a499;
+          --color-purple: #626ed4;
+          --color-dark: #3f4a5c;
+          --color-bg: #f8f8fa;
+          --color-green: #4CAF50;
+          --color-yellow: #FFC107;
+          --color-orange: #FF9800;
+          --color-red: #F44336;
+      }
+
+      body {
+          background-color: var(--color-bg);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      .main-container {
+          padding: 2rem;
+          max-width: 1400px;
+          margin: 0 auto;
+      }
+
+      .page-title {
+          color: var(--color-dark);
+          font-size: 2.5rem;
+          font-weight: 700;
+          margin-bottom: 2rem;
+          text-align: center;
+      }
+
+      .filters-card {
+          background: white;
+          border-radius: 15px;
+          padding: 1.5rem;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+          margin-bottom: 2rem;
+      }
+
+      .filters-title {
+          color: var(--color-dark);
+          font-size: 1.2rem;
+          font-weight: 600;
+          margin-bottom: 1rem;
+      }
+
+      .btn-filter {
+          border: 2px solid var(--color-secondary);
+          background: white;
+          color: var(--color-secondary);
+          border-radius: 25px;
+          padding: 0.5rem 1.5rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+      }
+
+
+
+      .btn-filter:hover,
+      .btn-filter.active {
+          background: var(--color-secondary);
+          color: white;
+      }
+
+      .btn-action {
+          background: #000;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 0.7rem 1.5rem;
+          font-weight: 500;
+          transition: all 0.3s ease;
+      }
+
+      .btn-action:hover {
+          background: #333;
+          color: white;
+      }
+
+     /* REEMPLAZAR EL ESTILO ANTERIOR CON ESTE: */
+        .btn-outline-secondary {
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #6c757d;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            height: calc(1.5em + 1rem + 2px); /* Misma altura que los inputs */
+        }
+
+        .btn-outline-secondary:hover {
+            background: #f8f9fa;
+            color: #495057;
+            border-color: #adb5bd;
+        }
+
+
+      .clientes-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 1.5rem;
+          margin-bottom: 2rem;
+      }
+
+      .cliente-card {
+          background: white;
+          border-radius: 15px;
+          padding: 1.5rem;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          position: relative;
+          overflow: hidden;
+      }
+
+      .cliente-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      }
+
+      .cliente-info h5 {
+          color: var(--color-dark);
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+      }
+
+      .cliente-info p {
+          color: #666;
+          margin-bottom: 0.3rem;
+          font-size: 0.9rem;
+      }
+
+      .puntaje-container {
+          text-align: center;
+          margin: 1rem 0;
+      }
+
+      /* BUSCA Y REEMPLAZA TODA ESTA SECCIÓN: */
+.speedometer {
+  width: 120px;
+  height: 90px;
+  margin: 0 auto 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.speedometer-bg {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(
+        from 270deg,
+        var(--color-red) 0deg 45deg,
+        var(--color-orange) 45deg 90deg,
+        var(--color-yellow) 90deg 135deg,
+        var(--color-green) 135deg 180deg,
+        transparent 180deg 360deg
+    );
+  padding: 8px;
+  position: relative;
+  top: 0;
+  overflow: hidden;
+}
+
+.speedometer-bg::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg);
+  z-index: 1;
+}
+
+.speedometer-inner {
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+.speedometer-content {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 15;
+}
+
+.speedometer-needle {
+  position: absolute;
+  bottom: 8px; /* Base del semicírculo */
+  left: 50%;
+  width: 3px;
+  height: 45px;
+  background: var(--color-dark);
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg); /* Posición inicial en 0 grados */
+  transition: transform 0.3s ease;
+  z-index: 10;
+}
+
+.speedometer-needle::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          left: -3px;
+          width: 9px;
+          height: 9px;
+          background: var(--color-green); /* Corrected to green */
+          border: 2px solid white;
+          border-radius: 50%;
+          z-index: 21
+}
+
+.speedometer-labels {
+  position: absolute;
+  bottom: 5px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 0.65rem;
+  color: #666;
+  z-index: 5;
+}
+
+      .puntaje-numero {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: var(--color-dark);
+          line-height: 1;
+      }
+
+      .puntaje-label {
+          font-size: 0.7rem;
+          color: #666;
+          font-weight: 500;
+          text-transform: uppercase;
+      }
+
+      .puntaje-indicator {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 2px solid white;
+      }
+
+      .nivel-bueno { background-color: var(--color-green); }
+      .nivel-regular { background-color: var(--color-yellow); }
+      .nivel-malo { background-color: var(--color-orange); }
+      .nivel-pesimo { background-color: var(--color-red); }
+
+      .puntaje-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 1rem;
+          font-size: 0.8rem;
+          color: #666;
+      }
+
+      .btn-detalle {
+          background: var(--color-success);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 0.5rem 1rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          width: 100%;
+          margin-top: 1rem;
+          transition: all 0.3s ease;
+      }
+
+      .btn-detalle:hover {
+          background: #028a80;
+          color: white;
+      }
+
+      .btn-historial {
+          background: transparent;
+          color: var(--color-secondary);
+          border: 1px solid var(--color-secondary);
+          border-radius: 8px;
+          padding: 0.4rem 0.8rem;
+          font-size: 0.8rem;
+          margin-top: 0.5rem;
+          width: 100%;
+          transition: all 0.3s ease;
+      }
+
+      .btn-historial:hover {
+          background: var(--color-secondary);
+          color: white;
+      }
+
+      .stats-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-bottom: 2rem;
+      }
+
+      .stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 1.5rem;
+          text-align: center;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      }
+
+      .stat-number {
+          font-size: 2rem;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+      }
+
+      .stat-label {
+          color: #666;
+          font-size: 0.9rem;
+          font-weight: 500;
+      }
+
+      .pagination-container {
+          display: flex;
+          justify-content: center;
+          margin-top: 2rem;
+      }
+
+      .modal-header {
+          background: var(--color-dark);
+          color: white;
+          border: none;
+      }
+
+      .timeline-container {
+          max-height: 400px;
+          overflow-y: auto;
+      }
+
+      .timeline-item {
+          display: flex;
+          align-items: center;
+          padding: 1rem;
+          border-bottom: 1px solid #eee;
+      }
+
+      .timeline-date {
+          min-width: 100px;
+          font-weight: 600;
+          color: var(--color-dark);
+      }
+
+      .timeline-status {
+          margin-left: 1rem;
+          padding: 0.3rem 0.8rem;
+          border-radius: 15px;
+          font-size: 0.8rem;
+          font-weight: 500;
+      }
+
+      .status-puntual {
+          background: rgba(76, 175, 80, 0.1);
+          color: var(--color-green);
+      }
+
+      .status-retraso {
+          background: rgba(255, 152, 0, 0.1);
+          color: var(--color-orange);
+      }
+
+      .status-vencido {
+          background: rgba(244, 67, 54, 0.1);
+          color: var(--color-red);
+      }
+
+      .loading-spinner {
+          display: none;
+          text-align: center;
+          padding: 2rem;
+      }
+
+      .empty-state {
+          text-align: center;
+          padding: 3rem;
+          color: #666;
+      }
+
+      .empty-state i {
+          font-size: 4rem;
+          color: #ddd;
+          margin-bottom: 1rem;
+      }
+
+      .info-group p {
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+      }
+
+      /* BUSCA Y REEMPLAZA speedometer-mini: */
+      .speedometer-mini {
+          width: 80px;
+          height: 60px; /* Aumentado */
+          margin: 0 auto;
+          position: relative;
+          overflow: hidden;
+      }
+
+      .speedometer-bg-mini {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: conic-gradient(
+          from 225deg,
+          var(--color-red) 0deg 45deg,
+          var(--color-orange) 45deg 90deg,
+          var(--color-yellow) 90deg 135deg,
+          var(--color-green) 135deg 180deg,
+          transparent 180deg 360deg
+      );
+  padding: 4px;
+  position: relative;
+  top: -20px;
+  overflow: hidden;
+}
+
+.speedometer-bg-mini::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg);
+  z-index: 1;
+}
+
+.speedometer-inner {
+  z-index: 2;
+}
+
+.speedometer-inner-mini {
+  z-index: 2;
+}
+
+.speedometer-needle {
+  z-index: 10;
+}
+
+.speedometer-needle-mini {
+  z-index: 10;
+}
+
+.speedometer-content {
+  z-index: 15;
+}
+
+.speedometer-content-mini {
+  z-index: 15;
+}
+
+      .speedometer-inner-mini {
+          width: calc(100% - 8px);
+          height: calc(100% - 8px);
+          background: white;
+          border-radius: 50%;
+          position: absolute;
+          top: 4px;
+          left: 4px;
+      }
+
+      .speedometer-content-mini {
+          position: absolute;
+          bottom: 15px;
+          left: 50%;
+          transform: translateX(-50%);
+          text-align: center;
+          z-index: 15;
+      }
+
+      .speedometer-needle-mini {
+          position: absolute;
+          bottom: 40px; /* Ajustado */
+          left: 50%;
+          width: 2px;
+          height: 34px;
+          background: var(--color-dark);
+          transform-origin: bottom center;
+          transform: translateX(-50%) rotate(-90deg);
+          transition: transform 0.3s ease;
+          z-index: 10;
+      }
+
+      .speedometer-needle-mini::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -2px;
+      width: 6px;
+      height: 6px;
+      background: var(--color-green);
+      border: 2px solid white; /* asegurar borde blanco */
+      border-radius: 50%;
+  }
+      .puntaje-numero-mini {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: var(--color-dark);
+      }
+
+      .puntaje-detalle {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+      }
+
+      .chart-container {
+          max-height: 300px;
+          overflow-y: auto;
+      }
+ 

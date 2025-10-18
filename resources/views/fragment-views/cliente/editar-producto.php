@@ -610,7 +610,21 @@
         function renderizarCaracteristicas(caracteristicas, esNuevaCategoria = false) {
             const caracteristicasDiv = $('#caracteristicasProducto');
             let html = '';
-            
+
+            // Mapeo de nombres de características de celular a nombres de campos
+            const mapeoCaracteristicasCelular = {
+                'chip_linea': 'chip_linea',
+                'marca_equipo': 'marca',
+                'modelo': 'modelo',
+                'nro_imei': 'imei',
+                'nro_imei 2': 'imei2',
+                'color': 'color',
+                'cargador': 'cargador',
+                'cable_usb': 'cable_usb',
+                'manual_usuario': 'manual_usuario',
+                'estuche': 'estuche'
+            };
+
             // Si no es nueva categoría y tenemos una categoría específica, cargar campos completos
             if (!esNuevaCategoria && categoriaOriginal) {
                 const categoriaNorm = normalizarTexto(categoriaOriginal);
@@ -620,16 +634,25 @@
             }
 
             if (Array.isArray(caracteristicas) && caracteristicas.length > 0) {
+                const categoriaNorm = normalizarTexto(categoriaOriginal);
+                const esCelular = categoriaNorm.includes('celular');
+
                 caracteristicas.forEach((car, index) => {
                     let valor = '';
                     if (!esNuevaCategoria && car.valor_caracteristica !== undefined) {
                         valor = car.valor_caracteristica;
                     }
-                    
+
                     const nombre = car.nombre_caracteristicas || car.nombre || `Característica ${index + 1}`;
-                    const campo = car.campo || `caracteristica_${index + 1}`;
+                    let campo = car.campo || `caracteristica_${index + 1}`;
                     let tipo = car.tipo || 'text';
-                    
+
+                    // CAMBIO IMPORTANTE: Para celular, usar el mapeo correcto
+                    if (esCelular) {
+                        const nombreCaracteristica = car.nombre_caracteristicas;
+                        campo = mapeoCaracteristicasCelular[nombreCaracteristica] || campo;
+                    }
+
                     // Detectar si debe ser fecha basándose en el nombre de la característica
                     const nombreNorm = normalizarTexto(nombre);
                     if (nombreNorm.includes('fecha')) {
@@ -637,7 +660,7 @@
                     } else if (nombreNorm.includes('anio') || nombreNorm.includes('año')) {
                         tipo = 'number';
                     }
-                    
+
                     html += `
                         <div class="mb-3">
                             <label class="form-label">
@@ -652,7 +675,7 @@
             } else {
                 html = '<p class="text-muted text-center"><i class="fas fa-info-circle"></i> No hay características específicas para esta categoría.</p>';
             }
-            
+
             caracteristicasDiv.html(html);
         }
         
@@ -800,17 +823,21 @@
                 const caracteristicas = [];
                 $('#caracteristicasProducto input').each(function() {
                     const element = $(this);
-                    const nombre = element.siblings('label').text().replace(/^\s*[\u2713\u2611\u2713\uFE0E]\s*/, '').trim();
+                    const labelText = element.siblings('label').text();
+                    // Remover el icono del label para obtener solo el nombre
+                    const nombre = labelText.replace(/^\s*[\u2713\u2611\u2713\uFE0E]\s*/, '').trim();
                     const valor = element.val().trim();
-                    
-                    if (nombre && valor) {
+
+                    // CAMBIO: Enviar TODAS las características, incluso las vacías
+                    if (nombre) {
                         caracteristicas.push({
                             nombre_caracteristica: nombre,
-                            valor_caracteristica: valor
+                            valor_caracteristica: valor  // Puede estar vacío
                         });
                     }
                 });
-                
+
+                // CAMBIO: Siempre enviar el array de características si existe
                 if (caracteristicas.length > 0) {
                     formData.append('caracteristicas', JSON.stringify(caracteristicas));
                 }
