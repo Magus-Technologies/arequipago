@@ -1407,8 +1407,12 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
     function guardarProducto() {
         // Obtener los datos del formulario
         var nombre = document.getElementById('nombre_producto').value;
-        var marca = document.getElementById('marca_producto').value;
-        var modelo = document.getElementById('modelo_producto').value;
+
+        // Obtener marca y modelo si existen (pueden estar en campos generales o de vehículo)
+        var marcaElement = document.getElementById('marca_producto') || document.getElementById('marca_vehiculo');
+        var modeloElement = document.getElementById('modelo_producto') || document.getElementById('modelo_vehiculo');
+        var marca = marcaElement ? marcaElement.value : '';
+        var modelo = modeloElement ? modeloElement.value : '';
 
         // Obtener el tipo de producto usando el texto visible
         var tipo_producto_select = document.getElementById('tipo_producto');
@@ -2102,9 +2106,11 @@ function actualizarSelectCategoriaProducto(nuevaCategoriaProducto) {
             text: nuevaCategoriaProducto.nombre
         });
         select.append(nuevaOpcion);
-        
-        // Actualizar Select2 para que reconozca la nueva opción
-        select.trigger('change.select2');
+
+        // Actualizar Select2 solo si está inicializado
+        if (typeof $.fn.select2 !== 'undefined' && select.hasClass('select2-hidden-accessible')) {
+            select.trigger('change.select2');
+        }
     }
 }
 
@@ -2117,13 +2123,13 @@ function cargarCategoriaProductos() {
             if (Array.isArray(response)) {
                 var select = $('#categoria_producto');
                 select.empty(); // Limpiar opciones anteriores
-                
+
                 // Agregar opción por defecto
                 select.append($('<option>', {
                     value: 'seleccionar_categoría',
                     text: 'Seleccionar Categoría'
                 }));
-                
+
                 // Agregar las categorías
                 response.forEach(function(categoria) {
                     select.append($('<option>', {
@@ -2131,14 +2137,22 @@ function cargarCategoriaProductos() {
                         text: categoria.nombre
                     }));
                 });
-                
-                // Inicializar Select2 con scroll
-                select.select2({
-                    placeholder: "Seleccionar Categoría",
-                    allowClear: false,
-                    width: '100%',
-                    dropdownParent: $('#modal-add-prod') // Importante para que funcione en modales
-                });
+
+                // Inicializar Select2 solo si está disponible
+                if (typeof $.fn.select2 !== 'undefined') {
+                    try {
+                        select.select2({
+                            placeholder: "Seleccionar Categoría",
+                            allowClear: false,
+                            width: '100%',
+                            dropdownParent: $('#modal-add-prod') // Importante para que funcione en modales
+                        });
+                    } catch (error) {
+                        console.warn('Select2 no se pudo inicializar:', error);
+                    }
+                } else {
+                    console.warn('Select2 no está disponible, usando select normal');
+                }
             } else {
                 console.error("La respuesta no es un arreglo");
             }
