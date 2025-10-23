@@ -163,3 +163,489 @@
             color: red;
             cursor: pointer;
         }
+
+/* ========== ESTILOS PARA FILTROS ========== */
+
+/* Contenedor de filtros */
+.row.mb-3 {
+    margin-bottom: 1rem;
+}
+
+/* Estilos para los selectores de filtro */
+#filtroStock,
+#filtroTipoProducto,
+#filtroCategoria {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+#filtroStock:focus,
+#filtroTipoProducto:focus,
+#filtroCategoria:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Etiquetas de los filtros */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+/* Botón de limpiar filtros */
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Indicador visual de filtros activos */
+.form-select.active-filter {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+/* Mensaje cuando no hay resultados */
+.text-center {
+    padding: 2rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Animación suave para la tabla */
+#tbodyProductos tr {
+    transition: background-color 0.2s ease;
+}
+
+#tbodyProductos tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Resaltar productos con stock bajo */
+#tbodyProductos tr[data-stock-bajo="true"] td:nth-child(4) {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Resaltar productos sin stock */
+#tbodyProductos tr[data-sin-stock="true"] td:nth-child(4) {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Responsive para filtros en móviles */
+@media (max-width: 768px) {
+    .row.mb-3 .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    #import-btn {
+        width: 100%;
+    }
+}
+
+/* Estilo para el contenedor de filtros */
+.card-header .row.mb-3:last-of-type {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+}
+
+
+/* ========== DROPDOWN PERSONALIZADO DE CATEGORÍAS CON CHECKBOXES ========== */
+
+.dropdown-categoria-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.btn-dropdown-categoria {
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.btn-dropdown-categoria:hover {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+.btn-dropdown-categoria:focus {
+    outline: none;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-dropdown-categoria i {
+    transition: transform 0.3s ease;
+    color: #6c757d;
+}
+
+.btn-dropdown-categoria.active i {
+    transform: rotate(180deg);
+}
+
+#categoriasSeleccionadasText {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #495057;
+}
+
+.dropdown-categoria-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.25rem;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    display: none;
+    max-width: 100%;
+}
+
+.dropdown-categoria-menu.show {
+    display: block;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-categoria-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.dropdown-categoria-title {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.btn-limpiar-categoria {
+    background: none;
+    border: none;
+    color: #0d6efd;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.btn-limpiar-categoria:hover {
+    background-color: #e7f1ff;
+    color: #0a58ca;
+}
+
+#contadorCategorias {
+    display: none;  /* Oculto por defecto */
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    font-weight: bold;
+}
+
+/* Mostrar solo cuando tiene contenido (no vacío) */
+#contadorCategorias:not(:empty) {
+    display: inline-block;
+}
+
+.dropdown-categoria-search {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.dropdown-categoria-search input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.dropdown-categoria-search input:focus {
+    outline: none;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.dropdown-categoria-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+/* Scrollbar personalizado */
+.dropdown-categoria-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dropdown-categoria-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.dropdown-categoria-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.dropdown-categoria-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.categoria-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.categoria-item:hover {
+    background-color: #f8f9fa;
+}
+
+.categoria-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    accent-color: #0d6efd;
+}
+
+.categoria-item label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    font-size: 0.95rem;
+    color: #495057;
+    user-select: none;
+}
+
+.categoria-item.selected {
+    background-color: #e7f1ff;
+}
+
+.categoria-item.selected label {
+    color: #0a58ca;
+    font-weight: 500;
+}
+
+/* Mensaje cuando no hay resultados */
+.no-categorias-found {
+    padding: 1rem;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+/* Cerrar dropdown al hacer clic fuera */
+.dropdown-categoria-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1040;
+    display: none;
+}
+
+.dropdown-categoria-backdrop.show {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dropdown-categoria-menu {
+        position: fixed;
+        left: 1rem;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        max-height: 80vh;
+    }
+    
+    .dropdown-categoria-list {
+        max-height: 50vh;
+    }
+}
+
+/* Animación para el contador */
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+#contadorCategorias.updated {
+    animation: pulse 0.3s ease;
+}
+
+/* Estilo para el contenedor de filtros */
+.filtros-container {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ========== FILTRO DE STOCK ESTILO TEXTO MINIMALISTA ========== */
+
+.stock-filter-buttons {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Botón Limpiar (aparece solo cuando hay filtros activos) */
+.btn-limpiar-filtros {
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    text-decoration: underline;
+    white-space: nowrap;
+    margin-left: 0.5rem;
+}
+
+.btn-limpiar-filtros:hover {
+    color: #0d6efd;
+}
+
+/* Filtros de stock - Estilo texto simple NEGRO */
+.btn-stock-filter {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #212529;  /* Negro por defecto */
+    font-size: 0.95rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Efecto hover - Mantiene el color negro */
+.btn-stock-filter:hover {
+    color: #000;  /* Negro más oscuro en hover */
+}
+
+/* Filtro activo - Texto negro (no cambia) */
+.btn-stock-filter.active {
+    color: #212529;  /* Negro siempre */
+    font-weight: 400;  /* Peso normal */
+}
+
+/* Indicador circular - Siempre visible */
+.stock-indicator-active {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: transparent;  /* Transparente por defecto */
+    border: 2px solid #d0d0d0;  /* Borde gris claro (bolita blanca/vacía) */
+    display: inline-block;  /* Siempre visible */
+    transition: all 0.2s ease;
+}
+
+/* Bolita AZUL SÓLIDA cuando el filtro está activo */
+.btn-stock-filter.active .stock-indicator-active {
+    background-color: #0d6efd;  /* Azul sólido */
+    border-color: #0d6efd;  /* Borde azul */
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .stock-filter-buttons {
+        gap: 1rem;
+    }
+    
+    .btn-stock-filter {
+        font-size: 0.875rem;
+    }
+}
+
+/* Ajuste del contenedor de filtros */
+.filtros-container .form-label {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+/* Hacer el select más compacto */
+.form-select-sm {
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    border-color: #e0e0e0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.form-select-sm:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}

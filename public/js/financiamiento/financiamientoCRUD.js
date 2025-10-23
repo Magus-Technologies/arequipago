@@ -269,16 +269,17 @@ function saveFinanciamiento(event) {
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
         if (response.success) {
-          // Preparar array de pagos a generar
+         // Preparar array de pagos a generar
           const pagos = [];
-
+          const metodoPago = $("#metodoPago").val() || "Efectivo"; // Valor por defecto
+                  
           if (montoInscrip > 0) {
             pagos.push({
               monto: montoInscrip,
               tipo: "Monto de Inscripción",
             });
           }
-
+          
           if (cuotaInicial > 0) {
             pagos.push({
               monto: cuotaInicial,
@@ -287,8 +288,9 @@ function saveFinanciamiento(event) {
           }
           // Solo hacer la llamada si hay pagos para generar
           if (pagos.length > 0) {
-            handleGeneratePDFs(response.id_financiamiento, pagos);
+            handleGeneratePDFs(response.id_financiamiento, pagos, metodoPago);
           }
+
           // 🐱 Clear the selected variant ID
           limpiarVarianteSeleccionada();
           document.getElementById("grupo").value = "";

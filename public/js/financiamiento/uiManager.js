@@ -105,51 +105,83 @@ let idFinanciamientoSeleccionado = null;
 function seleccionarFinanciamiento(row) {
   try {
     let financiamiento = JSON.parse(row.getAttribute("data-financiamiento"));
-    idFinanciamientoSeleccionado = financiamiento.financiamiento.idfinanciamiento;
+    idFinanciamientoSeleccionado =
+      financiamiento.financiamiento.idfinanciamiento;
     let simboloMoneda = financiamiento.financiamiento.moneda;
 
     // NUEVO: Verificar si el producto es ID 37 para mostrar botón "Entregar vehículo"
     const btnEntregarVehiculo = document.getElementById("btnEntregarVehiculo");
     if (btnEntregarVehiculo) {
-        if (financiamiento.producto && financiamiento.producto.idproductosv2 == 37) {
-            btnEntregarVehiculo.style.display = "inline-block";
-        } else {
-            btnEntregarVehiculo.style.display = "none";
-        }
+      if (
+        financiamiento.producto &&
+        financiamiento.producto.idproductosv2 == 37
+      ) {
+        btnEntregarVehiculo.style.display = "inline-block";
+      } else {
+        btnEntregarVehiculo.style.display = "none";
+      }
     }
 
     // NUEVO: Verificar si el vehículo ya fue entregado para mostrar botón de descarga
-    const btnDescargarContrato = document.getElementById("btnDescargarContratoEntrega");
+    const btnDescargarContrato = document.getElementById(
+      "btnDescargarContratoEntrega"
+    );
     if (btnDescargarContrato) {
-        // Lógica mejorada: Verificar si es vehículo por categoría del producto
-        let esVehiculo = false;
-        let vehiculoYaEntregado = false;
-        
-        if (financiamiento.producto) {
-            // Verificar si la categoría del producto es "Vehículo" o similar
-            const categoria = (financiamiento.producto.categoria || '').toLowerCase();
-            esVehiculo = categoria.includes('vehiculo') || categoria.includes('vehículo');
-            
-            // Verificar si ya fue entregado (idproductosv2 != 37)
-            vehiculoYaEntregado = (financiamiento.producto.idproductosv2 != 37);
-        }
-        
-        // Mostrar botón solo si es vehículo Y ya fue entregado
-        if (esVehiculo && vehiculoYaEntregado) {
-            btnDescargarContrato.style.display = "block";
-        } else {
-            btnDescargarContrato.style.display = "none";
-        }
+      // Lógica mejorada: Verificar si es vehículo por categoría del producto
+      let esVehiculo = false;
+      let vehiculoYaEntregado = false;
+
+      if (financiamiento.producto) {
+        // Verificar si la categoría del producto es "Vehículo" o similar
+        const categoria = (
+          financiamiento.producto.categoria || ""
+        ).toLowerCase();
+        esVehiculo =
+          categoria.includes("vehiculo") || categoria.includes("vehículo");
+
+        // Verificar si ya fue entregado (idproductosv2 != 37)
+        vehiculoYaEntregado = financiamiento.producto.idproductosv2 != 37;
+      }
+
+      // Mostrar botón solo si es vehículo Y ya fue entregado
+      if (esVehiculo && vehiculoYaEntregado) {
+        btnDescargarContrato.style.display = "block";
+      } else {
+        btnDescargarContrato.style.display = "none";
+      }
+    }
+
+    // NUEVO: Verificar si hay pagos iniciales (cuota inicial o monto de inscripción)
+    const btnBoletasIniciales = document.getElementById(
+      "btnDescargarBoletasIniciales"
+    );
+    if (btnBoletasIniciales) {
+      const cuotaInicial =
+        parseFloat(financiamiento.financiamiento.cuota_inicial) || 0;
+      const montoInscrip =
+        parseFloat(financiamiento.financiamiento.monto_inscrip) || 0;
+      const montoRecalculado =
+        parseFloat(financiamiento.financiamiento.monto_recalculado) || 0;
+
+      // Mostrar botón si hay algún pago inicial
+      if (cuotaInicial > 0 || montoInscrip > 0 || montoRecalculado > 0) {
+        btnBoletasIniciales.style.display = "block";
+      } else {
+        btnBoletasIniciales.style.display = "none";
+      }
     }
 
     // Actualizar el "select box" con el nombre del producto seleccionado
     const selectBoxDetalle = document.getElementById("selectBoxDetalle");
     if (selectBoxDetalle) {
-      selectBoxDetalle.innerText = financiamiento.producto.nombre || "Seleccionar un financiamiento";
+      selectBoxDetalle.innerText =
+        financiamiento.producto.nombre || "Seleccionar un financiamiento";
     }
 
     // Mostrar el contenedor de detalles
-    let detalleContainer = document.getElementById("detalleFinanciamientoContainer");
+    let detalleContainer = document.getElementById(
+      "detalleFinanciamientoContainer"
+    );
     if (detalleContainer) {
       detalleContainer.style.display = "block";
     }
@@ -165,23 +197,33 @@ function seleccionarFinanciamiento(row) {
       estado: document.getElementById("modalFinanciamientoEstado"),
       fechaInicio: document.getElementById("modalFechaInicio"),
       fechaFin: document.getElementById("modalFechaFin"),
-      usuario: document.getElementById("modalUsuarioRegistro")
+      usuario: document.getElementById("modalFinanciamientoUsuarioRegistro"), // ✅ CORREGIDO: ID correcto del HTML
     };
 
     // Llenar datos del cliente solo si los elementos existen
     if (elementos.documento) {
-      let documento = financiamiento.conductor.nro_documento || financiamiento.conductor.n_documento || "N/A";
+      let documento =
+        financiamiento.conductor.nro_documento ||
+        financiamiento.conductor.n_documento ||
+        "N/A";
       elementos.documento.innerText = documento;
     }
 
     if (elementos.nombres) {
-      let nombreCompleto = `${financiamiento.conductor.nombres || ""} ${financiamiento.conductor.apellido_paterno || ""} ${financiamiento.conductor.apellido_materno || ""}`.trim();
+      let nombreCompleto = `${financiamiento.conductor.nombres || ""} ${
+        financiamiento.conductor.apellido_paterno || ""
+      } ${financiamiento.conductor.apellido_materno || ""}`.trim();
       elementos.nombres.innerText = nombreCompleto || "N/A";
     }
 
     if (elementos.direccion) {
-      let direccionCompleta = `${financiamiento.direccion.departamento || ""}, ${financiamiento.direccion.provincia || ""}, ${financiamiento.direccion.distrito || ""}, ${financiamiento.direccion.direccion_detalle || ""}`.trim();
-      elementos.direccion.innerText = direccionCompleta || "Dirección no disponible";
+      let direccionCompleta = `${
+        financiamiento.direccion.departamento || ""
+      }, ${financiamiento.direccion.provincia || ""}, ${
+        financiamiento.direccion.distrito || ""
+      }, ${financiamiento.direccion.direccion_detalle || ""}`.trim();
+      elementos.direccion.innerText =
+        direccionCompleta || "Dirección no disponible";
     }
 
     if (elementos.telefono) {
@@ -190,15 +232,20 @@ function seleccionarFinanciamiento(row) {
 
     // Llenar los datos del financiamiento solo si los elementos existen
     if (elementos.codigo) {
-      elementos.codigo.innerText = financiamiento.financiamiento.codigo_asociado || "N/A";
+      elementos.codigo.innerText =
+        financiamiento.financiamiento.codigo_asociado || "N/A";
     }
 
     if (elementos.grupo) {
-      elementos.grupo.innerText = financiamiento.financiamiento.nombre_plan || financiamiento.financiamiento.grupo_financiamiento || "N/A";
+      elementos.grupo.innerText =
+        financiamiento.financiamiento.nombre_plan ||
+        financiamiento.financiamiento.grupo_financiamiento ||
+        "N/A";
     }
 
     if (elementos.estado) {
-      elementos.estado.innerText = financiamiento.financiamiento.estado || "N/A";
+      elementos.estado.innerText =
+        financiamiento.financiamiento.estado || "N/A";
     }
 
     // NUEVO: Llenar campos según tipo de plan
@@ -206,60 +253,93 @@ function seleccionarFinanciamiento(row) {
       // Mostrar campos de vehículo
       document.getElementById("campoCapacidadCompra").style.display = "block";
       document.getElementById("infoVehiculo").style.display = "block";
-      
+
       // Llenar capacidad de compra actual
-      const capacidadCompra = financiamiento.financiamiento.capacidad_compra_actual || 0;
-      document.getElementById("modalFinanciamientoCapacidadCompra").innerText = 
-        `${simboloMoneda} ${capacidadCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      
+      const capacidadCompra =
+        financiamiento.financiamiento.capacidad_compra_actual || 0;
+      document.getElementById(
+        "modalFinanciamientoCapacidadCompra"
+      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2 }
+      )}`;
+
       // Llenar información del plan
-      const planOriginal = financiamiento.financiamiento.plan_capacidad_original || 0;
-      document.getElementById("modalFinanciamientoPlanOriginal").innerText = 
-        `${simboloMoneda} ${planOriginal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      
-      const semanasPerdidas = financiamiento.financiamiento.semanas_perdidas || 0;
-      document.getElementById("modalFinanciamientoSemanasPerdidas").innerText = semanasPerdidas;
-      
+      const planOriginal =
+        financiamiento.financiamiento.plan_capacidad_original || 0;
+      document.getElementById(
+        "modalFinanciamientoPlanOriginal"
+      ).innerText = `${simboloMoneda} ${planOriginal.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+      })}`;
+
+      const semanasPerdidas =
+        financiamiento.financiamiento.semanas_perdidas || 0;
+      document.getElementById("modalFinanciamientoSemanasPerdidas").innerText =
+        semanasPerdidas;
+
       const dineroPerdido = financiamiento.financiamiento.dinero_perdido || 0;
-      document.getElementById("modalFinanciamientoDineroPerdido").innerText = 
-        `${simboloMoneda} ${dineroPerdido.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-      
+      document.getElementById(
+        "modalFinanciamientoDineroPerdido"
+      ).innerText = `${simboloMoneda} ${dineroPerdido.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+      })}`;
+
       // Llenar monto de compra (capacidad actual)
-      document.getElementById("modalFinanciamientoMontoCompra").innerText = 
-        `${simboloMoneda} ${capacidadCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      document.getElementById(
+        "modalFinanciamientoMontoCompra"
+      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2 }
+      )}`;
     } else {
       // Ocultar campos de vehículo para otros productos
       document.getElementById("campoCapacidadCompra").style.display = "none";
       document.getElementById("infoVehiculo").style.display = "none";
-      
+
       // Llenar monto de compra normal
-      const montoCompra = financiamiento.financiamiento.monto_sin_interes || financiamiento.financiamiento.monto_total || 0;
-      document.getElementById("modalFinanciamientoMontoCompra").innerText = 
-        `${simboloMoneda} ${montoCompra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+      const montoCompra =
+        financiamiento.financiamiento.monto_sin_interes ||
+        financiamiento.financiamiento.monto_total ||
+        0;
+      document.getElementById(
+        "modalFinanciamientoMontoCompra"
+      ).innerText = `${simboloMoneda} ${montoCompra.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+      })}`;
     }
 
     // Llenar monto total (siempre visible)
     const montoTotal = financiamiento.financiamiento.monto_total || 0;
-    document.getElementById("modalFinanciamientoMontoTotal").innerText = 
-      `${simboloMoneda} ${montoTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById(
+      "modalFinanciamientoMontoTotal"
+    ).innerText = `${simboloMoneda} ${montoTotal.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+    })}`;
 
     if (elementos.fechaInicio) {
-      elementos.fechaInicio.innerText = financiamiento.financiamiento.fecha_inicio || "N/A";
+      elementos.fechaInicio.innerText =
+        financiamiento.financiamiento.fecha_inicio || "N/A";
     }
 
     if (elementos.fechaFin) {
-      elementos.fechaFin.innerText = financiamiento.financiamiento.fecha_fin || "N/A";
+      elementos.fechaFin.innerText =
+        financiamiento.financiamiento.fecha_fin || "N/A";
     }
 
     if (elementos.usuario) {
-      elementos.usuario.innerText = financiamiento.financiamiento.usuario_registro || "No identificado";
+      elementos.usuario.innerText =
+        financiamiento.financiamiento.usuario_registro || "No identificado";
     }
 
     // Llenar la tabla de cuotas solo si el elemento existe
     let cuotasTable = document.getElementById("modalCuotasTable");
     if (cuotasTable) {
       cuotasTable.innerHTML = ""; // Limpiar contenido anterior
-      if (financiamiento.financiamiento.cuotas && financiamiento.financiamiento.cuotas.length > 0) {
+      if (
+        financiamiento.financiamiento.cuotas &&
+        financiamiento.financiamiento.cuotas.length > 0
+      ) {
         let tableHeader = `
                     <thead>
                         <tr>
@@ -284,7 +364,8 @@ function seleccionarFinanciamiento(row) {
           .join("");
         cuotasTable.innerHTML = tableHeader + tableBody + `</tbody>`;
       } else {
-        cuotasTable.innerHTML = "<tr><td colspan='4'>No hay cuotas disponibles</td></tr>";
+        cuotasTable.innerHTML =
+          "<tr><td colspan='4'>No hay cuotas disponibles</td></tr>";
       }
     } else {
       console.error("❌ Elemento 'modalCuotasTable' no encontrado");
@@ -292,10 +373,12 @@ function seleccionarFinanciamiento(row) {
 
     // Ocultar la tabla de selección después de elegir un financiamiento
     $("#detalleSelect").hide();
-
   } catch (error) {
     console.error("❌ Error en seleccionarFinanciamiento:", error);
-    console.error("Datos del financiamiento:", row.getAttribute("data-financiamiento"));
+    console.error(
+      "Datos del financiamiento:",
+      row.getAttribute("data-financiamiento")
+    );
   }
 }
 // Variable para almacenar el tooltip activo
@@ -431,10 +514,13 @@ function asignarEventListenersFinanciamiento() {
 
 // NUEVAS FUNCIONES para entregar vehículo
 function mostrarModalEntregarVehiculo() {
-    console.log("Mostrando modal para entregar vehículo, ID financiamiento:", idFinanciamientoSeleccionado);
-    
-    // Crear modal tecnológico con div
-    const modalHTML = `
+  console.log(
+    "Mostrando modal para entregar vehículo, ID financiamiento:",
+    idFinanciamientoSeleccionado
+  );
+
+  // Crear modal tecnológico con div
+  const modalHTML = `
         <div id="modalEntregarVehiculo" class="modal-entregar-vehiculo">
             <div class="modal-content-vehiculo">
                 <div class="modal-header-vehiculo">
@@ -477,234 +563,245 @@ function mostrarModalEntregarVehiculo() {
             </div>
         </div>
     `;
-    
-    // Agregar modal al body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // Mostrar modal con animación fluida
-    const modal = document.getElementById('modalEntregarVehiculo');
-    modal.style.display = 'flex';
-    // Forzar un reflow antes de agregar la clase show
-    modal.offsetHeight;
-    // Agregar clase para activar la animación
-    modal.classList.add('show');
-    
-    // Cargar productos vehiculares
-    cargarProductosVehiculos();
+
+  // Agregar modal al body
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  // Mostrar modal con animación fluida
+  const modal = document.getElementById("modalEntregarVehiculo");
+  modal.style.display = "flex";
+  // Forzar un reflow antes de agregar la clase show
+  modal.offsetHeight;
+  // Agregar clase para activar la animación
+  modal.classList.add("show");
+
+  // Cargar productos vehiculares
+  cargarProductosVehiculos();
 }
 
 function cerrarModalEntregarVehiculo() {
-    const modal = document.getElementById('modalEntregarVehiculo');
-    if (modal) {
-        // Remover clase show para activar animación de cierre
-        modal.classList.remove('show');
-        // Reducir tiempo de espera para cierre más rápido
-        setTimeout(() => {
-            modal.remove();
-        }, 200); // Cambiado de 400 a 200ms
-    }
-} 
+  const modal = document.getElementById("modalEntregarVehiculo");
+  if (modal) {
+    // Remover clase show para activar animación de cierre
+    modal.classList.remove("show");
+    // Reducir tiempo de espera para cierre más rápido
+    setTimeout(() => {
+      modal.remove();
+    }, 200); // Cambiado de 400 a 200ms
+  }
+}
 
 function cargarProductosVehiculos() {
-    $.ajax({
-        url: '/arequipago/obtenerProductosVehiculos',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            mostrarProductosVehiculos(data.productos || []);
-        },
-        error: function() {
-            console.error("Error al cargar productos vehiculares");
-            alert("Error al cargar los productos vehiculares");
-        }
-    });
+  $.ajax({
+    url: "/arequipago/obtenerProductosVehiculos",
+    type: "GET",
+    dataType: "json",
+    success: function (data) {
+      mostrarProductosVehiculos(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al cargar productos vehiculares");
+      alert("Error al cargar los productos vehiculares");
+    },
+  });
 }
 
 function mostrarProductosVehiculos(productos) {
-    const tbody = $('#tbodyVehiculosEntregar');
-    tbody.empty();
-    
-    productos.forEach(producto => {
-        const cantidad = parseInt(producto.cantidad) || 0;
-        const sinStock = cantidad === 0;
-        
-        tbody.append(`
-            <tr class="vehiculo-row ${sinStock ? 'sin-stock' : ''}" data-id-producto="${producto.idproductosv2}">
+  const tbody = $("#tbodyVehiculosEntregar");
+  tbody.empty();
+
+  productos.forEach((producto) => {
+    const cantidad = parseInt(producto.cantidad) || 0;
+    const sinStock = cantidad === 0;
+
+    tbody.append(`
+            <tr class="vehiculo-row ${
+              sinStock ? "sin-stock" : ""
+            }" data-id-producto="${producto.idproductosv2}">
                 <td>
-                    ${sinStock ? 
-                        '<span class="text-danger">Sin Stock</span>' : 
-                        `<input type="radio" name="vehiculoEntregar" class="vehiculo-checkbox" value="${producto.idproductosv2}">`
+                    ${
+                      sinStock
+                        ? '<span class="text-danger">Sin Stock</span>'
+                        : `<input type="radio" name="vehiculoEntregar" class="vehiculo-checkbox" value="${producto.idproductosv2}">`
                     }
                 </td>
-                <td>${producto.codigo || 'N/A'}</td>
-                <td>${producto.nombre || 'N/A'}</td>
-                <td class="${sinStock ? 'text-danger fw-bold' : ''}">${cantidad}</td>
-                <td>S/. ${parseFloat(producto.precio_venta || 0).toFixed(2)}</td>
+                <td>${producto.codigo || "N/A"}</td>
+                <td>${producto.nombre || "N/A"}</td>
+                <td class="${
+                  sinStock ? "text-danger fw-bold" : ""
+                }">${cantidad}</td>
+                <td>S/. ${parseFloat(producto.precio_venta || 0).toFixed(
+                  2
+                )}</td>
             </tr>
         `);
-    });
-    
-    // Event listener para selección (solo para productos con stock)
-    $('.vehiculo-checkbox').on('change', function() {
-        $('.vehiculo-row').removeClass('vehiculo-seleccionado');
-        $(this).closest('tr').addClass('vehiculo-seleccionado');
-    });
-    
-    // Event listener para mostrar alerta al hacer clic en productos sin stock
-    $('.sin-stock').on('click', function() {
-        mostrarNotificacionError('Este vehículo no tiene stock disponible');
-    });
+  });
+
+  // Event listener para selección (solo para productos con stock)
+  $(".vehiculo-checkbox").on("change", function () {
+    $(".vehiculo-row").removeClass("vehiculo-seleccionado");
+    $(this).closest("tr").addClass("vehiculo-seleccionado");
+  });
+
+  // Event listener para mostrar alerta al hacer clic en productos sin stock
+  $(".sin-stock").on("click", function () {
+    mostrarNotificacionError("Este vehículo no tiene stock disponible");
+  });
 }
 
 function buscarVehiculosParaEntregar() {
-    const searchTerm = $('#buscarVehiculoInput').val();
-    
-    $.ajax({
-        url: '/arequipago/buscarProductosVehiculos',
-        type: 'GET',
-        data: { searchTerm: searchTerm },
-        dataType: 'json',
-        success: function(data) {
-            mostrarProductosVehiculos(data.productos || []);
-        },
-        error: function() {
-            console.error("Error al buscar productos vehiculares");
-        }
-    });
+  const searchTerm = $("#buscarVehiculoInput").val();
+
+  $.ajax({
+    url: "/arequipago/buscarProductosVehiculos",
+    type: "GET",
+    data: { searchTerm: searchTerm },
+    dataType: "json",
+    success: function (data) {
+      mostrarProductosVehiculos(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al buscar productos vehiculares");
+    },
+  });
 }
 
 function confirmarEntregaVehiculo() {
-    const productoSeleccionado = $('input[name="vehiculoEntregar"]:checked').val();
-    
-    if (!productoSeleccionado) {
-        mostrarNotificacionError("Por favor seleccione un vehículo para entregar");
-        return;
-    }
-    
-    if (!idFinanciamientoSeleccionado) {
-        mostrarNotificacionError("Error: No se ha seleccionado un financiamiento");
-        return;
-    }
-    
-    giveVehicle(productoSeleccionado, idFinanciamientoSeleccionado);
+  const productoSeleccionado = $(
+    'input[name="vehiculoEntregar"]:checked'
+  ).val();
+
+  if (!productoSeleccionado) {
+    mostrarNotificacionError("Por favor seleccione un vehículo para entregar");
+    return;
+  }
+
+  if (!idFinanciamientoSeleccionado) {
+    mostrarNotificacionError("Error: No se ha seleccionado un financiamiento");
+    return;
+  }
+
+  giveVehicle(productoSeleccionado, idFinanciamientoSeleccionado);
 }
 
 function giveVehicle(idProducto, idFinanciamiento) {
-    $.ajax({
-        url: '/arequipago/entregarVehiculo',
-        type: 'POST',
-        data: {
-            id_producto: idProducto,
-            id_financiamiento: idFinanciamiento
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                // Cerrar modal inmediatamente
-                cerrarModalEntregarVehiculo();
-                
-                // Crear notificación personalizada para evitar problemas de z-index
-                mostrarNotificacionExito(response.message, function() {
-                    // Cerrar modal de detalles
-                    $('#financingDetailsModal').modal('hide');
-                    
-                    // NUEVO: Generar contrato de entrega de vehículo
-                    generarContratoEntregaVehiculo(idFinanciamiento);
-                    
-                    // Recargar lista de clientes
-                    cargarClientes();
-                });
-            } else {
-                cerrarModalEntregarVehiculo();
-                mostrarNotificacionError(response.message || 'Error al entregar el vehículo');
-            }
-        },
-        error: function() {
-            cerrarModalEntregarVehiculo();
-            mostrarNotificacionError('Error al conectar con el servidor');
-        }
-    });
+  $.ajax({
+    url: "/arequipago/entregarVehiculo",
+    type: "POST",
+    data: {
+      id_producto: idProducto,
+      id_financiamiento: idFinanciamiento,
+    },
+    dataType: "json",
+    success: function (response) {
+      if (response.success) {
+        // Cerrar modal inmediatamente
+        cerrarModalEntregarVehiculo();
+
+        // Crear notificación personalizada para evitar problemas de z-index
+        mostrarNotificacionExito(response.message, function () {
+          // Cerrar modal de detalles
+          $("#financingDetailsModal").modal("hide");
+
+          // NUEVO: Generar contrato de entrega de vehículo
+          generarContratoEntregaVehiculo(idFinanciamiento);
+
+          // Recargar lista de clientes
+          cargarClientes();
+        });
+      } else {
+        cerrarModalEntregarVehiculo();
+        mostrarNotificacionError(
+          response.message || "Error al entregar el vehículo"
+        );
+      }
+    },
+    error: function () {
+      cerrarModalEntregarVehiculo();
+      mostrarNotificacionError("Error al conectar con el servidor");
+    },
+  });
 }
 
 /**
  * Descargar contrato de entrega desde el modal de detalles
  */
 function descargarContratoEntregaDesdeModal() {
-    if (!idFinanciamientoSeleccionado) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se ha seleccionado un financiamiento'
-        });
-        return;
-    }
-    
-    // Llamar a la función de generación con el ID seleccionado
-    generarContratoEntregaVehiculo(idFinanciamientoSeleccionado);
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se ha seleccionado un financiamiento",
+    });
+    return;
+  }
+
+  // Llamar a la función de generación con el ID seleccionado
+  generarContratoEntregaVehiculo(idFinanciamientoSeleccionado);
 }
 
 /**
  * Generar contrato de entrega de vehículo
  */
 function generarContratoEntregaVehiculo(idFinanciamiento) {
-    // Mostrar indicador de carga
-    Swal.fire({
-        title: 'Generando contrato...',
-        text: 'Por favor espere',
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
-    });
-    
-    $.ajax({
-        url: '/arequipago/generarContratoEntregaVehiculo',
-        type: 'POST',
-        data: JSON.stringify({ id_financiamiento: idFinanciamiento }),
-        contentType: 'application/json',
-        dataType: 'json',
-        success: function(response) {
-            Swal.close();
-            
-            if (response.success) {
-                // Descargar PDF
-                const linkSource = `data:application/pdf;base64,${response.pdf}`;
-                const downloadLink = document.createElement('a');
-                downloadLink.href = linkSource;
-                downloadLink.download = response.nombre;
-                downloadLink.click();
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Éxito',
-                    text: 'Contrato de entrega generado correctamente',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: response.error || 'Error al generar el contrato'
-                });
-            }
-        },
-        error: function(xhr, status, error) {
-            Swal.close();
-            console.error('Error al generar contrato:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Error al conectar con el servidor'
-            });
-        }
-    });
+  // Mostrar indicador de carga
+  Swal.fire({
+    title: "Generando contrato...",
+    text: "Por favor espere",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  $.ajax({
+    url: "/arequipago/generarContratoEntregaVehiculo",
+    type: "POST",
+    data: JSON.stringify({ id_financiamiento: idFinanciamiento }),
+    contentType: "application/json",
+    dataType: "json",
+    success: function (response) {
+      Swal.close();
+
+      if (response.success) {
+        // Descargar PDF
+        const linkSource = `data:application/pdf;base64,${response.pdf}`;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = linkSource;
+        downloadLink.download = response.nombre;
+        downloadLink.click();
+
+        Swal.fire({
+          icon: "success",
+          title: "Éxito",
+          text: "Contrato de entrega generado correctamente",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.error || "Error al generar el contrato",
+        });
+      }
+    },
+    error: function (xhr, status, error) {
+      Swal.close();
+      console.error("Error al generar contrato:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+      });
+    },
+  });
 }
 
 // Funciones de notificación personalizadas para modal de vehículo
 function mostrarNotificacionExito(mensaje, callback) {
-    const notificacion = document.createElement('div');
-    notificacion.innerHTML = `
+  const notificacion = document.createElement("div");
+  notificacion.innerHTML = `
         <div style="
             position: fixed;
             top: 20px;
@@ -729,12 +826,12 @@ function mostrarNotificacionExito(mensaje, callback) {
             </div>
         </div>
     `;
-    
-    // Agregar estilos de animación
-    if (!document.getElementById('notificacion-styles')) {
-        const styles = document.createElement('style');
-        styles.id = 'notificacion-styles';
-        styles.innerHTML = `
+
+  // Agregar estilos de animación
+  if (!document.getElementById("notificacion-styles")) {
+    const styles = document.createElement("style");
+    styles.id = "notificacion-styles";
+    styles.innerHTML = `
             @keyframes slideInRight {
                 from { transform: translateX(100%); opacity: 0; }
                 to { transform: translateX(0); opacity: 1; }
@@ -744,26 +841,27 @@ function mostrarNotificacionExito(mensaje, callback) {
                 to { transform: translateX(100%); opacity: 0; }
             }
         `;
-        document.head.appendChild(styles);
-    }
-    
-    document.body.appendChild(notificacion);
-    
-    // Auto eliminar después de 3 segundos
+    document.head.appendChild(styles);
+  }
+
+  document.body.appendChild(notificacion);
+
+  // Auto eliminar después de 3 segundos
+  setTimeout(() => {
+    notificacion.firstElementChild.style.animation =
+      "slideOutRight 0.5s ease-in forwards";
     setTimeout(() => {
-        notificacion.firstElementChild.style.animation = 'slideOutRight 0.5s ease-in forwards';
-        setTimeout(() => {
-            if (notificacion.parentNode) {
-                notificacion.parentNode.removeChild(notificacion);
-            }
-            if (callback) callback();
-        }, 500);
-    }, 3000);
+      if (notificacion.parentNode) {
+        notificacion.parentNode.removeChild(notificacion);
+      }
+      if (callback) callback();
+    }, 500);
+  }, 3000);
 }
 
 function mostrarNotificacionError(mensaje) {
-    const notificacion = document.createElement('div');
-    notificacion.innerHTML = `
+  const notificacion = document.createElement("div");
+  notificacion.innerHTML = `
         <div style="
             position: fixed;
             top: 20px;
@@ -788,16 +886,443 @@ function mostrarNotificacionError(mensaje) {
             </div>
         </div>
     `;
-    
-    document.body.appendChild(notificacion);
-    
-    // Auto eliminar después de 4 segundos (más tiempo para errores)
+
+  document.body.appendChild(notificacion);
+
+  // Auto eliminar después de 4 segundos (más tiempo para errores)
+  setTimeout(() => {
+    notificacion.firstElementChild.style.animation =
+      "slideOutRight 0.5s ease-in forwards";
     setTimeout(() => {
-        notificacion.firstElementChild.style.animation = 'slideOutRight 0.5s ease-in forwards';
-        setTimeout(() => {
-            if (notificacion.parentNode) {
-                notificacion.parentNode.removeChild(notificacion);
+      if (notificacion.parentNode) {
+        notificacion.parentNode.removeChild(notificacion);
+      }
+    }, 500);
+  }, 4000);
+}
+// Detectar cambios en los campos de pago para mostrar/ocultar método de pago
+$(document).ready(function () {
+  // Escuchar cambios en los campos relevantes
+  $("#cuotaInicial, #montoInscripcion, #montoRecalculado").on(
+    "input change",
+    function () {
+      actualizarSelectMetodoPago();
+    }
+  );
+
+  // También verificar al cargar la página
+  actualizarSelectMetodoPago();
+});
+
+/**
+ * Mostrar modal con boletas de pago inicial
+ */
+function mostrarBoletasPagoInicial() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se ha seleccionado un financiamiento",
+    });
+    return;
+  }
+
+  // Mostrar indicador de carga
+  Swal.fire({
+    title: "Cargando boletas...",
+    text: "Por favor espere",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  // Obtener las boletas de pago inicial
+  $.ajax({
+    url: "/arequipago/obtenerBoletasPagoInicial",
+    type: "POST",
+    data: { id_financiamiento: idFinanciamientoSeleccionado },
+    dataType: "json",
+    success: function (response) {
+      Swal.close();
+
+      if (response.success && response.pagos && response.pagos.length > 0) {
+        mostrarModalBoletasIniciales(response.pagos, response.financiamiento);
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Sin boletas",
+          text: "No se encontraron boletas de pago inicial para este financiamiento",
+        });
+      }
+    },
+    error: function (xhr, status, error) {
+      Swal.close();
+      console.error("Error al obtener boletas:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+      });
+    },
+  });
+}
+
+/**
+ * Mostrar modal con las boletas disponibles
+ */
+function mostrarModalBoletasIniciales(pagos, financiamiento) {
+  // Crear modal dinámicamente
+  const modalHTML = `
+        <div id="modalBoletasIniciales" class="modal fade" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #626ed4 0%, #4a5ab8 100%); color: white;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-receipt me-2"></i>Boletas de Pago Inicial
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Campo para WhatsApp -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fab fa-whatsapp me-2 text-success"></i>Número de WhatsApp
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <input type="text" class="form-control" id="whatsappNumberBoletas" 
+                                    placeholder="Ej: +51987654321" value="+51">
+                                <button class="btn btn-secondary text-black" type="button" onclick="validarNumeroWhatsApp()">
+                                    <i class="fas fa-check me-1"></i>Validar
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Incluye el código de país (Ej: +51 para Perú)
+                            </small>
+                        </div>
+                        
+                        <!-- Lista de boletas -->
+                        <div id="listaBoletasIniciales">
+                            ${generarListaBoletas(pagos, financiamiento)}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+  // Eliminar modal anterior si existe
+  $("#modalBoletasIniciales").remove();
+
+  // Agregar modal al body
+  $("body").append(modalHTML);
+
+  // Obtener el modal element
+  const modalElement = document.getElementById("modalBoletasIniciales");
+
+  // CRÍTICO: Establecer z-index ANTES de mostrar el modal
+  modalElement.style.zIndex = "9999";
+
+  // Mostrar modal con backdrop oscuro personalizado
+  const modal = new bootstrap.Modal(modalElement, {
+    backdrop: "static", // No cerrar al hacer clic fuera
+    keyboard: true, // Permitir cerrar con ESC
+  });
+
+  // Agregar clase al body cuando se muestra el modal
+  modalElement.addEventListener("shown.bs.modal", function () {
+    // Agregar clase al body para activar estilos específicos
+    document.body.classList.add("modal-boletas-open");
+
+    // Buscar TODOS los backdrops y aplicar estilos al último (el más reciente)
+    const backdrops = document.querySelectorAll(".modal-backdrop");
+    const lastBackdrop = backdrops[backdrops.length - 1];
+
+    if (lastBackdrop) {
+      lastBackdrop.style.backgroundColor = "rgba(0, 0, 0, 0.85)"; // Fondo más oscuro
+      lastBackdrop.style.zIndex = "9998"; // Justo debajo del modal de boletas
+    }
+
+    // Asegurar que el modal de boletas esté por encima de TODO
+    modalElement.style.zIndex = "9999";
+
+    console.log(
+      "✅ Modal de boletas mostrado con z-index:",
+      modalElement.style.zIndex
+    );
+  });
+
+  // Quitar clase del body cuando se oculta el modal
+  modalElement.addEventListener("hidden.bs.modal", function () {
+    // Quitar clase del body
+    document.body.classList.remove("modal-boletas-open");
+
+    // Limpiar el modal del DOM
+    $("#modalBoletasIniciales").remove();
+
+    console.log("✅ Modal de boletas cerrado y limpiado");
+  });
+
+  modal.show();
+}
+
+/**
+ * Generar HTML de la lista de boletas
+ */
+function generarListaBoletas(pagos, financiamiento) {
+  let html = "";
+
+  pagos.forEach((pago, index) => {
+    const montoFormateado = parseFloat(pago.monto).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    const fechaFormateada = new Date(pago.fecha_pago).toLocaleDateString(
+      "es-PE",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
+    );
+
+    html += `
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header" style="background-color: #f8f9fa;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-file-invoice-dollar me-2 text-primary"></i>
+                            ${pago.concepto || "Pago Inicial"}
+                        </h6>
+                        <span class="badge bg-success">${
+                          pago.moneda
+                        } ${montoFormateado}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                                <strong>Fecha:</strong> ${fechaFormateada}
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-credit-card me-2 text-muted"></i>
+                                <strong>Método:</strong> ${
+                                  pago.metodo_pago || "No especificado"
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-sm" onclick="descargarBoletaInicial(${
+                                  pago.idpagos_financiamiento
+                                }, '${pago.concepto}')">
+                                    <i class="fas fa-download me-2"></i>Descargar PDF
+                                </button>
+                                <button class="btn btn-success btn-sm" onclick="enviarBoletaPorWhatsApp(${
+                                  pago.idpagos_financiamiento
+                                }, '${pago.concepto}')">
+                                    <i class="fab fa-whatsapp me-2"></i>Enviar por WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+  });
+
+  return html;
+}
+
+/**
+ * Validar número de WhatsApp
+ */
+function validarNumeroWhatsApp() {
+  const numero = $("#whatsappNumberBoletas").val().trim();
+
+  if (numero.length < 8) {
+    Swal.fire({
+      icon: "warning",
+      title: "Número inválido",
+      text: "Por favor ingresa un número válido incluyendo el código de país",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+    return false;
+  }
+
+  Swal.fire({
+    icon: "success",
+    title: "Número válido",
+    text: "El número de WhatsApp es correcto",
+    timer: 1500,
+    showConfirmButton: false,
+  });
+  return true;
+}
+
+/**
+ * Descargar boleta de pago inicial
+ */
+function descargarBoletaInicial(idPago, concepto) {
+  // Mostrar indicador de carga
+  Swal.fire({
+    title: "Generando boleta...",
+    text: "Por favor espere",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  $.ajax({
+    url: "/arequipago/generarBoletaPagoInicial",
+    type: "POST",
+    data: { id_pago: idPago },
+    dataType: "json",
+    success: function (response) {
+      Swal.close();
+
+      if (response.success && response.pdf) {
+        // Descargar PDF
+        const linkSource = `data:application/pdf;base64,${response.pdf}`;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = linkSource;
+        downloadLink.download = `Boleta_${concepto.replace(
+          /\s+/g,
+          "_"
+        )}_${idPago}.pdf`;
+        downloadLink.click();
+
+        Swal.fire({
+          icon: "success",
+          title: "Descarga exitosa",
+          text: "La boleta se ha descargado correctamente",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.error || "No se pudo generar la boleta",
+        });
+      }
+    },
+    error: function (xhr, status, error) {
+      Swal.close();
+      console.error("Error al generar boleta:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+      });
+    },
+  });
+}
+
+/**
+ * Enviar boleta por WhatsApp
+ */
+function enviarBoletaPorWhatsApp(idPago, concepto) {
+  const numero = $("#whatsappNumberBoletas").val().trim();
+
+  if (numero.length < 8) {
+    Swal.fire({
+      icon: "warning",
+      title: "Número requerido",
+      text: "Por favor ingresa un número de WhatsApp válido",
+      confirmButtonText: "Entendido",
+    });
+    return;
+  }
+
+  // Mostrar indicador de carga
+  Swal.fire({
+    title: "Generando y enviando...",
+    text: "Por favor espere",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  $.ajax({
+    url: "/arequipago/generarBoletaPagoInicial",
+    type: "POST",
+    data: { id_pago: idPago },
+    dataType: "json",
+    success: function (response) {
+      if (response.success && response.pdf) {
+        // Enviar PDF a servidor para generar enlace
+        $.ajax({
+          url: "/arequipago/generarEnlacePDF",
+          type: "POST",
+          data: { pdf_base64: response.pdf },
+          dataType: "json",
+          success: function (linkResponse) {
+            Swal.close();
+
+            if (linkResponse.success && linkResponse.pdf_url) {
+              const mensaje = `¡Hola! Aquí está tu boleta de ${concepto}: ${linkResponse.pdf_url}`;
+              const whatsappUrl = `https://api.whatsapp.com/send?phone=${numero.replace(
+                /\D/g,
+                ""
+              )}&text=${encodeURIComponent(mensaje)}`;
+              window.open(whatsappUrl, "_blank");
+
+              Swal.fire({
+                icon: "success",
+                title: "WhatsApp abierto",
+                text: "Se ha abierto WhatsApp con el enlace de la boleta",
+                timer: 2000,
+                showConfirmButton: false,
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "No se pudo generar el enlace para compartir",
+              });
             }
-        }, 500);
-    }, 4000);
+          },
+          error: function () {
+            Swal.close();
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "Error al generar enlace para WhatsApp",
+            });
+          },
+        });
+      } else {
+        Swal.close();
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.error || "No se pudo generar la boleta",
+        });
+      }
+    },
+    error: function (xhr, status, error) {
+      Swal.close();
+      console.error("Error al generar boleta:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al conectar con el servidor",
+      });
+    },
+  });
 }

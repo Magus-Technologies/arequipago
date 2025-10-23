@@ -363,7 +363,7 @@
                                 <div class="col-4">
                                     <small class="text-muted d-block">Cuota Inicial</small>
                                     <strong class="text-primary">{{
-                                        getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{
+                                        getCurrencySymbolForBeneficio(beneficio) }} {{
                                         beneficio.cuota_inicial || '0.00' }}</strong>
                                 </div>
                                 <div class="col-4">
@@ -372,9 +372,9 @@
                                 </div>
                                 <div class="col-4">
                                     <small class="text-muted d-block">{{
-                                        obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id) }}</small>
+                                        obtenerEtiquetaFrecuenciaForBeneficio(beneficio) }}</small>
                                     <strong class="text-success">{{
-                                        getCurrencySymbolForPlan(beneficio.plan_financiamiento_id) }} {{
+                                        getCurrencySymbolForBeneficio(beneficio) }} {{
                                         beneficio.cuota_mensual || '0.00' }}</strong>
                                 </div>
                             </div>
@@ -478,6 +478,29 @@
                                             errores.plan_financiamiento_id }}</div>
                                     </div>
                                 </div>
+
+                                <!-- Campos adicionales para Plan EDITABLE -->
+                                <div v-if="esPlanEditable" class="col-12">
+                                    <hr>
+                                    <h6 class="text-warning mb-3">
+                                        <i class="bi bi-pencil-square me-2"></i>
+                                        Configuración Personalizada (Plan Editable)
+                                    </h6>
+                                </div>
+
+                                <!-- Campo comentado - Solo se usa el Nombre del Producto
+                                <div v-if="esPlanEditable" class="col-md-8">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Nombre del Plan/Título *</label>
+                                        <input type="text" class="form-control"
+                                               v-model="formData.nombre_plan_personalizado"
+                                               placeholder="Ej: CERTIFICADO $15 000"
+                                               :required="esPlanEditable">
+                                        <div v-if="errores.nombre_plan_personalizado" class="error-message">{{ errores.nombre_plan_personalizado }}</div>
+                                    </div>
+                                </div>
+                                -->
+
                                 <!-- Categoría comentada temporalmente - preguntar al cliente si la quiere
                                 <div class="col-md-4">
                                     <div class="form-group">
@@ -506,6 +529,37 @@
                                     <h6 class="text-primary mb-3"><i class="bi bi-credit-card me-2"></i>Información de
                                         Financiamiento</h6>
                                 </div>
+
+                                <!-- Moneda y Frecuencia (solo para Plan Editable) -->
+                                <div v-if="esPlanEditable" class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Moneda *</label>
+                                        <select class="form-select"
+                                                v-model="formData.moneda"
+                                                :required="esPlanEditable">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="S/.">S/. (Soles)</option>
+                                            <option value="$">$ (Dólares)</option>
+                                        </select>
+                                        <div v-if="errores.moneda" class="error-message">{{ errores.moneda }}</div>
+                                    </div>
+                                </div>
+
+                                <div v-if="esPlanEditable" class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Frecuencia de Pago *</label>
+                                        <select class="form-select"
+                                                v-model="formData.frecuencia_pago"
+                                                :required="esPlanEditable">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="semanal">Semanal</option>
+                                            <!-- <option value="quincenal">Quincenal</option> -->
+                                            <option value="mensual">Mensual</option>
+                                        </select>
+                                        <div v-if="errores.frecuencia_pago" class="error-message">{{ errores.frecuencia_pago }}</div>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Cuota Inicial *</label>
@@ -639,9 +693,13 @@
                             cuota_inicial: '',
                             cantidad_cuotas: '',
                             cuota_mensual: '',
+                            moneda: '',
+                            nombre_plan_personalizado: '',
+                            frecuencia_pago: '',
                             disponible: true
                         },
                         errores: {},
+                        esPlanEditable: false,
 
                         // CATEGORÍAS (se cargarán desde la base de datos)
                         categorias: [],
@@ -880,8 +938,15 @@
                             cuota_inicial: beneficio.cuota_inicial || '',
                             cantidad_cuotas: beneficio.cantidad_cuotas || '',
                             cuota_mensual: beneficio.cuota_mensual || '',
+                            moneda: beneficio.moneda || '',
+                            nombre_plan_personalizado: beneficio.nombre_plan_personalizado || '',
+                            frecuencia_pago: beneficio.frecuencia_pago || '',
                             disponible: beneficio.disponible
                         };
+
+                        // Verificar si es plan editable
+                        this.esPlanEditable = this.formData.plan_financiamiento_id == 42;
+
                         // Configurar preview de imagen existente
                         if (beneficio.imagen) {
                             this.imagenPreview = '/arequipago/public/' + beneficio.imagen;
@@ -939,13 +1004,13 @@
                                     <hr>
                                     <div class="row">
                                         <div class="col-4">
-                                            <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForPlan(beneficio.plan_financiamiento_id)} ${beneficio.cuota_inicial}</p>
+                                            <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForBeneficio(beneficio)} ${beneficio.cuota_inicial}</p>
                                         </div>
                                         <div class="col-4">
                                             <p><strong>Cantidad de cuotas:</strong><br>${beneficio.cantidad_cuotas} cuotas</p>
                                         </div>
                                         <div class="col-4">
-                                            <p><strong>${this.obtenerEtiquetaFrecuencia(beneficio.plan_financiamiento_id).toLowerCase()}:</strong><br>${this.getCurrencySymbolForPlan(beneficio.plan_financiamiento_id)} ${beneficio.cuota_mensual}</p>
+                                            <p><strong>${this.obtenerEtiquetaFrecuenciaForBeneficio(beneficio).toLowerCase()}:</strong><br>${this.getCurrencySymbolForBeneficio(beneficio)} ${beneficio.cuota_mensual}</p>
                                         </div>
                                     </div>
                                     <p><strong>Estado:</strong>
@@ -1022,9 +1087,13 @@
                             cuota_inicial: '',
                             cantidad_cuotas: '',
                             cuota_mensual: '',
+                            moneda: '',
+                            nombre_plan_personalizado: '',
+                            frecuencia_pago: '',
                             disponible: true
                         };
                         this.errores = {};
+                        this.esPlanEditable = false;
                         this.imagenPreview = null;
                         if (this.$refs.imagenInput) {
                             this.$refs.imagenInput.value = '';
@@ -1033,7 +1102,15 @@
 
                     // ============ FUNCIONES DE MONEDA Y FRECUENCIA ============
                     getCurrencySymbol: function () {
+                        // Si es plan editable y ya tiene moneda seleccionada, usarla
+                        if (this.esPlanEditable && this.formData.moneda) {
+                            return this.formData.moneda;
+                        }
+
+                        // Si no tiene plan seleccionado, usar S/ por defecto
                         if (!this.formData.plan_financiamiento_id) return 'S/';
+
+                        // Buscar la moneda del plan
                         var plan = this.planes.find(p => p.idplan_financiamiento == this.formData.plan_financiamiento_id);
                         return plan ? plan.moneda : 'S/';
                     },
@@ -1046,6 +1123,18 @@
                     getCurrencySymbolForPlan: function (planId) {
                         if (!planId) return 'S/';
                         var plan = this.planes.find(p => p.idplan_financiamiento == planId);
+                        return plan ? plan.moneda : 'S/';
+                    },
+
+                    // Nueva función que prioriza la moneda del beneficio sobre la del plan
+                    getCurrencySymbolForBeneficio: function (beneficio) {
+                        // Si el beneficio tiene su propia moneda (plan editable), usarla
+                        if (beneficio.moneda) {
+                            return beneficio.moneda;
+                        }
+                        // Si no, buscar la moneda del plan
+                        if (!beneficio.plan_financiamiento_id) return 'S/';
+                        var plan = this.planes.find(p => p.idplan_financiamiento == beneficio.plan_financiamiento_id);
                         return plan ? plan.moneda : 'S/';
                     },
 
@@ -1062,7 +1151,41 @@
                         }
                     },
 
+                    // Nueva función que prioriza la frecuencia del beneficio sobre la del plan
+                    obtenerEtiquetaFrecuenciaForBeneficio: function (beneficio) {
+                        // Si el beneficio tiene su propia frecuencia (plan editable), usarla
+                        if (beneficio.frecuencia_pago) {
+                            switch (beneficio.frecuencia_pago.toLowerCase()) {
+                                case 'semanal': return 'Cuota Semanal';
+                                case 'mensual': return 'Cuota Mensual';
+                                case 'quincenal': return 'Cuota Quincenal';
+                                default: return 'Cuota ' + this.capitalize(beneficio.frecuencia_pago);
+                            }
+                        }
+                        // Si no, buscar la frecuencia del plan
+                        if (!beneficio.plan_financiamiento_id) return 'Cuota';
+                        var plan = this.planes.find(p => p.idplan_financiamiento == beneficio.plan_financiamiento_id);
+                        if (!plan) return 'Cuota';
+
+                        switch (plan.frecuencia_pago.toLowerCase()) {
+                            case 'semanal': return 'Cuota Semanal';
+                            case 'mensual': return 'Cuota Mensual';
+                            case 'quincenal': return 'Cuota Quincenal';
+                            default: return 'Cuota ' + this.capitalize(plan.frecuencia_pago);
+                        }
+                    },
+
                     obtenerEtiquetaFrecuenciaFormulario: function () {
+                        // Si es plan editable y ya tiene frecuencia seleccionada, usarla
+                        if (this.esPlanEditable && this.formData.frecuencia_pago) {
+                            switch (this.formData.frecuencia_pago.toLowerCase()) {
+                                case 'semanal': return 'Cuota Semanal';
+                                case 'mensual': return 'Cuota Mensual';
+                                case 'quincenal': return 'Cuota Quincenal';
+                                default: return 'Cuota';
+                            }
+                        }
+
                         if (!this.formData.plan_financiamiento_id) return 'Cuota Mensual';
                         return this.obtenerEtiquetaFrecuencia(this.formData.plan_financiamiento_id);
                     },
@@ -1075,6 +1198,16 @@
                     onPlanChange: function () {
                         // Limpiar error cuando se selecciona un plan
                         this.errores.plan_financiamiento_id = '';
+
+                        // Verificar si es el plan EDITABLE (ID 42)
+                        this.esPlanEditable = this.formData.plan_financiamiento_id == 42;
+
+                        // Si NO es plan editable, limpiar campos personalizados
+                        if (!this.esPlanEditable) {
+                            this.formData.moneda = '';
+                            this.formData.nombre_plan_personalizado = '';
+                            this.formData.frecuencia_pago = '';
+                        }
                     },
 
                     validarFormulario: function () {
@@ -1086,6 +1219,22 @@
 
                         if (!this.formData.plan_financiamiento_id) {
                             this.errores.plan_financiamiento_id = 'El plan de financiamiento es obligatorio';
+                        }
+
+                        // Validar campos adicionales si es plan EDITABLE
+                        if (this.esPlanEditable) {
+                            if (!this.formData.moneda) {
+                                this.errores.moneda = 'La moneda es obligatoria para el plan editable';
+                            }
+                            if (!this.formData.frecuencia_pago) {
+                                this.errores.frecuencia_pago = 'La frecuencia de pago es obligatoria para el plan editable';
+                            }
+                            // Campo comentado - Solo se usa el Nombre del Producto
+                            /*
+                            if (!this.formData.nombre_plan_personalizado || !this.formData.nombre_plan_personalizado.trim()) {
+                                this.errores.nombre_plan_personalizado = 'El nombre del plan es obligatorio para el plan editable';
+                            }
+                            */
                         }
 
                         if (!this.formData.cuota_inicial || this.formData.cuota_inicial <= 0) {
@@ -1164,6 +1313,9 @@
                         formData.append('cuota_inicial', self.formData.cuota_inicial);
                         formData.append('cantidad_cuotas', self.formData.cantidad_cuotas);
                         formData.append('cuota_mensual', self.formData.cuota_mensual);
+                        formData.append('moneda', self.formData.moneda || '');
+                        formData.append('nombre_plan_personalizado', self.formData.nombre_plan_personalizado || '');
+                        formData.append('frecuencia_pago', self.formData.frecuencia_pago || '');
                         formData.append('disponible', self.formData.disponible ? 1 : 0);
 
                         // Agregar imagen si hay archivo seleccionado
@@ -1253,6 +1405,21 @@
                     'formData.cuota_mensual': function (newVal) {
                         if (newVal && newVal > 0) {
                             this.errores.cuota_mensual = '';
+                        }
+                    },
+                    'formData.moneda': function (newVal) {
+                        if (newVal) {
+                            this.errores.moneda = '';
+                        }
+                    },
+                    'formData.nombre_plan_personalizado': function (newVal) {
+                        if (newVal && newVal.trim()) {
+                            this.errores.nombre_plan_personalizado = '';
+                        }
+                    },
+                    'formData.frecuencia_pago': function (newVal) {
+                        if (newVal) {
+                            this.errores.frecuencia_pago = '';
                         }
                     }
                 }

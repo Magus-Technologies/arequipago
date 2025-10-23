@@ -102,6 +102,25 @@ if (!$this->validarPlanFinanciamientoExiste($_POST['plan_financiamiento_id'])) {
     return;
 }
 
+// Validar campos adicionales si es el plan EDITABLE (ID 42)
+if ($_POST['plan_financiamiento_id'] == 42) {
+    if (empty($_POST['moneda'])) {
+        echo json_encode(['success' => false, 'message' => 'La moneda es obligatoria para el plan editable.']);
+        return;
+    }
+    if (empty($_POST['frecuencia_pago'])) {
+        echo json_encode(['success' => false, 'message' => 'La frecuencia de pago es obligatoria para el plan editable.']);
+        return;
+    }
+    // Campo nombre_plan_personalizado comentado - solo se usa Nombre del Producto
+    /*
+    if (empty($_POST['nombre_plan_personalizado'])) {
+        echo json_encode(['success' => false, 'message' => 'El nombre del plan es obligatorio para el plan editable.']);
+        return;
+    }
+    */
+}
+
 // Validar categoría contra la base de datos (opcional)
 if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['categoria'])) {
     echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
@@ -141,6 +160,9 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'cuota_inicial' => (float)$_POST['cuota_inicial'],
                 'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
                 'cuota_mensual' => (float)$_POST['cuota_mensual'],
+                'moneda' => !empty($_POST['moneda']) ? trim($_POST['moneda']) : null,
+                'nombre_plan_personalizado' => !empty($_POST['nombre_plan_personalizado']) ? trim($_POST['nombre_plan_personalizado']) : null,
+                'frecuencia_pago' => !empty($_POST['frecuencia_pago']) ? trim($_POST['frecuencia_pago']) : null,
                 'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
             ];
@@ -262,6 +284,25 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 return;
             }
 
+            // Validar campos adicionales si es el plan EDITABLE (ID 42)
+            if ($_POST['plan_financiamiento_id'] == 42) {
+                if (empty($_POST['moneda'])) {
+                    echo json_encode(['success' => false, 'message' => 'La moneda es obligatoria para el plan editable.']);
+                    return;
+                }
+                if (empty($_POST['frecuencia_pago'])) {
+                    echo json_encode(['success' => false, 'message' => 'La frecuencia de pago es obligatoria para el plan editable.']);
+                    return;
+                }
+                // Campo nombre_plan_personalizado comentado - solo se usa Nombre del Producto
+                /*
+                if (empty($_POST['nombre_plan_personalizado'])) {
+                    echo json_encode(['success' => false, 'message' => 'El nombre del plan es obligatorio para el plan editable.']);
+                    return;
+                }
+                */
+            }
+
             // Validar categoría contra la base de datos (opcional)
             if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['categoria'])) {
                 echo json_encode(['success' => false, 'message' => 'Categoría no válida.']);
@@ -299,6 +340,9 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'cuota_inicial' => (float)$_POST['cuota_inicial'],
                 'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
                 'cuota_mensual' => (float)$_POST['cuota_mensual'],
+                'moneda' => !empty($_POST['moneda']) ? trim($_POST['moneda']) : null,
+                'nombre_plan_personalizado' => !empty($_POST['nombre_plan_personalizado']) ? trim($_POST['nombre_plan_personalizado']) : null,
+                'frecuencia_pago' => !empty($_POST['frecuencia_pago']) ? trim($_POST['frecuencia_pago']) : null,
                 'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
             ];

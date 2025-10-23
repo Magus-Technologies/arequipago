@@ -965,16 +965,26 @@ function UploadDepartamentos() {
             if (!validarFormularioPago()) {
                 return;
             }
-            
+
             if (!validarMontoPago()) {
                 return;
             }
-            
+
+            // PREVENCIÓN DE DOBLE CLIC: Deshabilitar botón inmediatamente
+            const btnConfirmar = document.getElementById('btnConfirmarPago');
+            const textoOriginal = btnConfirmar.innerHTML;
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+
             const formData = new FormData(document.getElementById('formPago'));
 
             // Asegurar que el cliente_id se envíe correctamente
             const clienteId = document.getElementById('clienteIdPago').value;
             if (!clienteId) {
+                // Re-habilitar botón si hay error
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = textoOriginal;
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -990,7 +1000,7 @@ function UploadDepartamentos() {
             for (let [key, value] of formData.entries()) {
                 console.log(key + ': ' + value);
             }
-            
+
             $.ajax({
                 url: '/arequipago/guardarPago',
                 type: 'POST',
@@ -1003,14 +1013,22 @@ function UploadDepartamentos() {
                         // Cerrar modal
                         const modal = bootstrap.Modal.getInstance(document.getElementById('modalPago'));
                         modal.hide();
-                        
+
                         // Mostrar modal con opciones de descarga y WhatsApp
                         mostrarModalBoleta(response.pdf_path, response.pago_id);
-                        
+
                         // Resetear formulario de pago
                         document.getElementById('formPago').reset();
                         document.getElementById('vueltoContainer').style.display = 'none';
+
+                        // Re-habilitar botón para futuros usos
+                        btnConfirmar.disabled = false;
+                        btnConfirmar.innerHTML = textoOriginal;
                     } else {
+                        // Re-habilitar botón si hay error
+                        btnConfirmar.disabled = false;
+                        btnConfirmar.innerHTML = textoOriginal;
+
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -1020,6 +1038,10 @@ function UploadDepartamentos() {
                     }
                 },
                 error: function() {
+                    // Re-habilitar botón si hay error de conexión
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerHTML = textoOriginal;
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',

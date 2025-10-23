@@ -54,8 +54,22 @@ function calcularFinanciamiento() {
   });
 
   // Convertir valores a números y calcular el monto total con intereses
-  let montoTotal = montoSinIntereses * (1 + parseFloat(tasaInteresRaw) / 100);
-  console.log("Monto total calculado:", montoTotal);
+  let montoTotal;
+  
+  // ✅ FIX: Si planGlobal tiene monto definido, usarlo directamente
+  if (planGlobal && planGlobal.monto && parseFloat(planGlobal.monto) > 0) {
+    montoTotal = parseFloat(planGlobal.monto);
+    console.log("💰 Usando monto del plan global:", montoTotal);
+  } else if (montoSinIntereses > 0 && tasaInteresRaw) {
+    // Solo calcular si tenemos los valores necesarios
+    montoTotal = montoSinIntereses * (1 + parseFloat(tasaInteresRaw) / 100);
+    console.log("🧮 Monto calculado con intereses:", montoTotal);
+  } else {
+    console.error("❌ No hay monto disponible para calcular");
+    return;
+  }
+  
+  console.log("Monto total final:", montoTotal);
 
   const cuotaInicial = parseFloat(
     cuotaInicialRaw
@@ -408,9 +422,19 @@ function mostrarFechasVencimiento(
   botonDescargar.style.gap = "8px"; // Espacio entre el icono y el texto
 
   botonDescargar.addEventListener("click", () => {
-    generateCronograma(); // Mensaje temporal, reemplázalo con tu lógica de descarga
+    generateCronograma();
   });
-  contenedorFechas.appendChild(botonDescargar); // Agregar el botón al contenedor de fechas
+
+  // MODIFICADO: Agregar el botón FUERA del contenedor de fechas
+  const contenedorBoton = document.getElementById("contenedorBotonCronograma");
+  if (contenedorBoton) {
+    contenedorBoton.innerHTML = ""; // Limpiar botones anteriores
+    contenedorBoton.appendChild(botonDescargar);
+  } else {
+    // Fallback: si no existe el contenedor, agregarlo después del contenedorFechas
+    contenedorFechas.parentNode.appendChild(botonDescargar);
+  }
+
 }
 
 function formatFechaInput(fecha) {
@@ -904,7 +928,17 @@ function mostrarFechasVencimientoPlan(fechasVencimiento, valorcuota) {
   botonDescargar.addEventListener("click", () => {
     generateCronograma();
   });
-  contenedorFechas.appendChild(botonDescargar);
+
+  // MODIFICADO: Agregar el botón FUERA del contenedor de fechas
+  const contenedorBoton = document.getElementById("contenedorBotonCronograma");
+  if (contenedorBoton) {
+    contenedorBoton.innerHTML = ""; // Limpiar botones anteriores
+    contenedorBoton.appendChild(botonDescargar);
+  } else {
+    // Fallback: si no existe el contenedor, agregarlo después del contenedorFechas
+    contenedorFechas.parentNode.appendChild(botonDescargar);
+  }
+
   console.log("Datos del cronograma antes de generar PDF:", cronogramaDatos);
 }
 // AGREGAR esta función ANTES de calcularFinanciamientoConFechaIngreso() si no la tienes:

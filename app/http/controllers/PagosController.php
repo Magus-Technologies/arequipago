@@ -478,7 +478,7 @@ class PagosController extends Controller
          
          try {
              // Iniciamos una transacción
-             mysqli_begin_transaction($this->conectar);
+            //  mysqli_begin_transaction($this->conectar);
              
              // 1. Actualizamos el estado del pago a aprobado (1)
              $queryPago = "UPDATE pagos_financiamiento SET estado = 1 WHERE idpagos_financiamiento = ?";

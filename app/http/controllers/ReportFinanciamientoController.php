@@ -814,4 +814,121 @@ class ReportFinanciamientoController extends Controller
             echo "Error al generar la boleta: " . $e->getMessage();
         }
     }
+
+    /**
+     * Obtener boletas de pago inicial (cuota inicial, monto inscripción, monto recalculado)
+     */
+    public function obtenerBoletasPagoInicial() {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Método no permitido");
+            }
+
+            $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+
+            if (!$idFinanciamiento) {
+                throw new Exception("ID de financiamiento no proporcionado");
+            }
+
+            // Obtener datos del financiamiento
+            $stmt = $this->conexion->prepare("
+                SELECT cuota_inicial, monto_inscrip, monto_recalculado, moneda 
+                FROM financiamiento 
+                WHERE idfinanciamiento = ?
+            ");
+            $stmt->bind_param("i", $idFinanciamiento);
+            $stmt->execute();
+            $financiamiento = $stmt->get_result()->fetch_assoc();
+
+            if (!$financiamiento) {
+                throw new Exception("Financiamiento no encontrado");
+            }
+
+            // Obtener pagos iniciales registrados
+            $stmt = $this->conexion->prepare("
+                SELECT idpagos_financiamiento, monto, metodo_pago, fecha_pago, moneda, concepto
+                FROM pagos_financiamiento
+                WHERE id_financiamiento = ?
+                AND concepto IN ('Cuota Inicial', 'Monto de Inscripción', 'Monto Recalculado')
+                ORDER BY fecha_pago DESC
+            ");
+            $stmt->bind_param("i", $idFinanciamiento);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $pagos = [];
+            while ($row = $result->fetch_assoc()) {
+                $pagos[] = $row;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'pagos' => $pagos,
+                'financiamiento' => $financiamiento
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerBoletasPagoInicial: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generar boleta de pago inicial individual
+     */
+    public function generarBoletaPagoInicial() {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception("Método no permitido");
+            }
+
+            $idPago = $_POST['id_pago'] ?? null;
+
+            if (!$idPago) {
+                throw new Exception("ID de pago no proporcionado");
+            }
+
+            // Obtener datos del pago
+            $stmt = $this->conexion->prepare("
+                SELECT pf.*, f.id_conductor, f.id_cliente, f.idfinanciamiento
+                FROM pagos_financiamiento pf
+                INNER JOIN financiamiento f ON pf.id_financiamiento = f.idfinanciamiento
+                WHERE pf.idpagos_financiamiento = ?
+            ");
+            $stmt->bind_param("i", $idPago);
+            $stmt->execute();
+            $pago = $stmt->get_result()->fetch_assoc();
+
+            if (!$pago) {
+                throw new Exception("Pago no encontrado");
+            }
+
+            // Generar PDF usando la función existente
+            $pdfBase64 = $this->generateNotaVentaPagosInstant(
+                $pago['id_conductor'],
+                $pago['idfinanciamiento'],
+                $pago['id_asesor'],
+                $pago['monto'],
+                $idPago,
+                $pago['moneda'],
+                $pago['concepto'],
+                $pago['id_cliente']
+            );
+
+            echo json_encode([
+                'success' => true,
+                'pdf' => $pdfBase64
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en generarBoletaPagoInicial: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

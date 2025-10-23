@@ -33,9 +33,9 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
     <div class="row align-items-center">
         <div class="col-md-8">
             <h6 class="page-title">Productos</h6>
-            <ol class="breadcrumb m-0">
+            <!-- <ol class="breadcrumb m-0">
                 <li class="breadcrumb-item"><a href="javascript: void(0);">Almacen</a></li>
-            </ol>
+            </ol> -->
         </div>
         <div class="col-md-4">
             <div class="float-end d-none d-md-block">
@@ -56,7 +56,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
     </div>
 </div>
 
-<div class="row">
+<!-- <div class="row">
     <div class="col-md-12">
         <div class="card card-default">
             <div class="card-body">
@@ -66,8 +66,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             </div>
         </div>
     </div>
-    <!--col-md-6-->
-</div>
+ 
+</div> -->
 
 
 <div >
@@ -96,6 +96,63 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 <?php endif; ?>
                         </div>
                         
+                    </div>
+
+                    <!-- NUEVO: Filtros por Stock y Tipo de Producto -->
+                    <div class="row mb-3 filtros-container">
+                        <div class="col-md-5">
+                            <label class="form-label">Stock</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="stock-filter-buttons">
+                                    <button type="button" class="btn-stock-filter active" data-value="todos" onclick="cambiarFiltroStock('todos', this)">
+                                        <span class="stock-indicator-active"></span>Todos
+                                    </button>
+                                    <button type="button" class="btn-stock-filter" data-value="con_stock" onclick="cambiarFiltroStock('con_stock', this)">
+                                        <span class="stock-indicator-active"></span>En stock
+                                    </button>
+                                    <button type="button" class="btn-stock-filter" data-value="sin_stock" onclick="cambiarFiltroStock('sin_stock', this)">
+                                        <span class="stock-indicator-active"></span>Agotado
+                                    </button>
+                                    <button type="button" class="btn-stock-filter" data-value="stock_bajo" onclick="cambiarFiltroStock('stock_bajo', this)">
+                                        <span class="stock-indicator-active"></span>Stock Bajo
+                                    </button>
+                                </div>
+                                <button type="button" class="btn-limpiar-filtros" id="btnLimpiarFiltros" onclick="limpiarFiltros()" style="display: none;">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroTipoProducto" class="form-label">Filtrar por Tipo</label>
+                            <select id="filtroTipoProducto" class="form-select form-select-sm" onchange="actualizarBotonLimpiar(); aplicarFiltros();">
+                                <option value="todos">Todos los tipos</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Filtrar por Categoría</label>
+                            <!-- Dropdown personalizado con checkboxes -->
+                            <div class="dropdown-categoria-wrapper">
+                                <button class="btn-dropdown-categoria" type="button" id="btnCategoriaDropdown" onclick="toggleCategoriaDropdown()">
+                                    <span id="categoriasSeleccionadasText">Todas las categorías</span>
+                                    <i class="fa fa-chevron-down"></i>
+                                </button>
+                                <div class="dropdown-categoria-menu" id="categoriaDropdownMenu">
+                                    <div class="dropdown-categoria-header">
+                                        <span class="dropdown-categoria-title">Seleccionar Categorías</span>
+                                        <button type="button" class="btn-limpiar-categoria" onclick="limpiarCategoriasSeleccionadas()">
+                                            Limpiar <span id="contadorCategorias"></span>
+                                        </button>
+                                    </div>
+                                    <div class="dropdown-categoria-search">
+                                        <input type="text" id="buscarCategoria" class="form-control form-control-sm" placeholder="Buscar categoría...">
+                                    </div>
+                                    <div class="dropdown-categoria-list" id="listaCategorias">
+                                        <!-- Las categorías se cargarán dinámicamente aquí -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row d-flex justify-content-end">
@@ -2446,6 +2503,287 @@ function cargarCategoriaProductos() {
     var codeBarraTemps=''
     var datatable
     
+    // ========== VARIABLES Y FUNCIONES GLOBALES PARA FILTROS ==========
+    // Variable global para almacenar todos los productos
+    var todosLosProductos = [];
+    var categoriasSeleccionadas = []; // Array para almacenar categorías seleccionadas
+    var todasLasCategorias = []; // Array para almacenar todas las categorías disponibles
+    var filtroStockActual = 'todos'; // Variable para almacenar el filtro de stock actual
+
+    // Función global para cambiar filtro de stock (botones)
+    function cambiarFiltroStock(valor, boton) {
+        // Actualizar variable global
+        filtroStockActual = valor;
+        
+        // Remover clase active de todos los botones
+        document.querySelectorAll('.btn-stock-filter').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Agregar clase active al botón clickeado
+        boton.classList.add('active');
+        
+        // Mostrar/ocultar botón limpiar
+        actualizarBotonLimpiar();
+        
+        // Aplicar filtros
+        aplicarFiltros();
+    }
+
+    // Función para mostrar/ocultar botón "Limpiar"
+    function actualizarBotonLimpiar() {
+        const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+        const hayFiltrosActivos = 
+            filtroStockActual !== 'todos' || 
+            $('#filtroTipoProducto').val() !== 'todos' ||
+            categoriasSeleccionadas.length > 0 ||
+            $('#buscadorProductos').val().trim() !== '';
+        
+        if (hayFiltrosActivos) {
+            btnLimpiar.style.display = 'inline-block';
+        } else {
+            btnLimpiar.style.display = 'none';
+        }
+    }
+
+    // Función global para aplicar filtros
+    function aplicarFiltros() {
+        const filtroStock = filtroStockActual; // Usar variable global en lugar de select
+        const filtroTipo = $('#filtroTipoProducto').val();
+        const busqueda = $('#buscadorProductos').val().toLowerCase().trim();
+
+        let productosFiltrados = todosLosProductos;
+
+        // Filtrar por búsqueda de texto
+        if (busqueda !== '') {
+            productosFiltrados = productosFiltrados.filter(function(producto) {
+                return (
+                    (producto.nombre && producto.nombre.toLowerCase().includes(busqueda)) ||
+                    (producto.codigo && producto.codigo.toLowerCase().includes(busqueda)) ||
+                    (producto.razon_social && producto.razon_social.toLowerCase().includes(busqueda)) ||
+                    (producto.categoria && producto.categoria.toLowerCase().includes(busqueda)) ||
+                    (producto.tipo_producto && producto.tipo_producto.toLowerCase().includes(busqueda))
+                );
+            });
+        }
+
+        // Filtrar por stock
+        if (filtroStock !== 'todos') {
+            productosFiltrados = productosFiltrados.filter(function(producto) {
+                const cantidad = parseInt(producto.cantidad) || 0;
+                
+                switch(filtroStock) {
+                    case 'con_stock':
+                        return cantidad > 0;
+                    case 'sin_stock':
+                        return cantidad === 0;
+                    case 'stock_bajo':
+                        return cantidad > 0 && cantidad < 10;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Filtrar por tipo de producto
+        if (filtroTipo !== 'todos') {
+            productosFiltrados = productosFiltrados.filter(function(producto) {
+                return producto.tipo_producto === filtroTipo;
+            });
+        }
+
+        // Filtrar por categorías (múltiples selecciones)
+        if (categoriasSeleccionadas.length > 0) {
+            productosFiltrados = productosFiltrados.filter(function(producto) {
+                return categoriasSeleccionadas.includes(producto.categoria);
+            });
+        }
+
+        mostrarProductos(productosFiltrados);
+    }
+
+    // Función global para limpiar filtros
+    function limpiarFiltros() {
+        // Resetear filtro de stock a "Todos"
+        filtroStockActual = 'todos';
+        document.querySelectorAll('.btn-stock-filter').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.getAttribute('data-value') === 'todos') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Resetear otros filtros
+        $('#filtroTipoProducto').val('todos');
+        $('#buscadorProductos').val('');
+        limpiarCategoriasSeleccionadas();
+        
+        // Ocultar botón limpiar
+        actualizarBotonLimpiar();
+        
+        mostrarProductos(todosLosProductos);
+    }
+
+    // ========== FUNCIONES PARA DROPDOWN PERSONALIZADO DE CATEGORÍAS ==========
+    
+    // Toggle del dropdown de categorías
+    function toggleCategoriaDropdown() {
+        const menu = document.getElementById('categoriaDropdownMenu');
+        const btn = document.getElementById('btnCategoriaDropdown');
+        const isOpen = menu.classList.contains('show');
+        
+        if (isOpen) {
+            menu.classList.remove('show');
+            btn.classList.remove('active');
+        } else {
+            menu.classList.add('show');
+            btn.classList.add('active');
+        }
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(event) {
+        const wrapper = document.querySelector('.dropdown-categoria-wrapper');
+        const menu = document.getElementById('categoriaDropdownMenu');
+        const btn = document.getElementById('btnCategoriaDropdown');
+        
+        if (wrapper && !wrapper.contains(event.target)) {
+            menu.classList.remove('show');
+            btn.classList.remove('active');
+        }
+    });
+
+    // Actualizar texto del botón con categorías seleccionadas
+    function actualizarTextoCategoriasSeleccionadas() {
+        const texto = document.getElementById('categoriasSeleccionadasText');
+        const contador = document.getElementById('contadorCategorias');
+        
+        if (categoriasSeleccionadas.length === 0) {
+            texto.textContent = 'Todas las categorías';
+            contador.textContent = '';
+            contador.style.display = 'none';
+        } else if (categoriasSeleccionadas.length === 1) {
+            texto.textContent = categoriasSeleccionadas[0];
+            contador.textContent = '1';
+            contador.style.display = 'inline-block';
+            contador.classList.add('updated');
+            setTimeout(() => contador.classList.remove('updated'), 300);
+        } else {
+            texto.textContent = `Categoría (${categoriasSeleccionadas.length})`;
+            contador.textContent = categoriasSeleccionadas.length;
+            contador.style.display = 'inline-block';
+            contador.classList.add('updated');
+            setTimeout(() => contador.classList.remove('updated'), 300);
+        }
+    }
+
+    // Manejar selección de categoría
+    function toggleCategoria(categoria, checkbox) {
+        const index = categoriasSeleccionadas.indexOf(categoria);
+        
+        if (checkbox.checked && index === -1) {
+            categoriasSeleccionadas.push(categoria);
+        } else if (!checkbox.checked && index > -1) {
+            categoriasSeleccionadas.splice(index, 1);
+        }
+        
+        actualizarTextoCategoriasSeleccionadas();
+        actualizarBotonLimpiar();
+        aplicarFiltros();
+    }
+
+    // Limpiar categorías seleccionadas
+    function limpiarCategoriasSeleccionadas() {
+        categoriasSeleccionadas = [];
+        
+        // Desmarcar todos los checkboxes
+        const checkboxes = document.querySelectorAll('.categoria-item input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = false;
+            cb.closest('.categoria-item').classList.remove('selected');
+        });
+        
+        actualizarTextoCategoriasSeleccionadas();
+        actualizarBotonLimpiar();
+        aplicarFiltros();
+    }
+
+    // Buscar categorías en el dropdown
+    function buscarEnCategorias() {
+        const busqueda = document.getElementById('buscarCategoria').value.toLowerCase();
+        const items = document.querySelectorAll('.categoria-item');
+        let hayResultados = false;
+        
+        items.forEach(item => {
+            const texto = item.querySelector('label').textContent.toLowerCase();
+            if (texto.includes(busqueda)) {
+                item.style.display = 'flex';
+                hayResultados = true;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        const lista = document.getElementById('listaCategorias');
+        let mensajeNoResultados = lista.querySelector('.no-categorias-found');
+        
+        if (!hayResultados) {
+            if (!mensajeNoResultados) {
+                mensajeNoResultados = document.createElement('div');
+                mensajeNoResultados.className = 'no-categorias-found';
+                mensajeNoResultados.textContent = 'No se encontraron categorías';
+                lista.appendChild(mensajeNoResultados);
+            }
+        } else {
+            if (mensajeNoResultados) {
+                mensajeNoResultados.remove();
+            }
+        }
+    }
+
+    // Función global para mostrar productos en la tabla
+    function mostrarProductos(productos) {
+        var tbody = $('#tbodyProductos');
+        tbody.empty();
+        
+        if (productos.length === 0) {
+            tbody.append(`
+                <tr>
+                    <td colspan="12" class="text-center">No se encontraron productos con los filtros seleccionados</td>
+                </tr>
+            `);
+            return;
+        }
+        
+        $.each(productos, function(i, producto) {
+            tbody.append(`
+                <tr>
+                    <td>${producto.idproductosv2}</td>
+                    <td>
+                        <a href="#" onclick="event.preventDefault(); mostrarCodigoBarras(
+                            '${producto.idproductosv2}',
+                            '${producto.nombre}',
+                            '${producto.codigo}',
+                            '${producto.precio}'
+                        )">${producto.nombre}</a>
+                    </td>
+                    <td>${producto.codigo}</td>
+                    <td>${producto.cantidad}</td>
+                    <td>${producto.categoria}</td>
+                    <td>${producto.ruc}</td>
+                    <td>${producto.razon_social}</td>
+                    <td>${producto.fecha_vencimiento ? producto.fecha_vencimiento : 'No disponible'}</td>
+                    <td>${producto.tipo_producto}</td>
+                    <td><button class="btn btn-sm btn-primary editar-producto" data-id="${producto.idproductosv2}" onclick="redirigirEditar(${producto.idproductosv2})">Editar</button></td>
+                    <td><input type="checkbox" class="eliminar-producto" data-id="${producto.idproductosv2}"></td>
+                    <td><button class="btn btn-sm btn-info" onclick="mostrarDetallesProducto(${producto.idproductosv2})">Detalles</button></td>
+                </tr>
+            `);
+        });
+        toggleSeleccionarTodos();
+    }
+    
     $(document).ready(function() {
 
         cargarTiposProducto();
@@ -2533,6 +2871,116 @@ function cargarCategoriaProductos() {
         });
 
         // Asegúrate de eliminar cualquier manejador previo del evento 'change' para evitar duplicados
+
+        // ========== FUNCIONES AUXILIARES PARA FILTROS (dentro de document.ready) ==========
+        
+        // Función para cargar los tipos de producto en el filtro
+        function cargarTiposProductoFiltro() {
+            $.ajax({
+                url: "/arequipago/cargartiposproducto",
+                method: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (Array.isArray(response)) {
+                        var select = $('#filtroTipoProducto');
+                        select.empty();
+                        select.append($('<option>', {
+                            value: 'todos',
+                            text: 'Todos los tipos'
+                        }));
+                        
+                        response.forEach(function(tipo) {
+                            select.append($('<option>', {
+                                value: tipo.tipo_productocol,
+                                text: tipo.tipo_productocol
+                            }));
+                        });
+                    }
+                },
+                error: function () {
+                    console.error('Error al cargar tipos de producto para filtro');
+                }
+            });
+        }
+
+        // Función para cargar las categorías en el dropdown personalizado
+        function cargarCategoriasFiltro() {
+            $.ajax({
+                url: "/arequipago/cargarcategoriaproductos",
+                method: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (Array.isArray(response)) {
+                        todasLasCategorias = response; // Guardar en variable global
+                        const lista = $('#listaCategorias');
+                        lista.empty();
+                        
+                        response.forEach(function(categoria) {
+                            const item = $(`
+                                <div class="categoria-item">
+                                    <input type="checkbox" 
+                                           id="cat_${categoria.idcategoria_producto}" 
+                                           value="${categoria.nombre}"
+                                           onchange="toggleCategoria('${categoria.nombre}', this)">
+                                    <label for="cat_${categoria.idcategoria_producto}">${categoria.nombre}</label>
+                                </div>
+                            `);
+                            
+                            // Agregar evento click al item completo
+                            item.on('click', function(e) {
+                                if (e.target.tagName !== 'INPUT') {
+                                    const checkbox = $(this).find('input[type="checkbox"]');
+                                    checkbox.prop('checked', !checkbox.prop('checked'));
+                                    toggleCategoria(categoria.nombre, checkbox[0]);
+                                }
+                                
+                                // Toggle clase selected
+                                if ($(this).find('input[type="checkbox"]').prop('checked')) {
+                                    $(this).addClass('selected');
+                                } else {
+                                    $(this).removeClass('selected');
+                                }
+                            });
+                            
+                            lista.append(item);
+                        });
+                        
+                        // Agregar evento de búsqueda
+                        $('#buscarCategoria').off('keyup').on('keyup', buscarEnCategorias);
+                    }
+                },
+                error: function () {
+                    console.error('Error al cargar categorías para filtro');
+                }
+            });
+        }
+
+        // Función mejorada para cargar productos y almacenarlos (usa variable global)
+        function cargarProductos() {
+            $.ajax({
+                url: '/arequipago/obtenerTodosProductos',
+                type: 'GET',
+                dataType: 'json',
+                success: function(productos) {
+                    todosLosProductos = productos; // Guardar en variable global
+                    mostrarProductos(productos); // Mostrar todos inicialmente
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error al cargar los productos:", error);
+                    alert("Hubo un error al cargar los productos. Por favor, intenta de nuevo más tarde.");
+                }
+            });
+        }
+
+        // Modificar el buscador para que use los filtros
+        $('#buscadorProductos').on('keyup', function() {
+            actualizarBotonLimpiar();
+            aplicarFiltros();
+        });
+
+        // Inicializar filtros al cargar la página
+        cargarTiposProductoFiltro();
+        cargarCategoriasFiltro();
 
     })
 </script>

@@ -167,6 +167,12 @@ Route::get("/reporte/productos/pdf/:id","ReportesVentaController@reporteProducto
 Route::get("/reporte/ventasganancias/pdf/:id","GeneradoresController@reportePeriodoVentaGanancias");
 
 Route::get("/reporte/compras","ReportesVentaController@reporteCompraAll");
+
+// Rutas para Dashboard de Analíticas CrediGo
+Route::postBase("/reportes-credigo", "FragmentController@reporteCredigo");
+Route::get("/api/credigo/datos-graficas", "ReportesCredigoController@obtenerDatosGraficas");
+Route::get("/api/credigo/exportar-pdf", "ReportesCredigoController@exportarPDF");
+
 Route::postBase("/usuarios","FragmentController@usuariosLista");
 Route::postBase("/grupo-financiamiento", "FragmentController@openGruposFinance");
 Route::postBase("/pago-financiamiento", "FragmentController@pagoFinanciamiento");
@@ -211,6 +217,8 @@ Route::post('/downloadReportFinance', 'ReportFinanciamientoController@downloadRe
 
 
 Route::post('/generateBoletaFinance', 'ReportFinanciamientoController@generateBoletaFinance');
+Route::post('/obtenerBoletasPagoInicial', 'ReportFinanciamientoController@obtenerBoletasPagoInicial');
+Route::post('/generarBoletaPagoInicial', 'ReportFinanciamientoController@generarBoletaPagoInicial');
 Route::get('/numUnidad','RegistrarConductorController@obtenerNumeroLibre');
 Route::get('/reportPagosUnificado', 'ConductorController@reportPagosUnificado');
 Route::post('/generatePdf', 'ConductorController@generatePdfFromTable');
@@ -346,7 +354,7 @@ Route::post('/obtenerDetalleCuotas', 'FinanciamientoController@obtenerDetalleCuo
 Route::post('/obtenerCuotasVencidasFiltradas', 'FinanciamientoController@obtenerCuotasVencidasFiltradas');
 Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
 
-Route::get('/cargarGruposFinanciamiento', 'FinanciamientoController@cargarGruposFinanciamiento');
+// Route::get('/cargarGruposFinanciamiento', 'FinanciamientoController@cargarGruposFinanciamiento');
 Route::post('/guardarGrupoFinanciamiento', 'FinanciamientoController@guardarGrupoFinanciamiento');
 Route::post('/generarCronogramaPDF', 'FinanciamientoController@generarCronogramaPDF');
 Route::get('/TipoCambio', 'FinanciamientoController@obtenerTipoCambio');
@@ -370,7 +378,7 @@ Route::post('/obtenerPlanFinanciamiento', 'FinanciamientoController@getPlanFinan
 Route::post('/newPagofinance', 'FinanciamientoController@newPagofinance');
 Route::post('/getReportFinance', 'FinanciamientoController@getReportFinance');
 Route::post('/deleteReportFinance', 'FinanciamientoController@deleteReportFinance');
-
+ Route::post('/anularPagoFinanciamiento', 'FinanciamientoController@anularPago');
 Route::get('/cargarGruposFinanciamiento1', 'FinanciamientoController@cargarGruposFinanciamiento1');
 Route::post('/deleteMassiveReportFinance', 'FinanciamientoController@deleteMassive');
 Route::post('/obtenerDatosFinanciamientoCliente', 'FinanciamientoController@obtenerDatosFinanciamientoCliente');
