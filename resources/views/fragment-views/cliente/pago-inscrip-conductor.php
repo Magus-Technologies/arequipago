@@ -266,9 +266,37 @@ $id_conductor = $_GET['id'] ?? null;
 
             const financiadoSection = document.getElementById('informacionFinanciado');
             const montoInicialContainer = document.getElementById('montoInicialContainer');
+            const metodoPagoContainer = document.getElementById('metodoPagoContainer');
+            const metodoPagoRequired = document.getElementById('metodoPagoRequired');
+            
             financiadoSection.style.display = select.value === 'financiado' ? 'block' : 'none';
             montoInicialContainer.style.display = select.value === 'financiado' ? 'block' : 'none';
+            
+            // Mostrar método de pago siempre
+            metodoPagoContainer.style.display = 'block';
+            
+            // Si es contado, el método de pago es obligatorio
+            if (select.value === 'contado') {
+                metodoPagoRequired.style.display = 'inline';
+            } else {
+                // Si es financiado, solo es obligatorio si hay monto inicial
+                metodoPagoRequired.style.display = 'none';
+            }
+            
             document.getElementById('cuotasList').innerHTML = ''; // Limpiar lista si cambia la opción
+        }
+        
+        // Función para validar si el monto inicial requiere método de pago
+        function validarMetodoPagoRequerido() {
+            const tipoPago = document.getElementById('tipoPago').value;
+            const montoInicial = parseFloat(document.getElementById('montoInicial').value) || 0;
+            const metodoPagoRequired = document.getElementById('metodoPagoRequired');
+            
+            if (tipoPago === 'financiado' && montoInicial > 0) {
+                metodoPagoRequired.style.display = 'inline';
+            } else if (tipoPago === 'financiado' && montoInicial === 0) {
+                metodoPagoRequired.style.display = 'none';
+            }
         }
 
         function calcularCuotas() {
@@ -332,6 +360,32 @@ $id_conductor = $_GET['id'] ?? null;
             }
         }
 
+
+        function cargarMetodosPago() {
+            $.ajax({
+                url: '/arequipago/obtenerMetodosPago',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const select = $('#metodoPago');
+                        select.empty();
+                        select.append('<option value="">Seleccione...</option>');
+                        response.data.forEach(function(metodo) {
+                            // Deshabilitar "Pago Efectivo (Próximamente)"
+                            if (metodo.nombre === 'Pago Efectivo (Próximamente)') {
+                                select.append(`<option value="${metodo.nombre}" disabled>${metodo.nombre}</option>`);
+                            } else {
+                                select.append(`<option value="${metodo.nombre}">${metodo.nombre}</option>`);
+                            }
+                        });
+                    }
+                },
+                error: function(error) {
+                    console.error('Error al cargar métodos de pago:', error);
+                }
+            });
+        }
 
         function cargarDatos() {
             var id_conductor = <?php echo json_encode($id_conductor); ?>;
@@ -453,10 +507,24 @@ $id_conductor = $_GET['id'] ?? null;
                 return; // Modificado: Detener la ejecución si el campo monto base está vacío
             }
 
+            // Obtener método de pago
+            const metodoPago = document.getElementById('metodoPago').value;
+            
+            // Validar método de pago para contado
+            if (tipo_pago === 'contado' && !metodoPago) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Debe seleccionar un método de pago.'
+                });
+                return;
+            }
+
             let data = {
                 id_conductor: id_conductor,
                 tipo_pago: tipo_pago,
-                monto_pago: montoBase !== '' ? parseFloat(montoBase) : 0 // Modificado: Siempre tomar montoBase como monto_pago
+                monto_pago: montoBase !== '' ? parseFloat(montoBase) : 0, // Modificado: Siempre tomar montoBase como monto_pago
+                metodo_pago: metodoPago || 'Efectivo' // Agregar método de pago, por defecto Efectivo si no se selecciona
             };
 
             if (tipo_pago === 'financiado') {
@@ -473,6 +541,16 @@ $id_conductor = $_GET['id'] ?? null;
                         icon: 'error',
                         title: 'Error',
                         text: 'El monto inicial no puede ser mayor al monto base.'
+                    });
+                    return;
+                }
+                
+                // Validar método de pago si hay monto inicial
+                if (montoInicial > 0 && !metodoPago) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe seleccionar un método de pago para el monto inicial.'
                     });
                     return;
                 }
@@ -911,6 +989,7 @@ $id_conductor = $_GET['id'] ?? null;
 
         $(document).ready(function () {
             cargarDatos();
+            cargarMetodosPago();
             colorInput();
             zero();
             datePago();
@@ -1036,7 +1115,20 @@ $id_conductor = $_GET['id'] ?? null;
                         </div>
                         <div class="col-md-6" id="montoInicialContainer" style="display: none;">
                             <label class="form-label fw-bold">Monto inicial (S/):</label>
-                            <input type="number" class="form-control" id="montoInicial" value="0" placeholder="Ingrese el monto inicial" onchange="calcularCuotas()">
+                            <input type="number" class="form-control" id="montoInicial" value="0" placeholder="Ingrese el monto inicial" onchange="calcularCuotas(); validarMetodoPagoRequerido();">
+                        </div>
+                    </div>
+                    
+                    <!-- Método de Pago -->
+                    <div class="row g-3 mt-2" id="metodoPagoContainer">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-credit-card me-2"></i>Método de Pago:
+                                <span class="text-danger" id="metodoPagoRequired" style="display: none;">*</span>
+                            </label>
+                            <select class="form-select" id="metodoPago">
+                                <option value="">Seleccione...</option>
+                            </select>
                         </div>
                     </div>
                 </div>

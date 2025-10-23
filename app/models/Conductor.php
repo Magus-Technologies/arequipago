@@ -1490,6 +1490,20 @@ public function eliminar() {
                 $stmtFinanciamientoDelete->close();
             }
 
+            // Eliminar registros de notas_venta_inscripcion primero (por la relación FK)
+            $sqlDeleteNotasVenta = "DELETE FROM notas_venta_inscripcion WHERE id_conductor = ?";
+            $stmtDeleteNotasVenta = $this->conectar->prepare($sqlDeleteNotasVenta);
+            $stmtDeleteNotasVenta->bind_param("i", $id_conductor);
+            $stmtDeleteNotasVenta->execute();
+            $stmtDeleteNotasVenta->close();
+
+            // Eliminar registros de pagos_inscripcion para evitar duplicados
+            $sqlDeletePagosInscripcion = "DELETE FROM pagos_inscripcion WHERE id_conductor = ?";
+            $stmtDeletePagosInscripcion = $this->conectar->prepare($sqlDeletePagosInscripcion);
+            $stmtDeletePagosInscripcion->bind_param("i", $id_conductor);
+            $stmtDeletePagosInscripcion->execute();
+            $stmtDeletePagosInscripcion->close();
+
             // Eliminar el registro de conductor_pago
             $sqlDeletePago = "DELETE FROM conductor_pago WHERE id_conductor = ?";
             $stmtDeletePago = $this->conectar->prepare($sqlDeletePago);

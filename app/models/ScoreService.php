@@ -248,7 +248,9 @@ class ScoreService
         
         $sqlCount = "SELECT COUNT(*) as total 
                 FROM financiamiento 
-                WHERE $campoId = ?";
+                WHERE $campoId = ?
+                AND estado_eliminado = 0
+                AND (aprobado = 1 OR aprobado IS NULL)";
         
         $stmt = mysqli_prepare($this->conexion, $sqlCount);
         mysqli_stmt_bind_param($stmt, 'i', $idReferencia);

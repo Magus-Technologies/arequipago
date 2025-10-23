@@ -107,7 +107,20 @@ class PuntajeCrediticioModel
 
             // Query principal
             $sql = "SELECT DISTINCT
-                pc.*,
+                pc.id,
+                pc.tipo_cliente,
+                pc.id_cliente,
+                pc.id_conductor,
+                pc.puntaje_actual,
+                pc.total_retrasos,
+                pc.fecha_actualizacion,
+                pc.fecha_creacion,
+                (SELECT COUNT(*) FROM financiamiento f2 
+                 WHERE (pc.tipo_cliente = 'cliente' AND f2.id_cliente = pc.id_cliente 
+                        OR pc.tipo_cliente = 'conductor' AND f2.id_conductor = pc.id_conductor)
+                 AND f2.estado IN ('En Progreso', 'En progreso', 'Finalizado')
+                 AND f2.estado_eliminado = 0
+                 AND (f2.aprobado = 1 OR f2.aprobado IS NULL)) as total_financiamientos,
                 CASE 
                     WHEN pc.tipo_cliente = 'cliente' THEN cf.nombres
                     ELSE c.nombres 
@@ -261,6 +274,8 @@ $sqlFinanciamientos = "SELECT f.*, p.nombre as nombre_producto
                        LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                       WHERE " . ($tipo === 'cliente' ? 'f.id_cliente' : 'f.id_conductor') . " = ?
                       AND f.estado IN ('En Progreso', 'En progreso', 'Finalizado')
+                      AND f.estado_eliminado = 0
+                      AND (f.aprobado = 1 OR f.aprobado IS NULL)
                       ORDER BY f.fecha_inicio DESC";
 
 $stmt = mysqli_prepare($this->conexion, $sqlFinanciamientos);
@@ -301,7 +316,10 @@ mysqli_stmt_close($stmt);
 
             // *** VALIDACION ADICIONAL: Verificar que realmente tenga financiamientos ***
             $campoId = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
-            $sqlValidarFinanciamientos = "SELECT COUNT(*) as total FROM financiamiento WHERE $campoId = ?";
+            $sqlValidarFinanciamientos = "SELECT COUNT(*) as total FROM financiamiento 
+                                          WHERE $campoId = ? 
+                                          AND estado_eliminado = 0 
+                                          AND (aprobado = 1 OR aprobado IS NULL)";
             $stmt = mysqli_prepare($this->conexion, $sqlValidarFinanciamientos);
             mysqli_stmt_bind_param($stmt, 'i', $id);
             mysqli_stmt_execute($stmt);
@@ -382,7 +400,11 @@ mysqli_stmt_close($stmt);
                                             AND cf.puntos_aplicados = 1
                                         THEN
                                             -IF(
-                                                (SELECT COUNT(*) FROM financiamiento f2 WHERE f2.$campoId = f.$campoId AND f2.estado IN ('En Progreso', 'En progreso')) > 1,
+                                                (SELECT COUNT(*) FROM financiamiento f2 
+                                                 WHERE f2.$campoId = f.$campoId 
+                                                 AND f2.estado IN ('En Progreso', 'En progreso')
+                                                 AND f2.estado_eliminado = 0
+                                                 AND (f2.aprobado = 1 OR f2.aprobado IS NULL)) > 1,
                                                 3, -- Ganó 3 puntos
                                                 5  -- Ganó 5 puntos
                                             )
@@ -390,7 +412,10 @@ mysqli_stmt_close($stmt);
                                         WHEN (cf.fecha_pago > cf.fecha_vencimiento) OR (cf.fecha_vencimiento < CURDATE() AND cf.fecha_pago IS NULL)
                                         THEN
                                             IF(
-                                                (SELECT COUNT(*) FROM financiamiento f2 WHERE f2.$campoId = f.$campoId) > 1,
+                                                (SELECT COUNT(*) FROM financiamiento f2 
+                                                 WHERE f2.$campoId = f.$campoId
+                                                 AND f2.estado_eliminado = 0
+                                                 AND (f2.aprobado = 1 OR f2.aprobado IS NULL)) > 1,
                                                 3, -- Pierde 3 puntos
                                                 5  -- Pierde 5 puntos
                                             )
@@ -425,6 +450,8 @@ mysqli_stmt_close($stmt);
                                 INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                                 LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                                 WHERE f.$campoId = ?
+                                AND f.estado_eliminado = 0
+                                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                                 AND NOT EXISTS (
                                     SELECT 1 FROM historial_puntaje hp2
                                     WHERE hp2.id_cuota = cf.idcuotas_financiamiento
@@ -466,7 +493,10 @@ mysqli_stmt_close($stmt);
             
             $sqlFinanciamientos = "SELECT COUNT(*) as total_financiamientos 
                                 FROM financiamiento 
-                                WHERE $campoId = ? AND estado IN ('En Progreso', 'En progreso', 'Finalizado')";
+                                WHERE $campoId = ? 
+                                AND estado IN ('En Progreso', 'En progreso', 'Finalizado')
+                                AND estado_eliminado = 0
+                                AND (aprobado = 1 OR aprobado IS NULL)";
             
             $stmt = mysqli_prepare($this->conexion, $sqlFinanciamientos);
             mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -489,7 +519,9 @@ mysqli_stmt_close($stmt);
                     INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                     WHERE f.$campoId = ?
                     AND DATE(cf.fecha_pago) > DATE(cf.fecha_vencimiento)
-                    AND cf.fecha_pago IS NOT NULL";
+                    AND cf.fecha_pago IS NOT NULL
+                    AND f.estado_eliminado = 0
+                    AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
             $stmt = mysqli_prepare($this->conexion, $sqlRetrasosPagados);
             mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -506,7 +538,9 @@ mysqli_stmt_close($stmt);
                                 WHERE f.$campoId = ?
                                 AND cf.fecha_vencimiento < CURDATE()
                                 AND cf.estado = 'En progreso'
-                                AND cf.fecha_pago IS NULL";
+                                AND cf.fecha_pago IS NULL
+                                AND f.estado_eliminado = 0
+                                AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
             $stmt = mysqli_prepare($this->conexion, $sqlCuotasVencidas);
             mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -811,6 +845,8 @@ mysqli_stmt_close($stmt);
                                 AND cf.fecha_pago IS NULL
                                 AND cf.estado = 'En progreso'
                                 AND f.estado IN ('En Progreso', 'En progreso', 'Finalizado')
+                                AND f.estado_eliminado = 0
+                                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                                 AND NOT EXISTS (
                                     SELECT 1 FROM historial_puntaje hp 
                                     WHERE hp.id_cuota = cf.idcuotas_financiamiento 
@@ -892,7 +928,9 @@ mysqli_stmt_close($stmt);
                                    FROM cuotas_financiamiento cf
                                    INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                                    WHERE cf.fecha_pago IS NOT NULL 
-                                   AND DATE(cf.fecha_pago) = CURDATE()";
+                                   AND DATE(cf.fecha_pago) = CURDATE()
+                                   AND f.estado_eliminado = 0
+                                   AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
             $result = mysqli_query($this->conexion, $sqlCuotasCambiadas);
             while ($row = mysqli_fetch_assoc($result)) {
@@ -938,7 +976,9 @@ mysqli_stmt_close($stmt);
                             FROM cuotas_financiamiento cf
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                             WHERE (DATE(cf.fecha_vencimiento) = CURDATE() OR DATE(cf.fecha_pago) = CURDATE())
-                            AND f.estado IN ('En Progreso', 'En progreso', 'Finalizado')";
+                            AND f.estado IN ('En Progreso', 'En progreso', 'Finalizado')
+                            AND f.estado_eliminado = 0
+                            AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
             $result = mysqli_query($this->conexion, $sqlCuotasHoy);
 
@@ -1131,6 +1171,8 @@ mysqli_stmt_close($stmt);
     LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
     WHERE " . ($tipo === 'cliente' ? 'f.id_cliente' : 'f.id_conductor') . " = ?
     AND f.estado IN ('En Progreso', 'En progreso', 'Finalizado')
+    AND f.estado_eliminado = 0
+    AND (f.aprobado = 1 OR f.aprobado IS NULL)
     ORDER BY f.fecha_inicio DESC";
     $stmt = mysqli_prepare($this->conexion, $sqlFinanciamientos);
     mysqli_stmt_bind_param($stmt, 'i', $id);
