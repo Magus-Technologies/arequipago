@@ -31,6 +31,7 @@ Route::get('/cargarcategoriaproductos', 'ProductosController@getCategoriasProduc
 Route::get('/obtenerTipoProducto', 'ProductosController@obtenerTipoProducto');
 
 Route::get('/obtenerFinanciamientoDetalle', 'GenerarContratosController@obtenerFinanciamientoDetalle');
+Route::get('/obtenerMetodosPago', 'RegistroPagoController@obtenerMetodosPago');
 Route::post('/guardarRegistroPago', 'RegistroPagoController@guardarRegistroPago');
 Route::post('/generarContratosRegistro', 'GenerarContratosController@generarContratosRegistro');
 

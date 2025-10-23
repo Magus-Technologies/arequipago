@@ -21,6 +21,32 @@ class RegistroPagoController extends Controller
     {
         $this->conexion = (new Conexion())->getConexion();
     }
+    
+    public function obtenerMetodosPago()
+    {
+        try {
+            // Métodos de pago hardcodeados
+            $metodos = [
+                ['nombre' => 'Efectivo'],
+                ['nombre' => 'Transferencia'],
+                ['nombre' => 'QR'],
+                ['nombre' => 'Tarjeta'],
+                ['nombre' => 'Pago Efectivo (Próximamente)']
+            ];
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'data' => $metodos
+            ]);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener métodos de pago: ' . $e->getMessage()
+            ]);
+        }
+    }
 
     public function guardarRegistroPago()
     {
@@ -36,6 +62,7 @@ class RegistroPagoController extends Controller
         $fecha_actual = date('Y-m-d');
         $monto_pago = $data['monto_pago'];
         $monto_inicial = isset($data['monto_inicial']) ? $data['monto_inicial'] : null;
+        $metodo_pago = isset($data['metodo_pago']) ? $data['metodo_pago'] : 'Efectivo';
 
         // Verificar el rol del usuario
         $rol_usuario = $_SESSION['id_rol'] ?? null;
@@ -80,6 +107,7 @@ class RegistroPagoController extends Controller
                 'tipo_pago' => $tipo_pago,
                 'monto_pago' => $monto_pago,
                 'monto_inicial' => $monto_inicial,
+                'metodo_pago' => $metodo_pago,
                 'numero_cuotas' => $data['numero_cuotas'] ?? null,
                 'frecuencia_pago' => $data['frecuencia_pago'] ?? null,
                 'fecha_inicio' => isset($data['fechas_vencimiento'][0]) ? $data['fechas_vencimiento'][0] : null,
@@ -233,7 +261,7 @@ class RegistroPagoController extends Controller
                 number_format($monto_inicial, 2),
                 "0.00",
                 number_format($monto_inicial, 2),
-                "Efectivo",
+                $metodo_pago,
                 $nombreAsesor,
                 "Cuota Inicial: S/. " . number_format($monto_inicial, 2)
             ], $html);
@@ -256,11 +284,10 @@ class RegistroPagoController extends Controller
 
             // Registrar el pago
             $pagoModel = new PagoInscripcion();
-            $metodoPago = "Efectivo";
             $efectivoRecibido = "0.00";
             $vuelto = "0.00";
 
-            $idPago = $pagoModel->registrarPago($id_financiamiento, $metodoPago, $monto_inicial, $id_conductor, $idAsesor, $fechaHora, $efectivoRecibido, $vuelto);
+            $idPago = $pagoModel->registrarPago($id_financiamiento, $metodo_pago, $monto_inicial, $id_conductor, $idAsesor, $fechaHora, $efectivoRecibido, $vuelto);
         
             if (!$idPago) {
                 echo json_encode(['success' => false, 'message' => 'Error al registrar el pago en la base de datos']);
@@ -325,7 +352,7 @@ class RegistroPagoController extends Controller
                 number_format($monto_pago, 2), // Modificado: Total a pagar
                 "0.00", // Modificado: Vuelto en 0.00
                 number_format($monto_pago, 2), // Modificado: Total ingresado
-                "Efectivo", // Modificado: Método de pago por defecto
+                $metodo_pago, // Modificado: Usar el método de pago seleccionado
                 $nombreAsesor, // Modificado: Nombre del asesor
                 "Pago al contado: S/. " . number_format($monto_pago, 2) // Modificado: Detalle de pago
             ], $html);
@@ -348,13 +375,12 @@ class RegistroPagoController extends Controller
 
             // Registrar el pago en la base de datos
             $pagoModel = new PagoInscripcion();
-            $metodoPago = "Efectivo"; // Modificado: Método de pago por defecto
             $efectivoRecibido = "0.00"; // Modificado: Se coloca en 0.00
             $vuelto = "0.00"; // Modificado: Se coloca en 0.00
 
             $idPagoNV = $pagoModel->registrarPago(
                 $id_pago, // Modificado: Se usa el ID de pago registrado
-                $metodoPago, // Modificado: Método de pago "Efectivo"
+                $metodo_pago, // Modificado: Usar el método de pago seleccionado
                 $monto_pago, // Modificado: Monto pagado
                 $id_conductor, // Modificado: ID del conductor
                 $idAsesor, // Modificado: ID del asesor

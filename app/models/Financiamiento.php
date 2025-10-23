@@ -1371,7 +1371,7 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     {
         $campo = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
         // $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso')";
-        $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso') AND estado_eliminado = 0";
+        $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso') AND estado_eliminado = 0 AND (aprobado = 1 OR aprobado IS NULL)";
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param("i", $id);
         $stmt->execute();
