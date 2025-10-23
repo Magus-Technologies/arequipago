@@ -149,6 +149,77 @@ if ($result_pagos_financiamiento && $row = $result_pagos_financiamiento->fetch_a
     $total_pagos_financiamiento = $row['total'] ?: 0;
 }
 
+// ========== CONSULTAS PARA DASHBOARD CREDIGO ==========
+
+// 1. Total de ventas CrediGo en el período seleccionado
+$sql_ventas_credigo = "
+    SELECT SUM(monto_total) as total, COUNT(*) as cantidad
+    FROM financiamiento
+    WHERE fecha_creacion BETWEEN '$fecha_inicio 00:00:00' AND '$fecha_fin 23:59:59'
+    AND estado_eliminado = 0
+    AND incobrable = 0
+";
+$result_ventas_credigo = $conexion->query($sql_ventas_credigo);
+$total_ventas_credigo = 0;
+$cantidad_financiamientos = 0;
+if ($result_ventas_credigo && $row = $result_ventas_credigo->fetch_assoc()) {
+    $total_ventas_credigo = $row['total'] ?: 0;
+    $cantidad_financiamientos = $row['cantidad'] ?: 0;
+}
+
+// 2. Ganancias CrediGo (estimado 10% del monto de pagos)
+$sql_ganancias_credigo = "
+    SELECT SUM(pf.monto * 0.1) as ganancias
+    FROM pagos_financiamiento pf
+    INNER JOIN financiamiento f ON pf.id_financiamiento = f.idfinanciamiento
+    WHERE pf.fecha_pago BETWEEN '$fecha_inicio 00:00:00' AND '$fecha_fin 23:59:59'
+    AND f.estado_eliminado = 0
+    AND f.incobrable = 0
+";
+$result_ganancias_credigo = $conexion->query($sql_ganancias_credigo);
+$ganancias_credigo = 0;
+if ($result_ganancias_credigo && $row = $result_ganancias_credigo->fetch_assoc()) {
+    $ganancias_credigo = $row['ganancias'] ?: 0;
+}
+
+// 3. Comparativa mes actual vs mes anterior
+$mes_actual = date('Y-m');
+$mes_anterior = date('Y-m', strtotime('-1 month'));
+
+$sql_mes_actual = "
+    SELECT SUM(monto_total) as total
+    FROM financiamiento
+    WHERE DATE_FORMAT(fecha_creacion, '%Y-%m') = '$mes_actual'
+    AND estado_eliminado = 0
+    AND incobrable = 0
+";
+$result_mes_actual = $conexion->query($sql_mes_actual);
+$ventas_mes_actual = 0;
+if ($result_mes_actual && $row = $result_mes_actual->fetch_assoc()) {
+    $ventas_mes_actual = $row['total'] ?: 0;
+}
+
+$sql_mes_anterior = "
+    SELECT SUM(monto_total) as total
+    FROM financiamiento
+    WHERE DATE_FORMAT(fecha_creacion, '%Y-%m') = '$mes_anterior'
+    AND estado_eliminado = 0
+    AND incobrable = 0
+";
+$result_mes_anterior = $conexion->query($sql_mes_anterior);
+$ventas_mes_anterior = 0;
+if ($result_mes_anterior && $row = $result_mes_anterior->fetch_assoc()) {
+    $ventas_mes_anterior = $row['total'] ?: 0;
+}
+
+// Calcular porcentaje de cambio
+$porcentaje_cambio = 0;
+if ($ventas_mes_anterior > 0) {
+    $porcentaje_cambio = (($ventas_mes_actual - $ventas_mes_anterior) / $ventas_mes_anterior) * 100;
+}
+
+// ========== FIN CONSULTAS CREDIGO ==========
+
 // Función para obtener los cumpleaños de la semana actual
 function obtenerCumpleanosSemanales($conexion)
 {
@@ -553,248 +624,8 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 <!-- start page title -->
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-<style>
-   
-@media (min-width: 1200px) { /* Solo afecta a pantallas grandes */
-    .custom-conductor-box {
-        margin-top: 35px; /* Baja el cuadro 50px */
-    }
-}
-
-.cantidad-conductores {
-    margin-left: 29px; /* Ajusta el valor según necesites */
-}
-
-/* Fondo general del gráfico    iNVERSION
-.card {
-    background: #f0f2f7 !important; 
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-*/
-/* Título del gráfico */
-.card-title {
-    color: #333; /* Color oscuro para mejor contraste */
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-/* Estilización del botón de cambio de periodo */
-.form-check-label {
-    color: #333;
-}
-
-.form-check-input:checked {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-/* Estilos para el gráfico */
-canvas#chart-estadisticas {
-    background-color: rgba(10, 10, 20, 0.95); /* Fondo blanco para mejor visibilidad */
-    border-radius: 8px;
-    padding: 10px;
-    border: 1px solid #ddd;
-}
-
-/* Colores para las barras del gráfico */
-.chart-bar-1 {
-    background-color: rgba(75, 192, 192, 0.5) !important;
-    border-color: rgba(75, 192, 192, 1) !important;
-}
-
-.chart-bar-2 {
-    background-color: rgba(255, 159, 64, 0.5) !important;
-    border-color: rgba(255, 159, 64, 1) !important;
-}
-
-#chart-estadisticas {
-font-size: 14px !important;
-color: black !important;
-}
-
-#chart-estadisticas * {
-    font-size: 14px !important;
-    color: black !important;
-}
-
-.mini-stat-img {
-    width: 65px !important;
-    height: 40% !important; /* Reduce la altura */
-}
-
-.text-end{
-    margin-right: -18px;
-}
-
-.form-switch .form-check-input {
-    background-color: #eed8fc;
-}
-
-.form-switch .form-check-input {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%237852a2'/%3e%3c/svg%3e") !important;
-}
-
-/* Estilos para el componente de cumpleaños */
-.cumpleanos-lista {
-    max-height: 250px;
-    overflow-y: auto;
-}
-
-.cumpleanos-lista::-webkit-scrollbar {
-    width: 5px;
-}
-
-.cumpleanos-lista::-webkit-scrollbar-thumb {
-    background-color: #eed8fc;
-    border-radius: 10px;
-}
-
-.cumpleanos-lista::-webkit-scrollbar-track {
-    background-color: #f1f1f1;
-    border-radius: 10px;
-}
-
-/* Actualizar los estilos del componente de cumpleaños */
-.cumpleanos-lista {
-    scrollbar-width: thin;
-    scrollbar-color: #eed8fc #f1f1f1;
-}
-
-.cumpleanos-lista::-webkit-scrollbar {
-    width: 4px;
-}
-
-.cumpleanos-lista::-webkit-scrollbar-thumb {
-    background-color: #eed8fc;
-    border-radius: 4px;
-}
-
-.cumpleanos-lista::-webkit-scrollbar-track {
-    background-color: #f1f1f1;
-    border-radius: 4px;
-}
-
-.filtro-calendario-container .card {
-    background-color: white !important; /* Color de fondo */
-}
-
-.alert-info{
-    margin-top: -30px !important;
-    margin-bottom: 45px !important;
-}
-
-.card {
-    background: white !important; 
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-#layout-wrapper{
-    background-color:  #f0f2f7;
-}
-
-.form-check-input, /* Radios */
-.form-control, /* Inputs */
-.form-select { /* Selects */
-    border: 1.5px solid rgba(197, 156, 209, 0.8); /* Borde más suave con opacidad */
-    border-radius: 4px; /* Bordes más suavizados */
-    outline: none; /* Quita el borde azul predeterminado */
-    transition: all 0.3s ease-in-out; /* Transición suave */
-}
-
-.form-check-input:focus, 
-.form-control:focus, 
-.form-select:focus {
-    border-color: rgba(164, 120, 182, 0.9); /* Color de foco más claro */
-    box-shadow: 0 0 4px rgba(197, 156, 209, 0.4); /* Suaviza el brillo */
-}
-
-/*  inversion
-#layout-wrapper{
-    background-color: white;
-}
-*/
-
-/* 🔹 Estilos específicos para los botones flotantes */
-#btnPrev, #btnNext {
-position: absolute; /* 📌 Hace que floten sobre el gráfico */
-top: 50%; /* 📌 Los posiciona verticalmente en el centro */
-transform: translateY(-50%); /* 📌 Ajuste fino para centrar */
-background: rgba(0, 0, 0, 0.5); /* 📌 Fondo semi-transparente */
-width: 48px; /* 🔹 Aumentado el ancho para que no sea tan pequeño */
-height: 120px; /* 🔹 Aumentado el alto para que sea más alargado */
-border: none; /* 📌 Quita los bordes */
-cursor: pointer; /* 📌 Cursor de puntero */
-transition: background 0.3s ease; /* 📌 Efecto de transición */
-z-index: 10; /* 📌 Asegura que estén por encima del gráfico */
-clip-path: polygon(100% 50%, 0% 100%, 0% 0%); /* 🔹 Convierte en triángulo */
-}
-
-/* 🔹 Posición de cada botón (más sobre el gráfico) */
-#btnPrev {
-left: 10px; /* 🔹 Ahora está más dentro del gráfico */
-transform: translateY(-50%) rotate(180deg); /* 🔹 Rota el triángulo para apuntar a la izquierda */
-}
-
-#btnNext {
-right: 10px; /* 🔹 Ahora está más dentro del gráfico */
-}
-
-/* 🔹 Efecto al pasar el mouse */
-#btnPrev:hover, #btnNext:hover {
-background: rgba(0, 0, 0, 0.8); /* 📌 Hace el fondo más oscuro */
-}
-
-/* Efectos de hover para los items de conductores */
-#vencidos-item-1:hover,
-#vencidos-item-2:hover,
-#vencidos-item-3:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-    cursor: pointer;
-    background-color: rgba(247, 213, 74, 0.15);
-}
-
-/* Estilo para el botón Ver Todos */
-#vencidos-ver-todos:hover {
-    background-color: #f0ca38;
-    box-shadow: 0 4px 8px rgba(247, 213, 74, 0.3);
-    transform: translateY(-1px);
-}
-
-/* Estilos para la barra de desplazamiento en la lista */
-#vencidos-lista::-webkit-scrollbar {
-    width: 5px;
-}
-
-#vencidos-lista::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-#vencidos-lista::-webkit-scrollbar-thumb {
-    background: #eed8fc;
-    border-radius: 10px;
-}
-
-#vencidos-lista::-webkit-scrollbar-thumb:hover {
-    background: #d9b6f3;
-}
-
-/* Animación para nuevos elementos (puedes agregarla cuando se carguen datos nuevos) */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.nuevo-vencido {
-    animation: fadeIn 0.5s ease;
-}
-
-</style>
+<!-- llamamos al css de home -->
+<link rel="stylesheet" href="public/css/home.css">
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -1303,6 +1134,109 @@ background: rgba(0, 0, 0, 0.8); /* 📌 Hace el fondo más oscuro */
     
 
 </div>
+
+<!-- ========== SECCIÓN DASHBOARD CREDIGO ========== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h5 class="mb-5" style="color: #7852a2; font-weight: 600;">
+            <i class="fas fa-chart-line me-2"></i>Analíticas CrediGo
+        </h5>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Tarjeta 1: Ventas Totales CrediGo -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card mini-stat bg-white text-dark"
+            style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                        style="border-radius: 20px; background-color: #d4efdf;">
+                        <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/financiar.png') ?>" alt="">
+                    </div>
+                    <h5 class="fw-light text-uppercase text-black text-end">Ventas CrediGo</h5>
+                    <h1 class="fw-bolder text-end" style="color: #1d8348;">
+                        S/ <?= number_format($total_ventas_credigo, 2, ".", ",") ?>
+                    </h1>
+                </div>
+                <div class="pt-2">
+                    <p class="text-dark-50 mb-0 mt-1 text-end">
+                        <?= $cantidad_financiamientos ?> financiamiento<?= $cantidad_financiamientos != 1 ? 's' : '' ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta 2: Ganancias CrediGo -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card mini-stat bg-white text-dark"
+            style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                        style="border-radius: 20px; background-color: #fcf3cf;">
+                        <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/02.png') ?>" alt="">
+                    </div>
+                    <h5 class="fw-light text-uppercase text-black text-end">Ganancias CrediGo</h5>
+                    <h1 class="fw-bolder text-end" style="color: #f39c12;">
+                        S/ <?= number_format($ganancias_credigo, 2, ".", ",") ?>
+                    </h1>
+                </div>
+                <div class="pt-2">
+                    <p class="text-dark-50 mb-0 mt-1 text-end">
+                        Intereses cobrados
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta 3: Comparativa Mensual -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card mini-stat bg-white text-dark"
+            style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                        style="border-radius: 20px; background-color: <?= $porcentaje_cambio >= 0 ? '#d4efdf' : '#fadbd8' ?>;">
+                        <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/03.png') ?>" alt="">
+                    </div>
+                    <h5 class="fw-light text-uppercase text-black text-end">Mes Actual vs Anterior</h5>
+                    <h1 class="fw-bolder text-end" style="color: <?= $porcentaje_cambio >= 0 ? '#1d8348' : '#c0392b' ?>;">
+                        <?= $porcentaje_cambio >= 0 ? '+' : '' ?><?= number_format($porcentaje_cambio, 1) ?>%
+                    </h1>
+                </div>
+                <div class="pt-2">
+                    <p class="text-dark-50 mb-0 mt-1 text-end">
+                        Actual: S/ <?= number_format($ventas_mes_actual, 2, ".", ",") ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjeta 4: Botón Ver Reportes -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card mini-stat bg-white text-dark"
+            style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';"
+            onclick="window.location.href='<?= URL::to('/reportes-credigo') ?>'">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-bar" style="font-size: 3rem; color: #7852a2;"></i>
+                    </div>
+                    <h5 class="fw-bold" style="color: #7852a2;">Ver Reportes Detallados</h5>
+                    <p class="text-muted mb-0">Gráficas y análisis completo</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ========== FIN SECCIÓN CREDIGO ========== -->
 
 <div class="row">
     <!-- Tarjeta de Total de Conductores -->

@@ -664,11 +664,11 @@ class FinanciamientoController extends Controller
             }
         }
 
-        public function cargarGruposFinanciamiento() {
-            $grupoFinanciamientoModel = new GrupoFinanciamientoModel();
-            $grupos = $grupoFinanciamientoModel->obtenerGruposFinanciamiento();
-            echo json_encode($grupos);
-        }
+        // public function cargarGruposFinanciamiento() {
+        //     $grupoFinanciamientoModel = new GrupoFinanciamientoModel();
+        //     $grupos = $grupoFinanciamientoModel->obtenerGruposFinanciamiento();
+        //     echo json_encode($grupos);
+        // }
 
         public function generarCronogramaPDF() {
             $input = file_get_contents('php://input');
@@ -2415,5 +2415,21 @@ class FinanciamientoController extends Controller
                 ]);
             }
         }
+    public function anularPago() {
+      if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+          $idPago = $_POST['idpagos_financiamiento'];
+
+          if (empty($idPago) || !is_numeric($idPago)) {
+              echo json_encode(['status' => 'error', 'message' => 'ID de pago inválido']);
+              return;
+          }
+
+          $financiamiento = new Financiamiento();
+          $resultado = $financiamiento->anularPagoFinanciamiento($idPago);
+
+          echo json_encode($resultado);
+      }
+    }
+        
     }
     

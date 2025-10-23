@@ -233,6 +233,10 @@ function selectPlan(idPlan) {
         }
 
         $("#cuotaInicial").val(plan.cuota_inicial);
+        
+        setTimeout(function() {
+           actualizarSelectMetodoPago();
+        }, 100);
 
         let frecuencia =
           plan.frecuencia_pago.charAt(0).toUpperCase() +
@@ -1180,6 +1184,12 @@ function seleccionarVariante(index) {
       console.log("✅ Interfaz restaurada a estado inicial");
     }
   }, 500); // Ejecutar después de que se establezcan los valores básicos
+
+  // ✅ NUEVO: Actualizar select de método de pago después de cargar la variante
+  setTimeout(function() {
+    actualizarSelectMetodoPago();
+    console.log("✅ Select de método de pago actualizado para variante");
+  }, 600); // Ejecutar después de establecer todos los valores
 }
 
 function verificarInputsVacios() {

@@ -307,23 +307,28 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     }
 
     public function getFinanciamientoById($id) {
-        // $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
-        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
+        // ✅ MODIFICADO: Agregamos JOIN con usuarios para traer el nombre del usuario que registró
+        $sql = "SELECT f.*,
+                       CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro
+                FROM financiamiento f
+                LEFT JOIN usuarios u ON f.usuario_id = u.usuario_id
+                WHERE f.idfinanciamiento = ? AND f.estado_eliminado = 0";
+
         $stmt = $this->conectar->prepare($sql);
-        
+
         if (!$stmt) {
             die('Error al preparar la consulta financiamiento: ' . $this->conectar->error);
         }
-        
+
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
-        
+
         // Verificamos si el resultado es null
         if ($result === null) {
             return []; // Retornamos un array vacío si no se encuentra el financiamiento
         }
-        
+
         return $result;
     }
     
@@ -877,19 +882,22 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 ELSE CONCAT(u.nombres, ' ', u.apellidos) 
             END AS asesor,  
             c.numUnidad AS numUnidad,
-            CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente  
+            CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente,
+            c.nro_documento AS nro_documento_conductor,
+            cf.n_documento AS nro_documento_cliente
         FROM pagos_financiamiento p
         LEFT JOIN conductores c ON p.id_conductor = c.id_conductor  
         LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
         LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
         WHERE (c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR u.nombres LIKE ? OR p.monto LIKE ?
         OR c.numUnidad LIKE ? OR
-            cf.nombres LIKE ? OR cf.apellido_paterno LIKE ?  
+            cf.nombres LIKE ? OR cf.apellido_paterno LIKE ? OR
+            c.nro_documento LIKE ? OR cf.n_documento LIKE ?
         )";
 
         // NUEVO: Añadir condición de fechas si están presentes
         $params = [];
-        $types = "sssssss"; 
+        $types = "sssssssss"; // ✅ MODIFICADO: Agregados 2 's' más para los documentos
         $searchTerm = "%$search%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -897,7 +905,9 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $params[] = $searchTerm;
         $params[] = $searchTerm;
         $params[] = $searchTerm;  /* AÑADIDO: para búsqueda en cf.nombres */
-        $params[] = $searchTerm; 
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en c.nro_documento
+        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento 
 
         // NUEVO: Si hay fechas, añadir al WHERE
         if (!empty($fechaInicio) && !empty($fechaFin)) {
@@ -908,7 +918,10 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         }
 
         // MODIFICACIÓN SOLICITADA: Filtrar por estado 1 o NULL
-        $query .= " AND (p.estado = 1 OR p.estado IS NULL)";
+        // $query .= " AND (p.estado = 1 OR p.estado IS NULL)";
+
+         // Línea 916 - MODIFICAR
+  $query .= " AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)";
 
         $query .= " ORDER BY p.fecha_pago DESC LIMIT ?, ?";
         $types .= "ii";
@@ -951,6 +964,16 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             if (empty($row['conductor']) && !empty($row['cliente'])) {
                 $row['conductor'] = $row['cliente'];  /* Asignar nombre del cliente al campo conductor para mantener compatibilidad */
             }
+            
+            // ✅ NUEVO: Consolidar número de documento en un solo campo
+            $row['nro_documento'] = !empty($row['nro_documento_conductor']) 
+                ? $row['nro_documento_conductor'] 
+                : $row['nro_documento_cliente'];
+            
+            // ✅ NUEVO: Limpiar campos temporales (opcional)
+            unset($row['nro_documento_conductor']);
+            unset($row['nro_documento_cliente']);
+            
             $reportes[] = $row;
         }
         $stmt->close();
@@ -965,13 +988,14 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                   LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id  
                   LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
                   WHERE (c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR u.nombres LIKE ? OR p.monto LIKE ?
-                    OR c.numUnidad LIKE ? OR cf.nombres LIKE ? OR cf.apellido_paterno LIKE ?  
+                    OR c.numUnidad LIKE ? OR cf.nombres LIKE ? OR cf.apellido_paterno LIKE ? OR
+                    c.nro_documento LIKE ? OR cf.n_documento LIKE ?
                   )";
 
     
         // NUEVO: Preparar parámetros
         $params = [];
-        $types = "sssssss";
+        $types = "sssssssss"; // ✅ MODIFICADO: Agregados 2 's' más para los documentos
         $searchTerm = "%$search%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -980,6 +1004,8 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $params[] = $searchTerm;  // Corregido: ahora sí agregamos para c.numUnidad LIKE 🛒
         $params[] = $searchTerm;
         $params[] = $searchTerm;  /* AÑADIDO: para búsqueda en cf.nombres */
+        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en c.nro_documento
+        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento
        
         
         // NUEVO: Si hay fechas, añadir al WHERE
@@ -990,9 +1016,9 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             $params[] = $fechaFin;
         }
         
-        // MODIFICACIÓN SOLICITADA: Filtrar por estado 1 o NULL
-        $query .= " AND (p.estado = 1 OR p.estado IS NULL)"; // NUEVA LÍNEA agregada para filtrar registros con estado 1 o NULL
-        
+        // MODIFICACIÓN: Filtrar por estado 1 (Pagado), 3 (Anulado) o NULL
+        $query .= " AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)";
+
         $stmt = $this->conectar->prepare($query);
         
         if (!$stmt) {  // 🛒 Validar que prepare no haya fallado
@@ -1637,5 +1663,83 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             return [];
         }
     }
+      public function anularPagoFinanciamiento($idPago) {
+      try {
+          // Iniciar transacción
+          $this->conectar->begin_transaction();
+
+          // 1. Verificar que el pago existe y está en estado = 1 (Aprobado)
+          $queryVerificar = "SELECT estado FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+          $stmtVerificar = $this->conectar->prepare($queryVerificar);
+          $stmtVerificar->bind_param("i", $idPago);
+          $stmtVerificar->execute();
+          $resultVerificar = $stmtVerificar->get_result();
+          $pago = $resultVerificar->fetch_assoc();
+
+          if (!$pago) {
+              throw new Exception('El pago no existe');
+          }
+
+          if ($pago['estado'] != 1) {
+              throw new Exception('Solo se pueden anular pagos aprobados');
+          }
+
+          // 2. Obtener las cuotas relacionadas con este pago
+          $queryCuotas = "SELECT id_cuota FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+          $stmtCuotas = $this->conectar->prepare($queryCuotas);
+          $stmtCuotas->bind_param("i", $idPago);
+          $stmtCuotas->execute();
+          $resultCuotas = $stmtCuotas->get_result();
+
+          $idsCuotas = [];
+          while ($row = $resultCuotas->fetch_assoc()) {
+              $idsCuotas[] = $row['id_cuota'];
+          }
+
+          // 3. Cambiar estado del pago a Anulado (3)
+          $queryPago = "UPDATE pagos_financiamiento SET estado = 3 WHERE idpagos_financiamiento = ?";
+          $stmtPago = $this->conectar->prepare($queryPago);
+          $stmtPago->bind_param("i", $idPago);
+
+          if (!$stmtPago->execute()) {
+              throw new Exception('Error al actualizar el estado del pago');
+          }
+
+          // 4. Revertir las cuotas a "En Progreso" y limpiar fecha_pago
+          if (!empty($idsCuotas)) {
+              $placeholders = implode(',', array_fill(0, count($idsCuotas), '?'));
+              $queryRevertirCuotas = "UPDATE cuotas_financiamiento
+                                     SET estado = 'En Progreso', fecha_pago = NULL
+                                     WHERE idcuotas_financiamiento IN ($placeholders)";
+              $stmtRevertir = $this->conectar->prepare($queryRevertirCuotas);
+
+              // Bind dinámico de parámetros
+              $types = str_repeat('i', count($idsCuotas));
+              $stmtRevertir->bind_param($types, ...$idsCuotas);
+
+              if (!$stmtRevertir->execute()) {
+                  throw new Exception('Error al revertir las cuotas');
+              }
+          }
+
+          // 5. Limpiar el usuario de aprobación en pagos_pendientes_financiamientos (opcional)
+          $queryLimpiarAprobacion = "UPDATE pagos_pendientes_financiamientos
+                                     SET id_usuario_aprobacion = NULL
+                                     WHERE idpagos_financiamiento = ?";
+          $stmtLimpiar = $this->conectar->prepare($queryLimpiarAprobacion);
+          $stmtLimpiar->bind_param("i", $idPago);
+          $stmtLimpiar->execute();
+
+          // 6. Confirmar transacción
+          $this->conectar->commit();
+
+          return ['status' => 'success', 'message' => 'Pago anulado correctamente. Las cuotas han vuelto a "En Progreso".'];
+
+      } catch (Exception $e) {
+          $this->conectar->rollback();
+          return ['status' => 'error', 'message' => 'Error al anular el pago: ' . $e->getMessage()];
+      }
+  }
+
 
 }

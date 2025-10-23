@@ -168,13 +168,33 @@
                 100% { transform: scale(1); }
             }
 
-        #btnDescargar { /* Estilos aplicados exclusivamente a este botón */
-            background-color: #38a4f8 !important; /* Color solicitado */
-            color: white; /* Texto blanco para contraste */
-            margin-top: 4px;
-            display: block;
-            margin: 10px auto;
-        }
+       #btnDescargar { /* Estilos aplicados exclusivamente a este botón */
+    background-color: #38a4f8 !important; /* Color solicitado */
+    color: white; /* Texto blanco para contraste */
+    margin-top: 4px;
+    display: block;
+    margin: 10px auto;
+}
+
+/* Contenedor del botón de cronograma */
+#contenedorBotonCronograma {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+}
+
+#contenedorBotonCronograma button {
+    width: 100%;
+    max-width: 250px;
+    transition: all 0.3s ease;
+}
+
+#contenedorBotonCronograma button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
 
         #btnDescargar:hover {
             background-color: #1c86d1 !important; /* Efecto hover más oscuro */
@@ -622,4 +642,121 @@
 
 .sin-stock:hover {
     background-color: #e9ecef !important;
+}
+/* Estilos personalizados para el scroll del cronograma */
+#contenedorFechas {
+    scrollbar-width: thin;
+    scrollbar-color: #626ed4 #f1f1f1;
+}
+
+#contenedorFechas::-webkit-scrollbar {
+    width: 10px;
+}
+
+#contenedorFechas::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+
+#contenedorFechas::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #626ed4 0%, #4a5ab8 100%);
+    border-radius: 10px;
+    border: 2px solid #f1f1f1;
+    transition: all 0.3s ease;
+}
+
+#contenedorFechas::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #4a5ab8 0%, #3a4a98 100%);
+    border-color: #e0e0e0;
+    box-shadow: 0 0 6px rgba(98, 110, 212, 0.4);
+}
+
+/* Contenedor del botón de cronograma */
+#contenedorBotonCronograma {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+    margin-top: 5px;
+}
+
+#contenedorBotonCronograma button {
+    width: 100%;
+    max-width: 280px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.2);
+}
+
+#contenedorBotonCronograma button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+}
+
+
+/* Estilos para el modal de Boletas de Pago Inicial */
+#modalBoletasIniciales {
+    z-index: 9999 !important;
+}
+
+#modalBoletasIniciales .modal-dialog {
+    z-index: 10000 !important;
+}
+
+/* Backdrop oscuro SOLO cuando el modal de boletas está abierto */
+body.modal-boletas-open .modal-backdrop:last-of-type {
+    background-color: rgba(0, 0, 0, 0.85) !important;
+    z-index: 9998 !important;
+    opacity: 0.85 !important;
+}
+
+/* Estilos para las cards de boletas */
+#modalBoletasIniciales .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#modalBoletasIniciales .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para los botones dentro del modal de boletas */
+#modalBoletasIniciales .btn-primary {
+    background: linear-gradient(135deg, #626ed4 0%, #4a5ab8 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+#modalBoletasIniciales .btn-primary:hover {
+    background: linear-gradient(135deg, #4a5ab8 0%, #3a4a98 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(98, 110, 212, 0.3);
+}
+
+#modalBoletasIniciales .btn-success {
+    background: linear-gradient(135deg, #02a398 0%, #028a82 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+#modalBoletasIniciales .btn-success:hover {
+    background: linear-gradient(135deg, #029b8f 0%, #027a73 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(2, 163, 152, 0.3);
+}
+
+/* Animación de entrada para el modal */
+#modalBoletasIniciales.show .modal-dialog {
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }

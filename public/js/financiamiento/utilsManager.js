@@ -100,7 +100,7 @@ function revertirVacioInput() {
 
 function mostrarNotificacion(mensaje, duracion = 11000) {
   const notificacion = document.getElementById("notificacion");
-  
+
   // Limpiar contenido previo y mostrar directamente el mensaje completo
   notificacion.innerHTML = mensaje;
   notificacion.classList.add("show");
@@ -110,7 +110,6 @@ function mostrarNotificacion(mensaje, duracion = 11000) {
     notificacion.classList.remove("show");
   }, duracion);
 }
-
 
 function mostrarImagenFlotante() {
   console.log("AnimAte");
@@ -139,19 +138,28 @@ function mostrarImagenFlotante() {
 }
 
 // Función para generar y descargar PDF con opción de compartir por WhatsApp
-async function handleGeneratePDFs(idFinanciamiento, pagos) {
-  // Verificar si hay un método de pago seleccionado cuando es requerido
-  if ($(".metodoPago").length > 0 && $(".metodoPago").val() === "") {
-    Swal.fire(
-      "Error",
-      "Por favor seleccione un método de pago antes de continuar",
-      "error"
-    );
-    return;
-  }
+async function handleGeneratePDFs(
+  idFinanciamiento,
+  pagos,
+  metodoPagoParam = null
+) {
+  // Usar el método de pago pasado como parámetro o buscar en el DOM
+  let metodoPago = metodoPagoParam;
 
-  // Obtener el método de pago si existe el select
-  const metodoPago = $(".metodoPago").length > 0 ? $(".metodoPago").val() : "";
+  if (!metodoPago) {
+    // Verificar si hay un método de pago seleccionado cuando es requerido
+    if ($(".metodoPago").length > 0 && $(".metodoPago").val() === "") {
+      Swal.fire(
+        "Error",
+        "Por favor seleccione un método de pago antes de continuar",
+        "error"
+      );
+      return;
+    }
+    // Obtener el método de pago si existe el select
+    metodoPago =
+      $(".metodoPago").length > 0 ? $(".metodoPago").val() : "Efectivo";
+  }
 
   try {
     // Solicitud para obtener los PDFs desde el servidor
@@ -529,15 +537,13 @@ function generarContratoInstant(idFinanciamiento) {
 
 // Función para manejar la visualización del select de método de pago
 function actualizarSelectMetodoPago() {
-  const montoRecalculado = $("#montoRecalculado").val() || 0;
-  const cuotaInicial = $("#cuotaInicial").val() || 0;
-  const montoInscripcion = $("#montoInscripcion").val() || 0;
+  const montoRecalculado = parseFloat($("#montoRecalculado").val()) || 0;
+  const cuotaInicial = parseFloat($("#cuotaInicial").val()) || 0;
+  const montoInscripcion = parseFloat($("#montoInscripcion").val()) || 0;
 
   // Revisar los campos para decidir si mostrar el select
   const mostrarSelect =
-    parseFloat(montoRecalculado) > 0 ||
-    parseFloat(cuotaInicial) > 0 ||
-    parseFloat(montoInscripcion) > 0;
+    montoRecalculado > 0 || cuotaInicial > 0 || montoInscripcion > 0;
 
   // Si debe mostrarse el select y no existe, lo creamos
   if (mostrarSelect) {
@@ -570,10 +576,12 @@ function actualizarSelectMetodoPago() {
 function checkAndUpdate() {
   // Verificar que las variables globales existen
   if (!window.inputIds || !window.lastValues) {
-    console.warn('Variables inputIds o lastValues no están definidas globalmente');
+    console.warn(
+      "Variables inputIds o lastValues no están definidas globalmente"
+    );
     return;
   }
-  
+
   let changed = false;
   window.inputIds.forEach((id) => {
     const currentValue = $(id).val();
@@ -589,12 +597,11 @@ function checkAndUpdate() {
 
 // Función para mostrar/ocultar el selector de cobrar mora según el rol
 function mostrarSelectorCobroMora() {
-    const contenedorCobroMora = document.getElementById('contenedorCobroMora');
-    if (window.rolUsuarioActual == '3') { // Solo para rol director
-        contenedorCobroMora.style.display = 'block';
-    } else {
-        contenedorCobroMora.style.display = 'none';
-    }
+  const contenedorCobroMora = document.getElementById("contenedorCobroMora");
+  if (window.rolUsuarioActual == "3") {
+    // Solo para rol director
+    contenedorCobroMora.style.display = "block";
+  } else {
+    contenedorCobroMora.style.display = "none";
+  }
 }
-
-

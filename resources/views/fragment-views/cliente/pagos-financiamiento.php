@@ -7,6 +7,31 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 ?>
 
     <link rel="stylesheet" href="<?= URL::to('/public/css/pagos-financiamineto.css') ?>?v=<?= time() ?>">
+    
+    <style>
+        /* Estilos para el mensaje de procesamiento de DataTables */
+        .dataTables_processing {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 1em 2em !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid #ddd !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            z-index: 1000 !important;
+            font-size: 1.1em !important;
+            color: #333 !important;
+        }
+        
+        /* Asegurar que el contenedor de la tabla tenga posición relativa */
+        .table-responsive {
+            position: relative !important;
+        }
+    </style>
 
 <div class="switch-container">
     <span class="switch-label mt-3">Reportes</span>
@@ -231,22 +256,26 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                     </div>
                 </div>
                 <div class="card-body">
-                    <table id="tabla-reportes" class="table table-bordered dt-responsive nowrap text-center table-sm">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Conductor</th>
-                                <th>Nº Unidad</th>
-                                <th>Asesor</th>
-                                <th>Monto</th>
-                                <th>Fecha Emisión</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- DataTables llenará esto automáticamente -->
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="tabla-reportes" class="table table-bordered dt-responsive nowrap text-center table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Conductor</th>
+                                    <!-- <th>Nº Documento</th> -->
+                                    <th>N° Unid</th>
+                                    <th>Asesor</th>
+                                    <th>Monto</th>
+                                    <th>Fecha Emisión</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- DataTables llenará esto automáticamente -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1602,12 +1631,12 @@ function eliminarPagoReporte(id) {
                         'El pago ha sido eliminado exitosamente.',
                         'success'
                     );
-                    
+
                     // Recargar DataTable
                     if (typeof tablaReportes !== 'undefined') {
                         tablaReportes.ajax.reload(null, false);
                     }
-                    
+
                     // Actualizar contador de pagos pendientes si existe
                     if (typeof pagosPendientesCantidad === 'function') {
                         pagosPendientesCantidad();
@@ -1615,6 +1644,76 @@ function eliminarPagoReporte(id) {
                 },
                 error: function () {
                     Swal.fire('Error', 'No se pudo eliminar el pago.', 'error');
+                }
+            });
+        }
+    });
+}
+
+// ⬇️ NUEVA FUNCIÓN: Anular pago
+function anularPago(id) {
+    Swal.fire({
+        title: '¿Anular este pago?',
+        html: "Este pago será marcado como <strong>Anulado</strong> y las cuotas volverán a <strong>'En Progreso'</strong>.<br><br>¿Deseas continuar?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f39c12',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, anular pago',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loader mientras se procesa
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Anulando el pago',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '/arequipago/anularPagoFinanciamiento',
+                type: 'POST',
+                data: { idpagos_financiamiento: id },
+                success: function (response) {
+                    const res = typeof response === 'string' ? JSON.parse(response) : response;
+
+                    if (res.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Pago anulado!',
+                            text: res.message,
+                            confirmButtonColor: '#28a745'
+                        });
+
+                        // Recargar DataTable
+                        if (typeof tablaReportes !== 'undefined') {
+                            tablaReportes.ajax.reload(null, false);
+                        }
+
+                        // Actualizar contador de pagos pendientes si existe
+                        if (typeof pagosPendientesCantidad === 'function') {
+                            pagosPendientesCantidad();
+                        }
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: res.message || 'No se pudo anular el pago',
+                            confirmButtonColor: '#d33'
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error al anular pago:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo conectar con el servidor. Por favor, intenta nuevamente.',
+                        confirmButtonColor: '#d33'
+                    });
                 }
             });
         }
@@ -2715,6 +2814,10 @@ function eliminarPago(idPago) {
                     data: "conductor",
                     class: "text-center",
                 },
+                // {
+                //     data:"nro_documento",
+                //     class  :"text-center",
+                // },
                 {
                     data: "numUnidad",
                     class: "text-center",
@@ -2739,28 +2842,65 @@ function eliminarPago(idPago) {
                 {
                     data: "fecha_pago",
                     class: "text-center",
+                    render: function(data, type, row) {
+                        if (!data) return 'N/A';
+
+                        // Dividir fecha y hora (formato: 2025-10-22 09:16:51)
+                        let partes = data.split(' ');
+                        if (partes.length >= 2) {
+                            let fecha = partes[0]; // 2025-10-22
+                            let hora = partes[1];  // 09:16:51
+                            return '<span style="white-space: nowrap;">' + fecha + '<br><small>' + hora + '</small></span>';
+                        }
+                        return data;
+                    }
                 },
+                // ⬇️ NUEVA COLUMNA ESTADO
+                {
+                    data: "estado",
+                    class: "text-center",
+                    render: function(data, type, row) {
+                        if (data == 0) {
+                            return '<span class="badge bg-warning text-dark">Pendiente</span>';
+                        } else if (data == 1) {
+                            return '<span class="badge bg-success">Pagado</span>';
+                        } else if (data == 2) {
+                            return '<span class="badge bg-danger">Rechazado</span>';
+                        } else if (data == 3) {
+                            return '<span class="badge bg-danger">Anulado</span>';
+                        }
+                        return '<span class="badge bg-light text-dark">Sin estado</span>';
+                    }
+                },
+
                 {
                     data: null,
                     class: "text-center",
                     render: function(data, type, row) {
                         let botones = '';
-                        
+
                         // Botón eliminar solo para roles 1 y 3
                         if (ROL_USUARIO == 1 || ROL_USUARIO == 3) {
                             botones += `<button class="btn btn-danger btn-sm" onclick="eliminarPagoReporte(${row.idpagos_financiamiento})">
                                 <i class="fa fa-trash"></i>
                             </button> `;
                         }
-                        
+
                         botones += `<button class="btn btn-success btn-sm" onclick="descargarPago(${row.idpagos_financiamiento})">
                             <i class="fa fa-download"></i>
                         </button> `;
-                        
+
                         botones += `<button class="btn btn-info btn-sm" onclick="whatsappReport(${row.idpagos_financiamiento})">
                             <i class="fab fa-whatsapp"></i>
                         </button>`;
-                        
+
+                        // ⬇️ NUEVO: Botón Anular solo si estado = 1 (Pagado) y roles 1 o 3
+                        if (row.estado == 1 && (ROL_USUARIO == 1 || ROL_USUARIO == 3)) {
+                            botones += ` <button class="btn btn-warning btn-sm" onclick="anularPago(${row.idpagos_financiamiento})">
+                                <i class="fa fa-undo"></i> Anular
+                            </button>`;
+                        }
+
                         return `<div class="btn-group btn-sm">${botones}</div>`;
                     }
                 }

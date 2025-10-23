@@ -212,6 +212,10 @@ class FragmentController extends Controller
         return $this->view("fragment-views/cliente/comisiones");
     }
 
+    public function reporteCredigo(){
+        return $this->view("fragment-views/cliente/reportes-credigo");
+    }
+
     public function creditScore(){
         return $this->view("fragment-views/cliente/credit-score");
     }
@@ -239,5 +243,4 @@ class FragmentController extends Controller
     {
         return $this->view("fragment-views/cliente/vehiculos-list");
     }
-        
 }

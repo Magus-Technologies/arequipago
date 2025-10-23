@@ -149,8 +149,8 @@ class Beneficio
 
             $sql = "INSERT INTO beneficios (
                         nombre, plan_financiamiento_id, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual,
-                        imagen, disponible
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        moneda, nombre_plan_personalizado, frecuencia_pago, imagen, disponible
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -166,20 +166,26 @@ class Beneficio
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
             $cuota_mensual = $datos['cuota_mensual'];
+            $moneda = isset($datos['moneda']) && !empty($datos['moneda']) ? $datos['moneda'] : null;
+            $nombre_plan_personalizado = isset($datos['nombre_plan_personalizado']) && !empty($datos['nombre_plan_personalizado']) ? $datos['nombre_plan_personalizado'] : null;
+            $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
 
             $stmt->bind_param(
-                'siisdidsi',
-                $nombre,                  // s - string
-                $plan_financiamiento_id,  // i - integer
-                $categoria,               // i - integer (nullable)
-                $descripcion,             // s - string
-                $cuota_inicial,           // d - decimal
-                $cantidad_cuotas,         // i - integer
-                $cuota_mensual,           // d - decimal
-                $imagen,                  // s - string
-                $disponible               // i - integer
+                'siisdidssssi',
+                $nombre,                       // s - string
+                $plan_financiamiento_id,       // i - integer
+                $categoria,                    // i - integer (nullable)
+                $descripcion,                  // s - string
+                $cuota_inicial,                // d - decimal
+                $cantidad_cuotas,              // i - integer
+                $cuota_mensual,                // d - decimal
+                $moneda,                       // s - string (nullable)
+                $nombre_plan_personalizado,    // s - string (nullable)
+                $frecuencia_pago,              // s - string (nullable)
+                $imagen,                       // s - string
+                $disponible                    // i - integer
             );
 
             if (!$stmt->execute()) {
@@ -202,7 +208,9 @@ class Beneficio
     public function obtenerTodos($filtros = [])
     {
         try {
-            $sql = "SELECT b.*, p.moneda
+            $sql = "SELECT b.*,
+                    COALESCE(b.moneda, p.moneda) as moneda,
+                    COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display
                     FROM beneficios b
                     LEFT JOIN planes_financiamiento p ON b.plan_financiamiento_id = p.idplan_financiamiento
                     WHERE 1=1";
@@ -309,7 +317,7 @@ class Beneficio
         try {
             $sql = "UPDATE beneficios SET
                         nombre = ?, plan_financiamiento_id = ?, categoria = ?, descripcion = ?, cuota_inicial = ?,
-                        cantidad_cuotas = ?, cuota_mensual = ?, imagen = ?,
+                        cantidad_cuotas = ?, cuota_mensual = ?, moneda = ?, nombre_plan_personalizado = ?, frecuencia_pago = ?, imagen = ?,
                         disponible = ?, fecha_actualizacion = CURRENT_TIMESTAMP
                     WHERE id = ?";
 
@@ -335,21 +343,27 @@ class Beneficio
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
             $cuota_mensual = $datos['cuota_mensual'];
+            $moneda = isset($datos['moneda']) && !empty($datos['moneda']) ? $datos['moneda'] : null;
+            $nombre_plan_personalizado = isset($datos['nombre_plan_personalizado']) && !empty($datos['nombre_plan_personalizado']) ? $datos['nombre_plan_personalizado'] : null;
+            $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
 
             $stmt->bind_param(
-                'siisdidsii',
-                $nombre,                  // s - string
-                $plan_financiamiento_id,  // i - integer
-                $categoria,               // i - integer (nullable)
-                $descripcion,             // s - string
-                $cuota_inicial,           // d - decimal
-                $cantidad_cuotas,         // i - integer
-                $cuota_mensual,           // d - decimal
-                $imagen,                  // s - string
-                $disponible,              // i - integer
-                $id                       // i - integer
+                'siisdidssssii',
+                $nombre,                       // s - string
+                $plan_financiamiento_id,       // i - integer
+                $categoria,                    // i - integer (nullable)
+                $descripcion,                  // s - string
+                $cuota_inicial,                // d - decimal
+                $cantidad_cuotas,              // i - integer
+                $cuota_mensual,                // d - decimal
+                $moneda,                       // s - string (nullable)
+                $nombre_plan_personalizado,    // s - string (nullable)
+                $frecuencia_pago,              // s - string (nullable)
+                $imagen,                       // s - string
+                $disponible,                   // i - integer
+                $id                            // i - integer
             );
 
             if (!$stmt->execute()) {

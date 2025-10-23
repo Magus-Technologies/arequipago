@@ -323,6 +323,13 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                             <i class="fas fa-file-download me-2"></i>Descargar Acta de Entrega
                                                         </button>
                                                     </div>
+                                                    
+                                                    <!-- NUEVO: Botón para descargar boletas de pago inicial -->
+                                                    <div id="btnDescargarBoletasIniciales" style="display: none; margin-top: 15px;">
+                                                        <button type="button" class="btn btn-primary btn-sm w-100" onclick="mostrarBoletasPagoInicial()">
+                                                            <i class="fas fa-receipt me-2"></i>Ver Boletas de Pago Inicial
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1016,13 +1023,16 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                         <div class="card-body">
                                             <div class="row">
                                                 <div class="col-md-6">
-                                                    <div id="contenedorFechas" class="border rounded p-3 bg-light">
+                                                    <div id="contenedorFechas" class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto; overflow-x: hidden;">
                                                         <!-- Las fechas de vencimiento se mostrarán aquí -->
                                                         <p class="text-muted text-center">El cronograma de pagos se
                                                             generará automáticamente al completar los campos requeridos.
                                                         </p>
                                                     </div>
+                                                    <!-- Contenedor para el botón de cronograma (fuera del scroll) -->
+                                                    <div id="contenedorBotonCronograma" class="mt-2"></div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div id="contenedorVehicular" class="border rounded p-3 bg-light">
                                                         <!-- Contenido para vehículos -->

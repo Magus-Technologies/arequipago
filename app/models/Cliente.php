@@ -1014,25 +1014,31 @@ public function obtenerDepartamentos()
     }
 
     public function obtenerPorDni($dni) {
-        // Preparar la consulta con parámetros para prevenir SQL injection
+        // ✅ MODIFICADO: Primero buscar en clientes_financiar
         $sql = "SELECT * FROM clientes_financiar WHERE n_documento = ?";
         $stmt = $this->conectar->prepare($sql);
-        
-        // Vincular parámetros
         $stmt->bind_param('s', $dni);
-        
-        // Ejecutar la consulta
         $stmt->execute();
-        
-        // Obtener el resultado
         $result = $stmt->get_result();
         
-        // Si hay un resultado, devolverlo como array asociativo
+        // Si hay un resultado en clientes_financiar, devolverlo
         if ($result->num_rows > 0) {
             return $result->fetch_assoc();
         }
         
-        // Si no hay resultados, devolver null
+        // ✅ NUEVO: Si no se encuentra, buscar también en la tabla clientes
+        $sql = "SELECT * FROM clientes WHERE documento = ?";
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param('s', $dni);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        // Si hay un resultado en clientes, devolverlo
+        if ($result->num_rows > 0) {
+            return $result->fetch_assoc();
+        }
+        
+        // Si no hay resultados en ninguna tabla, devolver null
         return null;
     }
 
