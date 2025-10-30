@@ -304,7 +304,8 @@ Route::get('/chargedUsuarios', 'ComisionesController@chargedUsuarios');
 Route::get('/numUnidadLima', 'RegistrarConductorController@obtenerNumeroLibreLima');
 Route::post('/verificarConductorExiste', 'RegistrarConductorController@verificarConductorExiste');
 Route::post('/cambiarEstadoComision', 'ComisionesController@cambiarEstadoComision');
-Route::post('eliminarComision', 'ComisionController@eliminarComision');
+Route::post('eliminarComision', 'ComisionesController@eliminarComision');
+Route::post('/accionMasivaComisiones', 'ComisionesController@accionMasivaComisiones');
 
 // PUNTAJE CREDITICIO:
 Route::get('/obtenerEstadisticasPuntaje', 'PuntajeCrediticioController@obtenerEstadisticasPuntaje');

@@ -883,39 +883,46 @@ function mostrarReportes(reportes) {
 
     let html = '';
     reportes.forEach(function (reporte, index) {
+        // Generar ruta del PDF dinámicamente si es cliente y no tiene ruta
+        let rutaPDF = reporte.ruta;
+        if (reporte.tipo_persona === 'cliente' && (!rutaPDF || rutaPDF === '')) {
+            rutaPDF = 'files/notasPagoInscripcion/nota_venta_cliente_' + reporte.id_pago + '.pdf';
+        }
+        
         html += `
         <tr>
             <td>${index + 1}</td>
             <td>${reporte.nombre_persona || 'No especificado'}</td>
-            <td>${reporte.num_unidad ? reporte.num_unidad : '-'}</td> {/* Mostrar '-' si es cliente (sin unidad) */}
+            <td>${reporte.num_unidad ? reporte.num_unidad : '-'}</td>
             <td>${reporte.nombre_asesor || 'No especificado'}</td>
             <td>S/ ${parseFloat(reporte.monto).toFixed(2)}</td>
             <td>${formatearFecha(reporte.fecha_emision)}</td>
             <td>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-primary ver-pdf" 
-                            data-ruta="${reporte.ruta}" 
+                            data-ruta="${rutaPDF}" 
                             title="Ver PDF">
                         <i class="fa fa-eye"></i>
                     </button>
                     <button class="btn btn-sm btn-success descargar-pdf" 
-                            data-ruta="${reporte.ruta}" 
+                            data-ruta="${rutaPDF}" 
                             title="Descargar PDF">
                         <i class="fa fa-download"></i>
                     </button>
                     <button class="btn btn-sm btn-info enviar-whatsapp" 
-                            data-id="${reporte.idnotas_venta_inscripcion}"
-                            data-ruta="${reporte.ruta}"
+                            data-id="${reporte.id_pago}"
+                            data-ruta="${rutaPDF}"
                             title="Enviar por WhatsApp">
                         <i class="fab fa-whatsapp"></i>
                     </button>
-                    <?php if ($rol_usuario == 3 || $rol_usuario == 1): ?> <!-- NUEVO: Mostrar solo si el rol es 3 -->
+                    <?php if ($rol_usuario == 3 || $rol_usuario == 1): ?>
                     <button class="btn btn-sm btn-danger eliminar-reporte"
-                            data-id="${reporte.idnotas_venta_inscripcion}"
+                            data-id="${reporte.id_pago}"
+                            data-tipo="${reporte.tipo_persona}"
                             title="Eliminar">
                         <i class="fa fa-trash"></i>
                     </button>
-                    <?php endif; ?> <!-- FIN NUEVO -->
+                    <?php endif; ?>
                 </div>
             </td>
         </tr>

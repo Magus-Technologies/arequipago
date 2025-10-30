@@ -877,164 +877,227 @@ class ConductorController extends Controller
         }
 
         $dni = trim($_POST['dni']);
+        
+        // Primero buscar en conductores
         $conductor = new Conductor();
         $idConductor = $conductor->buscarPorDocumento($dni);
 
-        if (!$idConductor) {
-            echo json_encode(["success" => false, "message" => "Conductor no encontrado."]);
+        if ($idConductor) {
+            // Es un conductor
+            $conductor->setIdConductor($idConductor);
+            if (!$conductor->obtenerDatos()) {
+                echo json_encode(["success" => false, "message" => "No se pudieron obtener los datos del conductor."]);
+                return;
+            }
+
+            $datosPago = $conductor->obtenerDatosPago($idConductor);
+
+            echo json_encode([
+                "success" => true,
+                "tipo_persona" => "conductor",
+                "conductor" => [
+                    "nombres" => $conductor->getNombres(),
+                    "apellido_paterno" => $conductor->getApellidoPaterno(),
+                    "apellido_materno" => $conductor->getApellidoMaterno()
+                ],
+                "cuotas" => $datosPago && isset($datosPago['cuotas']) ? $datosPago['cuotas'] : []
+            ]);
             return;
         }
 
-        $conductor->setIdConductor($idConductor);
-        if (!$conductor->obtenerDatos()) {
-            echo json_encode(["success" => false, "message" => "No se pudieron obtener los datos del conductor."]);
+        // Si no es conductor, buscar en clientes
+        $cliente = new Cliente();
+        $datosCliente = $cliente->buscarClienteFinanciar($dni);
+
+        if ($datosCliente) {
+            // Es un cliente - los clientes siempre pagan al contado
+            echo json_encode([
+                "success" => true,
+                "tipo_persona" => "cliente",
+                "conductor" => [
+                    "nombres" => $datosCliente['nombres'],
+                    "apellido_paterno" => $datosCliente['apellido_paterno'],
+                    "apellido_materno" => $datosCliente['apellido_materno']
+                ],
+                "cuotas" => [] // Los clientes no tienen cuotas
+            ]);
             return;
         }
 
-        $datosPago = $conductor->obtenerDatosPago($idConductor);
-
-        echo json_encode([
-            "success" => true,
-            "conductor" => [
-                "nombres" => $conductor->getNombres(), // Cambio: Se usa el getter en lugar de acceder directamente a la propiedad privada
-                "apellido_paterno" => $conductor->getApellidoPaterno(), // Cambio: Se usa el getter correspondiente
-                "apellido_materno" => $conductor->getApellidoMaterno() // Cambio: Se usa el getter correspondiente
-            ],
-            "cuotas" => $datosPago && isset($datosPago['cuotas']) ? $datosPago['cuotas'] : []
-        ]);
+        // No se encontró ni conductor ni cliente
+        echo json_encode(["success" => false, "message" => "No se encontró ningún conductor o cliente con ese documento."]);
     }
 
     public function paymentMade() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-            $dni = $_POST['dni'];
+            $dni = trim($_POST['dni']);
             $metodoPago = $_POST['metodo_pago'];
             $monto = $_POST['monto'];
             $efectivoRecibido = $_POST['efectivo_recibido'];
             $vuelto = $_POST['vuelto'];
             $cuotas = $_POST['cuotas'];
-
-                
-            $conductor = new Conductor();
-            $dni = trim($dni);
-            $idConductor = $conductor->buscarPorDocumento($dni);
-
-            //var_dump("ID Conductor obtenido:", $idConductor);
-    
-            if (!$idConductor) {
-                echo json_encode(["success" => false, "message" => "No se encontró el conductor"]);
-                return;
-            }
-    
-            $datosPago = $conductor->obtenerDatosPago($idConductor);
-    
-            if (!$datosPago || !isset($datosPago['financiamiento']['idconductor_regfinanciamiento'])) {
-                echo json_encode(["success" => false, "message" => "No se encontraron datos de financiamiento"]);
-                return;
-            }
-    
-            $idInscripcion = $datosPago['financiamiento']['idconductor_regfinanciamiento'];
-            $idAsesor = $_SESSION['usuario_id']; // ID del asesor desde la sesión
-          
+            $idAsesor = $_SESSION['usuario_id'];
             $fechaPago = date("Y-m-d H:i:s");
 
-                
-            // Instanciar el modelo PagoInscripcion y guardar los datos
-            $pago = new PagoInscripcion();
-            $idPago = $pago->registrarPago($idInscripcion, $metodoPago, $monto, $idConductor, $idAsesor, $fechaPago, $efectivoRecibido, $vuelto);
-    
-            if ($idPago) {
-                
-                $pago->registrarDetallePago($idPago, $idInscripcion, $cuotas); // Se pasa el ID de pago, la inscripción y las cuotas recibidas
-    
-                $pago->actualizarCuotas($idInscripcion, $cuotas, $fechaPago, $metodoPago); 
+            // Primero buscar en conductores
+            $conductor = new Conductor();
+            $idConductor = $conductor->buscarPorDocumento($dni);
 
-                // Generar el PDF con MPDF
-                
-                // Obtener datos del conductor
-                $conductor->setIdConductor($idConductor);
-                $conductor->obtenerDatos();
-                $nombreCompleto = $conductor->getNombres() . " " . $conductor->getApellidoPaterno() . " " . $conductor->getApellidoMaterno();
-                $tipoDoc = $conductor->getTipoDoc();
-                $nroDocumento = $conductor->getNroDocumento();
-
-                $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "nota_venta_inscripcion.html";
-                $html = file_get_contents($rutaBase);
-                
-                if ($html === false) {
-                    echo json_encode(["success" => false, "message" => "Error al leer la plantilla HTML"]);
+            if ($idConductor) {
+                // ES UN CONDUCTOR - Proceso existente
+                $datosPago = $conductor->obtenerDatosPago($idConductor);
+        
+                if (!$datosPago || !isset($datosPago['financiamiento']['idconductor_regfinanciamiento'])) {
+                    echo json_encode(["success" => false, "message" => "No se encontraron datos de financiamiento"]);
                     return;
                 }
+        
+                $idInscripcion = $datosPago['financiamiento']['idconductor_regfinanciamiento'];
                 
-                $usuarioModel = new Usuario(); // Agregado: Instanciar el modelo Usuario
-                $asesorData = $usuarioModel->getData($idAsesor);
+                // Instanciar el modelo PagoInscripcion y guardar los datos
+                $pago = new PagoInscripcion();
+                $idPago = $pago->registrarPago($idInscripcion, $metodoPago, $monto, $idConductor, $idAsesor, $fechaPago, $efectivoRecibido, $vuelto);
+        
+                if ($idPago) {
+                    $pago->registrarDetallePago($idPago, $idInscripcion, $cuotas);
+                    $pago->actualizarCuotas($idInscripcion, $cuotas, $fechaPago, $metodoPago); 
 
-                if ($asesorData) { // Agregado: Verificar si se encontraron datos
-                    $nombreAsesordate = $asesorData['nombres'] . ' ' . $asesorData['apellidos']; // Agregado: Concatenar nombres y apellidos
-                } else {
-                    $nombreAsesordate = 'Asesor no encontrado'; // Agregado: Mensaje en caso de error
-                }
+                    // Obtener datos del conductor
+                    $conductor->setIdConductor($idConductor);
+                    $conductor->obtenerDatos();
+                    $nombreCompleto = $conductor->getNombres() . " " . $conductor->getApellidoPaterno() . " " . $conductor->getApellidoMaterno();
+                    $tipoDoc = $conductor->getTipoDoc();
+                    $nroDocumento = $conductor->getNroDocumento();
+                    $tipoPago = "Financiamiento";
+                    $tipoPersona = "Conductor";
 
-                $rutaLogo = 'public' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo-ticket.png'; // Definir la ruta del logo
-                $html = str_replace('{LOGO}', $rutaLogo, $html); // Reemplazar {LOGO} con la ruta
-                
-               // Aplicar los reemplazos asegurando que las etiquetas sean exactas
-                $html = str_replace([
-               
-                    '<span id="fecha"></span>',
-                    '<span id="nombre_conductor"></span>',
-                    '<span id="documento"></span>',
-                    '<span id="nro_documento"></span>',
-                    '<span id="monto_pagado"></span>',
-                    '<span id="total_pagar"></span>',
-                    '<span id="vuelto"></span>',
-                    '<span id="total_ingresado"></span>',
-                    '<span id="metodo_pago"></span>',
-                    '<span id="asesor"></span>', 
-                    '<div id="detalle_cuotas"></div>'
-                ], [
+                    // Generar PDF
+                    $pdfContent = $this->generarPDFPago($nombreCompleto, $tipoDoc, $nroDocumento, $metodoPago, $monto, $efectivoRecibido, $vuelto, $fechaPago, $idAsesor, $cuotas, $datosPago, $tipoPersona, $tipoPago);
                     
-                    $fechaPago,
-                    $nombreCompleto,
-                    $tipoDoc,
-                    $nroDocumento,
-                    $efectivoRecibido,
-                    $monto,
-                    $vuelto,
-                    $monto,
-                    $metodoPago,
-                    $nombreAsesordate,
-                    implode("", array_map(function($cuota) use ($datosPago) {
-                        return $cuota['pagoH'] == "1" ? "Cuota " . $cuota['numero_cuota'] . ": S/. " . $datosPago['financiamiento']['monto_cuota'] . "<br>" . (!empty($cuota['mora']) ? "Mora de la Cuota " . $cuota['numero_cuota'] . ": S/. " . $cuota['mora'] . "<br>" : "") : "";
-                    }, $cuotas))
-                ], $html);
+                    $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
+                    if (!file_exists($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $pdfPath = $uploadDir . "nota_venta_$idPago.pdf";
+                    file_put_contents($pdfPath, base64_decode($pdfContent));
 
-              
-                
-                $mpdf = new \Mpdf\Mpdf([
-                    'format' => [132, 210], // Se establece un tamaño personalizado de 70% de A4 (148mm x 210mm)  
-                    'default_font_size' => 9 // Se reduce el tamaño de la fuente para ajustar el contenido en una sola hoja
-                ]); // Se modifica el tamaño del PDF y la fuente
-                $mpdf->WriteHTML("<style> body { font-size: 11px; } </style>" . $html); // Se aplica reducción de fuente en el PDF
-                
-                // Guardar en base64 y en archivo
-                $pdfContent = base64_encode($mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN));
-                $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
+                    $pago->guardarNotaVenta($idPago, $idConductor, $idAsesor, $monto, $fechaPago, $pdfPath);
+                    
+                    echo json_encode(["success" => true, "message" => "Pago de conductor registrado correctamente", "pdf" => $pdfPath, "pdf_base64" => $pdfContent]);    
+                } else {
+                    echo json_encode(["success" => false, "message" => "Error al registrar el pago"]);
                 }
-                
-                $pdfPath = $uploadDir . "nota_venta_$idPago.pdf";
-                file_put_contents($pdfPath, base64_decode($pdfContent));
-
-                $pago->guardarNotaVenta($idPago, $idConductor, $idAsesor, $monto, $fechaPago, $pdfPath); // Modificado: Se agrega $pdfPath como parámetro
-                
-                echo json_encode(["success" => true, "message" => "Detalles de Pago y actualización de cuotas registrado correctamente", "pdf" => $pdfPath, "pdf_base64" => $pdfContent]);    
-
-            } else {
-                echo json_encode(["success" => false, "message" => "Error al registrar el pago"]);
+                return;
             }
+
+            // Si no es conductor, buscar en clientes
+            $cliente = new Cliente();
+            $datosCliente = $cliente->buscarClienteFinanciar($dni);
+
+            if ($datosCliente) {
+                // ES UN CLIENTE - Siempre pago al contado
+                $idCliente = $datosCliente['id'];
+                $nombreCompleto = $datosCliente['nombres'] . " " . $datosCliente['apellido_paterno'] . " " . $datosCliente['apellido_materno'];
+                $tipoDoc = $datosCliente['tipo_doc'];
+                $nroDocumento = $datosCliente['n_documento'];
+                $tipoPago = "Pago al Contado";
+                $tipoPersona = "Cliente";
+
+                // Registrar pago en cliente_pago
+                $sqlPago = "INSERT INTO cliente_pago (cliente_id, monto_pagado, monto_total, vuelto, metodo_pago_id, fecha_pago, usuario_id) 
+                           VALUES (?, ?, ?, ?, (SELECT id_metodo_pago FROM metodo_pago WHERE nombre = ?), ?, ?)";
+                $stmt = $this->conexion->prepare($sqlPago);
+                $stmt->bind_param("idddssi", $idCliente, $monto, $monto, $vuelto, $metodoPago, $fechaPago, $idAsesor);
+                
+                if ($stmt->execute()) {
+                    $idPago = $stmt->insert_id;
+
+                    // Generar PDF (sin cuotas para clientes)
+                    $pdfContent = $this->generarPDFPago($nombreCompleto, $tipoDoc, $nroDocumento, $metodoPago, $monto, $efectivoRecibido, $vuelto, $fechaPago, $idAsesor, [], null, $tipoPersona, $tipoPago);
+                    
+                    $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
+                    if (!file_exists($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+                    
+                    $pdfPath = $uploadDir . "nota_venta_cliente_$idPago.pdf";
+                    file_put_contents($pdfPath, base64_decode($pdfContent));
+                    
+                    echo json_encode(["success" => true, "message" => "Pago de cliente registrado correctamente", "pdf" => $pdfPath, "pdf_base64" => $pdfContent]);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Error al registrar el pago del cliente"]);
+                }
+                return;
+            }
+
+            // No se encontró ni conductor ni cliente
+            echo json_encode(["success" => false, "message" => "No se encontró ningún conductor o cliente con ese documento"]);
         }
+    }
+
+    private function generarPDFPago($nombreCompleto, $tipoDoc, $nroDocumento, $metodoPago, $monto, $efectivoRecibido, $vuelto, $fechaPago, $idAsesor, $cuotas, $datosPago, $tipoPersona, $tipoPago) {
+        $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "nota_venta_inscripcion.html";
+        $html = file_get_contents($rutaBase);
+        
+        if ($html === false) {
+            throw new Exception("Error al leer la plantilla HTML");
+        }
+        
+        $usuarioModel = new Usuario();
+        $asesorData = $usuarioModel->getData($idAsesor);
+        $nombreAsesordate = $asesorData ? $asesorData['nombres'] . ' ' . $asesorData['apellidos'] : 'Asesor no encontrado';
+
+        $rutaLogo = 'public' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo-ticket.png';
+        $html = str_replace('{LOGO}', $rutaLogo, $html);
+        
+        // Generar detalle de cuotas o mensaje de pago al contado
+        $detalleCuotas = "";
+        if (!empty($cuotas) && $datosPago) {
+            $detalleCuotas = implode("", array_map(function($cuota) use ($datosPago) {
+                return $cuota['pagoH'] == "1" ? "Cuota " . $cuota['numero_cuota'] . ": S/. " . $datosPago['financiamiento']['monto_cuota'] . "<br>" . (!empty($cuota['mora']) ? "Mora de la Cuota " . $cuota['numero_cuota'] . ": S/. " . $cuota['mora'] . "<br>" : "") : "";
+            }, $cuotas));
+        } else {
+            $detalleCuotas = "<p><strong>Tipo de Pago:</strong> " . $tipoPago . "</p>";
+        }
+
+        // Reemplazar en HTML - Cambiar "Conductor:" por el tipo de persona dinámicamente
+        $html = str_replace('Conductor:', $tipoPersona . ':', $html);
+        
+        $html = str_replace([
+            '<span id="fecha"></span>',
+            '<span id="nombre_conductor"></span>',
+            '<span id="documento"></span>',
+            '<span id="nro_documento"></span>',
+            '<span id="monto_pagado"></span>',
+            '<span id="total_pagar"></span>',
+            '<span id="vuelto"></span>',
+            '<span id="total_ingresado"></span>',
+            '<span id="metodo_pago"></span>',
+            '<span id="asesor"></span>', 
+            '<div id="detalle_cuotas"></div>'
+        ], [
+            $fechaPago,
+            $nombreCompleto,
+            $tipoDoc,
+            $nroDocumento,
+            $efectivoRecibido,
+            $monto,
+            $vuelto,
+            $monto,
+            $metodoPago,
+            $nombreAsesordate,
+            $detalleCuotas
+        ], $html);
+
+        $mpdf = new \Mpdf\Mpdf([
+            'format' => [132, 210],
+            'default_font_size' => 9
+        ]);
+        $mpdf->WriteHTML("<style> body { font-size: 11px; } </style>" . $html);
+        
+        return base64_encode($mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN));
     }
 
     public function generarEnlacePDF() {
@@ -1164,7 +1227,7 @@ class ConductorController extends Controller
                     '' AS ruta,
                     cp.usuario_id AS id_asesor,
                     CONCAT(clf.nombres, ' ', clf.apellido_paterno, ' ', clf.apellido_materno) AS nombre_persona,
-                    '' AS num_unidad,
+                    NULL AS num_unidad,
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
                     'cliente' AS tipo_persona
                     FROM cliente_pago cp

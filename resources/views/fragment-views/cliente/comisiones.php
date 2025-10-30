@@ -415,6 +415,29 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         <!-- Tabla de Comisiones -->
         <div class="table-container">
+            <!-- Botones de acción masiva (solo para directores) -->
+            <?php if ($rol_usuario == 3): ?>
+            <div class="mb-3" id="acciones-masivas" style="display: none;">
+                <div class="alert alert-info d-flex align-items-center justify-content-between">
+                    <span>
+                        <i class="fas fa-check-square me-2"></i>
+                        <strong id="contador-seleccionados">0</strong> comisiones seleccionadas
+                    </span>
+                    <div>
+                        <button class="btn btn-sm btn-success me-2" onclick="accionMasiva('pagada')">
+                            <i class="fas fa-dollar-sign me-1"></i> Marcar como Pagadas
+                        </button>
+                        <button class="btn btn-sm btn-warning me-2" onclick="accionMasiva('cancelada')">
+                            <i class="fas fa-times me-1"></i> Cancelar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="accionMasiva('eliminar')">
+                            <i class="fas fa-trash me-1"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="loading-spinner" id="loading-spinner">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Cargando...</span>
@@ -426,6 +449,11 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 <table class="table table-hover" id="tabla-comisiones">
                     <thead>
                         <tr>
+                            <?php if ($rol_usuario == 3): ?>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="seleccionar-todos" onchange="toggleSeleccionarTodos()">
+                            </th>
+                            <?php endif; ?>
                             <th>ID</th>
                             <th>Fecha</th>
                             <th>Tipo</th>
@@ -442,6 +470,18 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                         <!-- Datos cargados dinámicamente -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Paginador -->
+            <div class="d-flex justify-content-between align-items-center mt-3" id="paginador-container" style="display: none !important;">
+                <div>
+                    <span class="text-muted">Mostrando <strong id="info-desde">0</strong> a <strong id="info-hasta">0</strong> de <strong id="info-total">0</strong> comisiones</span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginador">
+                        <!-- Páginas generadas dinámicamente -->
+                    </ul>
+                </nav>
             </div>
 
             <div class="no-data" id="no-data" style="display: none;">
@@ -479,6 +519,10 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         // Variables globales
         const rolUsuario = <?php echo $rol_usuario; ?>;
         const usuarioId = <?php echo $usuario_id; ?>;
+        let paginaActual = 1;
+        const registrosPorPagina = 15;
+        let comisionesGlobales = [];
+        let comisionesSeleccionadas = [];
 
         $(document).ready(function () {
             inicializarVista();
@@ -540,6 +584,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         function cargarComisiones() {
             mostrarCargando(true);
+            comisionesSeleccionadas = [];
             
             const filtros = obtenerFiltros();
             
@@ -550,7 +595,9 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 data: filtros,
                 success: function(response) {
                     if (response.success) {
-                        mostrarComisiones(response.data);
+                        comisionesGlobales = response.data;
+                        paginaActual = 1;
+                        mostrarComisionesPaginadas();
                         actualizarEstadisticas(response.estadisticas);
                     } else {
                         mostrarError('Error al cargar las comisiones: ' + response.message);
@@ -563,6 +610,68 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     mostrarCargando(false);
                 }
             });
+        }
+
+        function mostrarComisionesPaginadas() {
+            const inicio = (paginaActual - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const comisionesPagina = comisionesGlobales.slice(inicio, fin);
+            
+            mostrarComisiones(comisionesPagina);
+            actualizarPaginador();
+            actualizarInfoPaginacion(inicio, fin);
+        }
+
+        function actualizarPaginador() {
+            const totalPaginas = Math.ceil(comisionesGlobales.length / registrosPorPagina);
+            
+            if (totalPaginas <= 1) {
+                document.getElementById('paginador-container').style.display = 'none';
+                return;
+            }
+            
+            document.getElementById('paginador-container').style.display = 'flex';
+            
+            let html = '';
+            
+            // Botón anterior
+            html += `<li class="page-item ${paginaActual === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual - 1}); return false;">Anterior</a>
+                    </li>`;
+            
+            // Páginas
+            for (let i = 1; i <= totalPaginas; i++) {
+                if (i === 1 || i === totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2)) {
+                    html += `<li class="page-item ${i === paginaActual ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a>
+                            </li>`;
+                } else if (i === paginaActual - 3 || i === paginaActual + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            // Botón siguiente
+            html += `<li class="page-item ${paginaActual === totalPaginas ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual + 1}); return false;">Siguiente</a>
+                    </li>`;
+            
+            document.getElementById('paginador').innerHTML = html;
+        }
+
+        function cambiarPagina(pagina) {
+            const totalPaginas = Math.ceil(comisionesGlobales.length / registrosPorPagina);
+            if (pagina < 1 || pagina > totalPaginas) return;
+            
+            paginaActual = pagina;
+            mostrarComisionesPaginadas();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function actualizarInfoPaginacion(inicio, fin) {
+            const total = comisionesGlobales.length;
+            document.getElementById('info-desde').textContent = total > 0 ? inicio + 1 : 0;
+            document.getElementById('info-hasta').textContent = Math.min(fin, total);
+            document.getElementById('info-total').textContent = total;
         }
 
         function obtenerFiltros() {
@@ -602,7 +711,15 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             const estadoBadge = obtenerBadgeEstado(comision.estado_comision);
             const tipoIcon = comision.tipo_comision === 'inscripcion' ? 'fa-user-plus' : 'fa-credit-card';
             
-            let html = `
+            let html = '';
+            
+            // Checkbox de selección (solo para directores)
+            if (rolUsuario == 3) {
+                const checked = comisionesSeleccionadas.includes(comision.id_comision) ? 'checked' : '';
+                html += `<td><input type="checkbox" class="checkbox-comision" value="${comision.id_comision}" ${checked} onchange="toggleSeleccion(${comision.id_comision})"></td>`;
+            }
+            
+            html += `
                 <td><strong>#${comision.id_comision}</strong></td>
                 <td>${formatearFecha(comision.fecha_comision)}</td>
                 <td>
@@ -637,6 +754,164 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             
             row.innerHTML = html;
             return row;
+        }
+
+        // Funciones de selección múltiple
+        function toggleSeleccion(idComision) {
+            const index = comisionesSeleccionadas.indexOf(idComision);
+            if (index > -1) {
+                comisionesSeleccionadas.splice(index, 1);
+            } else {
+                comisionesSeleccionadas.push(idComision);
+            }
+            actualizarUISeleccion();
+        }
+
+        function toggleSeleccionarTodos() {
+            const checkbox = document.getElementById('seleccionar-todos');
+            const checkboxes = document.querySelectorAll('.checkbox-comision');
+            
+            if (checkbox.checked) {
+                // Seleccionar todas las comisiones de la página actual
+                checkboxes.forEach(cb => {
+                    const id = parseInt(cb.value);
+                    if (!comisionesSeleccionadas.includes(id)) {
+                        comisionesSeleccionadas.push(id);
+                    }
+                    cb.checked = true;
+                });
+            } else {
+                // Deseleccionar todas las comisiones de la página actual
+                checkboxes.forEach(cb => {
+                    const id = parseInt(cb.value);
+                    const index = comisionesSeleccionadas.indexOf(id);
+                    if (index > -1) {
+                        comisionesSeleccionadas.splice(index, 1);
+                    }
+                    cb.checked = false;
+                });
+            }
+            
+            actualizarUISeleccion();
+        }
+
+        function actualizarUISeleccion() {
+            const contador = comisionesSeleccionadas.length;
+            document.getElementById('contador-seleccionados').textContent = contador;
+            document.getElementById('acciones-masivas').style.display = contador > 0 ? 'block' : 'none';
+            
+            // Actualizar estado del checkbox "seleccionar todos"
+            const checkboxes = document.querySelectorAll('.checkbox-comision');
+            const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+            const algunoSeleccionado = Array.from(checkboxes).some(cb => cb.checked);
+            
+            const checkboxTodos = document.getElementById('seleccionar-todos');
+            if (checkboxTodos) {
+                checkboxTodos.checked = todosSeleccionados;
+                checkboxTodos.indeterminate = algunoSeleccionado && !todosSeleccionados;
+            }
+        }
+
+        function accionMasiva(accion) {
+            if (comisionesSeleccionadas.length === 0) {
+                Swal.fire('Atención', 'Debe seleccionar al menos una comisión', 'warning');
+                return;
+            }
+            
+            let titulo, texto, confirmText, color;
+            
+            switch (accion) {
+                case 'pagada':
+                    titulo = '¿Marcar como pagadas?';
+                    texto = `¿Está seguro de marcar ${comisionesSeleccionadas.length} comisiones como pagadas?`;
+                    confirmText = 'Sí, marcar como pagadas';
+                    color = '#02a499';
+                    break;
+                case 'cancelada':
+                    titulo = '¿Cancelar comisiones?';
+                    texto = `¿Está seguro de cancelar ${comisionesSeleccionadas.length} comisiones?`;
+                    confirmText = 'Sí, cancelar';
+                    color = '#fcf34b';
+                    break;
+                case 'eliminar':
+                    titulo = '¿Eliminar comisiones?';
+                    texto = `¿Está seguro de eliminar definitivamente ${comisionesSeleccionadas.length} comisiones? Esta acción no se puede deshacer.`;
+                    confirmText = 'Sí, eliminar';
+                    color = '#ec4561';
+                    break;
+            }
+            
+            Swal.fire({
+                title: titulo,
+                text: texto,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: color,
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: confirmText,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    ejecutarAccionMasiva(accion);
+                }
+            });
+        }
+
+        function ejecutarAccionMasiva(accion) {
+            $.ajax({
+                url: '/arequipago/accionMasivaComisiones',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    ids: comisionesSeleccionadas,
+                    accion: accion
+                },
+                beforeSend: function() {
+                    Swal.fire({
+                        title: 'Procesando...',
+                        text: 'Por favor espere',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: response.message,
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        comisionesSeleccionadas = [];
+                        // Desmarcar el checkbox de la cabecera
+                        const checkboxTodos = document.getElementById('seleccionar-todos');
+                        if (checkboxTodos) {
+                            checkboxTodos.checked = false;
+                            checkboxTodos.indeterminate = false;
+                        }
+                        // Ocultar la barra de acciones masivas
+                        document.getElementById('acciones-masivas').style.display = 'none';
+                        document.getElementById('contador-seleccionados').textContent = '0';
+                        cargarComisiones();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message,
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error de conexión. Inténtelo nuevamente.',
+                        icon: 'error'
+                    });
+                }
+            });
         }
 
         function obtenerBadgeEstado(estado) {

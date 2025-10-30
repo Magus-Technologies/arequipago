@@ -499,4 +499,88 @@ class ComisionesController extends Controller
             ]);
         }
     }
+
+    /**
+     * Ejecuta acciones masivas sobre múltiples comisiones
+     */
+    public function accionMasivaComisiones()
+    {
+        try {
+            $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+            
+            // Solo directores pueden realizar acciones masivas
+            if ($rol_usuario != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No tiene permisos para realizar esta acción'
+                ]);
+                return;
+            }
+            
+            $ids = isset($_POST['ids']) ? $_POST['ids'] : [];
+            $accion = isset($_POST['accion']) ? $_POST['accion'] : '';
+            
+            if (empty($ids) || !is_array($ids)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Debe seleccionar al menos una comisión'
+                ]);
+                return;
+            }
+            
+            if (!in_array($accion, ['pagada', 'cancelada', 'eliminar'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Acción inválida'
+                ]);
+                return;
+            }
+            
+            $exitosos = 0;
+            $fallidos = 0;
+            
+            foreach ($ids as $id) {
+                $id = intval($id);
+                if ($id <= 0) continue;
+                
+                if ($accion === 'eliminar') {
+                    $resultado = $this->comision->eliminarComision($id);
+                } else {
+                    $resultado = $this->comision->cambiarEstadoComision($id, $accion);
+                }
+                
+                if ($resultado) {
+                    $exitosos++;
+                } else {
+                    $fallidos++;
+                }
+            }
+            
+            $mensaje = '';
+            if ($accion === 'eliminar') {
+                $mensaje = "$exitosos comisiones eliminadas correctamente";
+            } elseif ($accion === 'pagada') {
+                $mensaje = "$exitosos comisiones marcadas como pagadas";
+            } else {
+                $mensaje = "$exitosos comisiones canceladas";
+            }
+            
+            if ($fallidos > 0) {
+                $mensaje .= " ($fallidos fallaron)";
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'message' => $mensaje,
+                'exitosos' => $exitosos,
+                'fallidos' => $fallidos
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

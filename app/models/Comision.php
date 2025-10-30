@@ -27,6 +27,20 @@ class Comision {
 
     // Reemplazar con:
     public function registrarComision($usuario_id, $tipo_comision, $referencia_id, $monto_comision, $tipo_vehiculo = null, $observaciones = null, $moneda = 'S/.') {
+        // NUEVO: Verificar el rol del usuario - NO generar comisión para directores (rol 3)
+        $sqlRol = "SELECT id_rol FROM usuarios WHERE usuario_id = ?";
+        $stmtRol = $this->conectar->prepare($sqlRol);
+        $stmtRol->bind_param("i", $usuario_id);
+        $stmtRol->execute();
+        $resultRol = $stmtRol->get_result();
+        
+        if ($rowRol = $resultRol->fetch_assoc()) {
+            // Si el usuario es director (rol 3), NO crear comisión
+            if ($rowRol['id_rol'] == 3) {
+                return false; // No se crea comisión para directores
+            }
+        }
+        
         $fecha_comision = date('Y-m-d H:i:s');
         
         $sql = "INSERT INTO comisiones (usuario_id, tipo_comision, referencia_id, monto_comision, fecha_comision, tipo_vehiculo, observaciones, moneda) 
@@ -69,6 +83,19 @@ class Comision {
                 }
                 break;
                 
+            case 38: // CrediGo Autos Grupo 4
+                if ($id_variante) {
+                    switch (intval($id_variante)) {
+                        case 21: // Variante $13,000 - $80 semanal
+                            return ['monto' => 30.00, 'moneda' => '$', 'aplica' => true];
+                        case 22: // Variante $15,000 - $90 semanal
+                            return ['monto' => 40.00, 'moneda' => '$', 'aplica' => true];
+                        case 23: // Variante $17,000 - $100 semanal
+                            return ['monto' => 50.00, 'moneda' => '$', 'aplica' => true];
+                    }
+                }
+                break;
+                
             case 22: // CREDI GO MOTO
                 return ['monto' => 50.00, 'moneda' => 'S/.', 'aplica' => true];
                 
@@ -102,6 +129,7 @@ class Comision {
                             CONCAT('Comisión por financiamiento - ',
                                 CASE 
                                     WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Vehículo'
+                                    WHEN f.grupo_financiamiento = '38' THEN 'CrediGo Autos Grupo 4'
                                     WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Moto'
                                     WHEN f.grupo_financiamiento = '2' THEN 'Redmi 14'
                                     WHEN f.grupo_financiamiento = '3' THEN 'Redmi 14 Pro'
@@ -229,6 +257,7 @@ class Comision {
                             CONCAT('Financiamiento - Plan: ', 
                                 CASE 
                                     WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Vehículo'
+                                    WHEN f.grupo_financiamiento = '38' THEN 'CrediGo Autos Grupo 4'
                                     WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Moto'
                                     WHEN f.grupo_financiamiento = '2' THEN 'Redmi 14'
                                     WHEN f.grupo_financiamiento = '3' THEN 'Redmi 14 Pro'
