@@ -668,8 +668,8 @@ class ReportFinanciamientoController extends Controller
             $tipoDoc = $conductor->getTipoDoc();
             $nroDocumento = $conductor->getNroDocumento();
             } else if ($idCliente) {
-                // Obtener datos del cliente
-                $sql = "SELECT documento, datos FROM clientes WHERE id_cliente = ?";
+                // Obtener datos del cliente desde clientes_financiar
+                $sql = "SELECT n_documento, nombres, apellido_paterno, apellido_materno, tipo_doc FROM clientes_financiar WHERE id = ?";
                 $stmt = $this->conexion->prepare($sql);
                 $stmt->bind_param("i", $idCliente);
                 $stmt->execute();
@@ -677,9 +677,9 @@ class ReportFinanciamientoController extends Controller
                 $cliente = $resultCliente->fetch_assoc();
                 
                 if ($cliente) {
-                    $nombreCompleto = $cliente['datos'];
-                    $nroDocumento = $cliente['documento'];
-                    $tipoDoc = strlen($cliente['documento']) == 8 ? "DNI" : "";
+                    $nombreCompleto = $cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno'];
+                    $nroDocumento = $cliente['n_documento'];
+                    $tipoDoc = $cliente['tipo_doc'];
                 }
             }
 
@@ -806,6 +806,23 @@ class ReportFinanciamientoController extends Controller
             // Convertir el contenido PDF a base64
             $pdfBase64 = base64_encode($pdfOutput); 
 
+            // Guardar el PDF en el servidor usando el ID del pago como nombre
+            // Esto asegura que siempre sea el mismo archivo para el mismo pago
+            $fileName = 'boleta_pago_' . $idPago . '.pdf';
+            $uploadDir = "files" . DIRECTORY_SEPARATOR . "compartir" . DIRECTORY_SEPARATOR;
+            
+            // Crear directorio si no existe
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            
+            $filePath = $uploadDir . $fileName;
+            
+            // Solo guardar si no existe (para no sobrescribir el original)
+            if (!file_exists($filePath)) {
+                file_put_contents($filePath, $pdfOutput);
+            }
+
             return $pdfBase64; 
 
         } catch (Exception $e) {
@@ -906,17 +923,32 @@ class ReportFinanciamientoController extends Controller
                 throw new Exception("Pago no encontrado");
             }
 
-            // Generar PDF usando la función existente
-            $pdfBase64 = $this->generateNotaVentaPagosInstant(
-                $pago['id_conductor'],
-                $pago['idfinanciamiento'],
-                $pago['id_asesor'],
-                $pago['monto'],
-                $idPago,
-                $pago['moneda'],
-                $pago['concepto'],
-                $pago['id_cliente']
-            );
+            // Verificar si ya existe un PDF guardado usando el ID del pago
+            $fileName = 'boleta_pago_' . $idPago . '.pdf';
+            $uploadDir = "files" . DIRECTORY_SEPARATOR . "compartir" . DIRECTORY_SEPARATOR;
+            $filePath = $uploadDir . $fileName;
+            
+            if (file_exists($filePath)) {
+                // Reutilizar el PDF existente
+                $pdfContent = file_get_contents($filePath);
+                $pdfBase64 = base64_encode($pdfContent);
+            } else {
+                // Si no existe, generar un nuevo PDF
+                // Si hay id_cliente, priorizar cliente sobre conductor
+                $idConductorParam = (!empty($pago['id_cliente']) && $pago['id_cliente'] > 0) ? null : $pago['id_conductor'];
+
+                // Generar PDF usando la función existente
+                $pdfBase64 = $this->generateNotaVentaPagosInstant(
+                    $idConductorParam,
+                    $pago['idfinanciamiento'],
+                    $pago['id_asesor'],
+                    $pago['monto'],
+                    $idPago,
+                    $pago['moneda'],
+                    $pago['concepto'],
+                    $pago['id_cliente']
+                );
+            }
 
             echo json_encode([
                 'success' => true,

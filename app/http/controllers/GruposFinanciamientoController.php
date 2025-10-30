@@ -41,6 +41,17 @@ class GruposFinanciamientoController extends Controller
             $estado = $_POST["estado"] ?? "activo";
  
             $cobrarMora = isset($_POST["cobrar_mora"]) ? (int)$_POST["cobrar_mora"] : 1;
+            
+            // 🔹 NUEVO: Capturar campo es_yango
+            $esYango = isset($_POST["es_yango"]) ? (int)$_POST["es_yango"] : 0;
+            
+            // Si es Yango, configurar campos específicos
+            if ($esYango === 1) {
+                // Para Yango, las fechas deben ser NULL (inicio dinámico)
+                $fechaInicio = null;
+                $fechaFin = null;
+                $tipoVehicular = null;
+            }
 
             if (empty($nombrePlan) || empty($frecuenciaPago) || empty($moneda)) { 
                 echo json_encode(["success" => false, "message" => "Todos los campos son obligatorios excepto la cuota inicial, monto de cuota y cantidad de cuotas."]);
@@ -48,7 +59,7 @@ class GruposFinanciamientoController extends Controller
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
-            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora);
+            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango);
 
            if ($idPlan) {
                 // Verificar si hay variantes para guardar
@@ -123,13 +134,24 @@ class GruposFinanciamientoController extends Controller
 
             // NUEVO: Capturar cobrar mora
             $cobrarMora = isset($_POST['cobrar_mora']) ? (int)$_POST['cobrar_mora'] : 1;
+            
+            // 🔹 NUEVO: Capturar es_yango
+            $esYango = isset($_POST['es_yango']) ? (int)$_POST['es_yango'] : 0;
+            
+            // Si es Yango, configurar campos específicos
+            if ($esYango === 1) {
+                // Para Yango, las fechas deben ser NULL (inicio dinámico)
+                $fechaInicio = null;
+                $fechaFin = null;
+                $tipoVehicular = null;
+            }
 
             try {
                 $modelo = new GrupoFinanciamientoModel();  // Instanciar correctamente el modelo antes de usarlo (EDITADO)
 
                 $modelo->editarGrupo(  
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
-                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora  // Agregado $cobrarMora como 15º parámetro
+                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango  // Agregado $esYango como 16º parámetro
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes

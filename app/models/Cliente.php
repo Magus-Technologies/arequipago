@@ -1273,4 +1273,34 @@ public function obtenerDepartamentos()
         }
     }
 
+    /**
+     * Obtiene el pago de inscripción de un cliente
+     * 
+     * @param int $clienteId ID del cliente
+     * @return array|false Datos del pago o false si no existe
+     */
+    public function obtenerPagoPorCliente($clienteId) {
+        try {
+            $sql = "SELECT * FROM cliente_pago 
+                    WHERE cliente_id = ? 
+                    ORDER BY fecha_pago DESC 
+                    LIMIT 1";
+            
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $clienteId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                return $row;
+            }
+            
+            return false;
+            
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerPagoPorCliente(): " . $e->getMessage());
+            return false;
+        }
+    }
+
 }

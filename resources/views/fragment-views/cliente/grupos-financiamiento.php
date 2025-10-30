@@ -1,6 +1,6 @@
 <?php
 
-require_once "app/models/Cliente.php";
+require_once 'app/models/Cliente.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -8,13 +8,13 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Verificamos si el usuario tiene sesión activa
 if (!isset($_SESSION['id_rol'])) {
-    header("Location: /arequipago/login"); // Redirige al login si no está autenticado
+    header('Location: /arequipago/login');  // Redirige al login si no está autenticado
     exit();
 }
 
 // Verificamos que el usuario tenga el rol adecuado
-if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos acceso a rol 1 y 3
-    header("Location: /arequipago/"); // Redirige a la página principal si no tiene permiso
+if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos acceso a rol 1 y 3
+    header('Location: /arequipago/');  // Redirige a la página principal si no tiene permiso
     exit();
 }
 
@@ -29,22 +29,24 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
     <title>Grupos de Financiamiento</title>
 
     <link rel="stylesheet" href="<?= URL::to('public/css/grupo-finan.css') ?>?v=<?= time() ?>">
+ 
 
 </head>
 
 <body>
     <div class="container mt-4">
         <ul class="nav nav-tabs" id="financiamientoTabs">
+             <li class="nav-item">
+                <a class="nav-link active tab-button-active" data-bs-toggle="tab" href="#asociarProducto">
+                    <i class="fas fa-list me-2"></i>lista de Grupos
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#planFinanciamiento">
-                    <i class="fas fa-file-invoice-dollar me-2"></i>Grupo Financiamiento
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Crear Grupo Financiamiento
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link active tab-button-active" data-bs-toggle="tab" href="#asociarProducto">
-                    <i class="fas fa-list me-2"></i>Ver Grupos
-                </a>
-            </li>
+           
         </ul>
         <div class="tab-content mt-3">
             <div class="tab-pane fade" id="planFinanciamiento">
@@ -311,6 +313,20 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                                     </div>
                                 </div>
 
+                                <!-- Checkbox para producto Yango -->
+                                <div class="mb-3 p-3 border rounded" style="background-color: #fff3cd;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="esYangoCheckbox">
+                                        <label class="form-check-label" for="esYangoCheckbox">
+                                            <strong>Es un producto Yango</strong>
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted ms-4" style="font-size: 0.83rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Los productos Yango no requieren fechas de grupo. El financiamiento inicia 1 mes después del pago inicial. Los valores predeterminados son editables.
+                                    </small>
+                                </div>
+
                                 <!-- Checkbox para cobrar mora -->
                                 <div class="mb-3 p-3 border rounded">
                                     <div class="form-check">
@@ -393,7 +409,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                     </h5>
                     <div class="table-responsive">
                         <table id="tablaGrupos" class="table table-striped table-bordered text-center">
-                            <thead style="background-color: #fcf34b; color: #000;">
+                            <thead style="background-color: #000; color: #fff;">
                                 <tr>
                                     <th><i class="fas fa-file-invoice-dollar me-1"></i>Grupo de Financiamiento</th>
                                     <th><i class="fas fa-hand-holding-usd me-1"></i>Cuota Inicial</th>
@@ -495,6 +511,37 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
 
     </div>
 
+    <!-- Dropdown global para acciones (fuera de la tabla) -->
+    <div id="globalDropdownMenu" class="dropdown-menu" style="display: none;">
+        <a class="dropdown-item btn-edit-action" href="javascript:void(0);">
+            <i class="fas fa-edit text-primary"></i> Editar Grupo
+        </a>
+        <a class="dropdown-item btn-delete-action" href="javascript:void(0);">
+            <i class="fas fa-trash-alt text-danger"></i> Eliminar Grupo
+        </a>
+        <?php if ($_SESSION['id_rol'] == 3): ?>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item btn-view-action" href="javascript:void(0);">
+            <i class="fas fa-eye text-success"></i> Ver Detalle
+        </a>
+        <div class="dropdown-divider"></div>
+        <h6 class="dropdown-header" id="contrato-header">
+            <i class="fas fa-file-contract"></i> <span id="contrato-header-text">Contrato</span>
+        </h6>
+        <!-- Opciones para contratos hardcodeados (grupos 19, 22, 33, 35) -->
+        <a class="dropdown-item btn-view-hardcoded-contract" href="javascript:void(0);" style="display: none;">
+            <i class="fas fa-file-pdf text-danger"></i> Ver Contrato
+        </a>
+        <!-- Opciones para contratos del sistema nuevo (otros grupos) -->
+        <a class="dropdown-item btn-view-template-action" href="javascript:void(0);">
+            <i class="fas fa-file-contract text-info"></i> Ver Plantilla
+        </a>
+        <a class="dropdown-item btn-edit-template-action" href="javascript:void(0);">
+            <i class="fas fa-file-signature" style="color: #6f42c1;"></i> Editar Plantilla
+        </a>
+        <?php endif; ?>
+    </div>
+
     <script>
 
         function showInputsVehicular() {
@@ -552,6 +599,48 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 });
             } else {
                 console.error('No se encontró el checkbox vehicular');
+            }
+
+            // 🔹 NUEVO: Lógica para el checkbox Yango
+            const esYangoCheckbox = $('#esYangoCheckbox');
+            
+            if (esYangoCheckbox.length) {
+                esYangoCheckbox.on('change', function() {
+                    const isYango = $(this).prop('checked');
+                    
+                    if (isYango) {
+                        // Deshabilitar checkbox vehicular
+                        esVehicularCheckbox.prop('checked', false).prop('disabled', true);
+                        
+                        // Ocultar fechas vehiculares
+                        $('#fechasVehicular').hide();
+                        
+                        // Deshabilitar radio buttons vehiculares
+                        $('#radioAuto').prop('disabled', true).prop('checked', false);
+                        $('#radioMoto').prop('disabled', true).prop('checked', false);
+                        
+                        // Establecer valores predeterminados Yango (EDITABLES)
+                        $('#cuota_inicial').val('2000');
+                        $('#monto_cuota').val('100');
+                        $('#cantidad_cuotas').val('200');
+                        $('#moneda').val('$');
+                        
+                        // Sugerir nombre si está vacío
+                        if ($('#nombre_plan').val() === '') {
+                            $('#nombre_plan').val('Credit Yango');
+                        }
+                        
+                        // Calcular automáticamente
+                        calcularFinanciamiento();
+                        
+                        console.log('Producto Yango activado - valores predeterminados establecidos');
+                    } else {
+                        // Restaurar estado normal
+                        esVehicularCheckbox.prop('disabled', false);
+                        
+                        console.log('Producto Yango desactivado');
+                    }
+                });
             }
 
             // Manejar cambio de estado
@@ -633,8 +722,14 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                             // Creamos una nueva fila <tr>
                             let row = $("<tr>").attr("data-plan-id", plan.idplan_financiamiento); // MODIFICADO: Usar "data-plan-id" en lugar de "data-id" para ser más específico y evitar posibles conflictos.
 
+                            // 🔹 NUEVO: Agregar badge YANGO si es producto Yango
+                            let nombrePlanHtml = plan.nombre_plan;
+                            if (plan.es_yango == 1) {
+                                nombrePlanHtml = `<span class="badge bg-warning text-dark me-2">YANGO</span>${plan.nombre_plan}`;
+                            }
+
                             // Agregamos las celdas <td> dentro de la fila
-                            row.append(`<td>${plan.nombre_plan}</td>`); // Primera columna: nombre del plan
+                            row.append(`<td>${nombrePlanHtml}</td>`); // Primera columna: nombre del plan con badge si es Yango
                             row.append(`<td>${plan.moneda} ${plan.cuota_inicial}</td>`); // Columna cuota inicial
                             row.append(`<td>${plan.moneda} ${plan.monto_cuota}</td>`); // Columna monto cuota
                             row.append(`<td>${plan.cantidad_cuotas}</td>`); // Columna cantidad cuotas
@@ -643,36 +738,44 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                             row.append(`<td>${plan.monto !== null ? `${plan.moneda} ${plan.monto}` : "N/A"}</td>`); // Columna monto
                             row.append(`<td>${plan.monto_sin_interes !== null ? `${plan.moneda} ${plan.monto_sin_interes}` : "N/A"}</td>`); // Columna monto sin interés
                             row.append(`<td>${plan.tasa_interes !== null ? plan.tasa_interes : "N/A"}</td>`); // Columna tasa de interés
-                            row.append(`<td>${plan.fecha_inicio !== null ? plan.fecha_inicio : "No especificado"}</td>`); // Columna fecha de inicio
-                            row.append(`<td>${plan.fecha_fin !== null ? plan.fecha_fin : "No especificado"}</td>`); // Columna fecha de fin
+                            
+                            // 🔹 NUEVO: Mostrar texto especial para fechas de productos Yango
+                            if (plan.es_yango == 1) {
+                                row.append(`<td><span class="text-muted fst-italic">Inicio dinámico</span></td>`); // Columna fecha de inicio
+                                row.append(`<td><span class="text-muted fst-italic">Calculado automáticamente</span></td>`); // Columna fecha de fin
+                            } else {
+                                row.append(`<td>${plan.fecha_inicio !== null ? plan.fecha_inicio : "No especificado"}</td>`); // Columna fecha de inicio
+                                row.append(`<td>${plan.fecha_fin !== null ? plan.fecha_fin : "No especificado"}</td>`); // Columna fecha de fin
+                            }
 
-                            // Columna de acciones (editar y eliminar)
-                            // Columna de acciones (editar, eliminar y ver detalle)
+                            // Columna de acciones con botón simple
                             let botonesAccion = `
-                                                             <div class="d-flex gap-2 justify-content-center">
-                                                                 <button class="btn action-btn btn-edit" title="Editar">
-                                                              <i class="fas fa-edit"></i>
-                                                           </button>
-                                                           <button class="btn action-btn btn-delete" title="Eliminar">
-                                                               <i class="fas fa-trash-alt"></i>
-                                                           </button>`;
+                                <button class="btn btn-sm btn-secondary btn-acciones-global" type="button" data-plan-id="${plan.idplan_financiamiento}">
+                                    <i class="fas fa-cog"></i> Acciones
+                                </button>`;
 
-                            // Solo mostrar botón de ver detalle si es director (rol 3)
-                            <?php if ($_SESSION['id_rol'] == 3): ?>
-                                botonesAccion += `
-                                               <button class="btn action-btn btn-view" title="Ver Detalle" style="background-color: #28a745; color: white;">
-                                                   <i class="fas fa-eye"></i>
-                                               </button>`;
-                            <?php endif; ?>
-
-                            botonesAccion += `</div>`;
-
-                            row.append(`<td>${botonesAccion}</td>`);
+                            row.append(`<td class="text-center">${botonesAccion}</td>`);
 
 
                             // Agregamos la fila completa al tbody
                             tbody.append(row);
                         });
+                        
+                        // Inicializar dropdowns de Bootstrap después de agregar las filas
+                        console.log('Inicializando dropdowns...');
+                        console.log('Bootstrap disponible:', typeof $.fn.dropdown);
+                        
+                        // Intentar inicializar dropdowns
+                        try {
+                            if (typeof $.fn.dropdown !== 'undefined') {
+                                $('.dropdown-toggle').dropdown();
+                                console.log('Dropdowns inicializados correctamente');
+                            } else {
+                                console.error('Bootstrap dropdown no está disponible');
+                            }
+                        } catch (error) {
+                            console.error('Error al inicializar dropdowns:', error);
+                        }
                     }
                 },
                 error: function (xhr, status, error) {
@@ -724,8 +827,16 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
         });
         // Función para mostrar detalles en el modal
         function mostrarDetallesEnModal(plan, variantes) {
+            // 🔹 NUEVO: Verificar si es producto Yango
+            const esYango = plan.es_yango == 1;
+            
             // Llenar información general
-            $('#detalle-nombre-plan').text(plan.nombre_plan);
+            let nombrePlanHtml = plan.nombre_plan;
+            if (esYango) {
+                nombrePlanHtml = `<span class="badge bg-warning text-dark me-2">YANGO</span>${plan.nombre_plan}`;
+            }
+            $('#detalle-nombre-plan').html(nombrePlanHtml);
+            
             $('#detalle-moneda').text(plan.moneda);
             $('#detalle-cuota-inicial').text(plan.cuota_inicial ? `${plan.moneda} ${plan.cuota_inicial}` : 'N/A');
             $('#detalle-monto-cuota').text(plan.monto_cuota ? `${plan.moneda} ${plan.monto_cuota}` : 'N/A');
@@ -736,8 +847,15 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
             $('#detalle-monto-sin-interes').text(plan.monto_sin_interes ? `${plan.moneda} ${plan.monto_sin_interes}` : 'N/A');
             $('#detalle-tipo-vehicular').text(plan.tipo_vehicular || 'No especificado');
             $('#detalle-estado').text(plan.estado === 'activo' ? 'Visible' : 'Oculto');
-            $('#detalle-fecha-inicio').text(plan.fecha_inicio || 'No especificado');
-            $('#detalle-fecha-fin').text(plan.fecha_fin || 'No especificado');
+            
+            // 🔹 NUEVO: Mostrar texto especial para fechas de productos Yango
+            if (esYango) {
+                $('#detalle-fecha-inicio').html('<span class="text-muted fst-italic">Inicio dinámico (1 mes después del pago inicial)</span>');
+                $('#detalle-fecha-fin').html('<span class="text-muted fst-italic">Calculado automáticamente según cronograma</span>');
+            } else {
+                $('#detalle-fecha-inicio').text(plan.fecha_inicio || 'No especificado');
+                $('#detalle-fecha-fin').text(plan.fecha_fin || 'No especificado');
+            }
 
             // Mostrar variantes
             const variantesContainer = $('#detalle-variantes');
@@ -1159,6 +1277,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
                 }
                 formData.append("estado", estado);
                 formData.append("cobrar_mora", getCobrarMora());
+                
+                // 🔹 NUEVO: Agregar campo es_yango
+                const esYango = document.getElementById('esYangoCheckbox').checked ? '1' : '0';
+                formData.append("es_yango", esYango);
 
                 // Agregar variantes al formData si existen
                 if (variantes.length > 0) {
@@ -1292,7 +1414,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
 
             let selectedPlanId = null;
             // Función para poblar el formulario cuando se hace clic en editar
-            $(document).on('click', '.btn-edit', function () {
+            $(document).on('click', '.btn-edit', function (e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto del link
+                e.stopPropagation(); // Evitar que el evento se propague
+                
                 const row = $(this).closest('tr');
                 selectedPlanId = row.data("plan-id"); // Modificado: Guarda el ID en la variable global
 
@@ -1870,7 +1995,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
 
             let idPlanEliminar = null; // Inicialmente nulo
             // Manejar el botón de eliminar
-            $(document).on("click", ".btn-delete", function () {
+            $(document).on("click", ".btn-delete", function (e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto del link
+                e.stopPropagation(); // Evitar que el evento se propague
+                
                 let fila = $(this).closest("tr"); // Obtener la fila <tr> que contiene el botón eliminar.
                 let idPlanEliminar = fila.data("plan-id");
 
@@ -1987,6 +2115,542 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) { // 🔹 Permitimos a
             // Función para obtener el valor de cobrar mora
             function getCobrarMora() {
                 return document.getElementById('cobrarMoraCheckbox').checked ? 1 : 0;
+            }
+
+            // ==================== GESTIÓN DE PLANTILLAS DE CONTRATOS ====================
+            
+            // Variable global para almacenar el plan ID actual
+            let currentPlanId = null;
+            
+            // Grupos con contratos hardcodeados (sistema anterior)
+            const gruposHardcodeados = [19, 22, 33, 35, 44];
+            
+            // Handler para el botón de acciones global
+            $(document).on('click', '.btn-acciones-global', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const $button = $(this);
+                const $dropdown = $('#globalDropdownMenu');
+                const isVisible = $dropdown.is(':visible');
+                
+                // Guardar el plan ID
+                currentPlanId = $button.data('plan-id');
+                
+                // Determinar si tiene contrato hardcodeado
+                const tieneContratoHardcodeado = gruposHardcodeados.includes(parseInt(currentPlanId));
+                
+                // Mostrar/ocultar opciones según el tipo de contrato
+                if (tieneContratoHardcodeado) {
+                    // Mostrar solo "Ver Contrato" para hardcodeados
+                    $('.btn-view-hardcoded-contract').show();
+                    $('.btn-view-template-action').hide();
+                    $('.btn-edit-template-action').hide();
+                    $('#contrato-header-text').text('Contrato (Sistema Anterior)');
+                } else {
+                    // Mostrar "Ver Plantilla" y "Editar Plantilla" para nuevos
+                    $('.btn-view-hardcoded-contract').hide();
+                    $('.btn-view-template-action').show();
+                    $('.btn-edit-template-action').show();
+                    $('#contrato-header-text').text('Plantillas de Contrato');
+                }
+                
+                if (isVisible) {
+                    $dropdown.hide();
+                } else {
+                    // Obtener posición del botón
+                    const buttonRect = $button[0].getBoundingClientRect();
+                    
+                    // Mostrar temporalmente el dropdown para obtener su altura
+                    $dropdown.css({
+                        'position': 'fixed',
+                        'visibility': 'hidden',
+                        'display': 'block'
+                    });
+                    
+                    const dropdownHeight = $dropdown.outerHeight();
+                    const windowHeight = $(window).height();
+                    
+                    // Calcular si hay espacio debajo del botón
+                    const spaceBelow = windowHeight - buttonRect.bottom;
+                    const spaceAbove = buttonRect.top;
+                    
+                    let topPosition;
+                    
+                    // Si no hay suficiente espacio abajo pero sí arriba, mostrar hacia arriba
+                    if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+                        // Mostrar hacia arriba
+                        topPosition = buttonRect.top - dropdownHeight - 2;
+                    } else {
+                        // Mostrar hacia abajo (comportamiento normal)
+                        topPosition = buttonRect.bottom + 2;
+                    }
+                    
+                    // Posicionar el dropdown
+                    $dropdown.css({
+                        'position': 'fixed',
+                        'top': topPosition + 'px',
+                        'left': buttonRect.left + 'px',
+                        'visibility': 'visible',
+                        'display': 'block'
+                    });
+                }
+            });
+            
+            // Cerrar dropdown al hacer click fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.btn-acciones-global').length && 
+                    !$(e.target).closest('#globalDropdownMenu').length) {
+                    $('#globalDropdownMenu').hide();
+                }
+            });
+            
+            // Handlers para las acciones del dropdown global
+            $(document).on('click', '.btn-edit-action', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                // Buscar la fila con este plan ID y simular click en btn-edit
+                const $row = $(`tr[data-plan-id="${currentPlanId}"]`);
+                $row.find('.btn-edit').length ? $row.find('.btn-edit').trigger('click') : 
+                    $('.btn-edit').first().closest('tr').is(`[data-plan-id="${currentPlanId}"]`) ? 
+                    $('.btn-edit').first().trigger('click') : null;
+                // Trigger directo del handler
+                const row = $(`tr[data-plan-id="${currentPlanId}"]`);
+                if (row.length) {
+                    selectedPlanId = currentPlanId;
+                    const cells = row.find('td');
+                    $('#nombre_plan').val(cells.eq(0).text());
+                    $('#moneda').val(cells.eq(5).text());
+                    const cuotaInicial = cells.eq(1).text().split(' ')[1];
+                    $('#cuota_inicial').val(cuotaInicial);
+                    const montoCuota = cells.eq(2).text().split(' ')[1];
+                    $('#monto_cuota').val(montoCuota);
+                    $('#cantidad_cuotas').val(cells.eq(3).text());
+                    $('#frecuencia_pago').val(cells.eq(4).text());
+                    const montoText = cells.eq(6).text();
+                    $('#monto').val(montoText !== "N/A" ? montoText.split(' ')[1] : '');
+                    const montoSinInteresText = cells.eq(7).text();
+                    $('#monto_sin_interes').val(montoSinInteresText !== "N/A" ? montoSinInteresText.split(' ')[1] : '');
+                    const tasaInteres = cells.eq(8).text();
+                    $('#tasa_interes').val(tasaInteres !== "N/A" ? tasaInteres : '');
+                    const fechaInicio = cells.eq(9).text();
+                    const fechaFin = cells.eq(10).text();
+                    $('#fecha_inicio').val(fechaInicio !== "No especificado" ? fechaInicio : '');
+                    $('#fecha_fin').val(fechaFin !== "No especificado" ? fechaFin : '');
+                    $("#financiamientoTabs a[href='#planFinanciamiento']").tab("show");
+                    $("#btnRegistrar").hide();
+                    $("#tituloRegistro").hide();
+                    if (!$("#tituloEdicion").length) {
+                        $("#tituloRegistro").after('<h5 id="tituloEdicion" class="mb-4"><i class="fas fa-edit me-2"></i>Editar Grupo de Financiamiento</h5>');
+                    }
+                    if (!$("#guardarCambios").length) {
+                        $("#btnRegistrar").after(`
+                            <button id="guardarCambios" class="btn btn-success me-2">
+                                <i class="fas fa-check me-2"></i>Guardar Cambios
+                            </button>
+                            <button id="cancelarEdicion" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </button>
+                        `);
+                    }
+                }
+            });
+            
+            $(document).on('click', '.btn-delete-action', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                // Trigger delete con el currentPlanId
+                Swal.fire({
+                    title: "¿Estás seguro?",
+                    text: "Esta acción eliminará el grupo de financiamiento permanentemente.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: '<i class="fas fa-trash-alt me-2"></i>Sí, eliminar',
+                    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "/arequipago/deleteGroup",
+                            type: "POST",
+                            data: { id: currentPlanId },
+                            dataType: "json",
+                            success: function (response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: "success",
+                                        title: "Eliminado",
+                                        text: "Grupo de financiamiento eliminado correctamente.",
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    });
+                                    cargarTabla();
+                                } else {
+                                    Swal.fire({
+                                        icon: "error",
+                                        title: "Error",
+                                        text: "No se pudo eliminar el grupo de financiamiento.",
+                                    });
+                                }
+                            },
+                            error: function () {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Error",
+                                    text: "Hubo un problema con la solicitud.",
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+            
+            $(document).on('click', '.btn-view-action', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                // Trigger view con el currentPlanId
+                $.ajax({
+                    url: '/arequipago/getDetallesPlan',
+                    type: 'POST',
+                    data: { id: currentPlanId },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.status === 'success') {
+                            mostrarDetallesEnModal(result.plan, result.variantes);
+                        }
+                    }
+                });
+            });
+            
+            $(document).on('click', '.btn-view-template-action', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                // Trigger view template
+                $.ajax({
+                    url: '/arequipago/api/contratos/plantilla-por-grupo',
+                    type: 'GET',
+                    data: { grupo_id: currentPlanId },
+                    success: function(response) {
+                        if (response.success && response.tiene_plantilla) {
+                            mostrarVistaPreviaPlantilla(response.plantilla);
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Sin Plantilla',
+                                text: 'Este grupo no tiene una plantilla de contrato asignada. ¿Desea crear una?',
+                                showCancelButton: true,
+                                confirmButtonText: 'Crear Plantilla',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    abrirEditorPlantilla(currentPlanId, null);
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+            
+            $(document).on('click', '.btn-edit-template-action', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                // Trigger edit template
+                $.ajax({
+                    url: '/arequipago/api/contratos/plantilla-por-grupo',
+                    type: 'GET',
+                    data: { grupo_id: currentPlanId },
+                    success: function(response) {
+                        if (response.success && response.tiene_plantilla) {
+                            abrirEditorPlantilla(currentPlanId, response.plantilla);
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Nueva Plantilla',
+                                text: 'Este grupo no tiene plantilla. Se creará una nueva.',
+                                confirmButtonText: 'Continuar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    abrirEditorPlantilla(currentPlanId, null);
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+            
+            // Handler para ver contrato hardcodeado - Generar PDF
+            $(document).on('click', '.btn-view-hardcoded-contract', function(e) {
+                e.preventDefault();
+                $('#globalDropdownMenu').hide();
+                
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Generando PDF...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Crear formulario para generar PDF
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/arequipago/api/contratos/hardcoded-preview';
+                form.target = '_blank';
+                
+                const inputGrupo = document.createElement('input');
+                inputGrupo.type = 'hidden';
+                inputGrupo.name = 'grupo_id';
+                inputGrupo.value = currentPlanId;
+                form.appendChild(inputGrupo);
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                // Cerrar el loading después de un momento
+                setTimeout(() => {
+                    Swal.close();
+                }, 1000);
+            });
+            
+            // Event handler para ver plantilla
+            $(document).on('click', '.btn-view-template', function(e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto del link
+                e.stopPropagation(); // Evitar que el evento se propague
+                
+                const row = $(this).closest('tr');
+                const planId = row.data("plan-id");
+                
+                if (!planId) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo obtener el ID del grupo'
+                    });
+                    return;
+                }
+                
+                // Verificar si existe plantilla para este grupo
+                $.ajax({
+                    url: '/arequipago/api/contratos/plantilla-por-grupo',
+                    type: 'GET',
+                    data: { grupo_id: planId },
+                    success: function(response) {
+                        if (response.success && response.tiene_plantilla) {
+                            // Mostrar vista previa de la plantilla
+                            mostrarVistaPreviaPlantilla(response.plantilla);
+                        } else {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Sin Plantilla',
+                                text: 'Este grupo no tiene una plantilla de contrato asignada. ¿Desea crear una?',
+                                showCancelButton: true,
+                                confirmButtonText: 'Crear Plantilla',
+                                cancelButtonText: 'Cancelar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    abrirEditorPlantilla(planId, null);
+                                }
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo verificar la plantilla'
+                        });
+                    }
+                });
+            });
+            
+            // Event handler para editar plantilla
+            $(document).on('click', '.btn-edit-template', function(e) {
+                e.preventDefault(); // Prevenir comportamiento por defecto del link
+                e.stopPropagation(); // Evitar que el evento se propague
+                
+                const row = $(this).closest('tr');
+                const planId = row.data("plan-id");
+                
+                if (!planId) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo obtener el ID del grupo'
+                    });
+                    return;
+                }
+                
+                // Verificar si existe plantilla para este grupo
+                $.ajax({
+                    url: '/arequipago/api/contratos/plantilla-por-grupo',
+                    type: 'GET',
+                    data: { grupo_id: planId },
+                    success: function(response) {
+                        if (response.success && response.tiene_plantilla) {
+                            // Abrir editor con plantilla existente
+                            abrirEditorPlantilla(planId, response.plantilla);
+                        } else {
+                            // Crear nueva plantilla
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Nueva Plantilla',
+                                text: 'Este grupo no tiene plantilla. Se creará una nueva.',
+                                confirmButtonText: 'Continuar'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    abrirEditorPlantilla(planId, null);
+                                }
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo verificar la plantilla'
+                        });
+                    }
+                });
+            });
+            
+            // Función para mostrar vista previa de plantilla
+            function mostrarVistaPreviaPlantilla(plantilla) {
+                // Obtener datos de prueba para la vista previa
+                $.ajax({
+                    url: '/arequipago/api/contratos/plantilla/preview',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        html_template: plantilla.html_template
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // Crear modal para mostrar vista previa
+                            const modalHTML = `
+                                <div class="modal fade" id="modalVistaPrevia" tabindex="-1">
+                                    <div class="modal-dialog modal-xl">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">
+                                                    <i class="fas fa-file-contract me-2"></i>
+                                                    Vista Previa: ${plantilla.nombre}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body" style="padding: 0;">
+                                                <!-- Toolbar estilo PDF -->
+                                                <div style="background: #323639; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a1a;">
+                                                    <div style="color: #e8eaed; font-size: 14px;">
+                                                        <i class="fas fa-file-contract me-2"></i>
+                                                        ${plantilla.nombre}
+                                                    </div>
+                                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                                        <span style="color: #e8eaed; font-size: 12px;">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Vista previa con datos de ejemplo
+                                                        </span>
+                                                        <button type="button" class="btn btn-sm" style="background: #5f6368; color: white; border: none;" onclick="window.print()">
+                                                            <i class="fas fa-print me-1"></i>Imprimir
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <!-- Visor estilo PDF -->
+                                                <div class="pdf-viewer-container">
+                                                    <div class="pdf-page">
+                                                        ${response.html}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    Cerrar
+                                                </button>
+                                                <button type="button" class="btn btn-primary" onclick="abrirEditorPlantilla(${plantilla.grupo_financiamiento}, ${JSON.stringify(plantilla).replace(/"/g, '&quot;')})">
+                                                    <i class="fas fa-edit me-2"></i>Editar Plantilla
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Remover modal anterior si existe
+                            $('#modalVistaPrevia').remove();
+                            
+                            // Agregar y mostrar nuevo modal
+                            $('body').append(modalHTML);
+                            const modal = new bootstrap.Modal(document.getElementById('modalVistaPrevia'));
+                            modal.show();
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo generar la vista previa'
+                        });
+                    }
+                });
+            }
+            
+            // Función para abrir el editor de plantillas
+            function abrirEditorPlantilla(grupoId, plantilla) {
+                // Guardar datos en sessionStorage para el editor
+                sessionStorage.setItem('editor_grupo_id', grupoId);
+                if (plantilla) {
+                    sessionStorage.setItem('editor_plantilla', JSON.stringify(plantilla));
+                } else {
+                    sessionStorage.removeItem('editor_plantilla');
+                }
+                
+                // Redirigir al editor de contratos
+                window.location.href = '/arequipago/editor-contratos';
+            }
+            
+            // Función para mostrar vista previa de plantilla como PDF
+            function mostrarVistaPreviaPlantilla(plantilla) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Generando PDF...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Crear un formulario temporal para enviar la petición POST
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/arequipago/api/contratos/plantilla/preview-pdf';
+                form.target = '_blank';
+                
+                // Agregar datos como campos ocultos
+                const inputTemplate = document.createElement('input');
+                inputTemplate.type = 'hidden';
+                inputTemplate.name = 'html_template';
+                inputTemplate.value = plantilla.html_template;
+                form.appendChild(inputTemplate);
+                
+                const inputNombre = document.createElement('input');
+                inputNombre.type = 'hidden';
+                inputNombre.name = 'nombre';
+                inputNombre.value = plantilla.nombre;
+                form.appendChild(inputNombre);
+                
+                // Agregar el formulario al body y enviarlo
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                // Cerrar el loading después de un momento
+                setTimeout(() => {
+                    Swal.close();
+                }, 1000);
             }
 
         });

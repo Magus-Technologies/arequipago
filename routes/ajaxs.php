@@ -24,6 +24,7 @@ Route::get('/ajs/cupones/listar', 'CuponController@listarCupones'); // Para list
 Route::get('/ajs/cupones/listar-con-conductores', 'CuponController@listarCuponesConConductores'); // Para listar todos los cupones y los conductores asociados
 Route::post('/ajs/cupones/buscar/usuarios', 'CuponController@buscarUsuarios');
 Route::post('/ajs/cupones/usuarios', 'CuponController@obtenerUsuariosCupon');
+Route::get('/ajs/cupones/departamentos-habilitados', 'CuponController@obtenerDepartamentosHabilitados'); // Para obtener departamentos habilitados
 
 // Rutas de edición y eliminación de cupones
 Route::post('/ajs/cupones/obtener', 'CuponController@obtenerCupon'); // Para obtener un cupón específico para edición
@@ -67,6 +68,7 @@ Route::post('/ajs/beneficios/cambiar-disponibilidad', 'BeneficioController@cambi
 // Estadísticas y categorías
 Route::get('/ajs/beneficios/estadisticas', 'BeneficioController@obtenerEstadisticas'); // Estadísticas generales de beneficios
 Route::get('/ajs/beneficios/categorias', 'BeneficioController@obtenerCategorias'); // Obtener categorías disponibles
+Route::get('/ajs/beneficios/departamentos-habilitados', 'BeneficioController@obtenerDepartamentosHabilitados'); // Obtener departamentos habilitados
 
 // Solicitudes de beneficios (para futuras funcionalidades)
 Route::post('/ajs/beneficios/solicitar', 'BeneficioController@solicitarBeneficio'); // Solicitar un beneficio (placeholder)

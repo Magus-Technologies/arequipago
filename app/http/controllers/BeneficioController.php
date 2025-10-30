@@ -35,6 +35,9 @@ class BeneficioController
             if (isset($_GET['disponible']) && $_GET['disponible'] !== '') {
                 $filtros['disponible'] = (int)$_GET['disponible'];
             }
+            if (isset($_GET['departamento_id'])) {
+                $filtros['departamento_id'] = $_GET['departamento_id'];
+            }
 
             // También desde POST para compatibilidad con AJAX
             if (isset($_POST['categoria']) && !empty($_POST['categoria'])) {
@@ -45,6 +48,9 @@ class BeneficioController
             }
             if (isset($_POST['disponible']) && $_POST['disponible'] !== '') {
                 $filtros['disponible'] = (int)$_POST['disponible'];
+            }
+            if (isset($_POST['departamento_id'])) {
+                $filtros['departamento_id'] = $_POST['departamento_id'];
             }
 
             $beneficios = $this->beneficioModel->obtenerTodos($filtros);
@@ -163,6 +169,7 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'moneda' => !empty($_POST['moneda']) ? trim($_POST['moneda']) : null,
                 'nombre_plan_personalizado' => !empty($_POST['nombre_plan_personalizado']) ? trim($_POST['nombre_plan_personalizado']) : null,
                 'frecuencia_pago' => !empty($_POST['frecuencia_pago']) ? trim($_POST['frecuencia_pago']) : null,
+                'departamento_id' => !empty($_POST['departamento_id']) ? (int)$_POST['departamento_id'] : null,
                 'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
             ];
@@ -343,6 +350,7 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'moneda' => !empty($_POST['moneda']) ? trim($_POST['moneda']) : null,
                 'nombre_plan_personalizado' => !empty($_POST['nombre_plan_personalizado']) ? trim($_POST['nombre_plan_personalizado']) : null,
                 'frecuencia_pago' => !empty($_POST['frecuencia_pago']) ? trim($_POST['frecuencia_pago']) : null,
+                'departamento_id' => !empty($_POST['departamento_id']) ? (int)$_POST['departamento_id'] : null,
                 'imagen' => $imagenPrincipal,
                 'disponible' => isset($_POST['disponible']) ? (int)$_POST['disponible'] : 1,
             ];
@@ -683,6 +691,28 @@ private function validarPlanFinanciamientoExiste($idPlan)
     } catch (Exception $e) {
         error_log('Error al validar plan de financiamiento: ' . $e->getMessage());
         return false;
+    }
+}
+
+/**
+ * Obtener departamentos habilitados para el formulario de beneficios
+ */
+public function obtenerDepartamentosHabilitados()
+{
+    try {
+        $departamentos = $this->beneficioModel->obtenerDepartamentosHabilitados();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'data' => $departamentos
+        ]);
+    } catch (Exception $e) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener departamentos: ' . $e->getMessage()
+        ]);
     }
 }
 

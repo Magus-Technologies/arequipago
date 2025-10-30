@@ -17,6 +17,7 @@ function saveFinanciamiento(event) {
 
   // Comprobar si existe el select de método de pago y está vacío
   if ($("#contenedorMetodoPago").length > 0 && $("#metodoPago").val() === "") {
+    btn.disabled = false; // Rehabilitar botón si hay error
     Swal.fire(
       "Error",
       "Por favor seleccione un método de pago antes de guardar",
@@ -24,11 +25,22 @@ function saveFinanciamiento(event) {
     );
     return;
   }
+  
+  // 🔹 NUEVO: Mostrar loader de SweetAlert
+  Swal.fire({
+    title: 'Registrando...',
+    html: 'Por favor espera mientras se guarda el financiamiento',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
   // Obtener los valores de los campos
   const codigoAsociado = $("#codigoAsociado").val();
   const grupoFinanciamiento = $("#grupo").val();
-  const cantidadProducto = $("#cantidad").val();
+  let cantidadProducto = $("#cantidad").val(); // 🔹 Cambiado a 'let' para poder modificarlo en plan personalizado
 
     // NUEVO: Obtener nombre personalizado si es plan editable
   let nombrePersonalizado = null;
@@ -138,9 +150,13 @@ function saveFinanciamiento(event) {
     }
   });
 
+  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42)
+  const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
+  
   const idProducto = productoSeleccionado?.id;
 
-  if (!idProducto) {
+  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado
+  if (!esPlanPersonalizado && !idProducto) {
     Swal.fire("Error", "Debe seleccionar un producto.", "error");
     return;
   }
@@ -156,15 +172,11 @@ function saveFinanciamiento(event) {
       return;
     }
   }
-
-  // NUEVO: Validación especial para plan editable (ID 42)
-  const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
   
   if (esPlanPersonalizado) {
-    // Para planes personalizados, validar campos específicos
+    // 🔹 Para planes personalizados, validar campos específicos (SIN cantidad de producto)
     const camposPersonalizados = {
       'Grupo de financiamiento': grupoFinanciamiento,
-      'Cantidad de producto': cantidadProducto,
       'Monto total': montoTotal,
       'Monto sin intereses': montoSinIntereses,
       'Cuota inicial': cuotaInicial,
@@ -191,6 +203,12 @@ function saveFinanciamiento(event) {
         confirmButtonText: 'Entendido'
       });
       return;
+    }
+    
+    // 🔹 NUEVO: Para plan personalizado, establecer cantidad de producto en 1 por defecto
+    if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
+      cantidadProducto = '1';
+      console.log('🎨 Plan personalizado - Cantidad de producto establecida en 1');
     }
   } else {
     // Validaciones normales para otros planes
@@ -300,13 +318,17 @@ function saveFinanciamiento(event) {
           revertirEstilosInputs();
           revertirVacioInput();
           checkSelection();
+          
+          // 🔹 Cerrar loader y mostrar éxito
           Swal.fire("Éxito", response.message, "success");
           generarContratoInstant(response.id_financiamiento);
         } else {
-          Swal.fire("Error", response.message, "error"); // Modificado: Añadido caso de error que faltaba
+          // 🔹 Cerrar loader y mostrar error
+          Swal.fire("Error", response.message, "error");
         }
       },
       error: function (xhr, status, error) {
+        // 🔹 Cerrar loader y mostrar error
         Swal.fire(
           "Error",
           "Ha ocurrido un error al guardar el financiamiento: " + error,
@@ -386,13 +408,17 @@ function saveFinanciamiento(event) {
               revertirEstilosInputs();
               revertirVacioInput();
               checkSelection();
+              
+              // 🔹 Cerrar loader y mostrar éxito
               Swal.fire("Éxito", response.message, "success");
               generarContratoInstant(response.id_financiamiento);
             } else {
+              // 🔹 Cerrar loader y mostrar error
               Swal.fire("Error", response.message, "error");
             }
           },
           error: function () {
+            // 🔹 Cerrar loader y mostrar error
             Swal.fire(
               "Error",
               "Hubo un error al guardar el financiamiento.",
@@ -480,6 +506,17 @@ function saveFinanciamientoVehicular() {
     );
     return;
   }
+  
+  // 🔹 NUEVO: Mostrar loader de SweetAlert
+  Swal.fire({
+    title: 'Registrando...',
+    html: 'Por favor espera mientras se guarda el financiamiento',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
   // Obtener el valor del cliente y eliminar espacios vacíos
   const cliente = document.getElementById("numeroDocumento").value.trim(); // ✅ Eliminar espacios vacíos
@@ -492,57 +529,70 @@ function saveFinanciamientoVehicular() {
       verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
   }
 
+  // 🔹 NUEVO: Verificar si es plan personalizado
+  const grupoFinanciamientoActual = document.getElementById("grupo").value;
+  const esPlanPersonalizado = (grupoFinanciamientoActual === '42' || grupoFinanciamientoActual === 42);
+  
+  // 🔹 Declarar entregarSiElement ANTES para que esté disponible en todo el scope
+  const entregarSiElement = document.getElementById("entregarSi");
+  const entregarNoElement = document.getElementById("entregarNo");
+  
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
-  const entregarSiElement = document.getElementById("entregarSi");
+  // 🔹 MODIFICADO: Si es plan personalizado, no requerir producto
+  if (esPlanPersonalizado) {
+    idProducto = 37; // ID genérico para planes personalizados (ajustar según necesidad)
+  } else {
+    // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
 
-  if (entregarSiElement && entregarSiElement.checked) {
-    // ✅ Si "Sí" está marcado
-    idProducto = productoSeleccionado?.id; // ✅ Si "Sí" está marcado, tomar id del objeto productoSeleccionado
-    if (!idProducto) {
-      // ✅ Verificar si idProducto es null, undefined o no existe
-      Swal.fire("Error", "Debe seleccionar un producto de la lista", "error"); // ✅ Mostrar alerta si no hay producto seleccionado
-      return; // ✅ Salir de la función si no hay producto seleccionado
-    }
+    if (entregarSiElement && entregarSiElement.checked) {
+      // ✅ Si "Sí" está marcado
+      idProducto = productoSeleccionado?.id; // ✅ Si "Sí" está marcado, tomar id del objeto productoSeleccionado
+      if (!idProducto) {
+        // ✅ Verificar si idProducto es null, undefined o no existe
+        Swal.fire("Error", "Debe seleccionar un producto de la lista", "error"); // ✅ Mostrar alerta si no hay producto seleccionado
+        return; // ✅ Salir de la función si no hay producto seleccionado
+      }
 
-    // ✅ Nueva validación: si el precio de venta del producto seleccionado es 0 o menor
-    if (productoSeleccionado.cantidad <= 0) {
-      Swal.fire(
-        "Error",
-        "El producto seleccionado no tiene un stock suficiente",
-        "error"
-      ); // ✅ Mostrar alerta si el precio es inválido
-      return; // ✅ Salir de la función si el precio no es válido
-    }
-  } else if (!entregarSiElement) {
-    // Para planes no vehiculares (como corporativo), usar producto seleccionado si existe
-    if (productoSeleccionado && productoSeleccionado.id) {
-      idProducto = productoSeleccionado.id;
-    } else {
-      // Para planes corporativos sin producto, usar ID por defecto (ajustar según necesidad)
-      idProducto = 37; // ID para "Servicio" o similar
+      // ✅ Nueva validación: si el precio de venta del producto seleccionado es 0 o menor
+      if (productoSeleccionado.cantidad <= 0) {
+        Swal.fire(
+          "Error",
+          "El producto seleccionado no tiene un stock suficiente",
+          "error"
+        ); // ✅ Mostrar alerta si el precio es inválido
+        return; // ✅ Salir de la función si el precio no es válido
+      }
+    } else if (!entregarSiElement) {
+      // Para planes no vehiculares (como corporativo), usar producto seleccionado si existe
+      if (productoSeleccionado && productoSeleccionado.id) {
+        idProducto = productoSeleccionado.id;
+      } else {
+        // Para planes corporativos sin producto, usar ID por defecto (ajustar según necesidad)
+        idProducto = 37; // ID para "Servicio" o similar
+      }
     }
   }
 
   // MODIFICADO: Verificar si el radio button "Sí" o "No" está seleccionado (solo para planes vehiculares)
-const grupoFinanciamiento = document.getElementById("grupo").value;
-const entregarNoElement = document.getElementById("entregarNo");
+  const grupoFinanciamiento = document.getElementById("grupo").value;
 
-// Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
-if (
-  entregarSiElement && entregarNoElement &&
-  grupoFinanciamiento !== "33" &&
-  !entregarSiElement.checked &&
-  !entregarNoElement.checked
-) {
-  Swal.fire(
-    "Error",
-    "Debe seleccionar si se entregará un vehículo o no",
-    "error"
-  );
-  return;
-}
+  // Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
+  // Y NO es plan personalizado
+  if (
+    !esPlanPersonalizado &&
+    entregarSiElement && entregarNoElement &&
+    grupoFinanciamiento !== "33" &&
+    !entregarSiElement.checked &&
+    !entregarNoElement.checked
+  ) {
+    Swal.fire(
+      "Error",
+      "Debe seleccionar si se entregará un vehículo o no",
+      "error"
+    );
+    return;
+  }
 
 
   // Obtener el valor del código de asociado o asignar null si está vacío
@@ -885,8 +935,8 @@ function limpiarFormulario() {
     buscarProducto.value = "";
   }
 
-  // Deseleccionar radio buttons de tipoMoneda
-  document.getElementById("monedaSoles").checked = false;
+  // Resetear radio buttons de tipoMoneda a Soles por defecto
+  document.getElementById("monedaSoles").checked = true;
   document.getElementById("monedaDolares").checked = false;
 
   // Limpiar inputs adicionales
@@ -929,8 +979,8 @@ function limpiarFormularioChangueProduct() {
     buscarProducto.value = "";
   }
 
-  // Deseleccionar radio buttons de tipoMoneda
-  document.getElementById("monedaSoles").checked = false;
+  // Resetear radio buttons de tipoMoneda a Soles por defecto
+  document.getElementById("monedaSoles").checked = true;
   document.getElementById("monedaDolares").checked = false;
 
   // Limpiar inputs adicionales

@@ -147,43 +147,123 @@ class ScoreService
     }
 
     /**
-     * Aplica puntos al aprobar un pago pendiente
+     * Aplica puntos al aprobar un pago pendiente - OPTIMIZADO
      */
     public function aplicarPuntosEnAprobacion($idPago)
     {
         try {
-            mysqli_begin_transaction($this->conexion);
+            $startTime = microtime(true);
+            error_log("[ScoreService] Iniciando aplicarPuntosEnAprobacion para pago {$idPago}");
+            
+            // ⚡ NO usar transacción para evitar deadlocks
+            // mysqli_begin_transaction($this->conexion);
 
-            // Obtener cuotas del pago
+            // Obtener cuotas del pago en una sola query
             $sqlCuotas = "SELECT dp.id_cuota, cf.fecha_pago, cf.fecha_vencimiento, cf.puntos_aplicados,
                                  f.id_conductor, f.id_cliente
                           FROM detalle_pago_financiamiento dp
                           INNER JOIN cuotas_financiamiento cf ON dp.id_cuota = cf.idcuotas_financiamiento
                           INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
-                          WHERE dp.idfinanciamiento = ?";
+                          WHERE dp.idfinanciamiento = ?
+                          AND cf.puntos_aplicados = 0
+                          AND cf.fecha_pago <= cf.fecha_vencimiento";
             
             $stmt = mysqli_prepare($this->conexion, $sqlCuotas);
             mysqli_stmt_bind_param($stmt, 'i', $idPago);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
 
+            $cuotasPuntuales = [];
+            $idConductor = null;
+            $idCliente = null;
+            
             while ($cuota = mysqli_fetch_assoc($result)) {
-                // Solo aplicar si aún no se aplicaron puntos y el pago fue puntual
-                if ($cuota['puntos_aplicados'] == 0 && $cuota['fecha_pago'] <= $cuota['fecha_vencimiento']) {
-                    $this->aplicarPuntosPorPagoPuntual(
-                        $cuota['id_cuota'],
-                        $cuota['id_conductor'],
-                        $cuota['id_cliente']
-                    );
-                }
+                $cuotasPuntuales[] = $cuota['id_cuota'];
+                $idConductor = $cuota['id_conductor'];
+                $idCliente = $cuota['id_cliente'];
+            }
+            mysqli_stmt_close($stmt);
+
+            // Si no hay cuotas puntuales, salir
+            if (empty($cuotasPuntuales)) {
+                mysqli_commit($this->conexion);
+                error_log("[ScoreService] No hay cuotas puntuales para pago {$idPago}");
+                return ['success' => true];
             }
 
-            mysqli_stmt_close($stmt);
-            mysqli_commit($this->conexion);
+            error_log("[ScoreService] Procesando " . count($cuotasPuntuales) . " cuotas puntuales");
+
+            // Determinar tipo de cliente
+            $tipo = $idCliente ? 'cliente' : 'conductor';
+            $idReferencia = $idCliente ?? $idConductor;
+
+            // Calcular puntos UNA SOLA VEZ
+            $step1 = microtime(true);
+            $puntosASumar = $this->calcularPuntosPorPago($tipo, $idReferencia);
+            error_log("[ScoreService] calcularPuntosPorPago: " . round((microtime(true) - $step1) * 1000, 2) . "ms");
+            
+            $step2 = microtime(true);
+            $puntajeAnterior = $this->obtenerPuntajeActual($tipo, $idReferencia);
+            error_log("[ScoreService] obtenerPuntajeActual: " . round((microtime(true) - $step2) * 1000, 2) . "ms");
+            
+            $puntosTotal = $puntosASumar * count($cuotasPuntuales);
+            $puntajeNuevo = min(100, $puntajeAnterior + $puntosTotal);
+
+            // Actualizar puntaje UNA SOLA VEZ
+            $step3 = microtime(true);
+            $puntajeCrediticioId = $this->actualizarPuntaje($tipo, $idReferencia, $puntajeNuevo);
+            error_log("[ScoreService] actualizarPuntaje: " . round((microtime(true) - $step3) * 1000, 2) . "ms");
+
+            // Marcar todas las cuotas como procesadas en BATCH (sin FOR UPDATE)
+            $step4 = microtime(true);
+            $placeholders = implode(',', array_fill(0, count($cuotasPuntuales), '?'));
+            $sqlUpdate = "UPDATE cuotas_financiamiento 
+                          SET puntos_aplicados = 1 
+                          WHERE idcuotas_financiamiento IN ($placeholders)
+                          AND puntos_aplicados = 0";
+            
+            $stmtUpdate = mysqli_prepare($this->conexion, $sqlUpdate);
+            $types = str_repeat('i', count($cuotasPuntuales));
+            mysqli_stmt_bind_param($stmtUpdate, $types, ...$cuotasPuntuales);
+            mysqli_stmt_execute($stmtUpdate);
+            mysqli_stmt_close($stmtUpdate);
+            error_log("[ScoreService] Batch update cuotas: " . round((microtime(true) - $step4) * 1000, 2) . "ms");
+
+            // Registrar historial en BATCH
+            $step5 = microtime(true);
+            $historialRegistros = [];
+            $puntajeActualTemp = $puntajeAnterior;
+
+            foreach ($cuotasPuntuales as $idCuota) {
+                $motivo = "Pago puntual de cuota (+" . $puntosASumar . " puntos)";
+                $historialRegistros[] = [
+                    'puntajeCrediticioId' => $puntajeCrediticioId,
+                    'idCuota' => $idCuota,
+                    'puntajeAnterior' => $puntajeActualTemp,
+                    'puntajeNuevo' => min(100, $puntajeActualTemp + $puntosASumar),
+                    'puntosPerdidos' => 0,
+                    'motivo' => $motivo
+                ];
+                $puntajeActualTemp = min(100, $puntajeActualTemp + $puntosASumar);
+            }
+
+            $this->puntajeModel->registrarHistorialPuntajeBatch($historialRegistros);
+            error_log("[ScoreService] registrarHistorialPuntajeBatch: " . round((microtime(true) - $step5) * 1000, 2) . "ms");
+
+            // ⚡ NO hacer commit porque no hay transacción
+            // $step6 = microtime(true);
+            // mysqli_commit($this->conexion);
+            // error_log("[ScoreService] Commit: " . round((microtime(true) - $step6) * 1000, 2) . "ms");
+            
+            $executionTime = round(microtime(true) - $startTime, 3);
+            error_log("[ScoreService] Completado en {$executionTime}s para pago {$idPago}");
+            
             return ['success' => true];
 
         } catch (Exception $e) {
-            mysqli_rollback($this->conexion);
+            // ⚡ NO hacer rollback porque no hay transacción
+            // mysqli_rollback($this->conexion);
+            error_log("[ScoreService] Error: " . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }

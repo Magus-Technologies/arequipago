@@ -188,6 +188,10 @@ class FragmentController extends Controller
         return $this->view("fragment-views/cliente/grupos-financiamiento");
     }
 
+    public function editorContratos(){
+        return $this->view("fragment-views/admin/editor-contratos");
+    }
+
     public function reporteAlmacen(){
         return $this->view("fragment-views/cliente/reporte-almacen");
     }

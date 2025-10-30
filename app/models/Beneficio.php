@@ -149,8 +149,8 @@ class Beneficio
 
             $sql = "INSERT INTO beneficios (
                         nombre, plan_financiamiento_id, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual,
-                        moneda, nombre_plan_personalizado, frecuencia_pago, imagen, disponible
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                        moneda, nombre_plan_personalizado, frecuencia_pago, imagen, disponible, departamento_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -171,9 +171,10 @@ class Beneficio
             $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
+            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int)$datos['departamento_id'] : null;
 
             $stmt->bind_param(
-                'siisdidssssi',
+                'siisdidssssii',
                 $nombre,                       // s - string
                 $plan_financiamiento_id,       // i - integer
                 $categoria,                    // i - integer (nullable)
@@ -185,7 +186,8 @@ class Beneficio
                 $nombre_plan_personalizado,    // s - string (nullable)
                 $frecuencia_pago,              // s - string (nullable)
                 $imagen,                       // s - string
-                $disponible                    // i - integer
+                $disponible,                   // i - integer
+                $departamento_id               // i - integer (nullable)
             );
 
             if (!$stmt->execute()) {
@@ -234,6 +236,19 @@ class Beneficio
                 $sql .= " AND b.disponible = ?";
                 $params[] = $filtros['disponible'];
                 $types .= "i";
+            }
+
+            // Filtro por departamento
+            if (isset($filtros['departamento_id'])) {
+                if ($filtros['departamento_id'] === 'nacional') {
+                    // Beneficios nacionales (sin departamento específico)
+                    $sql .= " AND b.departamento_id IS NULL";
+                } else if (!empty($filtros['departamento_id'])) {
+                    // Beneficios de un departamento específico O nacionales
+                    $sql .= " AND (b.departamento_id = ? OR b.departamento_id IS NULL)";
+                    $params[] = $filtros['departamento_id'];
+                    $types .= "i";
+                }
             }
 
             if (!empty($filtros['busqueda'])) {
@@ -318,7 +333,7 @@ class Beneficio
             $sql = "UPDATE beneficios SET
                         nombre = ?, plan_financiamiento_id = ?, categoria = ?, descripcion = ?, cuota_inicial = ?,
                         cantidad_cuotas = ?, cuota_mensual = ?, moneda = ?, nombre_plan_personalizado = ?, frecuencia_pago = ?, imagen = ?,
-                        disponible = ?, fecha_actualizacion = CURRENT_TIMESTAMP
+                        disponible = ?, departamento_id = ?, fecha_actualizacion = CURRENT_TIMESTAMP
                     WHERE id = ?";
 
             $stmt = $this->conectar->prepare($sql);
@@ -348,9 +363,10 @@ class Beneficio
             $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
+            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int)$datos['departamento_id'] : null;
 
             $stmt->bind_param(
-                'siisdidssssii',
+                'siisdidssssiii',
                 $nombre,                       // s - string
                 $plan_financiamiento_id,       // i - integer
                 $categoria,                    // i - integer (nullable)
@@ -363,6 +379,7 @@ class Beneficio
                 $frecuencia_pago,              // s - string (nullable)
                 $imagen,                       // s - string
                 $disponible,                   // i - integer
+                $departamento_id,              // i - integer (nullable)
                 $id                            // i - integer
             );
 
@@ -584,5 +601,44 @@ public function obtenerCategorias()
             return false;
         }
     }
-    
+
+    /**
+     * Obtener departamentos habilitados para el registro de beneficios
+     */
+    public function obtenerDepartamentosHabilitados()
+    {
+        try {
+            $sql = "SELECT
+                        d.iddepast,
+                        d.nombre
+                    FROM depast d
+                    INNER JOIN departamentos_habilitados dh ON d.iddepast = dh.iddepast
+                    WHERE dh.habilitado = 1
+                    ORDER BY d.nombre ASC";
+
+            $stmt = $this->conectar->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $departamentos = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $departamentos[] = $row;
+            }
+
+            $stmt->close();
+            return $departamentos;
+        } catch (Exception $e) {
+            error_log('Error en Beneficio::obtenerDepartamentosHabilitados(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
 }

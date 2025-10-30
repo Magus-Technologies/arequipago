@@ -105,7 +105,21 @@ if ($esPlanPersonalizado) {
     }
 }
 
-$camposRequeridos = ['id_producto', 'monto_total', 'grupo_financiamiento', 'cuotas', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_creacion', 'cantidad_producto'];
+// 🔹 MODIFICADO: Para plan personalizado (ID 42), id_producto y cantidad_producto NO son obligatorios
+if ($esPlanPersonalizado) {
+    $camposRequeridos = ['monto_total', 'grupo_financiamiento', 'cuotas', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_creacion'];
+    
+    // Establecer valores por defecto para campos no obligatorios
+    if (empty($datos['id_producto'])) {
+        $datos['id_producto'] = 37; // ID genérico para servicios/planes personalizados
+    }
+    if (empty($datos['cantidad_producto'])) {
+        $datos['cantidad_producto'] = 1;
+    }
+} else {
+    $camposRequeridos = ['id_producto', 'monto_total', 'grupo_financiamiento', 'cuotas', 'estado', 'fecha_inicio', 'fecha_fin', 'fecha_creacion', 'cantidad_producto'];
+}
+
 foreach ($camposRequeridos as $campo) {
     if (empty($datos[$campo])) {
         throw new Exception("Falta el campo obligatorio: $campo");

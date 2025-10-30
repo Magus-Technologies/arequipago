@@ -1176,11 +1176,14 @@ function validarNumeroWhatsApp() {
  * Descargar boleta de pago inicial
  */
 function descargarBoletaInicial(idPago, concepto) {
-  // Mostrar indicador de carga
+  // Mostrar indicador de carga con z-index alto para que aparezca sobre el modal
   Swal.fire({
     title: "Generando boleta...",
     text: "Por favor espere",
     allowOutsideClick: false,
+    customClass: {
+      container: 'swal-high-zindex'
+    },
     didOpen: () => {
       Swal.showLoading();
     },
@@ -1205,13 +1208,25 @@ function descargarBoletaInicial(idPago, concepto) {
         )}_${idPago}.pdf`;
         downloadLink.click();
 
-        Swal.fire({
-          icon: "success",
-          title: "Descarga exitosa",
-          text: "La boleta se ha descargado correctamente",
-          timer: 2000,
-          showConfirmButton: false,
-        });
+        // Cerrar el modal antes de mostrar el mensaje
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalBoletasIniciales'));
+        if (modal) {
+          modal.hide();
+        }
+
+        // Mostrar mensaje después de un pequeño delay para que el modal se cierre
+        setTimeout(() => {
+          Swal.fire({
+            icon: "success",
+            title: "Descarga exitosa",
+            text: "La boleta se ha descargado correctamente",
+            timer: 2000,
+            showConfirmButton: false,
+            customClass: {
+              container: 'swal-high-zindex'
+            }
+          });
+        }, 300);
       } else {
         Swal.fire({
           icon: "error",

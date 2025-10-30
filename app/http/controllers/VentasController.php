@@ -303,6 +303,14 @@ class VentasController extends Controller
 
     public function anularVenta()
     {
+        // CORREGIDO: Validar que iventa no esté vacío
+        if (empty($_POST['iventa']) || !is_numeric($_POST['iventa'])) {
+            return json_encode([
+                "res" => false,
+                "mensaje" => "ID de venta inválido o vacío"
+            ]);
+        }
+
         $this->venta->setIdVenta($_POST['iventa']);
         $c_anulada = new VentaAnulada();
         $c_producto = new ProductoVenta();

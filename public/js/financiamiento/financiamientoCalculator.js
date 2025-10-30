@@ -113,6 +113,13 @@ function calcularFinanciamiento() {
   // Validar que cuota inicial no sea mayor que monto total
   if (cuotaInicial > montoTotal) {
     console.warn("La cuota inicial no puede ser mayor que el monto total");
+    Swal.fire({
+      icon: "error",
+      title: "Error en los valores",
+      html: `<p>La <strong>Cuota Inicial (${formatMoneda(cuotaInicial, tipoMoneda)})</strong> no puede ser mayor que el <strong>Monto Total (${formatMoneda(montoTotal, tipoMoneda)})</strong>.</p>
+             <p>Por favor, verifica el <strong>Monto Sin Intereses</strong> o reduce la <strong>Cuota Inicial</strong>.</p>`,
+      confirmButtonText: 'Entendido'
+    });
     return;
   }
 
@@ -159,6 +166,25 @@ function calcularFinanciamiento() {
   }
 
   console.log("Valor de la cuota calculado: ", valorCuota);
+  
+  // 🔹 NUEVA VALIDACIÓN: Verificar que el valor de la cuota sea positivo
+  if (valorCuota <= 0) {
+    console.error("❌ Valor de cuota inválido:", valorCuota);
+    Swal.fire({
+      icon: "error",
+      title: "Error en el cálculo",
+      html: `<p>El valor de la cuota calculado es <strong>${formatMoneda(valorCuota, tipoMoneda)}</strong>.</p>
+             <p>Esto puede ocurrir porque:</p>
+             <ul style="text-align: left;">
+               <li>La <strong>Cuota Inicial</strong> es muy alta</li>
+               <li>El <strong>Monto Sin Intereses</strong> es muy bajo</li>
+               <li>La <strong>Cantidad de Cuotas</strong> es incorrecta</li>
+             </ul>
+             <p>Por favor, verifica los valores ingresados.</p>`,
+      confirmButtonText: 'Entendido'
+    });
+    return;
+  }
 
   // NUEVO: Para celulares, verificar que no se sobrescriba un valor ya establecido
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
@@ -1082,7 +1108,9 @@ function calcularFinanciamientoConFechaIngreso(plan) {
       numeroInicial = 1; // Siempre empezar desde la primera cuota
       console.log("Plan corporativo CLARO (ID 36) - Iniciando desde cuota 1");
     } else {
-      numeroInicial = cuotasRestantes + 1; // Cálculo base del número de cuota para otros planes
+      // CORREGIDO: Asegurar que numeroInicial siempre sea al menos 1
+      numeroInicial = Math.max(1, cuotasRestantes + 1); // Cálculo base del número de cuota para otros planes
+      console.log("📊 Número inicial de cuota calculado:", numeroInicial, "| cuotasRestantes:", cuotasRestantes);
     }
 
     // NUEVO: Para plan corporativo de chips (ID 36), ajustar primera fecha al día 24

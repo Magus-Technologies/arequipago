@@ -346,20 +346,29 @@
         
         function obtenerTiposYCategorias() {
             return new Promise((resolve, reject) => {
-                $.ajax({
-                    url: "/arequipago/getDataSelets",
-                    type: "GET",
-                    dataType: "json",
-                    success: function(data) {
-                        tiposProductoData = data.tiposProducto || [];
-                        categoriasData = data.categorias || [];
-                        
-                        actualizarSelectores();
-                        resolve(data);
-                    },
-                    error: function(xhr, status, error) {
-                        reject(error);
-                    }
+                // Realizar dos llamadas en paralelo usando las mismas rutas que almacen-productos.php
+                Promise.all([
+                    // Cargar tipos de producto
+                    $.ajax({
+                        url: "/arequipago/cargartiposproducto",
+                        method: "GET",
+                        dataType: "json"
+                    }),
+                    // Cargar categorías de producto
+                    $.ajax({
+                        url: "/arequipago/cargarcategoriaproductos",
+                        method: "GET",
+                        dataType: "json"
+                    })
+                ]).then(([tiposResponse, categoriasResponse]) => {
+                    tiposProductoData = Array.isArray(tiposResponse) ? tiposResponse : [];
+                    categoriasData = Array.isArray(categoriasResponse) ? categoriasResponse : [];
+
+                    actualizarSelectores();
+                    resolve({ tiposProducto: tiposProductoData, categorias: categoriasData });
+                }).catch(error => {
+                    console.error('Error cargando datos:', error);
+                    reject(error);
                 });
             });
         }
@@ -445,39 +454,32 @@
         function actualizarSelectores() {
             // Actualizar select de categorías
             const categoriaSelect = $('#CATEGORIA');
-            if (categoriaSelect.length) {
+            if (categoriaSelect.length && Array.isArray(categoriasData)) {
                 categoriaSelect.empty();
-                
-                // Opciones base
-                const categoriasBase = ['SOAT', 'Seguro', 'Llantas', 'Aceites', 'Celular', 'Vehículo'];
-                categoriasBase.forEach(cat => {
-                    const selected = (categoriaOriginal === cat) ? 'selected' : '';
-                    categoriaSelect.append(`<option value="${cat}" ${selected}>${cat}</option>`);
-                });
-                
-                // Opciones dinámicas de BD
+
+                // Agregar opción por defecto
+                categoriaSelect.append($('<option>', {
+                    value: 'seleccionar_categoría',
+                    text: 'Seleccionar Categoría'
+                }));
+
+                // Cargar todas las categorías de la BD
                 categoriasData.forEach(categoria => {
-                    if (!categoriasBase.includes(categoria.nombre)) {
-                        const selected = (categoriaOriginal === categoria.nombre || parseInt(categoriaOriginal) === categoria.idcategoria_producto) ? 'selected' : '';
-                        categoriaSelect.append(`<option value="${categoria.idcategoria_producto}" ${selected}>${categoria.nombre}</option>`);
-                    }
+                    const selected = (categoriaOriginal === categoria.nombre ||
+                                    parseInt(categoriaOriginal) === categoria.idcategoria_producto) ? 'selected' : '';
+                    categoriaSelect.append(`<option value="${categoria.idcategoria_producto}" ${selected}>${categoria.nombre}</option>`);
                 });
             }
             
             // Actualizar select de tipos de producto
             const tipoSelect = $('#TIPO_PRODUCTO');
-            if (tipoSelect.length) {
+            if (tipoSelect.length && Array.isArray(tiposProductoData)) {
                 tipoSelect.empty();
-                
-                // Opciones fijas
-                ['Físico', 'Intangible'].forEach(tipo => {
-                    const selected = (tipoProductoOriginal === tipo) ? 'selected' : '';
-                    tipoSelect.append(`<option value="${tipo}" data-tipo-venta="unidad" ${selected}>${tipo}</option>`);
-                });
-                
-                // Opciones dinámicas de BD - AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+
+                // Cargar todos los tipos de producto de la BD
                 tiposProductoData.forEach(tipo => {
-                    const selected = (tipoProductoOriginal === tipo.tipo_productocol) ? 'selected' : '';
+                    const selected = (tipoProductoOriginal === tipo.tipo_productocol ||
+                                    parseInt(tipoProductoOriginal) === tipo.idtipo_producto) ? 'selected' : '';
                     // Agregar data-tipo-venta con el valor de la BD
                     tipoSelect.append(`<option value="${tipo.idtipo_producto}" data-tipo-venta="${tipo.tipo_venta}" ${selected}>${tipo.tipo_productocol}</option>`);
                 });

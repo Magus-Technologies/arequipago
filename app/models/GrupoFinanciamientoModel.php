@@ -24,7 +24,7 @@ class GrupoFinanciamientoModel {
         }
     }
 
-    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1)
+    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1, $esYango = 0)
     {
         // 🔹 Convertir valores vacíos a null para evitar errores
         $cuotaInicial = $cuotaInicial !== "" ? $cuotaInicial : null;
@@ -45,8 +45,8 @@ class GrupoFinanciamientoModel {
         }
 
         $sql = "INSERT INTO planes_financiamiento
-        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado, es_yango)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -54,7 +54,7 @@ class GrupoFinanciamientoModel {
             die("Error en la preparación de la consulta: " . $this->conectar->error);
         }
 
-        $stmt->bind_param("ssssssssssssis", // Cambiado: último parámetro es string (estado), cobrar_mora es integer
+        $stmt->bind_param("ssssssssssssisi", // Agregado: es_yango como integer al final
             $nombrePlan,                     
             $cuotaInicial,                   
             $montoCuota,                     
@@ -68,7 +68,8 @@ class GrupoFinanciamientoModel {
             $fechaFin,                       
             $tipoVehicular,                  
             $cobrarMora,        // i - integer
-            $estado             // s - string             
+            $estado,            // s - string
+            $esYango            // i - integer (NUEVO)
         );
 
         // 🔹 Ejecutar la consulta y verificar si fue exitosa
@@ -175,7 +176,7 @@ class GrupoFinanciamientoModel {
 
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, 
                           $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres, 
-                          $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1) {
+                          $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0) {
         
         // CORREGIDO: Validar y limpiar tipoVehicular
         if ($tipoVehicular === '' || $tipoVehicular === 'null' || $tipoVehicular === null) {
@@ -202,7 +203,8 @@ class GrupoFinanciamientoModel {
             fecha_fin = ?,
             tipo_vehicular = ?,
             cobrar_mora = ?,
-            estado = ?
+            estado = ?,
+            es_yango = ?
         WHERE idplan_financiamiento = ?";
 
 
@@ -224,7 +226,7 @@ class GrupoFinanciamientoModel {
         $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
 
         
-        $stmt->bind_param("ssssssssssssisi",  
+        $stmt->bind_param("ssssssssssssisii",  // Agregado: es_yango como integer
             $nombrePlan,           
             $cuotaInicial,         
             $montoCuota,           
@@ -238,7 +240,8 @@ class GrupoFinanciamientoModel {
             $fechaFin,             
             $tipoVehicular,        
             $cobrarMora,           // i - integer
-            $estado,               
+            $estado,               // s - string
+            $esYango,              // i - integer (NUEVO)
             $id                    // i - integer
         );
 
@@ -439,7 +442,8 @@ class GrupoFinanciamientoModel {
              monto_sin_interes,
              fecha_inicio,
              fecha_fin,
-             estado
+             estado,
+             es_yango
                 FROM planes_financiamiento 
                 WHERE idplan_financiamiento = ?";
                 
@@ -468,7 +472,8 @@ class GrupoFinanciamientoModel {
                 'monto_sin_interes' => 0,
                 'fecha_inicio' => null,
                 'fecha_fin' => null,
-                'estado' => 'activo'
+                'estado' => 'activo',
+                'es_yango' => 0
             ];
         }
         

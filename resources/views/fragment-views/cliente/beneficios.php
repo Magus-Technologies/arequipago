@@ -12,12 +12,15 @@
             transition: all 0.3s ease;
             border: 1px solid #dee2e6;
             cursor: pointer;
+            position: relative;
+            z-index: 1;
         }
 
         .beneficio-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             border-color: #6f42c1;
+            z-index: 2;
         }
 
         .beneficio-imagen {
@@ -74,43 +77,52 @@
         }
 
        .beneficio-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 0.75rem;
-    min-height: auto;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+            min-height: auto;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
 
 
-   .beneficio-description {
-    color: #6c757d;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    height: auto;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    margin-bottom: 0.5rem;
-}
+       .beneficio-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            height: auto;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            margin-bottom: 0.5rem;
+        }
 
 
 
         .vista-beneficios-header {
-            background: linear-gradient(135deg, #6f42c1 0%, #17a2b8 100%);
-            color: white;
-            padding: 2rem 0;
-            margin: -1.5rem -15px 2rem -15px;
-            border-radius: 0 0 15px 15px;
+            background: transparent;
+            color: #343a40;
+            padding: 1.5rem 0 1rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid #f8f9fa;
         }
 
-        .stats-card {
-            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-            border-left: 4px solid #6f42c1;
+        .vista-beneficios-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #343a40;
+            margin-bottom: 0;
+        }
+
+        .vista-beneficios-header .lead {
+            font-size: 0.95rem;
+            color: #6c757d;
+            margin-bottom: 0;
+            text-align: right;
         }
 
         .error-message {
@@ -134,6 +146,19 @@
             position: relative;
         }
 
+        .search-container .form-control {
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-container .form-control:focus {
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.15);
+        }
+
         .loading-spinner {
             position: absolute;
             right: 15px;
@@ -144,11 +169,57 @@
         .filter-badge {
             cursor: pointer;
             transition: all 0.3s ease;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+        }
+
+        .filter-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
 
         .filter-badge.active {
             background-color: #6f42c1 !important;
             border-color: #6f42c1 !important;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4);
+        }
+
+        .filter-badge.border {
+            border-color: #dee2e6 !important;
+        }
+
+        .filter-badge.bg-success {
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+        }
+
+        .filters-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-label i {
+            margin-right: 8px;
+            color: #6f42c1;
         }
 
         .beneficio-disponible {
@@ -187,6 +258,262 @@
             color: white;
             transform: translateY(-2px);
         }
+
+        /* Estilos para Dropdown de Planes */
+        .dropdown-plan-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .btn-dropdown-plan {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border: 2px solid #ced4da;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-dropdown-plan:hover {
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.15);
+        }
+
+        .btn-dropdown-plan i {
+            transition: transform 0.3s ease;
+            color: #6c757d;
+        }
+
+        .btn-dropdown-plan i.rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        #planesSeleccionadosText {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #495057;
+        }
+
+        .dropdown-plan-menu {
+            position: fixed;
+            margin-top: 0.5rem;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 99999;
+            display: none;
+            min-width: 300px;
+        }
+
+        .dropdown-plan-menu.show {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem 0.5rem 0 0;
+        }
+
+        .dropdown-plan-title {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .btn-limpiar-plan {
+            background: none;
+            border: none;
+            color: #0d6efd;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-limpiar-plan:hover {
+            background-color: #e7f1ff;
+            color: #0a58ca;
+        }
+
+        .dropdown-plan-search {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .dropdown-plan-search input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-plan-search input:focus {
+            outline: none;
+            border-color: #6f42c1;
+            box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.15);
+        }
+
+        .dropdown-plan-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+        }
+
+        .dropdown-plan-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dropdown-plan-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .dropdown-plan-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .dropdown-plan-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .plan-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .plan-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .plan-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 0.75rem;
+            cursor: pointer;
+            accent-color: #6f42c1;
+        }
+
+        .plan-item label {
+            flex: 1;
+            cursor: pointer;
+            margin: 0;
+            font-size: 0.95rem;
+            color: #495057;
+            user-select: none;
+        }
+
+        .plan-item.selected {
+            background-color: #f3f0ff;
+        }
+
+        .plan-item.selected label {
+            color: #6f42c1;
+            font-weight: 600;
+        }
+
+        .no-planes-found {
+            padding: 1rem;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* Estilos mejorados para selector de Departamento */
+        .departamentos-badges-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 15px;
+        }
+
+        .departamento-badge-item {
+            position: relative;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .departamento-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .departamento-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .departamento-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+            border-color: #28a745;
+        }
+
+        .departamento-input:checked + .departamento-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-color: #28a745;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.35);
+        }
+
+        .departamento-input:checked + .departamento-badge i {
+            animation: bounceIcon 0.5s ease;
+        }
+
+        @keyframes bounceIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Efecto de click */
+        .departamento-badge:active {
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
@@ -194,102 +521,132 @@
 
     <div id="app" class="container-fluid py-4">
 
-        Header Principal
-        <div class="vista-beneficios-header">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <h1 class="display-4 fw-bold mb-3">
-                            <i class="bi bi-star-fill me-3"></i>
-                            Catálogo de Beneficios
+        <!-- NUEVO: Header con Título y Departamento en la misma línea -->
+        <div class="vista-beneficios-header mb-4">
+            <div class="container-fluid">
+                <div class="row align-items-center justify-content-between">
+                    <div class="col-auto">
+                        <h1 style="color: #6f42c1" class="mb-0">
+                            <i class="fa fa-gift me-2" style="color: #6f42c1;"></i>
+                            Catálago De Beneficios
                         </h1>
-                        <p class="lead mb-0">Productos disponibles para financiamiento - Acceso para todos los usuarios
-                        </p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Controles Superiores -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="d-flex gap-3 align-items-center">
-                    <!-- Búsqueda -->
-                    <div class="search-container flex-grow-1">
-                        <input type="text" class="form-control" v-model="busqueda" @input="filtrarBeneficios"
-                            placeholder="Buscar productos: llantas, baterías, aceites...">
-                        <div class="loading-spinner" v-if="buscando">
-                            <div class="spinner-border spinner-border-sm" style="color: #6f42c1;" role="status"></div>
+                    <div class="col-auto">
+                        <div v-if="cargandoDepartamentos" class="text-end">
+                            <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                        </div>
+                        <div v-else class="departamentos-badges-container d-flex">
+                            <label class="departamento-badge-item">
+                                <input type="radio"
+                                       name="departamento"
+                                       value=""
+                                       v-model="departamentoSeleccionado"
+                                       @change="filtrarBeneficios"
+                                       class="departamento-input">
+                                <span class="departamento-badge">
+                                    <i class="fa fa-globe me-2"></i>
+                                    Todos
+                                </span>
+                            </label>
+                            <label v-for="dept in departamentosHabilitados"
+                                   :key="dept.iddepast"
+                                   class="departamento-badge-item">
+                                <input type="radio"
+                                       name="departamento"
+                                       :value="dept.iddepast"
+                                       v-model="departamentoSeleccionado"
+                                       @change="filtrarBeneficios"
+                                       class="departamento-input">
+                                <span class="departamento-badge">
+                                    <i class="fa fa-map-marker-alt me-2"></i>
+                                    {{ dept.nombre }}
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4 text-end">
-                <button class="btn btn-success" @click="abrirModalAgregarProducto">
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Agregar Producto
+        </div>
+
+        <!-- NUEVA: Fila con Buscador, Filtro de Planes y Botón Agregar -->
+        <div class="row mb-4 g-3 align-items-end">
+            <!-- Buscador -->
+            <div class="col-md-5">
+                <label class="form-label mb-2" style="font-weight: 600; color: #495057;">
+                    <i class="fa fa-search me-1"></i>
+                    Buscar Beneficios
+                </label>
+                <div class="search-container">
+                    <input type="text"
+                           class="form-control"
+                           v-model="busqueda"
+                           @input="filtrarBeneficios"
+                           placeholder="🔍 Buscar por nombre, descripción o categoría..."
+                           style="border-radius: 10px; padding: 12px 45px 12px 15px;">
+                    <div class="loading-spinner" v-if="buscando">
+                        <div class="spinner-border spinner-border-sm" style="color: #6f42c1;" role="status"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtro de Plan de Financiamiento -->
+            <div class="col-md-4" :style="{ position: 'relative', zIndex: planDropdownOpen ? 10000 : 'auto' }">
+                <label class="form-label mb-2" style="font-weight: 600; color: #495057;">
+                    <i class="fa fa-credit-card me-1"></i>
+                    Plan de Financiamiento
+                </label>
+                <div class="dropdown-plan-wrapper">
+                    <button class="btn-dropdown-plan" type="button" id="btnPlanDropdown" @click="togglePlanDropdown">
+                        <span id="planesSeleccionadosText">{{ planSeleccionadoTexto }}</span>
+                        <i class="fa fa-chevron-down" :class="{ 'rotate-180': planDropdownOpen }"></i>
+                    </button>
+                    <div class="dropdown-plan-menu" :class="{ show: planDropdownOpen }">
+                        <div class="dropdown-plan-header">
+                            <span class="dropdown-plan-title">Seleccionar Plan</span>
+                            <button type="button" class="btn-limpiar-plan" @click="limpiarPlanesSeleccionados" v-if="planSeleccionado">
+                                Limpiar
+                            </button>
+                        </div>
+                        <div class="dropdown-plan-search">
+                            <input type="text" v-model="busquedaPlan" class="form-control form-control-sm" placeholder="Buscar plan...">
+                        </div>
+                        <div class="dropdown-plan-list">
+                            <div v-if="cargandoPlanes" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                <span class="ms-2">Cargando planes...</span>
+                            </div>
+                            <div v-else>
+                                <div class="plan-item" @click="seleccionarPlan('')" :class="{ selected: planSeleccionado === '' }">
+                                    <input type="radio" name="plan" :checked="planSeleccionado === ''" @change="seleccionarPlan('')">
+                                    <label>
+                                        <i class="fa fa-th me-2"></i>Todos los planes
+                                    </label>
+                                </div>
+                                <div v-for="plan in planesFiltrados"
+                                     :key="plan.idplan_financiamiento"
+                                     class="plan-item"
+                                     @click="seleccionarPlan(plan.idplan_financiamiento)"
+                                     :class="{ selected: planSeleccionado === plan.idplan_financiamiento }">
+                                    <input type="radio" name="plan" :checked="planSeleccionado === plan.idplan_financiamiento" @change="seleccionarPlan(plan.idplan_financiamiento)">
+                                    <label>
+                                        <i class="fa fa-credit-card me-2"></i>{{ plan.nombre_plan }}
+                                    </label>
+                                </div>
+                                <div v-if="planesFiltrados.length === 0 && !cargandoPlanes" class="no-planes-found">
+                                    No se encontraron planes
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón Agregar Beneficio -->
+            <div class="col-md-3">
+                <button class="btn btn-success" @click="abrirModalAgregarProducto" style="border-radius: 10px; font-weight: 600; padding: 12px 20px; width: 100%;">
+                    <i class="fa fa-plus-circle me-2"></i>
+                    Agregar Beneficio
                 </button>
-            </div>
-        </div>
-        <!-- Filtros por Plan de Financiamiento -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div v-if="cargandoPlanes" class="text-center">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <span class="ms-2">Cargando planes...</span>
-                </div>
-                <div v-else class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-secondary filter-badge" :class="{ active: planSeleccionado === '' }"
-                        @click="filtrarPorPlan('')">
-                        <i class="bi bi-grid me-1"></i>Todos
-                    </span>
-                    <span v-for="plan in planes" :key="plan.idplan_financiamiento" class="badge bg-primary filter-badge"
-                        :class="{ active: planSeleccionado === plan.idplan_financiamiento }"
-                        @click="filtrarPorPlan(plan.idplan_financiamiento)">
-                        <i class="bi bi-credit-card me-1"></i>{{ plan.nombre_plan }}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Estadísticas -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stats-card h-100">
-                    <div class="card-body text-center">
-                        <i class="bi bi-box-seam display-4 mb-2" style="color: #6f42c1;"></i>
-                        <h4 class="fw-bold">{{ beneficiosFiltrados.length }}</h4>
-                        <p class="text-muted mb-0">Productos Disponibles</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card h-100">
-                    <div class="card-body text-center">
-                        <i class="bi bi-tags display-4 text-primary mb-2"></i>
-                        <h4 class="fw-bold">{{ categorias.length }}</h4>
-                        <p class="text-muted mb-0">Categorías</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card h-100">
-                    <div class="card-body text-center">
-                        <i class="bi bi-people display-4 text-success mb-2"></i>
-                        <h4 class="fw-bold">Todos</h4>
-                        <p class="text-muted mb-0">Usuarios con Acceso</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card h-100">
-                    <div class="card-body text-center">
-                        <i class="bi bi-infinity display-4 text-warning mb-2"></i>
-                        <h4 class="fw-bold">∞</h4>
-                        <p class="text-muted mb-0">Disponibilidad</p>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -476,6 +833,29 @@
                                         </select>
                                         <div v-if="errores.plan_financiamiento_id" class="error-message">{{
                                             errores.plan_financiamiento_id }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">
+                                            Departamento
+                                            <small class="text-muted">(Opcional - dejar vacío para disponibilidad nacional)</small>
+                                        </label>
+                                        <select class="form-select" v-model="formData.departamento_id">
+                                            <option value="">Nacional (Todos los departamentos)</option>
+                                            <option v-for="dept in departamentosHabilitados"
+                                                    :key="dept.iddepast"
+                                                    :value="dept.iddepast">
+                                                {{ dept.nombre }}
+                                            </option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="bi bi-info-circle"></i>
+                                            Si seleccionas un departamento específico, el beneficio solo se mostrará para usuarios de ese departamento.
+                                            Si dejas "Nacional", estará disponible para todos.
+                                        </small>
+                                        <div v-if="errores.departamento_id" class="error-message">{{ errores.departamento_id }}</div>
                                     </div>
                                 </div>
 
@@ -671,9 +1051,14 @@
                         buscando: false,
                         categoriaSeleccionada: '',
                         planSeleccionado: '',
+                        departamentoSeleccionado: '',
                         cargandoBeneficios: false,
                         planes: [],
                         cargandoPlanes: false,
+
+                        // DROPDOWN DE PLANES
+                        planDropdownOpen: false,
+                        busquedaPlan: '',
 
                         // CONFIGURACIÓN
                         itemsPorPagina: 12,
@@ -696,6 +1081,7 @@
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
+                            departamento_id: '',
                             disponible: true
                         },
                         errores: {},
@@ -703,21 +1089,42 @@
 
                         // CATEGORÍAS (se cargarán desde la base de datos)
                         categorias: [],
-                        cargandoCategorias: false
+                        cargandoCategorias: false,
+
+                        // DEPARTAMENTOS HABILITADOS
+                        departamentosHabilitados: [],
+                        cargandoDepartamentos: false
 
                     }
                 },
                 computed: {
                     totalPaginas: function () {
                         return Math.ceil(this.beneficiosFiltrados.length / this.itemsPorPagina);
+                    },
+                    planesFiltrados: function () {
+                        if (!this.busquedaPlan.trim()) {
+                            return this.planes;
+                        }
+                        const busqueda = this.busquedaPlan.toLowerCase();
+                        return this.planes.filter(function (plan) {
+                            return plan.nombre_plan.toLowerCase().includes(busqueda);
+                        });
+                    },
+                    planSeleccionadoTexto: function () {
+                        if (!this.planSeleccionado) {
+                            return 'Todos los planes';
+                        }
+                        const planEncontrado = this.planes.find(p => p.idplan_financiamiento === this.planSeleccionado);
+                        return planEncontrado ? planEncontrado.nombre_plan : 'Todos los planes';
                     }
                 },
                mounted: function () {
     var self = this;
     this.cargarCategorias();
     this.cargarPlanes();
+    this.cargarDepartamentosHabilitados();
     this.cargarBeneficios();
-    
+
     // Esperar a que el DOM esté completamente renderizado
     this.$nextTick(function() {
         var modalElement = document.getElementById('modalProducto');
@@ -816,6 +1223,34 @@
                             });
                     },
 
+                    // ============ CARGAR DEPARTAMENTOS HABILITADOS ============
+                    cargarDepartamentosHabilitados: function () {
+                        var self = this;
+                        self.cargandoDepartamentos = true;
+
+                        fetch(_URL + '/ajs/beneficios/departamentos-habilitados')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && Array.isArray(data.data)) {
+                                    self.departamentosHabilitados = data.data;
+                                } else {
+                                    console.error('Error: Formato de departamentos no válido');
+                                    self.departamentosHabilitados = [];
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error al cargar departamentos:', error);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'No se pudieron cargar los departamentos habilitados'
+                                });
+                            })
+                            .finally(() => {
+                                self.cargandoDepartamentos = false;
+                            });
+                    },
+
 
                     // ============ FILTROS Y BÚSQUEDA ============
                     filtrarBeneficios: function () {
@@ -838,6 +1273,11 @@
                         this.aplicarFiltros();
                     },
 
+                    filtrarPorDepartamento: function (departamento) {
+                        this.departamentoSeleccionado = departamento;
+                        this.aplicarFiltros();
+                    },
+
                     aplicarFiltros: function () {
                         var resultado = this.beneficios;
 
@@ -845,16 +1285,17 @@
                         if (this.busqueda.trim()) {
                             var termino = this.busqueda.toLowerCase();
                             resultado = resultado.filter(function (beneficio) {
-                                return beneficio.nombre.toLowerCase().includes(termino) ||
-                                    beneficio.descripcion.toLowerCase().includes(termino) ||
-                                    beneficio.categoria.toLowerCase().includes(termino);
+                                var nombre = beneficio.nombre ? beneficio.nombre.toLowerCase() : '';
+                                var descripcion = beneficio.descripcion ? beneficio.descripcion.toLowerCase() : '';
+                                var categoria = beneficio.categoria ? String(beneficio.categoria).toLowerCase() : '';
+                                return nombre.includes(termino) || descripcion.includes(termino) || categoria.includes(termino);
                             });
                         }
 
                         // Filtrar por categoría
                         if (this.categoriaSeleccionada) {
                             resultado = resultado.filter(function (beneficio) {
-                                return beneficio.categoria === this.categoriaSeleccionada;
+                                return beneficio.categoria == this.categoriaSeleccionada;
                             }, this);
                         }
 
@@ -865,6 +1306,15 @@
                             }, this);
                         }
 
+                        // Filtrar por departamento
+                        if (this.departamentoSeleccionado) {
+                            var deptSeleccionado = this.departamentoSeleccionado;
+                            resultado = resultado.filter(function (beneficio) {
+                                // Mostrar SOLO beneficios del departamento seleccionado
+                                return beneficio.departamento_id == deptSeleccionado;
+                            });
+                        }
+
                         this.beneficiosFiltrados = resultado;
                         this.paginaActual = 1;
                     },
@@ -873,8 +1323,57 @@
                         this.busqueda = '';
                         this.categoriaSeleccionada = '';
                         this.planSeleccionado = '';
+                        this.departamentoSeleccionado = '';
+                        this.busquedaPlan = '';
                         this.beneficiosFiltrados = this.beneficios;
                         this.paginaActual = 1;
+                    },
+
+                    // ============ DROPDOWN DE PLANES ============
+                    togglePlanDropdown: function () {
+                        this.planDropdownOpen = !this.planDropdownOpen;
+                        if (this.planDropdownOpen) {
+                            // Posicionar el dropdown con position: fixed
+                            this.$nextTick(() => {
+                                const button = document.getElementById('btnPlanDropdown');
+                                const menu = button.nextElementSibling;
+                                if (button && menu) {
+                                    const rect = button.getBoundingClientRect();
+                                    menu.style.top = (rect.bottom + 8) + 'px';
+                                    menu.style.left = rect.left + 'px';
+                                    menu.style.width = rect.width + 'px';
+                                }
+                            });
+
+                            // Cerrar al hacer clic fuera
+                            const self = this;
+                            setTimeout(() => {
+                                document.addEventListener('click', self.cerrarDropdownPlan);
+                            }, 100);
+                        }
+                    },
+
+                    cerrarDropdownPlan: function (event) {
+                        const dropdown = this.$el.querySelector('.dropdown-plan-wrapper');
+                        if (dropdown && !dropdown.contains(event.target)) {
+                            this.planDropdownOpen = false;
+                            document.removeEventListener('click', this.cerrarDropdownPlan);
+                        }
+                    },
+
+                    seleccionarPlan: function (idPlan) {
+                        this.planSeleccionado = idPlan;
+                        this.filtrarPorPlan(idPlan);
+                        this.planDropdownOpen = false;
+                        this.busquedaPlan = '';
+                        document.removeEventListener('click', this.cerrarDropdownPlan);
+                    },
+
+                    limpiarPlanesSeleccionados: function () {
+                        this.planSeleccionado = '';
+                        this.busquedaPlan = '';
+                        this.filtrarPorPlan('');
+                        this.planDropdownOpen = false;
                     },
 
                     // ============ UTILIDADES ============
@@ -941,6 +1440,7 @@
                             moneda: beneficio.moneda || '',
                             nombre_plan_personalizado: beneficio.nombre_plan_personalizado || '',
                             frecuencia_pago: beneficio.frecuencia_pago || '',
+                            departamento_id: beneficio.departamento_id || '',
                             disponible: beneficio.disponible
                         };
 
@@ -1090,6 +1590,7 @@
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
+                            departamento_id: '',
                             disponible: true
                         };
                         this.errores = {};
@@ -1316,6 +1817,7 @@
                         formData.append('moneda', self.formData.moneda || '');
                         formData.append('nombre_plan_personalizado', self.formData.nombre_plan_personalizado || '');
                         formData.append('frecuencia_pago', self.formData.frecuencia_pago || '');
+                        formData.append('departamento_id', self.formData.departamento_id || '');
                         formData.append('disponible', self.formData.disponible ? 1 : 0);
 
                         // Agregar imagen si hay archivo seleccionado

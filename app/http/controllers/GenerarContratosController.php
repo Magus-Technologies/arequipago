@@ -608,6 +608,8 @@ class GenerarContratosController extends controller
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "credigo_autos.html";
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_Motos.html";
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_incamotors.html";
         } elseif ($categoria === 'Llantas') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_llantas.html";
         } elseif ($categoria === 'Aceites') {
@@ -876,6 +878,48 @@ class GenerarContratosController extends controller
         }
         $plantilla = str_replace("<ul id=\"lista_cuotas\"></ul>", "<ul>$listaCuotas</ul>", $plantilla);
     
+        // Lógica específica para Plan Mantenimiento IncaMotors (ID 44)
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
+            // Reemplazos específicos para el contrato de IncaMotors
+            $plantilla = str_replace('<span id="textoRol"></span>', $textoRol, $plantilla);
+            $plantilla = str_replace('<span id="textoRol2"></span>', $textoRol, $plantilla);
+            $plantilla = str_replace('<span id="textoRol3"></span>', $textoRol, $plantilla);
+            $plantilla = str_replace('<span id="textoRol4"></span>', $textoRol, $plantilla);
+            $plantilla = str_replace('<span id="conductor"></span>', $nombrePersona, $plantilla);
+            $plantilla = str_replace('<span id="nro_documento"></span>', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            $plantilla = str_replace('<span id="bloqueLicencia"></span>', $bloqueLicencia, $plantilla);
+            $plantilla = str_replace('<span id="cantidad"></span>', $financiamiento['cantidad_producto'], $plantilla);
+            $plantilla = str_replace('<span id="nombreProducto"></span>', $producto['nombre'], $plantilla);
+            $plantilla = str_replace('<span id="marca"></span>', $producto['nombre'], $plantilla);
+            $plantilla = str_replace('<span id="moneda"></span>', $financiamiento['moneda'] ?? 'S/.', $plantilla);
+            $plantilla = str_replace('<span id="moneda_total"></span>', $financiamiento['moneda'] ?? 'S/.', $plantilla);
+            $plantilla = str_replace('<span id="moneda2"></span>', $financiamiento['moneda'] ?? 'S/.', $plantilla);
+            $plantilla = str_replace('<span id="moneda3"></span>', $financiamiento['moneda'] ?? 'S/.', $plantilla);
+            // Precio del producto (lo que les costó)
+            $plantilla = str_replace('<span id="precio_producto"></span>', number_format($producto['precio'], 2), $plantilla);
+            // Precio total del financiamiento (lo que pagará el cliente)
+            $plantilla = str_replace('<span id="precio_total"></span>', number_format($financiamiento['monto_total'], 2), $plantilla);
+            $plantilla = str_replace('<span id="n_cuotas"></span>', $financiamiento['cuotas'], $plantilla);
+            $plantilla = str_replace('<span id="nro_cuotas"></span>', $financiamiento['cuotas'], $plantilla);
+            $plantilla = str_replace('<span id="monto_inicial"></span>', number_format($financiamiento['cuota_inicial'] ?? 0, 2), $plantilla);
+            $plantilla = str_replace('<span id="monto_cuota"></span>', number_format($cuotas[0]['monto'], 2), $plantilla);
+            $plantilla = str_replace('<span id="frecuencia"></span>', $frecuencyTexto, $plantilla);
+            $plantilla = str_replace('<span id="frecuencia2"></span>', $frecuenciaTexto, $plantilla);
+            $plantilla = str_replace('<span id="clausulaConductor"></span>', $clausulaConductor, $plantilla);
+            $plantilla = str_replace('<span id="nombre_firma"></span>', $nombrePersona, $plantilla);
+            $plantilla = str_replace('<span id="dni_firma"></span>', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            
+            // Generar cronograma de cuotas para IncaMotors
+            $cronogramaCuotas = '';
+            foreach ($cuotas as $index => $cuota) {
+                $fechaCuota = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
+                $montoCuota = number_format($cuota['monto'], 2);
+                $moneda = $financiamiento['moneda'] ?? 'S/.';
+                $cronogramaCuotas .= "<p><strong>Cuota " . ($index + 1) . ":</strong> $moneda $montoCuota - Vencimiento: $fechaCuota</p>";
+            }
+            // Reemplazar el contenido del div cronogramaCuotas
+            $plantilla = str_replace('<!-- Las cuotas se cargarán dinámicamente aquí -->', $cronogramaCuotas, $plantilla);
+        }
 
         $plantillas['plantillaGeneral'] = $plantilla;
 

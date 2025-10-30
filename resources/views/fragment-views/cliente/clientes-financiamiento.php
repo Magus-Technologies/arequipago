@@ -1,9 +1,9 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // 🛠️ MODIFICADO: Inicia la sesión si aún no ha sido iniciada
+    session_start();  // 🛠️ MODIFICADO: Inicia la sesión si aún no ha sido iniciada
 }
 
-$rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // 🛠️ MODIFICADO: Obtener el rol del usuario logueado
+$rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // 🛠️ MODIFICADO: Obtener el rol del usuario logueado
 ?>
 
 
@@ -1049,8 +1049,41 @@ $(document).ready(function() {
                 data: null,
                 className: "text-center",
                 render: function(data, type, row) {
+                    // 🔹 Botones según el estado de pago
+                    let botonesExtra = '';
+                    
+                    // ❌ COMENTADO: El registro de pago ya existe en "Pagos Inscripción"
+                    // Los usuarios deben ir a esa vista para registrar pagos
+                    /*
+                    if (row.ha_pagado == 0) {
+                        botonesExtra = `
+                            <button class="btn btn-sm btn-success registrar-pago-btn" 
+                                    data-id="${row.id}" 
+                                    data-nombre="${row.nombres} ${row.apellido_paterno}" 
+                                    data-telefono="${row.telefono || ''}"
+                                    title="Registrar Pago de Inscripción">
+                                <i class="fas fa-dollar-sign"></i>
+                            </button>
+                        `;
+                    }
+                    */
+                    
+                    // ✅ Si el pago YA FUE REALIZADO (ha_pagado == 1) → Mostrar botón "Enviar Comprobante"
+                    if (row.ha_pagado == 1) {
+                        botonesExtra = `
+                            <button class="btn btn-sm btn-info enviar-comprobante-btn" 
+                                    data-id="${row.id}" 
+                                    data-nombre="${row.nombres} ${row.apellido_paterno}"
+                                    data-telefono="${row.telefono || ''}"
+                                    title="Enviar Comprobante por WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                        `;
+                    }
+                    
                     return `
                         <div class="btn-group btn-sm" role="group">
+                            ${botonesExtra}
                             <button class="btn btn-sm btn-primary ver-btn" data-id="${row.id}" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -1820,7 +1853,8 @@ $(document).on('click', '.eliminar-btn', function() {
                             title: 'Cliente eliminado',
                             text: response.mensaje
                         }).then(() => {
-                         cargarDatosClientesPage();
+                            // Recargar la tabla DataTable
+                            $('#tablaConductoresInicial').DataTable().ajax.reload();
                         });
                     } else {
                         Swal.fire({
@@ -1835,6 +1869,269 @@ $(document).on('click', '.eliminar-btn', function() {
                         icon: 'error',
                         title: 'Error',
                         text: 'Error al procesar la solicitud'
+                    });
+                }
+            });
+        }
+    });
+});
+
+// ❌ COMENTADO: Event handler para registrar pago de inscripción
+// El registro de pago ya existe en la vista "Pagos Inscripción"
+// Los usuarios deben usar esa vista para registrar pagos (tiene más funcionalidades)
+/*
+$(document).on('click', '.registrar-pago-btn', function() {
+    const clienteId = $(this).data('id');
+    const clienteNombre = $(this).data('nombre');
+    
+    Swal.fire({
+        title: 'Registrar Pago de Inscripción',
+        html: `
+            <p class="mb-3">Cliente: <strong>${clienteNombre}</strong></p>
+            <div class="mb-3">
+                <label for="monto_pago" class="form-label">Monto Pagado (S/)</label>
+                <input type="number" id="monto_pago" class="form-control" value="100.00" step="0.01" min="0">
+            </div>
+            <div class="mb-3">
+                <label for="metodo_pago" class="form-label">Método de Pago</label>
+                <select id="metodo_pago" class="form-select">
+                    <option value="1">Efectivo</option>
+                    <option value="2">Transferencia</option>
+                    <option value="3">Yape</option>
+                    <option value="4">Plin</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="vuelto" class="form-label">Vuelto (S/)</label>
+                <input type="number" id="vuelto" class="form-control" value="0.00" step="0.01" min="0">
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Registrar Pago',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        preConfirm: () => {
+            const montoPago = parseFloat($('#monto_pago').val());
+            const metodoPago = $('#metodo_pago').val();
+            const vuelto = parseFloat($('#vuelto').val());
+            
+            if (!montoPago || montoPago <= 0) {
+                Swal.showValidationMessage('El monto debe ser mayor a 0');
+                return false;
+            }
+            
+            return {
+                cliente_id: clienteId,
+                monto_pagado: montoPago,
+                metodo_pago: metodoPago,
+                vuelto: vuelto
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loader
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Registrando el pago',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar datos al servidor usando el endpoint existente
+            $.ajax({
+                url: '/arequipago/guardarPago',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    cliente_id: result.value.cliente_id,
+                    metodo_pago_id: result.value.metodo_pago,
+                    monto_pagado: result.value.monto_pagado
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Pago Registrado',
+                            text: response.message || 'El pago se registró correctamente',
+                            confirmButtonColor: '#28a745'
+                        }).then(() => {
+                            // Recargar la tabla
+                            $('#tablaConductoresInicial').DataTable().ajax.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'No se pudo registrar el pago'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al registrar pago:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al procesar la solicitud'
+                    });
+                }
+            });
+        }
+    });
+});
+*/
+
+// ✅ Event handler para enviar comprobante por WhatsApp
+$(document).on('click', '.enviar-comprobante-btn', function() {
+    const clienteId = $(this).data('id');
+    const clienteNombre = $(this).data('nombre');
+    let clienteTelefono = $(this).data('telefono');
+    
+    // Convertir a string si es necesario
+    if (clienteTelefono !== null && clienteTelefono !== undefined) {
+        clienteTelefono = String(clienteTelefono).trim();
+    }
+    
+    // Si no hay teléfono, usar vacío
+    if (!clienteTelefono || clienteTelefono === '' || clienteTelefono === 'null' || clienteTelefono === 'undefined') {
+        clienteTelefono = '';
+    }
+    
+    Swal.fire({
+        title: 'Enviar Comprobante por WhatsApp',
+        html: `
+            <div class="text-start">
+                <p class="mb-3"><strong>Cliente:</strong> ${clienteNombre}</p>
+                
+                <div class="mb-3">
+                    <label for="telefono_whatsapp" class="form-label"><strong>Número de WhatsApp:</strong></label>
+                    <input type="text" id="telefono_whatsapp" class="form-control" 
+                           value="${clienteTelefono}" 
+                           placeholder="Ej: 987654321"
+                           maxlength="9">
+                    <small class="text-muted">Ingrese el número sin código de país (9 dígitos)</small>
+                </div>
+                
+                <p class="text-muted mt-3">
+                    <i class="fas fa-info-circle"></i> Se abrirá WhatsApp Web con un mensaje predefinido del comprobante de pago.
+                </p>
+            </div>
+        `,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: '<i class="fab fa-whatsapp"></i> Abrir WhatsApp',
+        denyButtonText: '<i class="fas fa-file-pdf"></i> Ver Comprobante',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#25D366',
+        denyButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        width: '600px',
+        preConfirm: () => {
+            const telefono = document.getElementById('telefono_whatsapp').value.trim();
+            
+            if (!telefono || telefono === '') {
+                Swal.showValidationMessage('Por favor ingrese un número de teléfono');
+                return false;
+            }
+            
+            // Limpiar el número (quitar espacios, guiones, etc.)
+            const telefonoLimpio = telefono.replace(/\D/g, '');
+            
+            if (telefonoLimpio.length < 9) {
+                Swal.showValidationMessage('El número debe tener al menos 9 dígitos');
+                return false;
+            }
+            
+            return { telefono: telefonoLimpio };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Usuario hizo clic en "Abrir WhatsApp"
+            const telefonoLimpio = result.value.telefono;
+            
+            // Primero obtener el enlace del comprobante
+            Swal.fire({
+                title: 'Generando enlace...',
+                text: 'Preparando el comprobante para enviar',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: '/arequipago/obtenerComprobantePago',
+                type: 'POST',
+                dataType: 'json',
+                data: { cliente_id: clienteId },
+                success: function(response) {
+                    if (response.success && response.pdf_url) {
+                        // Mensaje predefinido para WhatsApp con el enlace del PDF
+                        const mensaje = `Hola ${clienteNombre}, te enviamos el comprobante de tu pago de inscripción de S/ 100.00. ¡Gracias por confiar en nosotros! 🚗\n\n📄 Descarga tu comprobante aquí:\n${response.pdf_url}`;
+                        
+                        // Construir URL de WhatsApp
+                        const whatsappUrl = `https://wa.me/51${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+                        
+                        // Cerrar el loading
+                        Swal.close();
+                        
+                        // Abrir WhatsApp en nueva pestaña
+                        window.open(whatsappUrl, '_blank');
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'WhatsApp Abierto',
+                            text: 'Se ha abierto WhatsApp Web con el enlace del comprobante.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'No se pudo obtener el enlace del comprobante',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al generar el enlace del comprobante',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            });
+        } else if (result.isDenied) {
+            // Usuario hizo clic en "Ver Comprobante"
+            // Obtener el PDF del comprobante
+            $.ajax({
+                url: '/arequipago/obtenerComprobantePago',
+                type: 'POST',
+                dataType: 'json',
+                data: { cliente_id: clienteId },
+                success: function(response) {
+                    if (response.success && response.pdf_path) {
+                        // Abrir el PDF en una nueva pestaña
+                        window.open('/' + response.pdf_path, '_blank');
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Comprobante no encontrado',
+                            text: response.message || 'No se encontró el comprobante de pago para este cliente',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al obtener el comprobante',
+                        confirmButtonColor: '#dc3545'
                     });
                 }
             });
