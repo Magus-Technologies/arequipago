@@ -2300,6 +2300,9 @@ function enviarPDFPorWhatsApp() {
     
     // Función para aprobar un pago
     function aprobarPago(idPago) {
+        console.log(`[${new Date().toISOString()}] Botón aprobar clickeado para pago ${idPago}`);
+        const startTime = performance.now();
+        
         Swal.fire({
             title: '¿Confirmar aprobación?',
             text: "Este pago será marcado como aprobado",
@@ -2311,6 +2314,9 @@ function enviarPDFPorWhatsApp() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                const confirmTime = performance.now();
+                console.log(`[${new Date().toISOString()}] Usuario confirmó aprobación (${Math.round(confirmTime - startTime)}ms después del click)`);
+                
                 // NUEVO: Mostrar loader mientras se procesa la aprobación
                 Swal.fire({
                     title: 'Procesando aprobación',
@@ -2321,12 +2327,19 @@ function enviarPDFPorWhatsApp() {
                     }
                 });
                 
+                const ajaxStartTime = performance.now();
+                console.log(`[${new Date().toISOString()}] Iniciando request AJAX para pago ${idPago}`);
+                
                 $.ajax({
-                    url: '/arequipago/aprobarPagoPendiente',
+                    url: _URL + '/ajs/aprobarPagoPendiente',
                     type: 'POST',
                     data: { idPago: idPago },
                     dataType: 'json',
                     success: function(response) {
+                        const ajaxEndTime = performance.now();
+                        console.log(`[${new Date().toISOString()}] Request AJAX completado en ${Math.round(ajaxEndTime - ajaxStartTime)}ms`);
+                        console.log(`[${new Date().toISOString()}] Tiempo total desde click: ${Math.round(ajaxEndTime - startTime)}ms`);
+                        
                         // NUEVO: Cerrar el loader
                         Swal.close();
                         
@@ -2347,7 +2360,10 @@ function enviarPDFPorWhatsApp() {
                             });
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        const ajaxEndTime = performance.now();
+                        console.error(`[${new Date().toISOString()}] Error en request AJAX después de ${Math.round(ajaxEndTime - ajaxStartTime)}ms:`, error);
+                        
                         // NUEVO: Cerrar el loader en caso de error
                         Swal.close();
                         
@@ -2358,6 +2374,8 @@ function enviarPDFPorWhatsApp() {
                         });
                     }
                 });
+            } else {
+                console.log(`[${new Date().toISOString()}] Usuario canceló la aprobación`);
             }
         });
     }

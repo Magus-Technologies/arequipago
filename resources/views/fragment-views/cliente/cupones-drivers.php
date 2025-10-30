@@ -278,6 +278,88 @@
             left: 10px;
             z-index: 10;
         }
+
+        /* Estilos para filtros de departamento */
+        .departamentos-badges-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 15px 0;
+        }
+
+        .departamento-badge-item {
+            position: relative;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .departamento-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .departamento-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .departamento-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
+            border-color: #28a745;
+        }
+
+        .departamento-input:checked + .departamento-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-color: #28a745;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .departamento-badge i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        /* Badge de departamento en tarjetas de cupones */
+        .cupon-departamento-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-nacional {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        }
+
+        .badge-regional {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
     </style>
 </head>
 
@@ -745,7 +827,7 @@
 
         </div>
 
-        <!-- Vista de Cupones (sin cambios) -->
+        <!-- Vista de Cupones -->
         <div v-if="vistaActual === 'cupones'">
             <!-- Header Simple de Cupones -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -758,6 +840,54 @@
                 <button class="btn btn-outline-primary" @click="regresarVistaPrincipal">
                     <i class="bi bi-arrow-left me-2"></i>Regresar
                 </button>
+            </div>
+
+            <!-- Filtros de Departamento -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3">
+                        <i class="bi bi-funnel me-2"></i>Filtrar por Departamento
+                    </h6>
+                    
+                    <!-- Loading State -->
+                    <div v-if="cargandoDepartamentos" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                        <span class="ms-2 text-muted">Cargando departamentos...</span>
+                    </div>
+
+                    <!-- Badges de Departamento -->
+                    <div v-else class="departamentos-badges-container">
+                        <!-- Badge "Todos" -->
+                        <label class="departamento-badge-item">
+                            <input type="radio" 
+                                   class="departamento-input" 
+                                   name="departamento" 
+                                   value="" 
+                                   v-model="departamentoSeleccionado"
+                                   @change="filtrarCupones">
+                            <span class="departamento-badge">
+                                <i class="bi bi-globe"></i>
+                                Todos
+                            </span>
+                        </label>
+
+                        <!-- Badges dinámicos de departamentos -->
+                        <label v-for="depto in departamentosHabilitados" 
+                               :key="depto.iddepast" 
+                               class="departamento-badge-item">
+                            <input type="radio" 
+                                   class="departamento-input" 
+                                   name="departamento" 
+                                   :value="depto.iddepast" 
+                                   v-model="departamentoSeleccionado"
+                                   @change="filtrarCupones">
+                            <span class="departamento-badge">
+                                <i class="bi bi-map-marker-alt"></i>
+                                {{ depto.nombre }}
+                            </span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Loading State -->
@@ -781,15 +911,34 @@
                 </div>
             </div>
 
+            <!-- Empty State - Sin cupones en departamento seleccionado -->
+            <div v-if="!cargandoCupones && cupones.length > 0 && cuponesFiltrados.length === 0" class="text-center py-5">
+                <div class="card shadow-sm mx-auto" style="max-width: 500px;">
+                    <div class="card-body py-5">
+                        <i class="bi bi-search display-1 text-muted mb-4"></i>
+                        <h3 class="text-muted mb-3">No hay cupones en este departamento</h3>
+                        <p class="text-muted mb-4">Intenta seleccionar otro departamento o crea un nuevo cupón.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Lista de Cupones -->
-            <div v-if="!cargandoCupones && cupones.length > 0" class="row g-4">
-                <div v-for="cupon in cupones" :key="cupon.id" class="col-lg-4 col-md-6">
+            <div v-if="!cargandoCupones && cuponesFiltrados.length > 0" class="row g-4">
+                <div v-for="cupon in cuponesFiltrados" :key="cupon.id" class="col-lg-4 col-md-6">
                     <div class="card cupon-card h-100 shadow-sm position-relative">
                         <!-- Estado del cupón -->
                         <span class="cupon-estado"
                             :class="cupon.activo ? 'bg-success text-white' : 'bg-danger text-white'">
                             <i class="bi" :class="cupon.activo ? 'bi-check-circle' : 'bi-x-circle'"></i>
                             {{ cupon.activo ? 'Activo' : 'Inactivo' }}
+                        </span>
+
+                        <!-- Badge de Departamento -->
+                        <span class="cupon-departamento-badge"
+                            :class="cupon.departamento_id ? 'badge-regional' : 'badge-nacional'">
+                            <i class="bi" :class="cupon.departamento_id ? 'bi-geo-alt-fill' : 'bi-globe'"></i>
+                            <span v-if="cupon.departamento_id && cupon.departamento">{{ cupon.departamento.nombre }}</span>
+                            <span v-else>Nacional</span>
                         </span>
 
                         <!-- Banner -->
@@ -915,6 +1064,26 @@
                                                 <textarea class="form-control" rows="3" name="descripcion"
                                                     v-model="formData.descripcion"
                                                     placeholder="Describe los beneficios del cupón..."></textarea>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-geo-alt me-1"></i>Departamento
+                                                </label>
+                                                <select class="form-select" name="departamento_id"
+                                                    v-model="formData.departamento_id">
+                                                    <option value="">Nacional (Todos los departamentos)</option>
+                                                    <option v-for="depto in departamentosHabilitados" 
+                                                            :key="depto.iddepast" 
+                                                            :value="depto.iddepast">
+                                                        {{ depto.nombre }}
+                                                    </option>
+                                                </select>
+                                                <small class="form-text text-muted">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Selecciona "Nacional" para que el cupón esté disponible en todos los departamentos, 
+                                                    o elige un departamento específico para limitar su alcance.
+                                                </small>
                                             </div>
 
                                             <div class="row g-3">
@@ -1218,6 +1387,11 @@
                         usuariosCupon: [],
                         cargandoUsuariosCupon: false,
 
+                        // DEPARTAMENTOS
+                        departamentosHabilitados: [],
+                        cargandoDepartamentos: false,
+                        departamentoSeleccionado: '', // '' = todos
+
                         // FORMULARIO
                         bannerPreview: null,
                         creandoCupon: false,
@@ -1234,7 +1408,8 @@
                             fechaFin: '',
                             limitePorConductor: '',
                             limiteTotal: '',
-                            activo: true
+                            activo: true,
+                            departamento_id: '' // '' = nacional, ID = específico
                         },
                         errores: {}
                     }
@@ -1253,10 +1428,21 @@
                     // TOTAL DE USUARIOS SELECCIONADOS
                     totalUsuariosSeleccionados: function () {
                         return this.conductoresSeleccionados.length + this.clientesSeleccionados.length;
+                    },
+
+                    // CUPONES FILTRADOS POR DEPARTAMENTO
+                    cuponesFiltrados: function () {
+                        if (!this.departamentoSeleccionado) {
+                            return this.cupones;
+                        }
+                        return this.cupones.filter(cupon => {
+                            return cupon.departamento_id == this.departamentoSeleccionado;
+                        });
                     }
                 },
                 mounted: function () {
                     this.cargarConductores();
+                    this.cargarDepartamentosHabilitados();
                     this.modal = new bootstrap.Modal(document.getElementById('modalCrearCupon'));
                     this.modalUsuarios = new bootstrap.Modal(document.getElementById('modalUsuariosCupon'));
                     this.inicializarFechas();
@@ -1578,6 +1764,30 @@
                             });
                     },
 
+                    cargarDepartamentosHabilitados: function () {
+                        var self = this;
+                        self.cargandoDepartamentos = true;
+                        fetch(_URL + '/ajs/cupones/departamentos-habilitados')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.error) {
+                                    throw new Error(data.error);
+                                }
+                                // La respuesta tiene estructura {success: true, data: [...]}
+                                self.departamentosHabilitados = data.data || data;
+                                self.cargandoDepartamentos = false;
+                            })
+                            .catch(error => {
+                                console.error('Error al cargar departamentos:', error);
+                                self.cargandoDepartamentos = false;
+                            });
+                    },
+
+                    filtrarCupones: function () {
+                        // El filtrado se hace automáticamente a través del computed property cuponesFiltrados
+                        // Este método existe para ser llamado desde el template cuando cambia el departamento
+                    },
+
                     verUsuariosCupon: function (idCupon) {
                         var self = this;
                         self.cargandoUsuariosCupon = true;
@@ -1610,6 +1820,29 @@
                         this.modal.show();
                     },
 
+                    editarCupon: function(cupon) {
+                        this.modoEdicion = true;
+                        this.cuponEditando = cupon;
+                        this.formData = {
+                            titulo: cupon.titulo,
+                            descripcion: cupon.descripcion || '',
+                            tipoDescuento: cupon.tipo_descuento,
+                            valor: cupon.valor,
+                            fechaInicio: cupon.fecha_inicio,
+                            fechaFin: cupon.fecha_fin,
+                            limitePorConductor: cupon.limite_por_conductor || '',
+                            limiteTotal: cupon.limite_total || '',
+                            activo: cupon.activo == 1,
+                            departamento_id: cupon.departamento_id || ''
+                        };
+                        
+                        if (cupon.imagen_banner) {
+                            this.bannerPreview = '/arequipago/public/' + cupon.imagen_banner;
+                        }
+                        
+                        this.modal.show();
+                    },
+
                     limpiarFormulario: function() {
                         this.modoEdicion = false;
                         this.cuponEditando = null;
@@ -1622,7 +1855,8 @@
                             fechaFin: '',
                             limitePorConductor: '',
                             limiteTotal: '',
-                            activo: true
+                            activo: true,
+                            departamento_id: ''
                         };
                         this.errores = {};
                         this.bannerPreview = null;
@@ -1737,6 +1971,7 @@
                         formData.set('limitePorConductor', this.formData.limitePorConductor);
                         formData.set('limiteTotal', this.formData.limiteTotal);
                         formData.set('activo', this.formData.activo ? '1' : '0');
+                        formData.set('departamento_id', this.formData.departamento_id);
 
                         // Agregar conductores y clientes
                         var conductoresIds = this.conductoresSeleccionados.map(c => c.id_conductor);

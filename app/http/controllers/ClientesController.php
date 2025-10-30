@@ -786,6 +786,68 @@ class ClientesController extends Controller
             }
         }
 
+        /**
+         * Obtiene la ruta del comprobante de pago de un cliente y genera enlace compartible
+         */
+        public function obtenerComprobantePago() {
+            $clienteModel = new Cliente();
+            
+            if (!isset($_POST['cliente_id']) || empty($_POST['cliente_id'])) {
+                echo json_encode(['success' => false, 'message' => 'ID de cliente no proporcionado']);
+                return;
+            }
+            
+            $clienteId = intval($_POST['cliente_id']);
+            
+            // Obtener el pago del cliente
+            $pago = $clienteModel->obtenerPagoPorCliente($clienteId);
+            
+            if (!$pago) {
+                echo json_encode(['success' => false, 'message' => 'No se encontró un pago registrado para este cliente']);
+                return;
+            }
+            
+            // Construir la ruta del PDF original
+            $pdfPath = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR . "nota_venta_cliente_" . $pago['id'] . ".pdf";
+            
+            // Verificar si el archivo existe
+            if (!file_exists($pdfPath)) {
+                echo json_encode(['success' => false, 'message' => 'El archivo del comprobante no existe']);
+                return;
+            }
+            
+            // Crear carpeta compartir si no existe
+            $compartirDir = "files" . DIRECTORY_SEPARATOR . "compartir" . DIRECTORY_SEPARATOR;
+            if (!file_exists($compartirDir)) {
+                mkdir($compartirDir, 0777, true);
+            }
+            
+            // Generar nombre único para el archivo compartible
+            $nombreCompartible = "comprobante_" . uniqid() . ".pdf";
+            $rutaCompartible = $compartirDir . $nombreCompartible;
+            
+            // Copiar el PDF a la carpeta compartir
+            if (copy($pdfPath, $rutaCompartible)) {
+                // Obtener la URL base del servidor
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+                $host = $_SERVER['HTTP_HOST'];
+                $baseUrl = $protocol . "://" . $host;
+                
+                // Construir URL completa del PDF
+                $pdfUrl = $baseUrl . "/arequipago/" . str_replace(DIRECTORY_SEPARATOR, "/", $rutaCompartible);
+                
+                echo json_encode([
+                    'success' => true,
+                    'pdf_path' => $pdfPath,
+                    'pdf_url' => $pdfUrl,
+                    'pdf_compartible' => $rutaCompartible,
+                    'pago_id' => $pago['id']
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Error al crear copia compartible del comprobante']);
+            }
+        }
+
         private function generarBoletaPago($pagoId, $clienteId) {
             try {
                 $clienteModel = new Cliente();

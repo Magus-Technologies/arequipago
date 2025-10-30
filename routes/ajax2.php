@@ -94,3 +94,4 @@ Route::post("/ajs/getroles","ConsultasController@getRoles");
 Route::post("/ajs/add/users","ConsultasController@saveUser");
 
 
+Route::post('/ajs/aprobarPagoPendiente', 'PagosController@aprobarPagoPendiente');

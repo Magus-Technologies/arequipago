@@ -1,0 +1,252 @@
+{
+  "version": "1.0",
+  "ultima_actualizacion": "2025-10-23T22:53:19",
+  "plantillas": [
+    {
+      "id": 1,
+      "nombre": "Contrato de Llantas",
+      "descripcion": "Contrato estándar para financiamiento de llantas",
+      "categoria": "Llantas",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_llantas.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Contrato de Aceites",
+      "descripcion": "Contrato estándar para financiamiento de aceites",
+      "categoria": "Aceites",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_aceites.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "nombre": "Contrato de Baterías",
+      "descripcion": "Contrato estándar para financiamiento de baterías",
+      "categoria": "Baterías",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_baterias.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "nombre": "Contrato de Celular",
+      "descripcion": "Contrato estándar para financiamiento de celulares",
+      "categoria": "Celular",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_celular.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "nombre": "Contrato Chip Línea Corporativa",
+      "descripcion": "Contrato para financiamiento de chips y líneas corporativas",
+      "categoria": "Chip (Linea corporativa)",
+      "grupo_financiamiento": 35,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_chipLinea.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "nombre": "Contrato Vehicular - Motos",
+      "descripcion": "Contrato para financiamiento de motocicletas",
+      "categoria": "Vehiculo",
+      "grupo_financiamiento": 22,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_Motos.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "nombre": "Contrato Vehicular - MotosYa",
+      "descripcion": "Contrato para financiamiento de motocicletas MotosYa",
+      "categoria": "Vehiculo",
+      "grupo_financiamiento": 33,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_MotosYa.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "nombre": "Contrato Vehicular - CrediGo Autos",
+      "descripcion": "Contrato para financiamiento de vehículos CrediGo Autos",
+      "categoria": "Vehiculo",
+      "grupo_financiamiento": 19,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde credigo_autos.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "nombre": "dfbgfdbfgdbfd",
+      "descripcion": "",
+      "categoria": null,
+      "grupo_financiamiento": "44",
+      "activo": true,
+      "html_template": "<h1 style=\"text-align: center; \"><b><u>CONTRATO MANTENIMIENTO INCAMOTORS&nbsp;</u></b></h1><pre style=\"text-align: left;\">Siendo las {{hora_actual}} hrs. del día  {{fecha_actual}} con domicilio en URB. LA ESPERANZA MZA. L LOTE. 15 URB. ADEPA\nAREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE Y RIVERO hace entrega al conductor {{nombre_cliente}}  Identificado con {{dni}} N° licencia {{num_unidad}} </pre><pre style=\"text-align: left;\">Se hace entrega al conductor la cantidad de 2 Producto Falso prueba (Estado nuevo), con\nlas siguientes características:\nMARCA: Producto Falso prueba\nPRECIO TOTAL: 0 240.00\nBeneficio de cortesía: Por la realización del mantenimiento, el conductor recibe sin costo\nadicional:\nFiltro de aceite nuevo\nEscaneo del vehículo\nEl cual será pagado en: N° 3 CUOTAS\nCuota inicial de 0 72.00, comprometiéndose a pagar en 3 cuotas semanalmente de 0 56.00.\n</pre><pre style=\"text-align: left;\">\n<b><u></u></b></pre>",
+      "css_personalizado": "",
+      "variables_requeridas": [
+        "hora_actual",
+        "fecha_actual",
+        "nombre_cliente",
+        "dni",
+        "num_unidad"
+      ],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-10-23T22:51:17",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-10-23T22:53:19",
+        "version": "1.1",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-10-23T22:51:17",
+            "cambios": "Creación inicial",
+            "usuario": "sistema"
+          },
+          {
+            "version": "1.1",
+            "fecha": "2025-10-23T22:53:19",
+            "cambios": "Actualización desde el editor",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CONTRATO MANTENIMIENTO INCAMOTORS</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        font-size: 10.5pt;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+        color: #000000;
+      }
+      .page {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+      .header {
+        text-align: center;
+        font-weight: bold;
+        font-size: 11.5pt;
+        margin-bottom: 25px;
+        text-transform: uppercase;
+        text-decoration: underline;
+      }
+      .company-info {
+        text-align: justify;
+        margin-bottom: 25px;
+        font-size: 10pt;
+        line-height: 1.6;
+      }
+      .section {
+        margin-bottom: 20px;
+        text-align: justify;
+        line-height: 1.6;
+      }
+      .section-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        margin-top: 15px;
+        text-transform: uppercase;
+        font-size: 10.5pt;
+      }
+      .clause {
+        margin-bottom: 20px;
+        text-align: justify;
+        line-height: 1.6;
+      }
+      .clause p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+      .bold {
+        font-weight: bold;
+      }
+      .underline {
+        text-decoration: underline;
+      }
+      .indent {
+        margin-left: 40px;
+      }
+      .bullet {
+        margin-left: 20px;
+        margin-bottom: 15px;
+        line-height: 1.8;
+        text-align: justify;
+      }
+      .signature-section {
+        margin-top: 60px;
+        page-break-inside: avoid;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      .signature-line {
+        border-bottom: 1px solid #000;
+        margin: 50px 20px 10px 20px;
+        height: 60px;
+      }
+      .field {
+        display: inline-block;
+        border-bottom: 1px dotted #000;
+        min-width: 150px;
+        padding: 0 5px;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        .page {
+          box-shadow: none;
+          margin: 0;
+        }
+        .page-break {
+          page-break-before: always;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- PRIMERA PÁGINA -->
+    <div class="page">
+      <div class="header">CONTRATO MANTENIMIENTO INCAMOTORS</div>
+
+      <div class="company-info">
+        <p>
+          Siendo las <span id="hora"></span> hrs. del día
+          <span id="dia"></span> de <span id="mes"></span>, Año
+          <span id="anio"></span>; La empresa
+          <strong>Arequipa Go E.I.R.L</strong> con
+          <strong>RUC N°</strong> 20612112763 con domicilio en URB. LA ESPERANZA
+          MZA. L LOTE. 15 URB. ADEPA AREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE
+          Y RIVERO hace entrega al <span id="textoRol"></span>
+          <strong><span id="conductor"></span></strong
+          ><span class="bold"
+            >, Identificado con N° DNI <span id="nro_documento"></span></span
+          ><span id="bloqueLicencia"></span>.
+        </p>
+        <p>
+          Se hace entrega al <span id="textoRol2"></span> la cantidad de
+          <strong><span id="cantidad"></span></strong>
+          <strong><span id="nombreProducto"></span></strong> (Estado nuevo), con
+          las siguientes características:
+          <br />
+
+          <ul>
+            <li> 
+              <span class="bold">MARCA:</span> <span id="marca"></span>
+              
+            </li>
+            <!-- <li>
+              <span class="bold">Precio del Producto:</span>
+              <span id="moneda"></span> <span id="precio_producto"></span>
+
+            </li> -->
+            <li>
+              <span class="bold">PRECIO TOTAL:</span>
+              <span id="moneda_total"></span> <span id="precio_total"></span>
+
+            </li>
+          </ul>
+      
+        </p>
+
+        <p>
+          <strong>Beneficio de cortesía:</strong>
+          Por la realización del mantenimiento, el
+          <span id="textoRol3"></span> recibe sin costo adicional:
+        </p>
+        <ul>
+          <li><strong>Filtro de aceite nuevo</strong></li>
+          <li><strong>Escaneo del vehículo</strong></li>
+        </ul>
+
+        <p>
+          <strong>El cual será pagado en:</strong>
+          N° <span id="n_cuotas"></span> CUOTAS
+        </p>
+
+        <p>
+          Cuota inicial de <span id="moneda2"></span>
+          <span id="monto_inicial"></span>, comprometiéndose a pagar en
+          <span id="nro_cuotas"></span> cuotas <span id="frecuencia"></span> de
+          <span id="moneda3"></span> <span id="monto_cuota"></span>.
+        </p>
+
+        <p>
+          Los pagos serán realizados <span id="frecuencia2"></span>, empezando:
+        </p>
+
+        <div
+          id="cronogramaCuotas"
+          style="margin-left: 20px; margin-bottom: 15px"
+        >
+          <!-- Las cuotas se cargarán dinámicamente aquí -->
+        </div>
+
+        <p>
+          El receptor declara conocer y asume la responsabilidad del pago
+          establecido en las fechas pactadas. El <span id="textoRol4"></span> es
+          el único responsable y tendrá que hacer la cancelación total de lo
+          adquirido.
+        </p>
+      </div>
+    </div>
+
+    <!-- SEGUNDA PÁGINA: CLÁUSULA DE MOROSIDAD -->
+    <div class="page page-break">
+      <div style="text-align: center; margin-bottom: 40px">
+        <h2 style="font-size: 24pt; font-weight: bold; margin-bottom: 20px">
+          IMPORTANTE:
+        </h2>
+        <h5 style="font-size: 13pt; font-weight: bold">
+          CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD
+        </h5>
+      </div>
+
+      <div
+        style="
+          text-align: justify;
+          font-size: 12pt;
+          line-height: 1.8;
+          margin: 15px 0;
+        "
+      >
+        <p style="margin-bottom: 20px">
+          Si cancelan después de la fecha pactada se le cobrará una mora diaria
+          de <strong>S/ 10.00 soles</strong>.
+        </p>
+
+        <p style="margin-bottom: 20px">
+          En caso de que <strong>EL CONDUCTOR</strong> incurra en morosidad
+          respecto a las obligaciones económicas adquiridas con
+          <strong>LA EMPRESA AREQUIPA GO E.I.R.L</strong>,
+          <strong>EL CONDUCTOR</strong> autoriza expresamente a la empresa a
+          realizar un descuento automático de la cantidad adeudada de su bono
+          semanal, con el fin de saldar el monto correspondiente.
+        </p>
+
+        <p style="margin-bottom: 20px">
+          Dicho descuento se efectuará sin necesidad de notificación adicional,
+          y será aplicado a la mayor brevedad posible para regularizar la deuda.
+        </p>
+
+        <p style="margin-bottom: 20px">
+          <strong>EL CONDUCTOR</strong> reconoce que esta autorización se otorga
+          como parte de las condiciones contractuales y que, en caso de no
+          contar con fondos suficientes, la empresa podrá tomar las medidas
+          legales necesarias para recuperar la deuda.
+        </p>
+      </div>
+
+      <!-- FIRMAS AL FINAL DE LA SEGUNDA PÁGINA -->
+      <div class="signature-section">
+        <table style="border: none">
+          <tr>
+            <td
+              style="
+                width: 50%;
+                text-align: center;
+                border: none;
+                vertical-align: top;
+              "
+            >
+              <div class="signature-line"></div>
+              <p style="margin-bottom: 20px">________________________________________</p> 
+              <br>
+              <p>Nombres y Apellidos: <span id="nombre_firma"></span></p>
+              <p>DNI: <span id="dni_firma"></span></p>
+            </td>
+            <td
+            style="
+                width: 50%;
+                text-align: center;
+                border: none;
+                vertical-align: top;
+                "
+            >
+            <p >____________________________________</p>
+            <br>
+            <div class="signature-line"></div>
+              <p>La Empresa</p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

@@ -175,7 +175,7 @@ function selectPlan(idPlan) {
           .removeEventListener("input", calcularFinanciamiento); // NUEVO: Remover evento para que no llame a calcularFinanciamiento
 
         // Limpiar los valores anteriores antes de establecer nuevos datos
-        $("#monedaSoles").prop("checked", false); // Desmarcar moneda soles
+        $("#monedaSoles").prop("checked", true); // Marcar moneda soles por defecto
         $("#monedaDolares").prop("checked", false); // Desmarcar moneda dólares
         $("#cuotaInicial").val(""); // Limpiar cuota inicial
         $("#valorCuota").val(""); // Limpiar valor cuota
@@ -907,7 +907,7 @@ function seleccionarVariante(index) {
     .removeEventListener("input", calcularFinanciamiento);
 
   // Limpiar valores anteriores
-  $("#monedaSoles").prop("checked", false);
+  $("#monedaSoles").prop("checked", true);
   $("#monedaDolares").prop("checked", false);
   $("#cuotaInicial").val("");
   $("#valorCuota").val("");
@@ -946,7 +946,7 @@ function seleccionarVariante(index) {
 
   $("#fechaFin").val("");
   // Limpiar valores anteriores
-  $("#monedaSoles").prop("checked", false);
+  $("#monedaSoles").prop("checked", true);
   $("#monedaDolares").prop("checked", false);
   $("#cuotaInicial").val("");
   $("#valorCuota").val("");
@@ -2501,6 +2501,13 @@ function recalcularPorCambioFechaInicio() {
     return;
   }
 
+  // 🔹 NUEVO: Para plan editable/personalizado (ID 42)
+  if (idPlan === 42) {
+    console.log("🎨 PLAN EDITABLE - Recalculando cronograma dinámico");
+    calcularCronogramaDinamico();
+    return;
+  }
+
   // Para cualquier otro plan, usar cálculo dinámico por defecto
   console.log("📊 PLAN GENERAL - Recalculando cronograma dinámico");
   calcularCronogramaDinamico();
@@ -2985,6 +2992,24 @@ function habilitarModoPersonalizado() {
     );
   }
 
+  // 🔹 NUEVO: Agregar event listeners para recalcular cronograma automáticamente
+  const camposParaRecalcular = ['cuotas', 'frecuenciaPago', 'fechaInicio', 'fechaFin'];
+  
+  camposParaRecalcular.forEach(campoId => {
+    const elemento = document.getElementById(campoId);
+    if (elemento) {
+      // Remover listeners anteriores para evitar duplicados
+      elemento.removeEventListener('change', recalcularCronogramaPlanEditable);
+      elemento.removeEventListener('input', recalcularCronogramaPlanEditable);
+      
+      // Agregar nuevo listener
+      const evento = (campoId === 'cuotas') ? 'input' : 'change';
+      elemento.addEventListener(evento, recalcularCronogramaPlanEditable);
+      
+      console.log(`✅ Event listener agregado a ${campoId} (evento: ${evento})`);
+    }
+  });
+
   // NUEVO: Disparar cálculo automático si hay datos suficientes
   setTimeout(() => {
     console.log("🔄 Intentando calcular financiamiento automáticamente...");
@@ -3025,4 +3050,29 @@ function habilitarModoPersonalizado() {
       );
     }
   }, 500); // Esperar 500ms para que los campos se actualicen completamente
+}
+
+// 🔹 NUEVA FUNCIÓN: Recalcular cronograma para plan editable
+function recalcularCronogramaPlanEditable() {
+  console.log("🎨 Plan editable - Campo modificado, recalculando cronograma...");
+  
+  // Verificar que tengamos los datos mínimos
+  const cuotas = document.getElementById("cuotas").value;
+  const fechaInicio = document.getElementById("fechaInicio").value;
+  const frecuencia = document.getElementById("frecuenciaPago").value;
+  
+  if (cuotas && fechaInicio && frecuencia) {
+    console.log("✅ Datos suficientes para generar cronograma");
+    
+    // Pequeño delay para asegurar que el valor se actualizó
+    setTimeout(() => {
+      calcularCronogramaDinamico();
+    }, 100);
+  } else {
+    console.log("⚠️ Faltan datos para generar cronograma:", {
+      cuotas: cuotas ? "✓" : "✗",
+      fechaInicio: fechaInicio ? "✓" : "✗",
+      frecuencia: frecuencia ? "✓" : "✗"
+    });
+  }
 }

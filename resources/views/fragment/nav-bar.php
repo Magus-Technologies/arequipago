@@ -252,7 +252,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             <li class="nav-item">
                                 <a class="nav-link" onclick=""href="/arequipago/vehiculos">
                                     <i class="fas fa-piggy-bank"></i>
-                                    VEHICULOS
+                                    CARROS Y MOTOS
                                 </a>
                             </li>
 

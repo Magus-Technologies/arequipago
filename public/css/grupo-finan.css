@@ -210,8 +210,8 @@
         /* Asegura que el encabezado de "Acciones" quede sobre las celdas */
         .table thead th:last-child {
             z-index: 5 !important; /* Aumentado y añadido !important para asegurar mayor prioridad */
-            background-color: #fcf34b !important; /* Color amarillo para consistencia */
-            color: #000 !important; /* Texto negro */
+            background-color: #000 !important; /* Color amarillo para consistencia */
+            color: #fff !important; /* Texto negro */
         }
 
         /* Fijar el encabezado al hacer scroll vertical */
@@ -231,8 +231,8 @@
 
         /* Asegura que el encabezado de "Acciones" en DataTables tenga fondo amarillo */
         table.dataTable thead th:last-child {
-            background-color: #fcf34b !important; /* Color amarillo */
-            color: #000 !important;
+            background-color: #000 !important; /* Color amarillo */
+            color: #fff !important;
             z-index: 5 !important; /* Mayor z-index para estar encima de todo */
         }
 

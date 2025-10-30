@@ -1,81 +1,79 @@
 <?php
 
-    class Financiamiento
+class Financiamiento
+{
+    private $id_cliente;
+    private $codigo_asociado;
+    private $grupo_financiamiento;
+    private $estado;
+    private $monto_total;
+    private $cuotas;
+    private $fecha_inicio;
+    private $fecha_fin;
+    private $conectar;
+
+    public function __construct()
     {
-        private $id_cliente;
-        private $codigo_asociado;
-        private $grupo_financiamiento;
-        private $estado;
-        private $monto_total;
-        private $cuotas;
-        private $fecha_inicio;
-        private $fecha_fin;
-        private $conectar;
+        $this->conectar = (new Conexion())->getConexion();
+    }
 
-        public function __construct()
-        {
-            $this->conectar = (new Conexion())->getConexion();
-        }
+    public function guardarFinanciamiento($datos)
+    {
+        // Limpiar el valor de monto_total y monto_inscrip eliminando prefijos no numéricos
+        $datos['monto_total'] = preg_replace('/[^\d.]/', '', $datos['monto_total']);
 
-        public function guardarFinanciamiento($datos) {
+        // Corregir el posible punto inicial erróneo
+        $datos['monto_total'] = ltrim($datos['monto_total'], '.');
 
-           
-            // Limpiar el valor de monto_total y monto_inscrip eliminando prefijos no numéricos
-            $datos['monto_total'] = preg_replace('/[^\d.]/', '', $datos['monto_total']);
-            
-            // Corregir el posible punto inicial erróneo
-            $datos['monto_total'] = ltrim($datos['monto_total'], '.');
-            
-            // Si monto_inscrip está vacío, lo convertimos a NULL
-            $datos['monto_inscrip'] = $datos['monto_inscrip'] !== '' ? $datos['monto_inscrip'] : null;
+        // Si monto_inscrip está vacío, lo convertimos a NULL
+        $datos['monto_inscrip'] = $datos['monto_inscrip'] !== '' ? $datos['monto_inscrip'] : null;
 
-            $datos['tasa'] = $datos['tasa'] !== '' ? $datos['tasa'] : null;
-            
-            // Si id_coti no está en los datos, asignamos NULL
-            $idCoti = isset($datos['id_coti']) && $datos['id_coti'] !== '' ? $datos['id_coti'] : null;
-            
-            // Si second_product no está en los datos, asignamos NULL
-            $secondProduct = isset($datos['second_product']) && $datos['second_product'] !== '' ? $datos['second_product'] : null;
-            
-            // Convertir monto_sin_interes a número y asegurar que no sea NULL
-            $montoSinInteres = isset($datos['monto_sin_intereses']) && is_numeric($datos['monto_sin_intereses']) 
-                ? (float)$datos['monto_sin_intereses'] 
-                : null;
-            
-            $montoRecalculado = isset($datos['monto_recalculado']) && $datos['monto_recalculado'] !== '' 
-                ? $datos['monto_recalculado'] 
-                : null;
-            
-            // Obtener fecha de creación actual si no se proporciona
-            $fechaCreacion = isset($datos['fecha_creacion']) ? $datos['fecha_creacion'] : date('Y-m-d H:i:s');
-            
-            $estado = isset($datos['estado']) && $datos['estado'] !== '' 
-                ? $datos['estado'] 
-                : 'En progreso';
-            
-            // NUEVO: Manejar id_cliente que puede ser NULL
-            $idCliente = isset($datos['id_cliente']) && $datos['id_cliente'] !== '' ? $datos['id_cliente'] : null;
-            
-            // MODIFICADO: id_conductor puede ser NULL si hay id_cliente
-            $idConductor = isset($datos['id_conductor']) && $datos['id_conductor'] !== '' ? $datos['id_conductor'] : null;
-            
-            // 💥 Modificado: Obtener el usuario_id si existe en los datos
-            $usuario_id = isset($datos['usuario_id']) ? $datos['usuario_id'] : null;
-            
-            // 💥 Modificado: Obtener el valor de aprobado con valor por defecto 1
-            $aprobado = isset($datos['aprobado']) ? $datos['aprobado'] : 1;
-            
-            // Obtener valor de cobrar mora
-            $cobrarMora = isset($datos['cobrar_mora']) ? $datos['cobrar_mora'] : 1;
+        $datos['tasa'] = $datos['tasa'] !== '' ? $datos['tasa'] : null;
 
-            // NUEVO: Obtener nombre personalizado
-$nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_personalizado'] !== '' 
-    ? $datos['nombre_personalizado'] 
-    : null;
+        // Si id_coti no está en los datos, asignamos NULL
+        $idCoti = isset($datos['id_coti']) && $datos['id_coti'] !== '' ? $datos['id_coti'] : null;
 
-            
-               // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id y aprobado
-            $query = "INSERT INTO financiamiento (
+        // Si second_product no está en los datos, asignamos NULL
+        $secondProduct = isset($datos['second_product']) && $datos['second_product'] !== '' ? $datos['second_product'] : null;
+
+        // Convertir monto_sin_interes a número y asegurar que no sea NULL
+        $montoSinInteres = isset($datos['monto_sin_intereses']) && is_numeric($datos['monto_sin_intereses'])
+            ? (float) $datos['monto_sin_intereses']
+            : null;
+
+        $montoRecalculado = isset($datos['monto_recalculado']) && $datos['monto_recalculado'] !== ''
+            ? $datos['monto_recalculado']
+            : null;
+
+        // Obtener fecha de creación actual si no se proporciona
+        $fechaCreacion = isset($datos['fecha_creacion']) ? $datos['fecha_creacion'] : date('Y-m-d H:i:s');
+
+        $estado = isset($datos['estado']) && $datos['estado'] !== ''
+            ? $datos['estado']
+            : 'En progreso';
+
+        // NUEVO: Manejar id_cliente que puede ser NULL
+        $idCliente = isset($datos['id_cliente']) && $datos['id_cliente'] !== '' ? $datos['id_cliente'] : null;
+
+        // MODIFICADO: id_conductor puede ser NULL si hay id_cliente
+        $idConductor = isset($datos['id_conductor']) && $datos['id_conductor'] !== '' ? $datos['id_conductor'] : null;
+
+        // 💥 Modificado: Obtener el usuario_id si existe en los datos
+        $usuario_id = isset($datos['usuario_id']) ? $datos['usuario_id'] : null;
+
+        // 💥 Modificado: Obtener el valor de aprobado con valor por defecto 1
+        $aprobado = isset($datos['aprobado']) ? $datos['aprobado'] : 1;
+
+        // Obtener valor de cobrar mora
+        $cobrarMora = isset($datos['cobrar_mora']) ? $datos['cobrar_mora'] : 1;
+
+        // NUEVO: Obtener nombre personalizado
+        $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_personalizado'] !== ''
+            ? $datos['nombre_personalizado']
+            : null;
+
+        // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id y aprobado
+        $query = 'INSERT INTO financiamiento (
                 id_conductor, 
                 id_cliente,
                 idproductosv2, 
@@ -101,65 +99,65 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 usuario_id,           -- 💥 Modificado: Campo añadido
                 aprobado,             -- 💥 Modificado: Campo añadido
             cobrar_mora           -- NUEVO: Campo para cobrar mora
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
 
-            $stmt = $this->conectar->prepare($query);
+        $stmt = $this->conectar->prepare($query);
 
-            if (!$stmt) {
-                die("Error al preparar la consulta: " . $this->conectar->error);
-            }
-
-            // 💥 Modificado: Actualizado bind_param para incluir usuario_id y aprobado
-            $stmt->bind_param(
-                'iiiiissddissssssdsdddiiis',
-                $idConductor,
-                $idCliente,
-                $datos['id_producto'],
-                $idCoti,
-                $datos['codigo_asociado'],
-                $datos['grupo_financiamiento'],
-                $nombrePersonalizado,       
-                $datos['cantidad_producto'],
-                $datos['monto_total'],
-                $datos['cuota_inicial'],
-                $datos['cuotas'],
-                $estado,
-                $datos['fecha_inicio'],
-                $datos['fecha_fin'],
-                $fechaCreacion,
-                $datos['frecuencia'],
-                $secondProduct,
-                $datos['monto_inscrip'],
-                $datos['tipo_moneda'],
-                $montoSinInteres,
-                $montoRecalculado,
-                $datos['tasa'],
-                $usuario_id,         
-                $aprobado,
-                $cobrarMora
-            );
-
-            $resultado = $stmt->execute();
-
-            if (!$resultado) {
-                die("Error al ejecutar la consulta: " . $stmt->error);
-            }
-
-            return $this->conectar->insert_id; // Devuelve el ID del nuevo financiamiento
+        if (!$stmt) {
+            die('Error al preparar la consulta: ' . $this->conectar->error);
         }
 
-            
+        // 💥 Modificado: Actualizado bind_param para incluir usuario_id y aprobado
+        // CORREGIDO: 25 tipos para 25 variables - moneda en posición 19 es 's' (string)
+        $stmt->bind_param(
+            'iiiiisidddisssssidsdddiii',
+            $idConductor,
+            $idCliente,
+            $datos['id_producto'],
+            $idCoti,
+            $datos['codigo_asociado'],
+            $datos['grupo_financiamiento'],
+            $nombrePersonalizado,
+            $datos['cantidad_producto'],
+            $datos['monto_total'],
+            $datos['cuota_inicial'],
+            $datos['cuotas'],
+            $estado,
+            $datos['fecha_inicio'],
+            $datos['fecha_fin'],
+            $fechaCreacion,
+            $datos['frecuencia'],
+            $secondProduct,
+            $datos['monto_inscrip'],
+            $datos['tipo_moneda'],
+            $montoSinInteres,
+            $montoRecalculado,
+            $datos['tasa'],
+            $usuario_id,
+            $aprobado,
+            $cobrarMora
+        );
+
+        $resultado = $stmt->execute();
+
+        if (!$resultado) {
+            die('Error al ejecutar la consulta: ' . $stmt->error);
+        }
+
+        return $this->conectar->insert_id;  // Devuelve el ID del nuevo financiamiento
+    }
+
     private function crearCuotas($id_financiamiento, $cantidad_cuotas, $valor_cuota, $fecha_inicio, $grupo_financiamiento = null)
     {
         $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento);
-        $estado = "Pendiente";  // Estado por defecto
+        $estado = 'Pendiente';  // Estado por defecto
 
         for ($i = 1; $i <= $cantidad_cuotas; $i++) {
             // Insertar cada cuota
-            $sql = "INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado)
-                    VALUES (?, ?, ?, ?, ?)";
+            $sql = 'INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado)
+                    VALUES (?, ?, ?, ?, ?)';
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("iiiss", $id_financiamiento, $i, $valor_cuota, $fecha_vencimiento, $estado);
+            $stmt->bind_param('iiiss', $id_financiamiento, $i, $valor_cuota, $fecha_vencimiento, $estado);
             $stmt->execute();
 
             // Incrementar fecha de vencimiento para la siguiente cuota
@@ -186,21 +184,21 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     {
         try {
             // Consulta para obtener el total de clientes filtrados
-            $sql = "SELECT COUNT(*) as total
+            $sql = 'SELECT COUNT(*) as total
                     FROM clientes c
                     LEFT JOIN financiamiento f ON c.id_cliente = f.id_cliente
-                    WHERE c.datos LIKE ? OR f.codigo_asociado LIKE ?";
+                    WHERE c.datos LIKE ? OR f.codigo_asociado LIKE ?';
 
             $stmt = $this->conectar->prepare($sql);
             $searchTermLike = "%$searchTerm%";
-            $stmt->bind_param("ss", $searchTermLike, $searchTermLike);
+            $stmt->bind_param('ss', $searchTermLike, $searchTermLike);
             $stmt->execute();
             $result = $stmt->get_result();
             $row = $result->fetch_assoc();
 
             return $row['total'];
         } catch (Exception $e) {
-            error_log("Error en Cliente::obtenerTotalClientes(): " . $e->getMessage());
+            error_log('Error en Cliente::obtenerTotalClientes(): ' . $e->getMessage());
             throw $e;
         }
     }
@@ -214,17 +212,17 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                         c.numUnidad 
                     FROM conductores c
                     WHERE c.id_conductor = ?";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_conductor);
+            $stmt->bind_param('i', $id_conductor);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $conductor = $result->fetch_assoc();
-            
+
             return $conductor ? $conductor : [];
         } catch (Exception $e) {
-            error_log("Error en Financiamiento::obtenerPorConductor(): " . $e->getMessage());
+            error_log('Error en Financiamiento::obtenerPorConductor(): ' . $e->getMessage());
             throw $e;
         }
     }
@@ -233,9 +231,9 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     {
         try {
             // $sql = "SELECT * FROM financiamiento WHERE id_cliente = ?";
-            $sql = "SELECT * FROM financiamiento WHERE id_cliente = ? AND estado_eliminado = 0";
+            $sql = 'SELECT * FROM financiamiento WHERE id_cliente = ? AND estado_eliminado = 0';
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_cliente);
+            $stmt->bind_param('i', $id_cliente);
             $stmt->execute();
             $result = $stmt->get_result();
             return $result->fetch_assoc();
@@ -244,20 +242,20 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         }
     }
 
-        
-    public function ObtenerFinanciamientoPorConductor ($id_conductor){
+    public function ObtenerFinanciamientoPorConductor($id_conductor)
+    {
         try {
             // $sql = "SELECT * FROM financiamiento WHERE id_conductor = ?";
-            $sql = "SELECT * FROM financiamiento WHERE id_conductor = ? AND estado_eliminado = 0";
+            $sql = 'SELECT * FROM financiamiento WHERE id_conductor = ? AND estado_eliminado = 0';
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_conductor);
+            $stmt->bind_param('i', $id_conductor);
             $stmt->execute();
             $result = $stmt->get_result();
-    
+
             return $result->fetch_assoc();
         } catch (Exception $e) {
             return ['error' => 'Error al obtener el financiamiento: ' . $e->getMessage()];
-        }     
+        }
     }
 
     public function buscarFinanciamientos($query)
@@ -292,7 +290,7 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
 
         // 🔄 Cambiamos a 8 parámetros ahora (antes eran 6)
         $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param('ssssssss', $query, $query, $query, $query, $query, $query, $query, $query); 
+        $stmt->bind_param('ssssssss', $query, $query, $query, $query, $query, $query, $query, $query);
         $stmt->execute();
 
         $result = $stmt->get_result();
@@ -306,7 +304,8 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         return $resultados;
     }
 
-    public function getFinanciamientoById($id) {
+    public function getFinanciamientoById($id)
+    {
         // ✅ MODIFICADO: Agregamos JOIN con usuarios para traer el nombre del usuario que registró
         $sql = "SELECT f.*,
                        CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro
@@ -326,34 +325,36 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
 
         // Verificamos si el resultado es null
         if ($result === null) {
-            return []; // Retornamos un array vacío si no se encuentra el financiamiento
+            return [];  // Retornamos un array vacío si no se encuentra el financiamiento
         }
 
         return $result;
     }
-    
-    public function getConductorById($id) {
-        $sql = "SELECT * FROM conductores WHERE id_conductor = ?";
+
+    public function getConductorById($id)
+    {
+        $sql = 'SELECT * FROM conductores WHERE id_conductor = ?';
         $stmt = $this->conectar->prepare($sql);
-        
+
         if (!$stmt) {
             die('Error al preparar la consulta conductor: ' . $this->conectar->error);
         }
-        
+
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_assoc();
-        
+
         // Verificamos si el resultado es null
         if ($result === null) {
-            return []; // Retornamos un array vacío si no se encuentra el conductor
+            return [];  // Retornamos un array vacío si no se encuentra el conductor
         }
-        
+
         return $result;
     }
-    
-    public function getDireccionCompleta($idConductor) {
-        $sql = "
+
+    public function getDireccionCompleta($idConductor)
+    {
+        $sql = '
             SELECT 
                 dc.direccion_detalle,
                 dep.nombre AS departamento,
@@ -364,52 +365,53 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             LEFT JOIN provincet prov ON dc.provincia = prov.idprovincet
             LEFT JOIN distritot dist ON dc.distrito = dist.iddistritot
             WHERE dc.id_conductor = ?
-        ";
+        ';
         $stmt = $this->conectar->prepare($sql);
-        
+
         if (!$stmt) {
             die('Error al preparar la consulta direccion conductor: ' . $this->conectar->error);
         }
-        
+
         $stmt->bind_param('i', $idConductor);
         $stmt->execute();
         $direccion = $stmt->get_result()->fetch_assoc();
-        
+
         // Verificamos si la dirección es null
         if ($direccion === null) {
-            return ''; // Retornamos una cadena vacía si no se encuentra la dirección
+            return '';  // Retornamos una cadena vacía si no se encuentra la dirección
         }
-        
+
         // Verificamos si los valores son null antes de devolverlos
         $direccionDetalle = isset($direccion['direccion_detalle']) ? $direccion['direccion_detalle'] : '';
         $departamento = isset($direccion['departamento']) ? $direccion['departamento'] : '';
         $provincia = isset($direccion['provincia']) ? $direccion['provincia'] : '';
         $distrito = isset($direccion['distrito']) ? $direccion['distrito'] : '';
-        
+
         return "{$direccionDetalle}, {$departamento}, {$provincia}, {$distrito}";
     }
-    
-    public function getProductoById($id) {
-        $sql = "SELECT codigo, nombre FROM productosv2 WHERE idproductosv2 = ?";
+
+    public function getProductoById($id)
+    {
+        $sql = 'SELECT codigo, nombre FROM productosv2 WHERE idproductosv2 = ?';
         $stmt = $this->conectar->prepare($sql);
-        
+
         if (!$stmt) {
             die('Error al preparar la consulta producto: ' . $this->conectar->error);
         }
-        
+
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $producto = $stmt->get_result()->fetch_assoc();
-        
+
         // Verificamos si el producto es null
         if ($producto === null) {
-            return ['codigo' => 'N/A', 'nombre' => 'Producto no disponible']; // Retornamos valores por defecto
+            return ['codigo' => 'N/A', 'nombre' => 'Producto no disponible'];  // Retornamos valores por defecto
         }
-        
+
         // Verificamos si los valores son null antes de devolverlos
         $codigo = isset($producto['codigo']) ? $producto['codigo'] : 'N/A';
         $nombre = isset($producto['nombre']) ? $producto['nombre'] : 'Producto no disponible';
-        
+
         return ['codigo' => $codigo, 'nombre' => $nombre];
     }
 
@@ -444,13 +446,13 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $stmt->close();
         return $resultados;
     }
-    
+
     public function obtenerTipoProducto($idFinanciamiento)
     {
-        $query = "SELECT p.tipo_producto 
+        $query = 'SELECT p.tipo_producto 
                   FROM financiamiento f
                   INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
-                  WHERE f.idfinanciamiento = ?";
+                  WHERE f.idfinanciamiento = ?';
         $stmt = $this->conectar->prepare($query);
         $stmt->bind_param('i', $idFinanciamiento);
         $stmt->execute();
@@ -460,14 +462,14 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             return $row['tipo_producto'];
         }
 
-        return null; // Si no se encuentra el producto
+        return null;  // Si no se encuentra el producto
     }
 
     public function obtenerProductoConCategoria($idProducto)
     {
-        $sql = "SELECT codigo, nombre, marca, modelo, categoria, cantidad, cantidad_unidad, unidad_medida, tipo_producto, fecha_vencimiento, ruc, razon_social, precio, fecha_registro, guia_remision
+        $sql = 'SELECT codigo, nombre, marca, modelo, categoria, cantidad, cantidad_unidad, unidad_medida, tipo_producto, fecha_vencimiento, ruc, razon_social, precio, fecha_registro, guia_remision
             FROM productosv2
-            WHERE idproductosv2 = ?";
+            WHERE idproductosv2 = ?';
         $stmt = $this->conectar->prepare($sql);
 
         if (!$stmt) {
@@ -486,25 +488,25 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 'cantidad' => 0,
                 'cantidad_unidad' => 0,
                 'unidad_medida' => '',
-                'tipo_producto' => 'N/A', // Modificado: Nueva clave añadida
-                'fecha_vencimiento' => null, // Modificado: Nueva clave añadida
-                'ruc' => 'N/A', // Modificado: Nueva clave añadida
-                'razon_social' => 'N/A', // Modificado: Nueva clave añadida
-                'precio' => 0.00, // Modificado: Nueva clave añadida
-                'fecha_registro' => null, // Modificado: Nueva clave añadida
+                'tipo_producto' => 'N/A',  // Modificado: Nueva clave añadida
+                'fecha_vencimiento' => null,  // Modificado: Nueva clave añadida
+                'ruc' => 'N/A',  // Modificado: Nueva clave añadida
+                'razon_social' => 'N/A',  // Modificado: Nueva clave añadida
+                'precio' => 0.0,  // Modificado: Nueva clave añadida
+                'fecha_registro' => null,  // Modificado: Nueva clave añadida
                 'guia_remision' => 'N/A',
-            ]; 
+            ];
         }
 
         return $producto;
     }
 
-    public function getFinanciamientoList($id_conductor) {
-
-        $sql = "SELECT f.*, pf.nombre_plan 
+    public function getFinanciamientoList($id_conductor)
+    {
+        $sql = 'SELECT f.*, pf.nombre_plan 
                 FROM financiamiento f 
                 LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_conductor = ? AND f.estado_eliminado = 0";
+                WHERE f.id_conductor = ? AND f.estado_eliminado = 0';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_conductor);
 
@@ -513,15 +515,14 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $result = $stmt->get_result();
 
         return $result->fetch_all(MYSQLI_ASSOC);
-
     }
 
-
-    public function getPlanChecker($idProducto) {
+    public function getPlanChecker($idProducto)
+    {
         // Consulta para obtener el id_plan del producto seleccionado
-        $sql = "SELECT id_plan FROM productosv2 WHERE idproductosv2 = ?";
+        $sql = 'SELECT id_plan FROM productosv2 WHERE idproductosv2 = ?';
         $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param("i", $idProducto);
+        $stmt->bind_param('i', $idProducto);
         $stmt->execute();
         $resultado = $stmt->get_result();
         $producto = $resultado->fetch_assoc();
@@ -534,31 +535,32 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $idPlan = $producto['id_plan'];
 
         // Consulta para obtener los detalles del plan de financiamiento
-        $sqlPlan = "SELECT * FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+        $sqlPlan = 'SELECT * FROM planes_financiamiento WHERE idplan_financiamiento = ?';
         $stmtPlan = $this->conectar->prepare($sqlPlan);
-        $stmtPlan->bind_param("i", $idPlan);
+        $stmtPlan->bind_param('i', $idPlan);
         $stmtPlan->execute();
         $resultadoPlan = $stmtPlan->get_result();
 
-        return $resultadoPlan->fetch_assoc() ?: null; // Retorna el plan o null si no se encuentra
+        return $resultadoPlan->fetch_assoc() ?: null;  // Retorna el plan o null si no se encuentra
     }
 
-    public function eliminarFinanciamiento($id_financiamiento) {
+    public function eliminarFinanciamiento($id_financiamiento)
+    {
         try {
-            $this->conectar->begin_transaction(); // Iniciar transacción
-    
+            $this->conectar->begin_transaction();  // Iniciar transacción
+
             // --- NUEVO BLOQUE: Restaurar stock del producto asociado al financiamiento ---
             // 1. Obtener idproductosv2 y cantidad_producto del financiamiento
-            $sqlBuscarProducto = "SELECT idproductosv2, cantidad_producto FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
+            $sqlBuscarProducto = 'SELECT idproductosv2, cantidad_producto FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0';
             $stmtBuscar = $this->conectar->prepare($sqlBuscarProducto);
             if (!$stmtBuscar) {
-                throw new Exception("Error al preparar la consulta de búsqueda: " . $this->conectar->error);
+                throw new Exception('Error al preparar la consulta de búsqueda: ' . $this->conectar->error);
             }
 
-            $stmtBuscar->bind_param("i", $id_financiamiento);
+            $stmtBuscar->bind_param('i', $id_financiamiento);
             if (!$stmtBuscar->execute()) {
                 $stmtBuscar->close();
-                throw new Exception("Error al ejecutar la consulta de búsqueda: " . $stmtBuscar->error);
+                throw new Exception('Error al ejecutar la consulta de búsqueda: ' . $stmtBuscar->error);
             }
 
             $result = $stmtBuscar->get_result();
@@ -570,55 +572,54 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 // Solo actualizar stock si hay producto asociado y cantidad válida
                 if ($idProducto && $cantidadProducto > 0) {
                     // 2. Actualizar stock en productosv2 sumando la cantidad del financiamiento
-                    $sqlActualizarStock = "UPDATE productosv2 SET cantidad = cantidad + ? WHERE idproductosv2 = ?";
+                    $sqlActualizarStock = 'UPDATE productosv2 SET cantidad = cantidad + ? WHERE idproductosv2 = ?';
                     $stmtUpdateStock = $this->conectar->prepare($sqlActualizarStock);
                     if (!$stmtUpdateStock) {
-                        throw new Exception("Error al preparar la consulta de actualización de stock: " . $this->conectar->error);
+                        throw new Exception('Error al preparar la consulta de actualización de stock: ' . $this->conectar->error);
                     }
-                    
-                    $stmtUpdateStock->bind_param("ii", $cantidadProducto, $idProducto);
+
+                    $stmtUpdateStock->bind_param('ii', $cantidadProducto, $idProducto);
                     if (!$stmtUpdateStock->execute()) {
                         $stmtUpdateStock->close();
-                        throw new Exception("Error al ejecutar la actualización de stock: " . $stmtUpdateStock->error);
+                        throw new Exception('Error al ejecutar la actualización de stock: ' . $stmtUpdateStock->error);
                     }
                     $stmtUpdateStock->close();
                 }
             } else {
                 $stmtBuscar->close();
-                throw new Exception("No se encontró el financiamiento con el ID proporcionado.");
+                throw new Exception('No se encontró el financiamiento con el ID proporcionado.');
             }
 
-                
-                    // SOFT DELETE: Marcar como eliminado en lugar de eliminar físicamente
-            $sqlFinanciamiento = "UPDATE financiamiento SET estado_eliminado = 1 WHERE idfinanciamiento = ?";
+            // SOFT DELETE: Marcar como eliminado en lugar de eliminar físicamente
+            $sqlFinanciamiento = 'UPDATE financiamiento SET estado_eliminado = 1 WHERE idfinanciamiento = ?';
             $stmtFinanciamiento = $this->conectar->prepare($sqlFinanciamiento);
             if (!$stmtFinanciamiento) {
-                throw new Exception("Error al preparar la consulta de eliminación de financiamiento: " . $this->conectar->error);
+                throw new Exception('Error al preparar la consulta de eliminación de financiamiento: ' . $this->conectar->error);
             }
 
-            $stmtFinanciamiento->bind_param("i", $id_financiamiento);
+            $stmtFinanciamiento->bind_param('i', $id_financiamiento);
             if (!$stmtFinanciamiento->execute()) {
                 $stmtFinanciamiento->close();
-                throw new Exception("Error al ejecutar la eliminación de financiamiento: " . $stmtFinanciamiento->error);
+                throw new Exception('Error al ejecutar la eliminación de financiamiento: ' . $stmtFinanciamiento->error);
             }
 
             if ($stmtFinanciamiento->affected_rows === 0) {
                 $stmtFinanciamiento->close();
-                throw new Exception("No se encontró el financiamiento a eliminar o ya estaba eliminado.");
+                throw new Exception('No se encontró el financiamiento a eliminar o ya estaba eliminado.');
             }
             $stmtFinanciamiento->close();
 
             // También marcar las cuotas como eliminadas (soft delete)
-            $sqlCuotas = "UPDATE cuotas_financiamiento SET estado_eliminado = 1 WHERE id_financiamiento = ?";
+            $sqlCuotas = 'UPDATE cuotas_financiamiento SET estado_eliminado = 1 WHERE id_financiamiento = ?';
             $stmtCuotas = $this->conectar->prepare($sqlCuotas);
             if (!$stmtCuotas) {
-                throw new Exception("Error al preparar la consulta de eliminación de cuotas: " . $this->conectar->error);
+                throw new Exception('Error al preparar la consulta de eliminación de cuotas: ' . $this->conectar->error);
             }
 
-            $stmtCuotas->bind_param("i", $id_financiamiento);
+            $stmtCuotas->bind_param('i', $id_financiamiento);
             if (!$stmtCuotas->execute()) {
                 $stmtCuotas->close();
-                throw new Exception("Error al ejecutar la eliminación de cuotas: " . $stmtCuotas->error);
+                throw new Exception('Error al ejecutar la eliminación de cuotas: ' . $stmtCuotas->error);
             }
             $stmtCuotas->close();
 
@@ -626,28 +627,29 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             $sqlComisiones = "DELETE FROM comisiones WHERE tipo_comision = 'financiamiento' AND referencia_id = ?";
             $stmtComisiones = $this->conectar->prepare($sqlComisiones);
             if (!$stmtComisiones) {
-                throw new Exception("Error al preparar la consulta de eliminación de comisiones: " . $this->conectar->error);
+                throw new Exception('Error al preparar la consulta de eliminación de comisiones: ' . $this->conectar->error);
             }
 
-            $stmtComisiones->bind_param("i", $id_financiamiento);
+            $stmtComisiones->bind_param('i', $id_financiamiento);
             if (!$stmtComisiones->execute()) {
                 $stmtComisiones->close();
-                throw new Exception("Error al ejecutar la eliminación de comisiones: " . $stmtComisiones->error);
+                throw new Exception('Error al ejecutar la eliminación de comisiones: ' . $stmtComisiones->error);
             }
             $stmtComisiones->close();
-    
-            $this->conectar->commit(); // Confirmar transacción
+
+            $this->conectar->commit();  // Confirmar transacción
             return true;
         } catch (Exception $e) {
-            $this->conectar->rollback(); // Revertir cambios si hay error
+            $this->conectar->rollback();  // Revertir cambios si hay error
             return false;
         }
     }
 
-    public function getPlan($idPlan) {
-        $sqlPlan = "SELECT * FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+    public function getPlan($idPlan)
+    {
+        $sqlPlan = 'SELECT * FROM planes_financiamiento WHERE idplan_financiamiento = ?';
         $stmtPlan = $this->conectar->prepare($sqlPlan);
-        $stmtPlan->bind_param("i", $idPlan);
+        $stmtPlan->bind_param('i', $idPlan);
         $stmtPlan->execute();
         $resultadoPlan = $stmtPlan->get_result();
         return $resultadoPlan->fetch_assoc() ?: null;
@@ -655,114 +657,156 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
 
     public function actualizarCuotas($cuotasSeleccionadas, $fechaPagoReal = null)
     {
-        $cuotasPagadas = 0;
-        $totalCuotas = count($cuotasSeleccionadas);
+        $startTime = microtime(true);
         $idFinanciamiento = null;
         $fechaPagoReal = $fechaPagoReal ?: date('Y-m-d');
 
-            // ✅ Obtener el rol del usuario desde la sesión
+        // Obtener el rol del usuario desde la sesión
         $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
         // Verificar si hay cuotas para procesar
         if (empty($cuotasSeleccionadas)) {
-            return ['success' => true]; // No hay cuotas para actualizar
+            return ['success' => true];
         }
+
+        error_log("Actualizando " . count($cuotasSeleccionadas) . " cuotas");
 
         // Tomar el ID de la primera cuota para obtener el ID del financiamiento
         $primeraCuotaId = $cuotasSeleccionadas[0]['idCuota'];
 
-        // Consultar el id_financiamiento de la primera cuota
-        $queryFinanciamientoId = "SELECT id_financiamiento FROM cuotas_financiamiento WHERE idcuotas_financiamiento = ?";
-        $stmtFinanciamientoId = $this->conectar->prepare($queryFinanciamientoId);
-        $stmtFinanciamientoId->bind_param('i', $primeraCuotaId);
-        $stmtFinanciamientoId->execute();
-        $resultFinanciamientoId = $stmtFinanciamientoId->get_result();
-        $rowFinanciamientoId = $resultFinanciamientoId->fetch_assoc();
-        $stmtFinanciamientoId->close();
+        // Consultar el id_financiamiento y validar permisos en una sola query optimizada
+        $queryValidacion = 'SELECT cf.id_financiamiento, p.categoria 
+                           FROM cuotas_financiamiento cf
+                           INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                           LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                           WHERE cf.idcuotas_financiamiento = ?';
+        $stmtValidacion = $this->conectar->prepare($queryValidacion);
+        
+        if (!$stmtValidacion) {
+            error_log("Error preparando validación: " . $this->conectar->error);
+            return ['success' => false, 'message' => 'Error al validar permisos'];
+        }
+        
+        $stmtValidacion->bind_param('i', $primeraCuotaId);
+        $stmtValidacion->execute();
+        $resultValidacion = $stmtValidacion->get_result();
+        $rowValidacion = $resultValidacion->fetch_assoc();
+        $stmtValidacion->close();
 
-        if ($rowFinanciamientoId) {
-            $idFinanciamiento = $rowFinanciamientoId['id_financiamiento'];
-           
-            // Consultar el idproductosv2 del financiamiento
-            $queryProductoId = "SELECT idproductosv2 FROM financiamiento WHERE idfinanciamiento = ?";
-            $stmtProductoId = $this->conectar->prepare($queryProductoId);
-            $stmtProductoId->bind_param('i', $idFinanciamiento);
-            $stmtProductoId->execute();
-            $resultProductoId = $stmtProductoId->get_result();
-            $rowProductoId = $resultProductoId->fetch_assoc();
-            $stmtProductoId->close();
+        if ($rowValidacion) {
+            $idFinanciamiento = $rowValidacion['id_financiamiento'];
+            $categoria = $rowValidacion['categoria'];
 
-            if ($rowProductoId) {
-                $idProducto = $rowProductoId['idproductosv2'];
-                
-                // Consultar la categoría del producto
-                $queryCategoria = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
-                $stmtCategoria = $this->conectar->prepare($queryCategoria);
-                $stmtCategoria->bind_param('i', $idProducto);
-                $stmtCategoria->execute();
-                $resultCategoria = $stmtCategoria->get_result();
-                $rowCategoria = $resultCategoria->fetch_assoc();
-                $stmtCategoria->close();
+            // Validar permisos si es necesario
+            if ($categoria) {
+                $categoriaNormalizada = trim(strtolower(str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $categoria)));
 
-                if ($rowCategoria) {
-                    $categoria = $rowCategoria['categoria'];
-
-                    $categoriaNormalizada = trim(strtolower(str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $categoria)));
-
-                    // Verificar si la categoría es "celular" o "vehículo" y el rol del usuario es 2
-                    if (($categoriaNormalizada === 'celular' || $categoriaNormalizada === 'celulares' || $categoriaNormalizada === 'vehiculo' || $categoriaNormalizada === 'vehiculos') && $rol_usuario == 2) {
-                        return ['success' => false, 'message' => 'No está autorizado para esta operación'];
-                    }
+                // Verificar si la categoría es "celular" o "vehículo" y el rol del usuario es 2
+                if (($categoriaNormalizada === 'celular' || $categoriaNormalizada === 'celulares' || $categoriaNormalizada === 'vehiculo' || $categoriaNormalizada === 'vehiculos') && $rol_usuario == 2) {
+                    return ['success' => false, 'message' => 'No está autorizado para esta operación'];
                 }
             }
         }
 
+        // OPTIMIZACIÓN: Batch update usando CASE statements
+        // Construir arrays para los IDs y valores
+        $ids = [];
+        $caseMora = '';
+        $caseDescuento = '';
+        
         foreach ($cuotasSeleccionadas as $cuota) {
-            $idCuota = $cuota['idCuota'];
-            $monto = $cuota['monto'];
-            $mora = $cuota['mora'] ?? 0;
+            $idCuota = (int)$cuota['idCuota'];
+            $mora = (float)($cuota['mora'] ?? 0);
+            $descuentoAplicado = (float)($cuota['descuento_aplicado'] ?? 0.0);
             
-            // ✅ NUEVO: Obtener el descuento aplicado desde el array de cuotas
-            $descuentoAplicado = isset($cuota['descuento_aplicado']) ? $cuota['descuento_aplicado'] : 0.00;
+            $ids[] = $idCuota;
+            $caseMora .= "WHEN {$idCuota} THEN {$mora} ";
+            $caseDescuento .= "WHEN {$idCuota} THEN {$descuentoAplicado} ";
+        }
 
-            // ✅ MODIFICADO: Actualizar también el descuento_aplicado
-            $sql = "UPDATE cuotas_financiamiento 
-                SET mora = ?, estado = 'pagado', fecha_pago = ?, descuento_aplicado = ? 
-                WHERE idcuotas_financiamiento = ?";
-            $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param('dsdi', $mora, $fechaPagoReal, $descuentoAplicado, $idCuota);
+        // Crear placeholders para IN clause
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
 
-            if ($stmt->execute()) {
-                $cuotasPagadas++;
+        // Una sola query para actualizar todas las cuotas
+        $sql = "UPDATE cuotas_financiamiento 
+                SET mora = CASE idcuotas_financiamiento {$caseMora} END,
+                    descuento_aplicado = CASE idcuotas_financiamiento {$caseDescuento} END,
+                    estado = 'pagado',
+                    fecha_pago = ?
+                WHERE idcuotas_financiamiento IN ({$placeholders})";
+        
+        $stmt = $this->conectar->prepare($sql);
+        
+        if (!$stmt) {
+            error_log("Error preparando batch update: " . $this->conectar->error);
+            return ['success' => false, 'message' => 'Error al preparar actualización de cuotas'];
+        }
 
-                // Obtenemos el id_financiamiento solo una vez
-                if (!$idFinanciamiento) {
-                    $queryFinanciamiento = "SELECT id_financiamiento FROM cuotas_financiamiento WHERE idcuotas_financiamiento = ?";
-                    $stmt2 = $this->conectar->prepare($queryFinanciamiento);
-                    $stmt2->bind_param('i', $idCuota);
-                    $stmt2->execute();
-                    $result = $stmt2->get_result();
-                    if ($row = $result->fetch_assoc()) {
-                        $idFinanciamiento = $row['id_financiamiento'];
-                    }
+        // Bind parameters: fecha + todos los IDs
+        $types = 's' . str_repeat('i', count($ids));
+        $params = array_merge([$fechaPagoReal], $ids);
+        
+        // Crear referencias para bind_param
+        $bindParams = [$types];
+        foreach ($params as $key => $value) {
+            $bindParams[] = &$params[$key];
+        }
+        
+        call_user_func_array([$stmt, 'bind_param'], $bindParams);
+
+        if (!$stmt->execute()) {
+            error_log("Error ejecutando batch update: " . $stmt->error);
+            $stmt->close();
+            return ['success' => false, 'message' => 'Error al actualizar las cuotas'];
+        }
+
+        $cuotasPagadas = $stmt->affected_rows;
+        $stmt->close();
+        
+        error_log("Cuotas actualizadas: {$cuotasPagadas}");
+
+        // Verificar si todas las cuotas del financiamiento están pagadas
+        if ($idFinanciamiento) {
+            $sqlVerificar = "SELECT COUNT(*) as total_pendientes 
+                            FROM cuotas_financiamiento 
+                            WHERE id_financiamiento = ? AND estado != 'pagado' AND estado_eliminado = 0";
+            $stmtVerificar = $this->conectar->prepare($sqlVerificar);
+            
+            if (!$stmtVerificar) {
+                error_log("Error preparando verificación: " . $this->conectar->error);
+                return ['success' => false, 'message' => 'Error al verificar estado del financiamiento'];
+            }
+            
+            $stmtVerificar->bind_param('i', $idFinanciamiento);
+            $stmtVerificar->execute();
+            $resultVerificar = $stmtVerificar->get_result();
+            $rowVerificar = $resultVerificar->fetch_assoc();
+            $stmtVerificar->close();
+
+            // Si no hay cuotas pendientes, marcar financiamiento como finalizado
+            if ($rowVerificar && $rowVerificar['total_pendientes'] == 0) {
+                $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
+                $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
+                
+                if (!$stmtFinal) {
+                    error_log("Error preparando finalización: " . $this->conectar->error);
+                    return ['success' => false, 'message' => 'Error al preparar finalización del financiamiento'];
                 }
-            } else {
-                return ['success' => false, 'message' => 'Error al actualizar la cuota'];
+                
+                $stmtFinal->bind_param('i', $idFinanciamiento);
+
+                if (!$stmtFinal->execute()) {
+                    error_log("Error finalizando financiamiento: " . $stmtFinal->error);
+                    $stmtFinal->close();
+                    return ['success' => false, 'message' => 'Error al finalizar el financiamiento'];
+                }
+                $stmtFinal->close();
+                error_log("Financiamiento {$idFinanciamiento} marcado como Finalizado");
             }
         }
 
-        // Si todas las cuotas fueron marcadas como pagadas
-        if ($cuotasPagadas === $totalCuotas && $idFinanciamiento) {
-            $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
-            $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
-            $stmtFinal->bind_param('i', $idFinanciamiento);
-
-            if ($stmtFinal->execute()) {
-                return ['success' => true];
-            } else {
-                return ['success' => false, 'message' => 'Error al finalizar el financiamiento'];
-            }
-        }
+        $executionTime = round(microtime(true) - $startTime, 3);
+        error_log("Tiempo de actualización de cuotas: {$executionTime}s");
 
         return ['success' => true];
     }
@@ -770,109 +814,109 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     public function newPago($idConductor, $idAsesor, $monto, $concepto = null, $efectivoRecibido, $vuelto, $monedaEfectivo, $idFinanciamiento = null, $idCliente = null, $metodoPago = null, $estado = 1)
     {
         try {
-            $fechaPago = date('Y-m-d H:i:s'); // ✅ OK
-    
+            $fechaPago = date('Y-m-d H:i:s');  // ✅ OK
+
             // ✅ Limpieza de montos
-            $monto = (float) str_replace([',', 'S/. ', '$ '], '', $monto); 
-            $efectivoRecibido = (float) str_replace([',', 'S/. ', '$ '], '', $efectivoRecibido); 
+            $monto = (float) str_replace([',', 'S/. ', '$ '], '', $monto);
+            $efectivoRecibido = (float) str_replace([',', 'S/. ', '$ '], '', $efectivoRecibido);
             $vuelto = (float) str_replace([',', 'S/. ', '$ '], '', $vuelto);
-            $monedaEfectivo = $monedaEfectivo ?? ''; // ✅ OK
-    
+            $monedaEfectivo = $monedaEfectivo ?? '';  // ✅ OK
+
             // ✅ Agregamos variable que faltaba
-            $idFinanciamientoParam = $idFinanciamiento > 0 ? $idFinanciamiento : null; // ⚠️ NUEVO
-    
-            $idConductorParam = $idConductor > 0 ? $idConductor : null; // ✅ OK
-            $idClienteParam = $idCliente > 0 ? $idCliente : null; // ✅ OK
-    
-            $metodoPagoParam = $metodoPago ?? ''; // ✅ OK
-            $conceptoParam = $concepto ?? ''; // ✅ OK
-                            
+            $idFinanciamientoParam = $idFinanciamiento > 0 ? $idFinanciamiento : null;  // ⚠️ NUEVO
+
+            $idConductorParam = $idConductor > 0 ? $idConductor : null;  // ✅ OK
+            $idClienteParam = $idCliente > 0 ? $idCliente : null;  // ✅ OK
+
+            $metodoPagoParam = $metodoPago ?? '';  // ✅ OK
+            $conceptoParam = $concepto ?? '';  // ✅ OK
+
             // ✅ QUERY corregida con el nuevo campo estado 🌎
-            $query = "INSERT INTO pagos_financiamiento 
+            $query = 'INSERT INTO pagos_financiamiento 
             (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, concepto, fecha_pago, efectivo_recibido, vuelto, moneda, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
-            $stmt = $this->conectar->prepare($query); // ✅ OK
-    
-            // ✅ TIPO DE DATOS CORREGIDOS: 12 variables = 12 letras 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+            $stmt = $this->conectar->prepare($query);  // ✅ OK
+
+            // ✅ TIPO DE DATOS CORREGIDOS: 12 variables = 12 letras
             $stmt->bind_param(
-                "iiiidsssddsi", // ⚠️ CORREGIDO: 12 variables, 12 tipos 
-                $idFinanciamientoParam, 
-                $idConductorParam,     
-                $idClienteParam,       
-                $idAsesor,             
-                $monto,                
-                $metodoPagoParam,      
-                $conceptoParam,        
-                $fechaPago,            
-                $efectivoRecibido,     
-                $vuelto,               
+                'iiiidsssddsi',  // ⚠️ CORREGIDO: 12 variables, 12 tipos
+                $idFinanciamientoParam,
+                $idConductorParam,
+                $idClienteParam,
+                $idAsesor,
+                $monto,
+                $metodoPagoParam,
+                $conceptoParam,
+                $fechaPago,
+                $efectivoRecibido,
+                $vuelto,
                 $monedaEfectivo,
-                $estado   
+                $estado
             );
-    
+
             if ($stmt->execute()) {
                 $idPago = $stmt->insert_id;
-                return ['success' => true, 'message' => 'Pago registrado con éxito', 'id_pago' => $idPago]; // ✅ OK
+                return ['success' => true, 'message' => 'Pago registrado con éxito', 'id_pago' => $idPago];  // ✅ OK
             } else {
-                var_dump($stmt->error); // ⚠️ DEBUG: Mostrar error SQL
+                var_dump($stmt->error);  // ⚠️ DEBUG: Mostrar error SQL
                 return ['success' => false, 'message' => 'Error al registrar el pago en la base de datos'];
             }
-    
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
-    
-    public function guardarPagoPendiente($idPagoFinanciamiento, $cuotasJson) 
-    { 
-        try { 
-            $query = "INSERT INTO pagos_pendientes_financiamientos 
+
+    public function guardarPagoPendiente($idPagoFinanciamiento, $cuotasJson)
+    {
+        try {
+            $query = 'INSERT INTO pagos_pendientes_financiamientos 
                     (idpagos_financiamiento, cuotas_json, id_usuario_aprobacion) 
-                    VALUES (?, ?, NULL)"; 
-            
-            $stmt = $this->conectar->prepare($query); 
-            $stmt->bind_param("is", $idPagoFinanciamiento, $cuotasJson); 
-            
-            if ($stmt->execute()) { 
-                return ['success' => true, 'message' => 'Pago pendiente guardado con éxito']; 
-            } else { 
-                return ['success' => false, 'message' => 'Error al guardar el pago pendiente']; 
-            } 
-        } catch (Exception $e) { 
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()]; 
-        } 
-    } 
-  
-    public function newDetallePago($cuotasSeleccionadas, $idPago) // Modificación: añadido $idPago como parámetro
+                    VALUES (?, ?, NULL)';
+
+            $stmt = $this->conectar->prepare($query);
+            $stmt->bind_param('is', $idPagoFinanciamiento, $cuotasJson);
+
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Pago pendiente guardado con éxito'];
+            } else {
+                return ['success' => false, 'message' => 'Error al guardar el pago pendiente'];
+            }
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        }
+    }
+
+    public function newDetallePago($cuotasSeleccionadas, $idPago)  // Modificación: añadido $idPago como parámetro
     {
         foreach ($cuotasSeleccionadas as $cuota) {
             $idCuota = $cuota['idCuota'];
             $mora = $cuota['mora'];
 
             // Insertamos en la tabla detalle_pago_financiamiento con el idPago en lugar de idFinanciamiento
-            $insertSql = "INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora) VALUES (?, ?, ?)";
-            $insertStmt = $this->conectar->prepare($insertSql); // Usamos $this->conectar
+            $insertSql = 'INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora) VALUES (?, ?, ?)';
+            $insertStmt = $this->conectar->prepare($insertSql);  // Usamos $this->conectar
 
-            if (!$insertStmt) { // Verificamos si $insertStmt es falso
-                die("Error en la preparación de la consulta SQL de inserción: " . $this->conectar->error); // Mostramos el error específico
+            if (!$insertStmt) {  // Verificamos si $insertStmt es falso
+                die('Error en la preparación de la consulta SQL de inserción: ' . $this->conectar->error);  // Mostramos el error específico
             }
 
-            $insertStmt->bind_param("iid", $idPago, $idCuota, $mora); // CORREGIDO: Usamos $idPago en lugar de $idFinanciamiento
-            $insertStmt->execute(); // Ejecutamos el insert
+            $insertStmt->bind_param('iid', $idPago, $idCuota, $mora);  // CORREGIDO: Usamos $idPago en lugar de $idFinanciamiento
+            $insertStmt->execute();  // Ejecutamos el insert
 
             // Comprobamos errores (opcional, puedes agregar logs aquí si lo prefieres)
             if ($insertStmt->affected_rows > 0) {
-                error_log("Cuota $idCuota registrada en detalle_pago_financiamiento con ID de pago $idPago y mora $mora."); // Mensaje de éxito
+                error_log("Cuota $idCuota registrada en detalle_pago_financiamiento con ID de pago $idPago y mora $mora.");  // Mensaje de éxito
             } else {
-                error_log("Error al registrar cuota $idCuota en detalle_pago_financiamiento."); // Mensaje de error si no se guarda
+                error_log("Error al registrar cuota $idCuota en detalle_pago_financiamiento.");  // Mensaje de error si no se guarda
             }
 
-            $insertStmt->close(); // Cerramos el statement del insert
+            $insertStmt->close();  // Cerramos el statement del insert
         }
     }
-    
-    public function obtenerReportesPagos($offset, $limit, $search, $fechaInicio = '', $fechaFin = '') {
+
+    public function obtenerReportesPagos($offset, $limit, $search, $fechaInicio = '', $fechaFin = '')
+    {
         // MODIFICADO: Base de la consulta - Cambiado INNER JOIN a LEFT JOIN para conductores
         $query = "SELECT p.*, 
             CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS conductor, 
@@ -897,7 +941,7 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
 
         // NUEVO: Añadir condición de fechas si están presentes
         $params = [];
-        $types = "sssssssss"; // ✅ MODIFICADO: Agregados 2 's' más para los documentos
+        $types = 'sssssssss';  // ✅ MODIFICADO: Agregados 2 's' más para los documentos
         $searchTerm = "%$search%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -907,47 +951,46 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $params[] = $searchTerm;  /* AÑADIDO: para búsqueda en cf.nombres */
         $params[] = $searchTerm;
         $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en c.nro_documento
-        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento 
+        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento
 
         // NUEVO: Si hay fechas, añadir al WHERE
         if (!empty($fechaInicio) && !empty($fechaFin)) {
-        $query .= " AND DATE(p.fecha_pago) BETWEEN ? AND ?";
-        $types .= "ss";
-        $params[] = $fechaInicio;
-        $params[] = $fechaFin;
+            $query .= ' AND DATE(p.fecha_pago) BETWEEN ? AND ?';
+            $types .= 'ss';
+            $params[] = $fechaInicio;
+            $params[] = $fechaFin;
         }
 
         // MODIFICACIÓN SOLICITADA: Filtrar por estado 1 o NULL
         // $query .= " AND (p.estado = 1 OR p.estado IS NULL)";
 
-         // Línea 916 - MODIFICAR
-  $query .= " AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)";
+        // Línea 916 - MODIFICAR
+        $query .= ' AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)';
 
-        $query .= " ORDER BY p.fecha_pago DESC LIMIT ?, ?";
-        $types .= "ii";
+        $query .= ' ORDER BY p.fecha_pago DESC LIMIT ?, ?';
+        $types .= 'ii';
         $params[] = $offset;
         $params[] = $limit;
 
         $stmt = $this->conectar->prepare($query);
 
         if (!$stmt) {
-            var_dump("🔴 Error en prepare():", $this->conectar->error);  // 🛒
-            var_dump("📄 Consulta SQL:", $query);  // 🛒
+            var_dump('🔴 Error en prepare():', $this->conectar->error);  // 🛒
+            var_dump('📄 Consulta SQL:', $query);  // 🛒
             return [];  // 🛒
         }
-
 
         // MODIFICADO: Usar call_user_func_array para bind_param dinámico
         $bindParams = array_merge([$types], $params);
         $ref = [];
-        foreach($bindParams as $key => $value) {
+        foreach ($bindParams as $key => $value) {
             $ref[$key] = &$bindParams[$key];
         }
         call_user_func_array([$stmt, 'bind_param'], $ref);
-        
+
         // 3. Ejecutar el statement 🛒
         if (!$stmt->execute()) {  // 🛒
-            var_dump("🔴 Error en execute():", $stmt->error);  // 🛒
+            var_dump('🔴 Error en execute():', $stmt->error);  // 🛒
             return [];  // 🛒
         }
 
@@ -955,25 +998,25 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
 
         if ($result === false) {
             var_dump($stmt->error);
-            return []; // O maneja el error
+            return [];  // O maneja el error
         }
-        
+
         $reportes = [];
         while ($row = $result->fetch_assoc()) {
             /* AÑADIDO: Usar cliente como nombre cuando conductor está vacío */
             if (empty($row['conductor']) && !empty($row['cliente'])) {
                 $row['conductor'] = $row['cliente'];  /* Asignar nombre del cliente al campo conductor para mantener compatibilidad */
             }
-            
+
             // ✅ NUEVO: Consolidar número de documento en un solo campo
-            $row['nro_documento'] = !empty($row['nro_documento_conductor']) 
-                ? $row['nro_documento_conductor'] 
+            $row['nro_documento'] = !empty($row['nro_documento_conductor'])
+                ? $row['nro_documento_conductor']
                 : $row['nro_documento_cliente'];
-            
+
             // ✅ NUEVO: Limpiar campos temporales (opcional)
             unset($row['nro_documento_conductor']);
             unset($row['nro_documento_cliente']);
-            
+
             $reportes[] = $row;
         }
         $stmt->close();
@@ -981,21 +1024,21 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         return $reportes;
     }
 
-    public function contarReportes($search, $fechaInicio = '', $fechaFin = '') {
+    public function contarReportes($search, $fechaInicio = '', $fechaFin = '')
+    {
         // MODIFICADO: Base de la consulta - Cambiado INNER JOIN a LEFT JOIN para conductores
-        $query = "SELECT COUNT(*) AS total FROM pagos_financiamiento p
+        $query = 'SELECT COUNT(*) AS total FROM pagos_financiamiento p
                   LEFT JOIN conductores c ON p.id_conductor = c.id_conductor  
                   LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id  
                   LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
                   WHERE (c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR u.nombres LIKE ? OR p.monto LIKE ?
                     OR c.numUnidad LIKE ? OR cf.nombres LIKE ? OR cf.apellido_paterno LIKE ? OR
                     c.nro_documento LIKE ? OR cf.n_documento LIKE ?
-                  )";
+                  )';
 
-    
         // NUEVO: Preparar parámetros
         $params = [];
-        $types = "sssssssss"; // ✅ MODIFICADO: Agregados 2 's' más para los documentos
+        $types = 'sssssssss';  // ✅ MODIFICADO: Agregados 2 's' más para los documentos
         $searchTerm = "%$search%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
@@ -1006,39 +1049,38 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         $params[] = $searchTerm;  /* AÑADIDO: para búsqueda en cf.nombres */
         $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en c.nro_documento
         $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento
-       
-        
+
         // NUEVO: Si hay fechas, añadir al WHERE
         if (!empty($fechaInicio) && !empty($fechaFin)) {
-            $query .= " AND DATE(p.fecha_pago) BETWEEN ? AND ?";
-            $types .= "ss";
+            $query .= ' AND DATE(p.fecha_pago) BETWEEN ? AND ?';
+            $types .= 'ss';
             $params[] = $fechaInicio;
             $params[] = $fechaFin;
         }
-        
+
         // MODIFICACIÓN: Filtrar por estado 1 (Pagado), 3 (Anulado) o NULL
-        $query .= " AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)";
+        $query .= ' AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)';
 
         $stmt = $this->conectar->prepare($query);
-        
+
         if (!$stmt) {  // 🛒 Validar que prepare no haya fallado
-            var_dump("🔴 Error en prepare():", $this->conectar->error);
-            var_dump("📄 Consulta SQL:", $query);
+            var_dump('🔴 Error en prepare():', $this->conectar->error);
+            var_dump('📄 Consulta SQL:', $query);
             return false;  // Detener ejecución para evitar errores posteriores
         }
 
         // MODIFICADO: Usar call_user_func_array para bind_param dinámico
         $bindParams = array_merge([$types], $params);
         $ref = [];
-        foreach($bindParams as $key => $value) {
+        foreach ($bindParams as $key => $value) {
             $ref[$key] = &$bindParams[$key];
         }
         call_user_func_array([$stmt, 'bind_param'], $ref);
-        
+
         $stmt->execute();
         $result = $stmt->get_result();
         $row = $result->fetch_assoc();
-        
+
         return $row['total'];
     }
 
@@ -1046,46 +1088,47 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     {
         try {
             // Eliminar de la tabla detalle_pago_financiamiento (si existe relación)
-            $stmtDetalle = $this->conectar->prepare("DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?");
-            $stmtDetalle->bind_param("i", $idPago);
+            $stmtDetalle = $this->conectar->prepare('DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?');
+            $stmtDetalle->bind_param('i', $idPago);
             $stmtDetalle->execute();
 
             // Eliminar de la tabla pagos_financiamiento
-            $stmt = $this->conectar->prepare("DELETE FROM pagos_financiamiento WHERE idpagos_financiamiento = ?");
-            $stmt->bind_param("i", $idPago);
+            $stmt = $this->conectar->prepare('DELETE FROM pagos_financiamiento WHERE idpagos_financiamiento = ?');
+            $stmt->bind_param('i', $idPago);
             $result = $stmt->execute();
 
-            return $result; // Retorna true si se eliminó exitosamente
+            return $result;  // Retorna true si se eliminó exitosamente
         } catch (Exception $e) {
-            return false; // Manejo básico de errores
+            return false;  // Manejo básico de errores
         }
     }
 
-    public function getDataPago($idPago) {
-        $queryPago = "SELECT * FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+    public function getDataPago($idPago)
+    {
+        $queryPago = 'SELECT * FROM pagos_financiamiento WHERE idpagos_financiamiento = ?';
         $stmtPago = $this->conectar->prepare($queryPago);
-        $stmtPago->bind_param("i", $idPago);
+        $stmtPago->bind_param('i', $idPago);
         $stmtPago->execute();
         $resultadoPago = $stmtPago->get_result();
         $pago = $resultadoPago->fetch_assoc();
-    
+
         if ($pago) {
             // Obtener las cuotas relacionadas a este pago
-            $queryCuotas = "SELECT id_cuota, mora FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+            $queryCuotas = 'SELECT id_cuota, mora FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?';
             $stmtCuotas = $this->conectar->prepare($queryCuotas);
-            $stmtCuotas->bind_param("i", $idPago);
+            $stmtCuotas->bind_param('i', $idPago);
             $stmtCuotas->execute();
             $resultadoCuotas = $stmtCuotas->get_result();
             $cuotas = [];
-    
+
             // Recorremos cada cuota y obtenemos los detalles completos desde la tabla cuotas_financiamiento
             while ($filaCuota = $resultadoCuotas->fetch_assoc()) {
                 $idCuota = $filaCuota['id_cuota'];
 
                 // Realizar una consulta adicional para obtener el monto de la cuota desde la tabla cuotas_financiamiento
-                $queryMontoCuota = "SELECT monto, mora FROM cuotas_financiamiento WHERE idcuotas_financiamiento = ?";
-                $stmtMontoCuota = $this->conectar->prepare($queryMontoCuota); // Crear una nueva consulta
-                $stmtMontoCuota->bind_param("i", $idCuota); // Asignar el id de la cuota
+                $queryMontoCuota = 'SELECT monto, mora FROM cuotas_financiamiento WHERE idcuotas_financiamiento = ?';
+                $stmtMontoCuota = $this->conectar->prepare($queryMontoCuota);  // Crear una nueva consulta
+                $stmtMontoCuota->bind_param('i', $idCuota);  // Asignar el id de la cuota
                 $stmtMontoCuota->execute();
                 $resultadoMontoCuota = $stmtMontoCuota->get_result();
                 $detalleMontoCuota = $resultadoMontoCuota->fetch_assoc();
@@ -1093,12 +1136,12 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 if ($detalleMontoCuota) {
                     // Sumar el monto y la mora para obtener el valor completo y agregar al array
                     $cuotas[] = [
-                        'id_cuota' => $idCuota,                                     // Mantener el ID de la cuota
-                        'monto' => $detalleMontoCuota['monto'],                     // Agregar el monto de la cuota
+                        'id_cuota' => $idCuota,  // Mantener el ID de la cuota
+                        'monto' => $detalleMontoCuota['monto'],  // Agregar el monto de la cuota
                         'mora' => $filaCuota['mora'] + $detalleMontoCuota['mora'],  // Sumar la mora existente y la nueva
                     ];
                 } else {
-                    error_log("No se encontró el detalle de la cuota con id $idCuota"); // Manejar el caso de error
+                    error_log("No se encontró el detalle de la cuota con id $idCuota");  // Manejar el caso de error
                 }
             }
 
@@ -1107,130 +1150,117 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 'id_conductor' => $pago['id_conductor'],
                 'id_asesor' => $pago['id_asesor'],
                 'moneda' => $pago['moneda'],
-                'cuotas' => $cuotas, // Ahora con 'monto' y mora sumados correctamente
+                'cuotas' => $cuotas,  // Ahora con 'monto' y mora sumados correctamente
             ];
         }
-    
-        return null; // Si no hay datos del pago
-    }    
 
+        return null;  // Si no hay datos del pago
+    }
 
     // Método para actualizar un financiamiento
 
     public function actualizarFinanciamiento($idFinanciamiento, $codigoAsociado, $grupoFinanciamiento, $estado)
-
     {
-
-        $sql = "UPDATE financiamiento 
+        $sql = 'UPDATE financiamiento 
 
                 SET codigo_asociado = ?, grupo_financiamiento = ?, estado = ? 
 
-                WHERE idfinanciamiento = ?";
+                WHERE idfinanciamiento = ?';
 
         $stmt = $this->conectar->prepare($sql);
 
         $stmt->bind_param('sssi', $codigoAsociado, $grupoFinanciamiento, $estado, $idFinanciamiento);
 
         return $stmt->execute();
-
     }
-
 
     // Método para obtener un financiamiento por su ID
 
     public function obtenerFinanciamientoPorId($idFinanciamiento)
-
     {
-    
         // $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ?";
-        $sql = "SELECT * FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0";
-    
+        $sql = 'SELECT * FROM financiamiento WHERE idfinanciamiento = ? AND estado_eliminado = 0';
+
         $stmt = $this->conectar->prepare($sql);
-    
+
         $stmt->bind_param('i', $idFinanciamiento);
-    
+
         $stmt->execute();
-    
+
         $result = $stmt->get_result();
-    
+
         return $result->fetch_assoc();
-    
     }
 
-    public function obtenerGruposFinanciamiento() {
-
+    public function obtenerGruposFinanciamiento()
+    {
         // Modificar para usar la tabla planes_financiamiento en lugar de grupovehicular_financiamiento
 
-        $sql = "SELECT idplan_financiamiento, nombre_plan FROM planes_financiamiento";
+        $sql = 'SELECT idplan_financiamiento, nombre_plan FROM planes_financiamiento';
 
         $stmt = $this->conectar->prepare($sql);
 
-
-
         if ($stmt->execute()) {
-
             $result = $stmt->get_result();
 
             $grupos = $result->fetch_all(MYSQLI_ASSOC);
 
             return $grupos;
-
         } else {
-
             return [];
-
         }
-
     }
 
     // Busca esta función y reemplázala completamente:
-    public function getVariante($idPlan) {
+    public function getVariante($idPlan)
+    {
         // MODIFICADO: Agregado JOIN para obtener tipo_vehicular del grupo padre
-        $sql = "SELECT gv.*, pf.tipo_vehicular 
+        $sql = 'SELECT gv.*, pf.tipo_vehicular 
                 FROM grupos_variantes gv 
                 INNER JOIN planes_financiamiento pf ON gv.idplan_financiamiento = pf.idplan_financiamiento 
-                WHERE gv.idplan_financiamiento = ?";
-        
+                WHERE gv.idplan_financiamiento = ?';
+
         $stmt = $this->conectar->prepare($sql);
-        
+
         if (!$stmt) {
             return false;
         }
-        
+
         // Vincular el parámetro
-        $stmt->bind_param("i", $idPlan);
-        
+        $stmt->bind_param('i', $idPlan);
+
         // Ejecutar la consulta
         if (!$stmt->execute()) {
             return false;
         }
-        
+
         // Obtener el resultado
         $resultado = $stmt->get_result();
-        
+
         // Array para almacenar todas las variantes
         $variantes = [];
-        
+
         // Obtener cada variante con su tipo_vehicular heredado
         while ($variante = $resultado->fetch_assoc()) {
             $variantes[] = $variante;
         }
-        
+
         return $variantes;
     }
-    
-    public function getFinanciamientoByCliente($id_cliente) {
-        $sql = "SELECT f.*, pf.nombre_plan 
+
+    public function getFinanciamientoByCliente($id_cliente)
+    {
+        $sql = 'SELECT f.*, pf.nombre_plan 
                 FROM financiamiento f 
                 LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_cliente = ? AND f.estado_eliminado = 0";
+                WHERE f.id_cliente = ? AND f.estado_eliminado = 0';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_cliente);
-        
+
         $stmt->execute();
-        
+
         $result = $stmt->get_result();
-        
+
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
@@ -1244,43 +1274,44 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                     FROM clientes_financiar 
                     WHERE id = ?";
 
-            $stmt = $this->conectar->prepare($sql); // ✅ Preparar con mysqli, no PDO
-            $stmt->bind_param("i", $id_cliente); // ✅ Asegurar que el ID sea entero
+            $stmt = $this->conectar->prepare($sql);  // ✅ Preparar con mysqli, no PDO
+            $stmt->bind_param('i', $id_cliente);  // ✅ Asegurar que el ID sea entero
             $stmt->execute();
 
-            $result = $stmt->get_result(); // ✅ Obtener resultados como objeto MySQLi_Result
+            $result = $stmt->get_result();  // ✅ Obtener resultados como objeto MySQLi_Result
             $cliente = $result->fetch_assoc();
 
             if ($cliente) {
-                $cliente['numUnidad'] = null; // ✅ Agregar manualmente numUnidad como null
+                $cliente['numUnidad'] = null;  // ✅ Agregar manualmente numUnidad como null
             }
 
-            return $cliente ? $cliente : []; // ✅ Si no hay resultado, retornar arreglo vacío
+            return $cliente ? $cliente : [];  // ✅ Si no hay resultado, retornar arreglo vacío
         } catch (Exception $e) {
-            error_log("Error en Financiamiento::obtenerPorCliente(): " . $e->getMessage()); // ✅ Log del error
-            throw $e; // ✅ Relanzar el error para manejo externo
+            error_log('Error en Financiamiento::obtenerPorCliente(): ' . $e->getMessage());  // ✅ Log del error
+            throw $e;  // ✅ Relanzar el error para manejo externo
         }
     }
 
-    public function getFinanciamientoListCliente($id_cliente) {
-        $sql = "SELECT f.*, pf.nombre_plan 
+    public function getFinanciamientoListCliente($id_cliente)
+    {
+        $sql = 'SELECT f.*, pf.nombre_plan 
                 FROM financiamiento f 
                 LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_cliente = ? AND f.estado_eliminado = 0";
+                WHERE f.id_cliente = ? AND f.estado_eliminado = 0';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_cliente);
-    
+
         $stmt->execute();
-    
+
         $result = $stmt->get_result();
-    
+
         return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     public function getAllFinanciamientos()
     {
         // $sql = "SELECT * FROM financiamiento";
-        $sql = "SELECT * FROM financiamiento WHERE estado_eliminado = 0";
+        $sql = 'SELECT * FROM financiamiento WHERE estado_eliminado = 0';
         $result = $this->conectar->query($sql);
         $financiamientos = [];
 
@@ -1296,23 +1327,23 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     public function obtenerUsuarioRegistro($id_financiamiento)
     {
         try {
-            $sql = "SELECT u.nombres, u.apellidos 
+            $sql = 'SELECT u.nombres, u.apellidos 
                     FROM financiamiento f 
                     LEFT JOIN usuarios u ON f.usuario_id = u.usuario_id 
-                    WHERE f.idfinanciamiento = ?";
-            
+                    WHERE f.idfinanciamiento = ?';
+
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_financiamiento);
+            $stmt->bind_param('i', $id_financiamiento);
             $stmt->execute();
             $result = $stmt->get_result();
-            
+
             $usuario = $result->fetch_assoc();
-            
+
             if ($usuario) {
                 // Construir el nombre completo con validaciones
                 $nombre = trim($usuario['nombres'] ?? '');
                 $apellidos = trim($usuario['apellidos'] ?? '');
-                
+
                 if (!empty($nombre) && !empty($apellidos)) {
                     return $nombre . ' ' . $apellidos;
                 } elseif (!empty($nombre)) {
@@ -1321,48 +1352,48 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                     return $apellidos;
                 }
             }
-            
+
             return 'No identificado';
         } catch (Exception $e) {
-            error_log("Error en Financiamiento::obtenerUsuarioRegistro(): " . $e->getMessage());
+            error_log('Error en Financiamiento::obtenerUsuarioRegistro(): ' . $e->getMessage());
             return 'No identificado';
         }
     }
 
-    public function verificarCodigoAsociadoDuplicado($codigoAsociado, $grupoFinanciamiento) {
+    public function verificarCodigoAsociadoDuplicado($codigoAsociado, $grupoFinanciamiento)
+    {
         try {
             // Primero verificar si el plan es vehicular
-            $sqlPlan = "SELECT tipo_vehicular FROM planes_financiamiento WHERE idplan_financiamiento = ?";
+            $sqlPlan = 'SELECT tipo_vehicular FROM planes_financiamiento WHERE idplan_financiamiento = ?';
             $stmtPlan = mysqli_prepare($this->conectar, $sqlPlan);
-            mysqli_stmt_bind_param($stmtPlan, "s", $grupoFinanciamiento);
+            mysqli_stmt_bind_param($stmtPlan, 's', $grupoFinanciamiento);
             mysqli_stmt_execute($stmtPlan);
             $resultPlan = mysqli_stmt_get_result($stmtPlan);
-            
+
             if ($rowPlan = mysqli_fetch_assoc($resultPlan)) {
                 $tipoVehicular = $rowPlan['tipo_vehicular'];
-                
+
                 // Solo validar si es vehicular (vehiculo o moto)
                 if ($tipoVehicular === 'vehiculo' || $tipoVehicular === 'moto') {
                     // Verificar si existe código duplicado
-                    // $sqlFinanciamiento = "SELECT COUNT(*) as total FROM financiamiento 
+                    // $sqlFinanciamiento = "SELECT COUNT(*) as total FROM financiamiento
                     //                     WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL";
-                    $sqlFinanciamiento = "SELECT COUNT(*) as total FROM financiamiento 
-                    WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL AND estado_eliminado = 0";
+                    $sqlFinanciamiento = 'SELECT COUNT(*) as total FROM financiamiento 
+                    WHERE codigo_asociado = ? AND grupo_financiamiento = ? AND codigo_asociado IS NOT NULL AND estado_eliminado = 0';
                     $stmtFinanciamiento = mysqli_prepare($this->conectar, $sqlFinanciamiento);
-                    mysqli_stmt_bind_param($stmtFinanciamiento, "ss", $codigoAsociado, $grupoFinanciamiento);
+                    mysqli_stmt_bind_param($stmtFinanciamiento, 'ss', $codigoAsociado, $grupoFinanciamiento);
                     mysqli_stmt_execute($stmtFinanciamiento);
                     $resultFinanciamiento = mysqli_stmt_get_result($stmtFinanciamiento);
-                    
+
                     if ($rowFinanciamiento = mysqli_fetch_assoc($resultFinanciamiento)) {
                         return $rowFinanciamiento['total'] > 0;
                     }
                 }
             }
-            
+
             return false;
-            
         } catch (Exception $e) {
-            error_log("Error en verificarCodigoAsociadoDuplicado: " . $e->getMessage());
+            error_log('Error en verificarCodigoAsociadoDuplicado: ' . $e->getMessage());
             return false;
         }
     }
@@ -1373,36 +1404,37 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
         // $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso')";
         $sql = "SELECT COUNT(*) as total FROM financiamiento WHERE {$campo} = ? AND (estado = 'En Progreso' OR estado = 'En progreso') AND estado_eliminado = 0 AND (aprobado = 1 OR aprobado IS NULL)";
         $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param("i", $id);
+        $stmt->bind_param('i', $id);
         $stmt->execute();
         $result = $stmt->get_result();
         $fila = $result->fetch_assoc();
-        return (int)$fila['total'];
+        return (int) $fila['total'];
     }
 
     // Función para obtener el nombre del usuario que creó el financiamiento
-    public function obtenerUsuarioPorId($usuario_id) {
+    public function obtenerUsuarioPorId($usuario_id)
+    {
         try {
             if (!$usuario_id) {
                 return null;
             }
 
-            $sql = "SELECT nombres, apellidos FROM usuarios WHERE usuario_id = ?";
+            $sql = 'SELECT nombres, apellidos FROM usuarios WHERE usuario_id = ?';
             $stmt = $this->conectar->prepare($sql);
-            
+
             if ($stmt === false) {
-                throw new Exception("Error en prepare: " . $this->conectar->error);
+                throw new Exception('Error en prepare: ' . $this->conectar->error);
             }
 
-            $stmt->bind_param("i", $usuario_id);
-            
+            $stmt->bind_param('i', $usuario_id);
+
             if (!$stmt->execute()) {
-                throw new Exception("Error en execute: " . $stmt->error);
+                throw new Exception('Error en execute: ' . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $usuario = $result->fetch_assoc();
-            
+
             if ($usuario) {
                 // Concatenar nombres y apellidos, si apellidos es null solo devolver nombres
                 if (!empty($usuario['apellidos'])) {
@@ -1411,18 +1443,19 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                     return trim($usuario['nombres']);
                 }
             }
-            
+
             return null;
         } catch (Exception $e) {
-            error_log("Error en obtenerUsuarioPorId: " . $e->getMessage());
+            error_log('Error en obtenerUsuarioPorId: ' . $e->getMessage());
             return null;
         }
     }
 
     // Función para obtener financiamientos eliminados (papelera)
-    public function getFinanciamientosEliminados() {
+    public function getFinanciamientosEliminados()
+    {
         try {
-            $sql = "SELECT f.*,
+            $sql = 'SELECT f.*,
                         COALESCE(c.nombres, cf.nombres) as nombre_cliente,
                         COALESCE(c.apellido_paterno, cf.apellido_paterno) as apellido_cliente,
                         COALESCE(c.nro_documento, cf.n_documento) as documento_cliente
@@ -1430,114 +1463,117 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                     LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
                     LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
                     WHERE f.estado_eliminado = 1
-                    ORDER BY f.fecha_creacion DESC";
+                    ORDER BY f.fecha_creacion DESC';
 
             $stmt = $this->conectar->prepare($sql);
             if ($stmt === false) {
-                throw new Exception("Error en prepare: " . $this->conectar->error);
+                throw new Exception('Error en prepare: ' . $this->conectar->error);
             }
 
             if (!$stmt->execute()) {
-                throw new Exception("Error en execute: " . $stmt->error);
+                throw new Exception('Error en execute: ' . $stmt->error);
             }
 
             $result = $stmt->get_result();
             return $result->fetch_all(MYSQLI_ASSOC);
         } catch (Exception $e) {
-            error_log("Error en getFinanciamientosEliminados: " . $e->getMessage());
+            error_log('Error en getFinanciamientosEliminados: ' . $e->getMessage());
             return [];
         }
     }
 
     // Función para restaurar un financiamiento eliminado
-    public function restaurarFinanciamiento($id_financiamiento) {
+    public function restaurarFinanciamiento($id_financiamiento)
+    {
         try {
             $this->conectar->begin_transaction();
 
             // Restaurar financiamiento
-            $sql = "UPDATE financiamiento SET estado_eliminado = 0 WHERE idfinanciamiento = ?";
+            $sql = 'UPDATE financiamiento SET estado_eliminado = 0 WHERE idfinanciamiento = ?';
             $stmt = $this->conectar->prepare($sql);
             if ($stmt === false) {
-                throw new Exception("Error en prepare financiamiento: " . $this->conectar->error);
+                throw new Exception('Error en prepare financiamiento: ' . $this->conectar->error);
             }
 
-            $stmt->bind_param("i", $id_financiamiento);
+            $stmt->bind_param('i', $id_financiamiento);
             if (!$stmt->execute()) {
-                throw new Exception("Error en execute financiamiento: " . $stmt->error);
+                throw new Exception('Error en execute financiamiento: ' . $stmt->error);
             }
 
             // Restaurar cuotas
-            $sqlCuotas = "UPDATE cuotas_financiamiento SET estado_eliminado = 0 WHERE id_financiamiento = ?";
+            $sqlCuotas = 'UPDATE cuotas_financiamiento SET estado_eliminado = 0 WHERE id_financiamiento = ?';
             $stmtCuotas = $this->conectar->prepare($sqlCuotas);
             if ($stmtCuotas === false) {
-                throw new Exception("Error en prepare cuotas: " . $this->conectar->error);
+                throw new Exception('Error en prepare cuotas: ' . $this->conectar->error);
             }
 
-            $stmtCuotas->bind_param("i", $id_financiamiento);
+            $stmtCuotas->bind_param('i', $id_financiamiento);
             if (!$stmtCuotas->execute()) {
-                throw new Exception("Error en execute cuotas: " . $stmtCuotas->error);
+                throw new Exception('Error en execute cuotas: ' . $stmtCuotas->error);
             }
 
             $this->conectar->commit();
             return true;
         } catch (Exception $e) {
             $this->conectar->rollback();
-            error_log("Error en restaurarFinanciamiento: " . $e->getMessage());
+            error_log('Error en restaurarFinanciamiento: ' . $e->getMessage());
             return false;
         }
     }
 
     // Función para eliminar permanentemente un financiamiento
-    public function eliminarPermanentemente($id_financiamiento) {
-    try {
-        $this->conectar->begin_transaction();
+    public function eliminarPermanentemente($id_financiamiento)
+    {
+        try {
+            $this->conectar->begin_transaction();
 
-        // Eliminar detalles de pago del financiamiento
-        $sqlDetalles = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
-        $stmtDetalles = $this->conectar->prepare($sqlDetalles);
-        if ($stmtDetalles === false) {
-            throw new Exception("Error en prepare detalle_pago: " . $this->conectar->error);
+            // Eliminar detalles de pago del financiamiento
+            $sqlDetalles = 'DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?';
+            $stmtDetalles = $this->conectar->prepare($sqlDetalles);
+            if ($stmtDetalles === false) {
+                throw new Exception('Error en prepare detalle_pago: ' . $this->conectar->error);
+            }
+            $stmtDetalles->bind_param('i', $id_financiamiento);
+            $stmtDetalles->execute();
+
+            // Eliminar cuotas del financiamiento
+            $sqlCuotas = 'DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?';
+            $stmtCuotas = $this->conectar->prepare($sqlCuotas);
+            if ($stmtCuotas === false) {
+                throw new Exception('Error en prepare cuotas: ' . $this->conectar->error);
+            }
+            $stmtCuotas->bind_param('i', $id_financiamiento);
+            $stmtCuotas->execute();
+
+            // Eliminar el financiamiento
+            $sqlFinanciamiento = 'DELETE FROM financiamiento WHERE idfinanciamiento = ?';
+            $stmtFinanciamiento = $this->conectar->prepare($sqlFinanciamiento);
+            if ($stmtFinanciamiento === false) {
+                throw new Exception('Error en prepare financiamiento: ' . $this->conectar->error);
+            }
+            $stmtFinanciamiento->bind_param('i', $id_financiamiento);
+            $stmtFinanciamiento->execute();
+
+            $this->conectar->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conectar->rollback();
+            error_log('Error en eliminarPermanentemente: ' . $e->getMessage());
+            return false;
         }
-        $stmtDetalles->bind_param("i", $id_financiamiento);
-        $stmtDetalles->execute();
-
-        // Eliminar cuotas del financiamiento
-        $sqlCuotas = "DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?";
-        $stmtCuotas = $this->conectar->prepare($sqlCuotas);
-        if ($stmtCuotas === false) {
-            throw new Exception("Error en prepare cuotas: " . $this->conectar->error);
-        }
-        $stmtCuotas->bind_param("i", $id_financiamiento);
-        $stmtCuotas->execute();
-
-        // Eliminar el financiamiento
-        $sqlFinanciamiento = "DELETE FROM financiamiento WHERE idfinanciamiento = ?";
-        $stmtFinanciamiento = $this->conectar->prepare($sqlFinanciamiento);
-        if ($stmtFinanciamiento === false) {
-            throw new Exception("Error en prepare financiamiento: " . $this->conectar->error);
-        }
-        $stmtFinanciamiento->bind_param("i", $id_financiamiento);
-        $stmtFinanciamiento->execute();
-
-        $this->conectar->commit();
-        return true;
-    } catch (Exception $e) {
-        $this->conectar->rollback();
-        error_log("Error en eliminarPermanentemente: " . $e->getMessage());
-        return false;
-    }
     }
 
     // Función para vaciar toda la papelera
-    public function vaciarPapelera() {
+    public function vaciarPapelera()
+    {
         try {
             $this->conectar->begin_transaction();
 
             // Obtener todos los financiamientos eliminados
-            $sqlObtener = "SELECT idfinanciamiento FROM financiamiento WHERE estado_eliminado = 1";
+            $sqlObtener = 'SELECT idfinanciamiento FROM financiamiento WHERE estado_eliminado = 1';
             $stmtObtener = $this->conectar->prepare($sqlObtener);
             if ($stmtObtener === false) {
-                throw new Exception("Error en prepare obtener eliminados: " . $this->conectar->error);
+                throw new Exception('Error en prepare obtener eliminados: ' . $this->conectar->error);
             }
 
             $stmtObtener->execute();
@@ -1549,18 +1585,18 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
                 $id_financiamiento = $financiamiento['idfinanciamiento'];
 
                 // Eliminar detalles de pago
-                $sqlDetalles = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+                $sqlDetalles = 'DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?';
                 $stmtDetalles = $this->conectar->prepare($sqlDetalles);
                 if ($stmtDetalles) {
-                    $stmtDetalles->bind_param("i", $id_financiamiento);
+                    $stmtDetalles->bind_param('i', $id_financiamiento);
                     $stmtDetalles->execute();
                 }
 
                 // Eliminar cuotas
-                $sqlCuotas = "DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?";
+                $sqlCuotas = 'DELETE FROM cuotas_financiamiento WHERE id_financiamiento = ?';
                 $stmtCuotas = $this->conectar->prepare($sqlCuotas);
                 if ($stmtCuotas) {
-                    $stmtCuotas->bind_param("i", $id_financiamiento);
+                    $stmtCuotas->bind_param('i', $id_financiamiento);
                     $stmtCuotas->execute();
                 }
 
@@ -1568,10 +1604,10 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             }
 
             // Eliminar todos los financiamientos de la papelera
-            $sqlFinanciamientos = "DELETE FROM financiamiento WHERE estado_eliminado = 1";
+            $sqlFinanciamientos = 'DELETE FROM financiamiento WHERE estado_eliminado = 1';
             $stmtFinanciamientos = $this->conectar->prepare($sqlFinanciamientos);
             if ($stmtFinanciamientos === false) {
-                throw new Exception("Error en prepare eliminar financiamientos: " . $this->conectar->error);
+                throw new Exception('Error en prepare eliminar financiamientos: ' . $this->conectar->error);
             }
             $stmtFinanciamientos->execute();
 
@@ -1579,7 +1615,7 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             return ['success' => true, 'eliminados' => $eliminados];
         } catch (Exception $e) {
             $this->conectar->rollback();
-            error_log("Error en vaciarPapelera: " . $e->getMessage());
+            error_log('Error en vaciarPapelera: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -1592,14 +1628,14 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
     public function obtenerInfoCuota($idCuota)
     {
         try {
-            $query = "SELECT
+            $query = 'SELECT
                         cf.*,
                         f.idproductosv2,
                         p.descuento_cuota
                     FROM cuotas_financiamiento cf
                     INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                     INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
-                    WHERE cf.idcuotas_financiamiento = ?";
+                    WHERE cf.idcuotas_financiamiento = ?';
 
             $stmt = $this->conectar->prepare($query);
             $stmt->bind_param('i', $idCuota);
@@ -1607,9 +1643,8 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             $result = $stmt->get_result();
 
             return $result->fetch_assoc();
-
         } catch (Exception $e) {
-            error_log("Error en obtenerInfoCuota: " . $e->getMessage());
+            error_log('Error en obtenerInfoCuota: ' . $e->getMessage());
             return null;
         }
     }
@@ -1657,89 +1692,87 @@ $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_p
             }
 
             return $cuotasInfo;
-
         } catch (Exception $e) {
-            error_log("Error en obtenerInfoCuotasBatch: " . $e->getMessage());
+            error_log('Error en obtenerInfoCuotasBatch: ' . $e->getMessage());
             return [];
         }
     }
-      public function anularPagoFinanciamiento($idPago) {
-      try {
-          // Iniciar transacción
-          $this->conectar->begin_transaction();
 
-          // 1. Verificar que el pago existe y está en estado = 1 (Aprobado)
-          $queryVerificar = "SELECT estado FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
-          $stmtVerificar = $this->conectar->prepare($queryVerificar);
-          $stmtVerificar->bind_param("i", $idPago);
-          $stmtVerificar->execute();
-          $resultVerificar = $stmtVerificar->get_result();
-          $pago = $resultVerificar->fetch_assoc();
+    public function anularPagoFinanciamiento($idPago)
+    {
+        try {
+            // Iniciar transacción
+            $this->conectar->begin_transaction();
 
-          if (!$pago) {
-              throw new Exception('El pago no existe');
-          }
+            // 1. Verificar que el pago existe y está en estado = 1 (Aprobado)
+            $queryVerificar = 'SELECT estado FROM pagos_financiamiento WHERE idpagos_financiamiento = ?';
+            $stmtVerificar = $this->conectar->prepare($queryVerificar);
+            $stmtVerificar->bind_param('i', $idPago);
+            $stmtVerificar->execute();
+            $resultVerificar = $stmtVerificar->get_result();
+            $pago = $resultVerificar->fetch_assoc();
 
-          if ($pago['estado'] != 1) {
-              throw new Exception('Solo se pueden anular pagos aprobados');
-          }
+            if (!$pago) {
+                throw new Exception('El pago no existe');
+            }
 
-          // 2. Obtener las cuotas relacionadas con este pago
-          $queryCuotas = "SELECT id_cuota FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
-          $stmtCuotas = $this->conectar->prepare($queryCuotas);
-          $stmtCuotas->bind_param("i", $idPago);
-          $stmtCuotas->execute();
-          $resultCuotas = $stmtCuotas->get_result();
+            if ($pago['estado'] != 1) {
+                throw new Exception('Solo se pueden anular pagos aprobados');
+            }
 
-          $idsCuotas = [];
-          while ($row = $resultCuotas->fetch_assoc()) {
-              $idsCuotas[] = $row['id_cuota'];
-          }
+            // 2. Obtener las cuotas relacionadas con este pago
+            $queryCuotas = 'SELECT id_cuota FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?';
+            $stmtCuotas = $this->conectar->prepare($queryCuotas);
+            $stmtCuotas->bind_param('i', $idPago);
+            $stmtCuotas->execute();
+            $resultCuotas = $stmtCuotas->get_result();
 
-          // 3. Cambiar estado del pago a Anulado (3)
-          $queryPago = "UPDATE pagos_financiamiento SET estado = 3 WHERE idpagos_financiamiento = ?";
-          $stmtPago = $this->conectar->prepare($queryPago);
-          $stmtPago->bind_param("i", $idPago);
+            $idsCuotas = [];
+            while ($row = $resultCuotas->fetch_assoc()) {
+                $idsCuotas[] = $row['id_cuota'];
+            }
 
-          if (!$stmtPago->execute()) {
-              throw new Exception('Error al actualizar el estado del pago');
-          }
+            // 3. Cambiar estado del pago a Anulado (3)
+            $queryPago = 'UPDATE pagos_financiamiento SET estado = 3 WHERE idpagos_financiamiento = ?';
+            $stmtPago = $this->conectar->prepare($queryPago);
+            $stmtPago->bind_param('i', $idPago);
 
-          // 4. Revertir las cuotas a "En Progreso" y limpiar fecha_pago
-          if (!empty($idsCuotas)) {
-              $placeholders = implode(',', array_fill(0, count($idsCuotas), '?'));
-              $queryRevertirCuotas = "UPDATE cuotas_financiamiento
+            if (!$stmtPago->execute()) {
+                throw new Exception('Error al actualizar el estado del pago');
+            }
+
+            // 4. Revertir las cuotas a "En Progreso" y limpiar fecha_pago
+            if (!empty($idsCuotas)) {
+                $placeholders = implode(',', array_fill(0, count($idsCuotas), '?'));
+                $queryRevertirCuotas = "UPDATE cuotas_financiamiento
                                      SET estado = 'En Progreso', fecha_pago = NULL
                                      WHERE idcuotas_financiamiento IN ($placeholders)";
-              $stmtRevertir = $this->conectar->prepare($queryRevertirCuotas);
+                $stmtRevertir = $this->conectar->prepare($queryRevertirCuotas);
 
-              // Bind dinámico de parámetros
-              $types = str_repeat('i', count($idsCuotas));
-              $stmtRevertir->bind_param($types, ...$idsCuotas);
+                // Bind dinámico de parámetros
+                $types = str_repeat('i', count($idsCuotas));
+                $stmtRevertir->bind_param($types, ...$idsCuotas);
 
-              if (!$stmtRevertir->execute()) {
-                  throw new Exception('Error al revertir las cuotas');
-              }
-          }
+                if (!$stmtRevertir->execute()) {
+                    throw new Exception('Error al revertir las cuotas');
+                }
+            }
 
-          // 5. Limpiar el usuario de aprobación en pagos_pendientes_financiamientos (opcional)
-          $queryLimpiarAprobacion = "UPDATE pagos_pendientes_financiamientos
+            // 5. Limpiar el usuario de aprobación en pagos_pendientes_financiamientos (opcional)
+            $queryLimpiarAprobacion = 'UPDATE pagos_pendientes_financiamientos
                                      SET id_usuario_aprobacion = NULL
-                                     WHERE idpagos_financiamiento = ?";
-          $stmtLimpiar = $this->conectar->prepare($queryLimpiarAprobacion);
-          $stmtLimpiar->bind_param("i", $idPago);
-          $stmtLimpiar->execute();
+                                     WHERE idpagos_financiamiento = ?';
+            $stmtLimpiar = $this->conectar->prepare($queryLimpiarAprobacion);
+            $stmtLimpiar->bind_param('i', $idPago);
+            $stmtLimpiar->execute();
 
-          // 6. Confirmar transacción
-          $this->conectar->commit();
+            // 6. Confirmar transacción
+            $this->conectar->commit();
 
-          return ['status' => 'success', 'message' => 'Pago anulado correctamente. Las cuotas han vuelto a "En Progreso".'];
-
-      } catch (Exception $e) {
-          $this->conectar->rollback();
-          return ['status' => 'error', 'message' => 'Error al anular el pago: ' . $e->getMessage()];
-      }
-  }
-
-
+            return ['status' => 'success', 'message' => 'Pago anulado correctamente. Las cuotas han vuelto a "En Progreso".'];
+        } catch (Exception $e) {
+            $this->conectar->rollback();
+            return ['status' => 'error', 'message' => 'Error al anular el pago: ' . $e->getMessage()];
+        }
+    }
 }

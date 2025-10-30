@@ -1,7 +1,7 @@
 <!-- resources\views\fragment-views\cliente\financiamientoView.php -->
 <?php
 if (session_status() == PHP_SESSION_NONE) {
-    session_start(); // Aseguramos que la sesión está iniciada
+    session_start();  // Aseguramos que la sesión está iniciada
 }
 
 // Verificamos si el usuario tiene sesión activa
@@ -526,6 +526,26 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                         </button>
                     </div>
                 </div>
+                
+                <!-- Buscador de Papelera -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" 
+                                   id="buscadorPapelera" 
+                                   class="form-control" 
+                                   placeholder="Buscar por cliente, documento, ID o monto...">
+                            <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusquedaPapelera">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <span id="resultadosBusquedaPapelera"></span>
+                        </small>
+                    </div>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
@@ -738,7 +758,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         <div class="form-check">
                                                             <input class="form-check-input" type="radio"
                                                                 name="tipoMoneda" id="monedaSoles" value="Soles"
-                                                                required>
+                                                                checked required>
                                                             <label class="form-check-label" for="monedaSoles">
                                                                 <i class="fas fa-coins me-1"></i>Soles
                                                             </label>
@@ -1815,6 +1835,9 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 $('#listaClientes').show();
             });
 
+            // Variable global para almacenar los datos de la papelera
+            let datosFinanciamientosEliminados = [];
+
             // Función para cargar los datos en la tabla de la papelera
             function cargarFinanciamientosEliminados() {
                 $.ajax({
@@ -1823,34 +1846,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                     dataType: 'json',
                     success: function(response) {
                         if (response.success) {
-                            const tabla = $('#tablaPapelera');
-                            tabla.empty();
-                            if (response.data.length > 0) {
-                                response.data.forEach(function(item) {
-                                    let nombreCliente = item.nombre_cliente ? item.nombre_cliente + ' ' + (item.apellido_cliente || '') : 'No disponible';
-                                    let fila = `
-                                        <tr>
-                                            <td>${item.idfinanciamiento}</td>
-                                            <td>${nombreCliente}</td>
-                                            <td>${item.documento_cliente || 'N/A'}</td>
-                                            <td>${item.fecha_creacion}</td>
-                                            <td>${item.moneda} ${item.monto_total}</td>
-                                            <td><span class="badge bg-danger">Eliminado</span></td>
-                                            <td>
-                                                <button class="btn btn-sm btn-info me-1" onclick="restaurarFinanciamiento(${item.idfinanciamiento})">
-                                                    <i class="fas fa-undo"></i> Restaurar
-                                                </button>
-                                                <button class="btn btn-sm btn-danger" onclick="eliminarPermanentemente(${item.idfinanciamiento})">
-                                                    <i class="fas fa-trash"></i> Eliminar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `;
-                                    tabla.append(fila);
-                                });
-                            } else {
-                                tabla.append('<tr><td colspan="7" class="text-center">La papelera está vacía.</td></tr>');
-                            }
+                            datosFinanciamientosEliminados = response.data; // Guardar datos globalmente
+                            mostrarFinanciamientosEliminados(datosFinanciamientosEliminados);
                         } else {
                             Swal.fire({
                                 title: 'Error',
@@ -1870,6 +1867,82 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                     }
                 });
             }
+
+            // Función para mostrar financiamientos en la tabla
+            function mostrarFinanciamientosEliminados(datos) {
+                const tabla = $('#tablaPapelera');
+                tabla.empty();
+                
+                if (datos.length > 0) {
+                    datos.forEach(function(item) {
+                        let nombreCliente = item.nombre_cliente ? item.nombre_cliente + ' ' + (item.apellido_cliente || '') : 'No disponible';
+                        let fila = `
+                            <tr data-id="${item.idfinanciamiento}" 
+                                data-cliente="${nombreCliente.toLowerCase()}" 
+                                data-documento="${(item.documento_cliente || '').toLowerCase()}" 
+                                data-monto="${item.monto_total}">
+                                <td>${item.idfinanciamiento}</td>
+                                <td>${nombreCliente}</td>
+                                <td>${item.documento_cliente || 'N/A'}</td>
+                                <td>${item.fecha_creacion}</td>
+                                <td>${item.moneda} ${item.monto_total}</td>
+                                <td><span class="badge bg-danger">Eliminado</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-info me-1" onclick="restaurarFinanciamiento(${item.idfinanciamiento})">
+                                        <i class="fas fa-undo"></i> Restaurar
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="eliminarPermanentemente(${item.idfinanciamiento})">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tabla.append(fila);
+                    });
+                    
+                    // Actualizar contador de resultados
+                    $('#resultadosBusquedaPapelera').text(`Mostrando ${datos.length} de ${datosFinanciamientosEliminados.length} financiamientos`);
+                } else {
+                    tabla.append('<tr><td colspan="7" class="text-center">No se encontraron resultados.</td></tr>');
+                    $('#resultadosBusquedaPapelera').text('');
+                }
+            }
+
+            // Función para filtrar financiamientos
+            function filtrarFinanciamientosPapelera(termino) {
+                if (!termino || termino.trim() === '') {
+                    mostrarFinanciamientosEliminados(datosFinanciamientosEliminados);
+                    return;
+                }
+
+                termino = termino.toLowerCase().trim();
+                
+                const datosFiltrados = datosFinanciamientosEliminados.filter(function(item) {
+                    const nombreCliente = (item.nombre_cliente ? item.nombre_cliente + ' ' + (item.apellido_cliente || '') : '').toLowerCase();
+                    const documento = (item.documento_cliente || '').toLowerCase();
+                    const id = item.idfinanciamiento.toString();
+                    const monto = item.monto_total.toString();
+                    
+                    return nombreCliente.includes(termino) || 
+                           documento.includes(termino) || 
+                           id.includes(termino) || 
+                           monto.includes(termino);
+                });
+
+                mostrarFinanciamientosEliminados(datosFiltrados);
+            }
+
+            // Evento para el buscador de papelera
+            $('#buscadorPapelera').on('keyup', function() {
+                const termino = $(this).val();
+                filtrarFinanciamientosPapelera(termino);
+            });
+
+            // Evento para limpiar búsqueda
+            $('#btnLimpiarBusquedaPapelera').on('click', function() {
+                $('#buscadorPapelera').val('');
+                filtrarFinanciamientosPapelera('');
+            });
 
             // Evento para el botón de vaciar papelera
             $('#btnVaciarPapelera').on('click', function() {

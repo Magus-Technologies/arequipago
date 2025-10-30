@@ -1,0 +1,136 @@
+{
+  "version": "1.0",
+  "ultima_actualizacion": "2025-10-24T08:20:00",
+  "plantillas": [
+    {
+      "id": 1,
+      "nombre": "Contrato de Llantas",
+      "descripcion": "Contrato estándar para financiamiento de llantas",
+      "categoria": "Llantas",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_llantas.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Contrato de Aceites",
+      "descripcion": "Contrato estándar para financiamiento de aceites",
+      "categoria": "Aceites",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_aceites.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "nombre": "Contrato de Baterías",
+      "descripcion": "Contrato estándar para financiamiento de baterías",
+      "categoria": "Baterías",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_baterias.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "nombre": "Contrato de Celular",
+      "descripcion": "Contrato estándar para financiamiento de celulares",
+      "categoria": "Celular",
+      "grupo_financiamiento": null,
+      "activo": true,
+      "html_template": "",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-01-23T10:00:00",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-01-23T10:00:00",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-01-23T10:00:00",
+            "cambios": "Migración inicial desde contrato_celular.html",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "nombre": "vbbbbbbbbb",
+      "descripcion": "",
+      "categoria": null,
+      "grupo_financiamiento": "2",
+      "activo": true,
+      "html_template": "<h1 style=\"text-align: center; \"><u>CONTRATO DE PRUEBA&nbsp;</u></h1>",
+      "css_personalizado": "",
+      "variables_requeridas": [],
+      "metadata": {
+        "creado_por": "sistema",
+        "fecha_creacion": "2025-10-24T07:47:43",
+        "modificado_por": "sistema",
+        "fecha_modificacion": "2025-10-24T07:47:43",
+        "version": "1.0",
+        "historial": [
+          {
+            "version": "1.0",
+            "fecha": "2025-10-24T07:47:43",
+            "cambios": "Creación inicial",
+            "usuario": "sistema"
+          }
+        ]
+      }
+    }
+  ]
+}

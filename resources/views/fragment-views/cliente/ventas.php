@@ -1073,6 +1073,16 @@ $("#datatable_filter input").on("keyup", function () {
         // anular venta sin refresacar
         $("#datatable").on("click", ".btn-anular-vent", function (evt) {
             const iventa = $(evt.currentTarget).attr('data-venta');
+            
+            // CORREGIDO: Validar que iventa no esté vacío
+            if (!iventa || iventa === '' || iventa === 'undefined') {
+                alertError("Error: No se pudo obtener el ID de la venta");
+                console.error("ID de venta vacío o inválido:", iventa);
+                return;
+            }
+            
+            console.log("ID de venta a anular:", iventa);
+            
             Swal.fire({
                 title: 'Anular Venta',
                 text: "¿Esta seguro de ANULAR este documento?",
@@ -1086,6 +1096,7 @@ $("#datatable_filter input").on("keyup", function () {
                     _ajax("/ajs/venta/anular", "POST", {
                         iventa
                     }, function (resp) {
+                        console.log("Respuesta del servidor:", resp);
                         if (resp.res) {
                             // Actualizar solo la fila específica en lugar de recargar toda la tabla
                             const row = tabla.row($(`[data-venta="${iventa}"]`).closest('tr'));
@@ -1093,7 +1104,7 @@ $("#datatable_filter input").on("keyup", function () {
                             row.draw(); // Redibujar la fila
                             alertExito("Venta Anulada!");
                         } else {
-                            alertError("No se pudo Anular")
+                            alertError("No se pudo Anular: " + (resp.mensaje || "Error desconocido"));
                         }
                     })
                 }

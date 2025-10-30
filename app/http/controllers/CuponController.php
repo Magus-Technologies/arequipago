@@ -152,6 +152,7 @@ class CuponController
                 'limite_usos_conductor' => !empty($_POST['limitePorConductor']) ? intval($_POST['limitePorConductor']) : 1,
                 'limite_usos_total' => !empty($_POST['limiteTotal']) ? intval($_POST['limiteTotal']) : null,
                 'activo' => isset($_POST['activo']) ? 1 : 0,
+                'departamento_id' => !empty($_POST['departamento_id']) ? intval($_POST['departamento_id']) : null,
             ];
 
             // CORREGIDO: Crear cupón UNA SOLA VEZ
@@ -884,6 +885,7 @@ $response = [
                 'limite_usos_conductor' => !empty($_POST['limitePorConductor']) ? intval($_POST['limitePorConductor']) : 1,
                 'limite_usos_total' => !empty($_POST['limiteTotal']) ? intval($_POST['limiteTotal']) : null,
                 'activo' => isset($_POST['activo']) ? 1 : 0,
+                'departamento_id' => !empty($_POST['departamento_id']) ? intval($_POST['departamento_id']) : null,
             ];
 
             // Actualizar cupón
@@ -953,6 +955,30 @@ $response = [
             return round(($montoTotal * $cuponInfo['valor']) / 100, 2);
         } else { // monto_fijo
             return min($cuponInfo['valor'], $montoTotal); // No puede ser mayor al total
+        }
+    }
+
+    /**
+     * Obtener departamentos habilitados para cupones
+     */
+    public function obtenerDepartamentosHabilitados()
+    {
+        try {
+            $cuponModel = new Cupon();
+            $departamentos = $cuponModel->obtenerDepartamentosHabilitados();
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'data' => $departamentos
+            ]);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener departamentos: ' . $e->getMessage()
+            ]);
         }
     }
 }
