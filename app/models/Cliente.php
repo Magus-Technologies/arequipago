@@ -1150,6 +1150,25 @@ public function obtenerDepartamentos()
             
             $insertId = $this->conectar->insert_id;
 
+            // Registrar comisión por ingreso de cliente
+            if ($insertId && isset($datos['usuario_id'])) {
+                require_once 'app/models/Comision.php';
+                $comisionModel = new Comision();
+                $comisionData = $comisionModel->calcularComisionIngresoCliente();
+                
+                if ($comisionData['aplica']) {
+                    $comisionModel->registrarComision(
+                        $datos['usuario_id'],
+                        'inscripcion',
+                        $insertId,
+                        $comisionData['monto'],
+                        null,
+                        "Comisión por ingreso de cliente",
+                        $comisionData['moneda']
+                    );
+                }
+            }
+
             // Confirmar transacción
             $this->conectar->commit();
             return $insertId;
