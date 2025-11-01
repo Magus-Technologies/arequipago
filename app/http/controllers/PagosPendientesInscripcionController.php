@@ -114,7 +114,7 @@ class PagosPendientesInscripcionController extends Controller
             }
 
             // Iniciar transacción
-            $this->conexion->begin_transaction();
+            // $this->conexion->begin_transaction();
 
             try {
                 if ($pagoPendiente['tipo_inscripcion'] === 'conductor') {
@@ -234,7 +234,12 @@ class PagosPendientesInscripcionController extends Controller
     private function aprobarPagoCliente($pagoPendiente, $id_usuario_aprobacion)
     {
         require_once "app/models/Cliente.php";
-        
+
+        // 🔥 DEBUG: Ver todos los datos del pago pendiente
+        error_log("=== APROBAR PAGO CLIENTE DEBUG ===");
+        error_log("Pago Pendiente completo: " . json_encode($pagoPendiente));
+        error_log("ID Usuario Aprobacion (quien aprueba): " . $id_usuario_aprobacion);
+
         $observaciones = json_decode($pagoPendiente['observaciones'], true);
         $id_cliente = $observaciones['id_cliente'];
         $monto_pago = $observaciones['monto_pago'];
@@ -242,80 +247,142 @@ class PagosPendientesInscripcionController extends Controller
         $monto_pagado = $observaciones['monto_pagado'] ?? $monto_pago;
         $vuelto = $observaciones['vuelto'] ?? 0;
 
+        // 🔥 CORREGIDO: El campo se llama 'id_usuario_registro', NO 'id_usuario'
+        $id_usuario_original = $pagoPendiente['id_usuario_registro'] ?? null; // El asesor que registró el pago
+
+        // 🔥 DEBUG: Ver qué asesor se va a guardar
+        error_log("ID Usuario Original (asesor que registro): " . ($id_usuario_original ?? 'NULL'));
+
+        // 🔥 VALIDACIÓN: Si no hay usuario original, usar el que aprueba
+        if (empty($id_usuario_original)) {
+            error_log("⚠️ ADVERTENCIA: No hay id_usuario_registro en pagoPendiente, usando id_usuario_aprobacion");
+            $id_usuario_original = $id_usuario_aprobacion;
+        }
+
         // Insertar en cliente_pago
-        $sql = "INSERT INTO cliente_pago 
-                (cliente_id, monto_total, metodo_pago_id, monto_pagado, vuelto, usuario_id, estado) 
+        $sql = "INSERT INTO cliente_pago
+                (cliente_id, monto_total, metodo_pago_id, monto_pagado, vuelto, usuario_id, estado)
                 VALUES (?, ?, ?, ?, ?, ?, '1')";
-        
+
         $stmt = $this->conexion->prepare($sql);
-        $stmt->bind_param("iddddi", $id_cliente, $monto_pago, $metodo_pago, $monto_pagado, $vuelto, $id_usuario_aprobacion);
-        
+        // 🔥 CORREGIDO: Usar $id_usuario_original en lugar de $id_usuario_aprobacion
+        $stmt->bind_param("iddddi", $id_cliente, $monto_pago, $metodo_pago, $monto_pagado, $vuelto, $id_usuario_original);
+
+        // 🔥 DEBUG: Ver los datos que se van a insertar
+        error_log("Insertando en cliente_pago - Cliente: $id_cliente, Monto: $monto_pago, Usuario: $id_usuario_original");
+
         if (!$stmt->execute()) {
+            error_log("❌ ERROR al insertar en cliente_pago: " . $stmt->error);
             throw new Exception('Error al registrar el pago del cliente');
         }
 
         $id_cliente_pago = $this->conexion->insert_id;
+        error_log("✅ Pago insertado correctamente con ID: $id_cliente_pago");
+
+        // 🔥 DEBUG: Verificar qué se guardó en la BD
+        $sqlVerificar = "SELECT * FROM cliente_pago WHERE id = $id_cliente_pago";
+        $resultVerificar = $this->conexion->query($sqlVerificar);
+        if ($rowVerificar = $resultVerificar->fetch_assoc()) {
+            error_log("📋 Verificación BD - Registro guardado: " . json_encode($rowVerificar));
+        }
 
         // Actualizar el ID en pagos_pendientes_inscripcion
         $this->model->actualizarIdClientePago($pagoPendiente['id'], $id_cliente_pago);
-        
-        // Generar boleta de pago
-        $this->generarBoletaPagoCliente($id_cliente_pago, $id_cliente);
+
+        // Generar boleta de pago con el ID del asesor original
+        $this->generarBoletaPagoCliente($id_cliente_pago, $id_cliente, $id_usuario_original);
+
+        error_log("=== FIN APROBAR PAGO CLIENTE ===");
     }
     
     /**
      * Generar boleta de pago para cliente
      */
-    private function generarBoletaPagoCliente($pagoId, $clienteId)
+    private function generarBoletaPagoCliente($pagoId, $clienteId, $id_usuario_original = null)
     {
         try {
             require_once "app/models/Cliente.php";
             $clienteModel = new Cliente();
-            
+
             // Obtener datos del cliente y del pago
             $cliente = $clienteModel->obtenerClientePorId($clienteId);
             $pago = $clienteModel->obtenerPagoPorId($pagoId);
-            
+
             if (!$cliente || !$pago) {
-                error_log("No se encontraron datos del cliente o pago");
+                error_log("No se encontraron datos del cliente o pago. PagoId: $pagoId, ClienteId: $clienteId");
                 return;
             }
-            
+
+            // 🔥 CORREGIDO: Usar el ID del asesor original si se proporciona, sino usar el del pago
+            $usuarioModel = new Usuario();
+            $idUsuarioAsesor = $id_usuario_original ?? $pago['usuario_id'];
+            $usuario = $usuarioModel->getData($idUsuarioAsesor);
+            $nombreAsesor = $usuario ? ($usuario['nombres'] . ' ' . $usuario['apellidos']) : 'N/A';
+
+            error_log("Generando PDF - Pago: $pagoId, Cliente: $clienteId, Asesor: $idUsuarioAsesor ($nombreAsesor)");
+
             // Cargar plantilla HTML
             $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "nota_venta_inscrip-cliente.html";
             if (!file_exists($rutaBase)) {
                 error_log("No se encontró la plantilla de nota de venta");
                 return;
             }
-            
+
             $html = file_get_contents($rutaBase);
-            
-            // Reemplazar variables en la plantilla
-            $nombreCompleto = $cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno'];
-            $fechaActual = date('Y-m-d H:i:s');
-            
-            $html = str_replace('{NOMBRE_CLIENTE}', $nombreCompleto, $html);
-            $html = str_replace('{DOCUMENTO}', $cliente['n_documento'], $html);
-            $html = str_replace('{MONTO}', number_format($pago['monto_total'], 2), $html);
+
+            // Preparar datos
+            $nombreCompleto = trim($cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno']);
+            $fechaActual = date('d/m/Y H:i:s');
+            $tipoDocumento = !empty($cliente['tipo_doc']) ? strtoupper($cliente['tipo_doc']) : 'DNI';
+            $nroDocumento = $cliente['n_documento'];
+            $metodoPago = !empty($pago['metodo_pago']) ? strtoupper($pago['metodo_pago']) : 'EFECTIVO';
+
+            // Formatear montos
+            $montoPagado = number_format($pago['monto_pagado'], 2);
+            $totalPagar = number_format($pago['monto_total'], 2);
+            $vuelto = number_format($pago['vuelto'], 2);
+            $totalIngresado = number_format($pago['monto_total'], 2);
+
+            // Logo
+            $rutaLogo = 'public' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo-ticket.png';
+
+            // Reemplazar TODAS las variables en la plantilla
+            $html = str_replace('{LOGO}', $rutaLogo, $html);
             $html = str_replace('{FECHA}', $fechaActual, $html);
-            $html = str_replace('{METODO_PAGO}', $pago['metodo_pago'], $html);
-            
+            $html = str_replace('{NOMBRE_CLIENTE}', $nombreCompleto, $html);
+            $html = str_replace('{TIPO_DOCUMENTO}', $tipoDocumento, $html);
+            $html = str_replace('{NRO_DOCUMENTO}', $nroDocumento, $html);
+            $html = str_replace('{METODO_PAGO}', $metodoPago, $html);
+            $html = str_replace('{MONTO_PAGADO}', $montoPagado, $html);
+            $html = str_replace('{TOTAL_PAGAR}', $totalPagar, $html);
+            $html = str_replace('{VUELTO}', $vuelto, $html);
+            $html = str_replace('{TOTAL_INGRESADO}', $totalIngresado, $html);
+            $html = str_replace('{ASESOR}', $nombreAsesor, $html);
+
+            // Guardar PDF
+            $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $pdfPath = $uploadDir . "nota_venta_cliente_$pagoId.pdf";
+
+            // Eliminar PDF antiguo si existe
+            if (file_exists($pdfPath)) {
+                unlink($pdfPath);
+                error_log("PDF antiguo eliminado: $pdfPath");
+            }
+
             // Generar PDF
             $mpdf = new Mpdf([
                 'format' => [132, 210],
                 'default_font_size' => 9
             ]);
             $mpdf->WriteHTML($html);
-            
-            // Guardar PDF
-            $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            
-            $pdfPath = $uploadDir . "nota_venta_cliente_$pagoId.pdf";
             $mpdf->Output($pdfPath, \Mpdf\Output\Destination::FILE);
-            
+
+            error_log("PDF generado correctamente: $pdfPath");
+
         } catch (Exception $e) {
             error_log("Error al generar boleta de pago: " . $e->getMessage());
         }
@@ -640,6 +707,76 @@ class PagosPendientesInscripcionController extends Controller
             header('Content-Type: application/json');
             ob_clean();
             echo json_encode(['success' => false, 'message' => 'Error al eliminar pago: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    /**
+     * Ver comprobante de pago de cliente
+     * Si el PDF no existe, lo regenera automáticamente desde la BD
+     */
+    public function verComprobante($pagoId, $request = null)
+    {
+        try {
+            // El router pasa el ID directamente como primer parámetro
+            if (!$pagoId) {
+                http_response_code(404);
+                echo "ID de pago no proporcionado";
+                exit;
+            }
+
+            $pdfPath = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR . "nota_venta_cliente_$pagoId.pdf";
+
+            // Si el PDF no existe, intentar regenerarlo
+            if (!file_exists($pdfPath)) {
+                error_log("PDF no encontrado, intentando regenerar: $pdfPath");
+
+                // Buscar el pago en cliente_pago
+                require_once "app/models/Cliente.php";
+                $clienteModel = new Cliente();
+                $pago = $clienteModel->obtenerPagoPorId($pagoId);
+
+                if ($pago && isset($pago['cliente_id'])) {
+                    error_log("Regenerando PDF para pago ID: $pagoId, cliente ID: {$pago['cliente_id']}, usuario ID: {$pago['usuario_id']}");
+                    // 🔥 CORREGIDO: Pasar también el usuario_id del pago para usar el asesor correcto
+                    $this->generarBoletaPagoCliente($pagoId, $pago['cliente_id'], $pago['usuario_id']);
+                } else {
+                    // Si no se encuentra en cliente_pago, buscar en pagos_pendientes_inscripcion
+                    $pagoPendiente = $this->model->obtenerPagoPendientePorId($pagoId);
+
+                    if ($pagoPendiente && $pagoPendiente['id_cliente_pago']) {
+                        // Si tiene id_cliente_pago, buscar con ese ID
+                        $pago = $clienteModel->obtenerPagoPorId($pagoPendiente['id_cliente_pago']);
+                        if ($pago && isset($pago['cliente_id'])) {
+                            error_log("Regenerando PDF desde pago pendiente: {$pagoPendiente['id_cliente_pago']}, usuario ID: {$pago['usuario_id']}");
+                            // 🔥 CORREGIDO: Pasar también el usuario_id del pago
+                            $this->generarBoletaPagoCliente($pagoPendiente['id_cliente_pago'], $pago['cliente_id'], $pago['usuario_id']);
+                            // Actualizar la ruta del PDF porque usamos el id_cliente_pago
+                            $pdfPath = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR . "nota_venta_cliente_{$pagoPendiente['id_cliente_pago']}.pdf";
+                        }
+                    }
+                }
+
+                // Verificar nuevamente si el PDF se generó
+                if (!file_exists($pdfPath)) {
+                    error_log("No se pudo regenerar el PDF: $pdfPath");
+                    http_response_code(404);
+                    echo "No se pudo encontrar o generar el comprobante de pago.";
+                    exit;
+                }
+            }
+
+            // Enviar el PDF al navegador
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: inline; filename="comprobante_pago_' . $pagoId . '.pdf"');
+            header('Content-Length: ' . filesize($pdfPath));
+            readfile($pdfPath);
+            exit;
+
+        } catch (Exception $e) {
+            error_log("Error en verComprobante: " . $e->getMessage());
+            http_response_code(500);
+            echo "Error al procesar el comprobante: " . $e->getMessage();
             exit;
         }
     }

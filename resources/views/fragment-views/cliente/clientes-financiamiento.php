@@ -244,6 +244,250 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // 🛠
             color: #212529;
         }
 
+        /* ========== ESTILOS PARA BÚSQUEDA DE CONTRATOS - DISEÑO PROFESIONAL ========== */
+
+        /* Contenedor de resultados con animación suave */
+        #resultadosBusqueda {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Título de resultados elegante */
+        .resultados-titulo {
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+            display: inline-block;
+            font-size: 18px;
+        }
+
+        /* Card de cliente - Diseño corporativo */
+        .cliente-card {
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .cliente-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            transform: translateX(4px);
+            border-left-color: #1d4ed8;
+        }
+
+        /* Contenido dentro del card */
+        .cliente-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .cliente-datos {
+            flex: 1;
+        }
+
+        .cliente-dni {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cliente-dni i {
+            color: #2563eb;
+            font-size: 16px;
+        }
+
+        .cliente-dni span {
+            color: #1a1a1a;
+        }
+
+        .cliente-nombre {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .cliente-telefono {
+            font-size: 14px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cliente-telefono i {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        /* Botón de acción elegante */
+        .cliente-accion {
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-generar-contrato {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .btn-generar-contrato:hover {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-generar-contrato:active {
+            transform: scale(0.98);
+        }
+
+        .btn-generar-contrato i {
+            font-size: 16px;
+        }
+
+        /* Indicador de carga profesional */
+        .loading-search {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .loading-search i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            color: #2563eb;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-search p {
+            font-size: 15px;
+            color: #6b7280;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Sin resultados - mensaje profesional */
+        .sin-resultados-box {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f9fafb;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .sin-resultados-box i {
+            font-size: 56px;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+
+        .sin-resultados-box h5 {
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .sin-resultados-box p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Variantes sutiles de colores (borde izquierdo) */
+        .cliente-card.variant-1 {
+            border-left-color: #2563eb;
+        }
+
+        .cliente-card.variant-2 {
+            border-left-color: #7c3aed;
+        }
+
+        .cliente-card.variant-3 {
+            border-left-color: #0891b2;
+        }
+
+        .cliente-card.variant-4 {
+            border-left-color: #059669;
+        }
+
+        .cliente-card.variant-5 {
+            border-left-color: #dc2626;
+        }
+
+        /* Hover para cada variante */
+        .cliente-card.variant-1:hover { border-left-color: #1d4ed8; }
+        .cliente-card.variant-2:hover { border-left-color: #6d28d9; }
+        .cliente-card.variant-3:hover { border-left-color: #0e7490; }
+        .cliente-card.variant-4:hover { border-left-color: #047857; }
+        .cliente-card.variant-5:hover { border-left-color: #b91c1c; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .cliente-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .cliente-accion {
+                width: 100%;
+            }
+
+            .btn-generar-contrato {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .cliente-nombre {
+                font-size: 16px;
+            }
+
+            .cliente-dni {
+                font-size: 13px;
+            }
+
+            .cliente-card {
+                padding: 20px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -268,8 +512,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // 🛠
                             <i class="fas fa-plus-circle"></i> Registrar Cliente
                         </button>
                     </div>
-                    <div class="col-md-6">
-                        <!-- Espacio para futuros botones adicionales -->
+                    <div class="col-md-6 text-end">
+                        <!-- NUEVO: Botón para generar contratos -->
+                        <button id="btnGenerarContratos" class="btn btn-warning" onclick="toggleGenerarContratos()">
+                            <i class="fas fa-file-contract"></i> Generar Contratos
+                        </button>
                     </div>
                 </div>
             </div>
@@ -311,6 +558,57 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // 🛠
                 <!-- Aquí se generarán los enlaces de paginación -->
             </ul>
         </nav>
+    </div>
+</div>
+
+<!-- NUEVO: Panel para Generar Contratos de Clientes -->
+<div class="generar-contratos-container d-none" id="generarContratosFrm" style="margin-top: 30px;">
+    <div class="card" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
+        <div class="card-header bg-warning">
+            <h4 class="mb-0"><i class="fas fa-file-contract"></i> Generar Contrato de Cliente</h4>
+        </div>
+        <div class="card-body">
+            <!-- Filtro de búsqueda -->
+            <div class="row mb-4">
+                <div class="col-md-10">
+                    <label for="buscar-clientes"><i class="fas fa-search"></i> Buscar cliente por DNI, Nombre o Apellido:</label>
+                    <input type="text" id="buscar-clientes" class="form-control form-control-lg" placeholder="Ej: 12345678, Juan, Pérez" autofocus>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="btn-buscar-clientes" onclick="buscarClientesContratos()" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resultados de búsqueda (cards modernos) -->
+            <div id="resultadosBusqueda" class="d-none">
+                <h5 class="resultados-titulo">
+                    <i class="fas fa-users"></i> Resultados de la Búsqueda
+                </h5>
+                <div id="clientesCardsContainer">
+                    <!-- Se llenará dinámicamente con JavaScript -->
+                </div>
+            </div>
+
+            <!-- Mensaje cuando no hay resultados -->
+            <div id="sinResultados" class="d-none">
+                <div class="sin-resultados-box">
+                    <i class="fas fa-search"></i>
+                    <h5>No se encontraron clientes</h5>
+                    <p>Intenta con otro criterio de búsqueda (DNI, nombre o apellido)</p>
+                </div>
+            </div>
+
+            <!-- Botón Cancelar -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <button class="btn btn-secondary btn-lg" onclick="toggleGenerarContratos()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2107,16 +2405,16 @@ $(document).on('click', '.enviar-comprobante-btn', function() {
             });
         } else if (result.isDenied) {
             // Usuario hizo clic en "Ver Comprobante"
-            // Obtener el PDF del comprobante
+            // Obtener el ID del pago del cliente
             $.ajax({
                 url: '/arequipago/obtenerComprobantePago',
                 type: 'POST',
                 dataType: 'json',
                 data: { cliente_id: clienteId },
                 success: function(response) {
-                    if (response.success && response.pdf_path) {
-                        // Abrir el PDF en una nueva pestaña
-                        window.open('/' + response.pdf_path, '_blank');
+                    if (response.success && response.pago_id) {
+                        // 🔥 CORREGIDO: Usar la nueva ruta dinámica que regenera el PDF si no existe
+                        window.open(`/arequipago/verComprobante/${response.pago_id}`, '_blank');
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -2138,5 +2436,329 @@ $(document).on('click', '.enviar-comprobante-btn', function() {
         }
     });
 });
+
+// ========================================
+// FUNCIONES PARA GENERAR CONTRATOS DE CLIENTES
+// ========================================
+
+/**
+ * Alterna la visualización del panel de generar contratos
+ */
+function toggleGenerarContratos() {
+    const panel = document.getElementById('generarContratosFrm');
+    const tablaInicial = document.querySelector('.card');
+
+    if (panel.classList.contains('d-none')) {
+        panel.classList.remove('d-none');
+        tablaInicial.classList.add('d-none'); // Ocultar tabla principal
+        // Limpiar búsqueda anterior
+        document.getElementById('buscar-clientes').value = '';
+        document.getElementById('resultadosBusqueda').classList.add('d-none');
+        document.getElementById('sinResultados').classList.add('d-none');
+        document.getElementById('clientesCardsContainer').innerHTML = '';
+        // Hacer focus en el input de búsqueda
+        setTimeout(() => document.getElementById('buscar-clientes').focus(), 300);
+    } else {
+        panel.classList.add('d-none');
+        tablaInicial.classList.remove('d-none'); // Mostrar tabla principal
+    }
+}
+
+/**
+ * Busca clientes por criterio de búsqueda
+ * Búsqueda en tiempo real mientras se escribe
+ */
+let timeoutBusqueda = null; // Variable para el debounce
+
+// Evento para búsqueda en tiempo real mientras se escribe
+document.getElementById('buscar-clientes')?.addEventListener('input', function(e) {
+    // Cancelar la búsqueda anterior si existe
+    if (timeoutBusqueda) {
+        clearTimeout(timeoutBusqueda);
+    }
+
+    // Esperar 500ms después de que el usuario deje de escribir
+    timeoutBusqueda = setTimeout(() => {
+        buscarClientesContratos();
+    }, 500);
+});
+
+// Mantener la funcionalidad de buscar con Enter
+document.getElementById('buscar-clientes')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        // Cancelar el timeout si existe
+        if (timeoutBusqueda) {
+            clearTimeout(timeoutBusqueda);
+        }
+        buscarClientesContratos();
+    }
+});
+
+function buscarClientesContratos() {
+    const busqueda = document.getElementById('buscar-clientes').value.trim();
+
+    // Si el campo está vacío, limpiar resultados
+    if (!busqueda) {
+        document.getElementById('resultadosBusqueda').classList.add('d-none');
+        document.getElementById('sinResultados').classList.add('d-none');
+        document.getElementById('clientesCardsContainer').innerHTML = '';
+        return;
+    }
+
+    // Si tiene menos de 1 carácter, no buscar
+    if (busqueda.length < 1) {
+        return;
+    }
+
+    // Mostrar indicador de carga sin bloquear la interfaz
+    const container = document.getElementById('clientesCardsContainer');
+    container.innerHTML = `
+        <div class="loading-search">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Buscando clientes...</p>
+        </div>
+    `;
+    document.getElementById('resultadosBusqueda').classList.remove('d-none');
+    document.getElementById('sinResultados').classList.add('d-none');
+
+    $.ajax({
+        url: '/arequipago/buscarClientesContratos',
+        type: 'POST',
+        dataType: 'json',
+        data: { busqueda: busqueda },
+        success: function(response) {
+            if (response.success && response.clientes && response.clientes.length > 0) {
+                // Limitar a 10 resultados
+                const clientesLimitados = response.clientes.slice(0, 10);
+                renderizarClientesCards(clientesLimitados);
+                document.getElementById('resultadosBusqueda').classList.remove('d-none');
+                document.getElementById('sinResultados').classList.add('d-none');
+            } else {
+                document.getElementById('resultadosBusqueda').classList.add('d-none');
+                document.getElementById('sinResultados').classList.remove('d-none');
+                document.getElementById('clientesCardsContainer').innerHTML = '';
+            }
+        },
+        error: function() {
+            // Mostrar error sin modal
+            container.innerHTML = `
+                <div class="sin-resultados-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h5>Error al buscar clientes</h5>
+                    <p>Por favor, intenta nuevamente</p>
+                </div>
+            `;
+        }
+    });
+}
+
+/**
+ * Renderiza cards de clientes con diseño moderno (Máximo 10)
+ */
+function renderizarClientesCards(clientes) {
+    const container = document.getElementById('clientesCardsContainer');
+    container.innerHTML = '';
+
+    if (!clientes || clientes.length === 0) {
+        container.innerHTML = `
+            <div class="sin-resultados-box">
+                <i class="fas fa-users-slash"></i>
+                <h5>No hay clientes disponibles</h5>
+                <p>Intenta refinar tu búsqueda</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Variantes de colores para los gradientes
+    const variants = ['variant-1', 'variant-2', 'variant-3', 'variant-4', 'variant-5'];
+
+    clientes.forEach((cliente, index) => {
+        const nombreCompleto = `${cliente.nombres} ${cliente.apellido_paterno} ${cliente.apellido_materno}`;
+        const variantClass = variants[index % variants.length];
+
+        const card = `
+            <div class="cliente-card ${variantClass}">
+                <div class="cliente-info">
+                    <div class="cliente-datos">
+                        <div class="cliente-dni">
+                            <i class="fas fa-id-card"></i>
+                            <span>${cliente.n_documento}</span>
+                        </div>
+                        <div class="cliente-nombre">${nombreCompleto}</div>
+                        <div class="cliente-telefono">
+                            <i class="fas fa-phone"></i>
+                            <span>${cliente.telefono || 'Sin teléfono'}</span>
+                        </div>
+                    </div>
+                    <div class="cliente-accion">
+                        <button class="btn-generar-contrato" onclick="generarContratoDirecto(${cliente.id}, '${cliente.n_documento}', '${nombreCompleto.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-file-contract"></i>
+                            <span>Generar Contrato</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML += card;
+    });
+
+    // Mostrar mensaje si hay más de 10 resultados
+    if (clientes.length === 10) {
+        const msgCard = `
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle"></i> Se muestran los primeros 10 resultados. Afina tu búsqueda para encontrar más clientes específicos.
+            </div>
+        `;
+        container.innerHTML += msgCard;
+    }
+}
+
+// Mantener retrocompatibilidad (alias de la función anterior)
+function renderizarTablaClientesContratos(clientes) {
+    renderizarClientesCards(clientes);
+}
+
+/**
+ * Genera el contrato directamente sin necesidad de seleccionar
+ */
+function generarContratoDirecto(clienteId, dni, nombreCompleto) {
+    // Mostrar loading
+    Swal.fire({
+        title: 'Generando Contrato',
+        html: `<p>Cliente: <strong>${nombreCompleto}</strong></p><p>DNI: <strong>${dni}</strong></p>`,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Enviar solicitud al servidor
+    fetch('/arequipago/generarContratoCliente', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cliente_id: clienteId,
+            dni: dni,
+            nombre_completo: nombreCompleto
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+
+        if (data.success && data.pdf) {
+            // Descargar el PDF automáticamente
+            const linkSource = `data:application/pdf;base64,${data.pdf}`;
+            const downloadLink = document.createElement("a");
+            downloadLink.href = linkSource;
+            downloadLink.download = data.filename || `contrato_cliente_${dni}.pdf`;
+            downloadLink.click();
+
+            // Mostrar opciones: Enviar por WhatsApp o Cerrar
+            Swal.fire({
+                icon: 'success',
+                title: '¡Contrato Generado!',
+                html: `<p>El contrato de <strong>${nombreCompleto}</strong> se descargó correctamente.</p>`,
+                showDenyButton: true,
+                confirmButtonText: '<i class="fab fa-whatsapp"></i> Enviar por WhatsApp',
+                denyButtonText: '<i class="fas fa-check"></i> Finalizar',
+                confirmButtonColor: '#25D366',
+                denyButtonColor: '#28a745'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    enviarContratoPorWhatsApp(data.pdf, data.filename, { id: clienteId, dni: dni, nombreCompleto: nombreCompleto });
+                }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'No se pudo generar el contrato',
+                confirmButtonColor: '#dc3545'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error al generar el contrato:', error);
+        Swal.close();
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al generar el contrato',
+            confirmButtonColor: '#dc3545'
+        });
+    });
+}
+
+/**
+ * Envía el contrato por WhatsApp
+ */
+function enviarContratoPorWhatsApp(pdfBase64, filename, cliente) {
+    // Buscar el teléfono en los cards de clientes
+    let telefonoCliente = '';
+    const cards = document.querySelectorAll('.cliente-card');
+    cards.forEach(card => {
+        const dniElement = card.querySelector('.cliente-dni span');
+        if (dniElement && dniElement.textContent.trim() === cliente.dni) {
+            const telefonoElement = card.querySelector('.cliente-telefono span');
+            if (telefonoElement && telefonoElement.textContent !== 'Sin teléfono') {
+                telefonoCliente = telefonoElement.textContent.trim();
+            }
+        }
+    });
+
+    Swal.fire({
+        title: 'Enviar Contrato por WhatsApp',
+        html: `
+            <div class="mb-3 text-start">
+                <label for="numeroWhatsApp" class="form-label"><strong>Número de WhatsApp:</strong></label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fab fa-whatsapp"></i> +51</span>
+                    <input type="text" class="form-control" id="numeroWhatsApp" placeholder="987654321" maxlength="9" value="${telefonoCliente}">
+                </div>
+                <small class="text-muted">Ingrese el número sin código de país (9 dígitos)</small>
+            </div>
+        `,
+        confirmButtonText: '<i class="fab fa-whatsapp"></i> Abrir WhatsApp',
+        confirmButtonColor: '#25D366',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const numero = document.getElementById('numeroWhatsApp').value.trim();
+            if (!numero) {
+                Swal.showValidationMessage('Por favor ingrese un número de WhatsApp');
+                return false;
+            }
+            if (numero.length !== 9 || !/^\d{9}$/.test(numero)) {
+                Swal.showValidationMessage('El número debe tener exactamente 9 dígitos');
+                return false;
+            }
+            return numero;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const mensaje = `Hola ${cliente.nombreCompleto}, te enviamos tu *Contrato de Servicios y Afiliación - CrediGo*.
+
+Por favor revísalo y cualquier duda estamos a tu disposición. ¡Gracias por confiar en nosotros! 🚗
+
+_Nota: El archivo PDF se descargó en tu computadora. Por favor adjúntalo manualmente en esta conversación._`;
+
+            const whatsappUrl = `https://wa.me/51${result.value}?text=${encodeURIComponent(mensaje)}`;
+            window.open(whatsappUrl, '_blank');
+
+            Swal.fire({
+                icon: 'success',
+                title: 'WhatsApp Abierto',
+                html: `<p>Se abrió WhatsApp con el número <strong>+51 ${result.value}</strong></p>
+                       <p class="text-muted"><small>Recuerda adjuntar manualmente el PDF descargado en la conversación.</small></p>`,
+                confirmButtonColor: '#28a745'
+            });
+        }
+    });
+}
 
 </script>                          

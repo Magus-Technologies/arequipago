@@ -245,7 +245,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
         <!-- Botón para registrar pago -->
         <div class="text-center mt-4 mb-4">
-            <button class="btn btn-success w-40" style="font-size: 16px;" onclick="saveAll()"><i
+            <button id="btnRegistrarPago" class="btn btn-success w-40" style="font-size: 16px;" onclick="saveAll()"><i
                     class="fa fa-file-invoice-dollar"></i> Registrar Pago y Generar Nota</button>
         </div>
     </div>
@@ -305,6 +305,65 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                     let cuotas = response.cuotas;
                     let html = `<p><strong>Nombre: </strong> ${conductor.nombres} ${conductor.apellido_paterno} ${conductor.apellido_materno}</p>`;
 
+                    // NUEVO: Verificar si es un cliente de clientes_financiar
+                    if (response.tipo === "cliente" && response.estado_pago) {
+                        const estadoPago = response.estado_pago;
+
+                        // Cliente YA PAGÓ
+                        if (estadoPago.tiene_pago && estadoPago.pago_data) {
+                            const pago = estadoPago.pago_data;
+                            html += `
+                                <div class="alert alert-success mt-3">
+                                    <h5><i class="fas fa-check-circle"></i> Pago de Inscripción Completado</h5>
+                                    <hr>
+                                    <p><strong>Monto Total:</strong> S/ ${parseFloat(pago.monto_total).toFixed(2)}</p>
+                                    <p><strong>Monto Pagado:</strong> S/ ${parseFloat(pago.monto_pagado).toFixed(2)}</p>
+                                    <p><strong>Vuelto:</strong> S/ ${parseFloat(pago.vuelto).toFixed(2)}</p>
+                                    <p><strong>Método de Pago:</strong> ${pago.metodo_pago}</p>
+                                    <p><strong>Fecha de Pago:</strong> ${pago.fecha_pago}</p>
+                                    <button class="btn btn-primary mt-2" onclick="verComprobante(${pago.id})">
+                                        <i class="fas fa-file-pdf"></i> Ver Comprobante
+                                    </button>
+                                </div>
+                            `;
+                            $("#lista_cuotas").html(html);
+                            // NO mostrar el botón de registrar pago
+                            $("#btnRegistrarPago").hide();
+                            return;
+                        }
+
+                        // Cliente tiene pago PENDIENTE
+                        if (estadoPago.tiene_pendiente && estadoPago.pendiente_data) {
+                            const pendiente = estadoPago.pendiente_data;
+                            html += `
+                                <div class="alert alert-warning mt-3">
+                                    <h5><i class="fas fa-clock"></i> Pago Pendiente de Aprobación</h5>
+                                    <hr>
+                                    <p><strong>Monto:</strong> S/ ${parseFloat(pendiente.monto).toFixed(2)}</p>
+                                    <p><strong>Fecha de Registro:</strong> ${pendiente.fecha_registro}</p>
+                                    <p class="mb-0">Este pago está pendiente de aprobación por un Director.</p>
+                                </div>
+                            `;
+                            $("#lista_cuotas").html(html);
+                            // NO mostrar el botón de registrar pago
+                            $("#btnRegistrarPago").hide();
+                            return;
+                        }
+
+                        // Cliente NO tiene pago ni pendiente
+                        html += `
+                            <div class="alert alert-info mt-3">
+                                <h5><i class="fas fa-info-circle"></i> Pago de Inscripción Requerido</h5>
+                                <p class="mb-0">Este cliente debe realizar el pago de inscripción de <strong>S/ 100.00</strong></p>
+                            </div>
+                        `;
+                        $("#lista_cuotas").html(html);
+                        // Mostrar el botón de registrar pago
+                        $("#btnRegistrarPago").show();
+                        return;
+                    }
+
+                    // Para conductores, mantener la lógica original
                     if (cuotas.length > 0) {
                         html += "<ul class='list-group'>";
 
@@ -346,6 +405,9 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                     }
 
                     $("#lista_cuotas").html(html);
+
+                    // Mostrar el botón de registrar pago para conductores
+                    $("#btnRegistrarPago").show();
 
                     // MODIFICADO: Inicializar los checkboxes correctamente
                     const checkboxes = $(".cuota-checkbox")
@@ -432,6 +494,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 });
             }
         });
+    }
+
+    // NUEVO: Función para ver el comprobante de pago de un cliente
+    function verComprobante(pagoId) {
+        // Usar la ruta dinámica que regenera el PDF si no existe
+        const pdfUrl = `/arequipago/verComprobante/${pagoId}`;
+        window.open(pdfUrl, '_blank');
     }
 
     function saveAll() {
@@ -883,12 +952,15 @@ function mostrarReportes(reportes) {
 
     let html = '';
     reportes.forEach(function (reporte, index) {
-        // Generar ruta del PDF dinámicamente si es cliente y no tiene ruta
+        // Determinar si es cliente o conductor para usar la ruta correcta
+        let esCliente = reporte.tipo_persona === 'cliente';
         let rutaPDF = reporte.ruta;
-        if (reporte.tipo_persona === 'cliente' && (!rutaPDF || rutaPDF === '')) {
+
+        // Para clientes sin ruta, generamos la ruta física (para WhatsApp)
+        if (esCliente && (!rutaPDF || rutaPDF === '')) {
             rutaPDF = 'files/notasPagoInscripcion/nota_venta_cliente_' + reporte.id_pago + '.pdf';
         }
-        
+
         html += `
         <tr>
             <td>${index + 1}</td>
@@ -899,17 +971,21 @@ function mostrarReportes(reportes) {
             <td>${formatearFecha(reporte.fecha_emision)}</td>
             <td>
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-primary ver-pdf" 
-                            data-ruta="${rutaPDF}" 
+                    <button class="btn btn-sm btn-primary ver-pdf"
+                            data-id="${reporte.id_pago}"
+                            data-tipo="${reporte.tipo_persona}"
+                            data-ruta="${rutaPDF}"
                             title="Ver PDF">
                         <i class="fa fa-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-success descargar-pdf" 
-                            data-ruta="${rutaPDF}" 
+                    <button class="btn btn-sm btn-success descargar-pdf"
+                            data-id="${reporte.id_pago}"
+                            data-tipo="${reporte.tipo_persona}"
+                            data-ruta="${rutaPDF}"
                             title="Descargar PDF">
                         <i class="fa fa-download"></i>
                     </button>
-                    <button class="btn btn-sm btn-info enviar-whatsapp" 
+                    <button class="btn btn-sm btn-info enviar-whatsapp"
                             data-id="${reporte.id_pago}"
                             data-ruta="${rutaPDF}"
                             title="Enviar por WhatsApp">
@@ -933,13 +1009,31 @@ function mostrarReportes(reportes) {
 
     // Eventos para los botones
     $(".ver-pdf").click(function () {
+        const id = $(this).data("id");
+        const tipo = $(this).data("tipo");
         const ruta = $(this).data("ruta");
-        window.open(ruta, "_blank");
+
+        // Si es cliente, usar la nueva ruta dinámica
+        if (tipo === 'cliente') {
+            window.open(`/arequipago/verComprobante/${id}`, "_blank");
+        } else {
+            // Para conductores, usar la ruta tradicional
+            window.open(ruta, "_blank");
+        }
     });
 
     $(".descargar-pdf").click(function () {
+        const id = $(this).data("id");
+        const tipo = $(this).data("tipo");
         const ruta = $(this).data("ruta");
-        descargarPDF(ruta);
+
+        // Si es cliente, usar la nueva ruta dinámica
+        if (tipo === 'cliente') {
+            descargarPDF(`/arequipago/verComprobante/${id}`);
+        } else {
+            // Para conductores, usar la ruta tradicional
+            descargarPDF(ruta);
+        }
     });
 
     $(".enviar-whatsapp").click(function () {
@@ -1494,12 +1588,26 @@ $(document).ready(function () {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Mostrar loader mientras se procesa
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Aprobando el pago, por favor espere',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    allowEnterKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 $.ajax({
                     url: '/arequipago/aprobarPagoInscripcion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ id: id }),
                     success: function(response) {
+                        Swal.close(); // Cerrar el loader
                         if (response.success) {
                             Swal.fire('Aprobado', response.message, 'success');
                             cargarPagosPendientesInscripcion();
@@ -1508,8 +1616,11 @@ $(document).ready(function () {
                             Swal.fire('Error', response.message, 'error');
                         }
                     },
-                    error: function() {
-                        Swal.fire('Error', 'No se pudo aprobar el pago', 'error');
+                    error: function(xhr, status, error) {
+                        Swal.close(); // Cerrar el loader en caso de error
+                        console.error('Error al aprobar pago:', error);
+                        console.error('Response:', xhr.responseText);
+                        Swal.fire('Error', 'No se pudo aprobar el pago. Por favor intente nuevamente.', 'error');
                     }
                 });
             }

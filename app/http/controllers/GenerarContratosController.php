@@ -1697,4 +1697,90 @@ class GenerarContratosController extends controller
             throw new Exception("Error al generar PDF: " . $e->getMessage());
         }
     }
+
+    /**
+     * Genera el contrato de un cliente usando el template contrato_clientes.html
+     */
+    public function generarContratoCliente() {
+        header('Content-Type: application/json');
+
+        // Leer el body JSON
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['cliente_id']) || empty($input['cliente_id'])) {
+            echo json_encode(['success' => false, 'message' => 'ID de cliente no proporcionado']);
+            return;
+        }
+
+        $clienteId = $input['cliente_id'];
+        $dni = $input['dni'] ?? '';
+        $nombreCompleto = $input['nombre_completo'] ?? '';
+
+        try {
+            // Obtener datos del cliente
+            $clienteModel = new Cliente();
+            $cliente = $clienteModel->obtenerCliente($clienteId);
+
+            if (!$cliente) {
+                echo json_encode(['success' => false, 'message' => 'Cliente no encontrado']);
+                return;
+            }
+
+            // Construir nombre completo y dirección
+            $nombreClienteCompleto = trim($cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno']);
+            $direccionCompleta = trim(
+                ($cliente['departamento_nombre'] ?? '') . ', ' .
+                ($cliente['provincia_nombre'] ?? '') . ', ' .
+                ($cliente['distrito_nombre'] ?? '') . ', ' .
+                ($cliente['direccion_detallada'] ?? '')
+            );
+
+            // Leer template HTML
+            $templatePath = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'contrato_clientes.html';
+
+            if (!file_exists($templatePath)) {
+                echo json_encode(['success' => false, 'message' => 'Template de contrato no encontrado']);
+                return;
+            }
+
+            $html = file_get_contents($templatePath);
+
+            // Reemplazar placeholders en el template
+            $html = str_replace('<span id="nombre_cliente"></span>', '<span id="nombre_cliente">' . htmlspecialchars($nombreClienteCompleto) . '</span>', $html);
+            $html = str_replace('<span id="dni_cliente"></span>', '<span id="dni_cliente">' . htmlspecialchars($cliente['n_documento']) . '</span>', $html);
+            $html = str_replace('<span id="domicilio_afiliado"></span>', '<span id="domicilio_afiliado">' . htmlspecialchars($direccionCompleta) . '</span>', $html);
+
+            // Generar PDF con mPDF
+            $mpdf = new Mpdf([
+                'format' => 'A4',
+                'margin_left' => 30,
+                'margin_right' => 30,
+                'margin_top' => 30,
+                'margin_bottom' => 30
+            ]);
+
+            $mpdf->WriteHTML($html);
+
+            // Generar PDF como string y codificar en base64
+            $pdfContent = $mpdf->Output('', 'S');
+            $pdfBase64 = base64_encode($pdfContent);
+
+            // Nombre del archivo
+            $filename = 'contrato_cliente_' . $cliente['n_documento'] . '_' . date('Ymd_His') . '.pdf';
+
+            // Retornar respuesta exitosa con PDF en base64
+            echo json_encode([
+                'success' => true,
+                'pdf' => $pdfBase64,
+                'filename' => $filename,
+                'message' => 'Contrato generado exitosamente'
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al generar el contrato: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

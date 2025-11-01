@@ -877,13 +877,13 @@ class ConductorController extends Controller
         }
 
         $dni = trim($_POST['dni']);
-        
+
         // Primero buscar en conductores
         $conductor = new Conductor();
         $idConductor = $conductor->buscarPorDocumento($dni);
 
         if ($idConductor) {
-            // Es un conductor
+            // Si se encuentra en conductores, procesar como antes
             $conductor->setIdConductor($idConductor);
             if (!$conductor->obtenerDatos()) {
                 echo json_encode(["success" => false, "message" => "No se pudieron obtener los datos del conductor."]);
@@ -894,7 +894,7 @@ class ConductorController extends Controller
 
             echo json_encode([
                 "success" => true,
-                "tipo_persona" => "conductor",
+                "tipo" => "conductor",
                 "conductor" => [
                     "nombres" => $conductor->getNombres(),
                     "apellido_paterno" => $conductor->getApellidoPaterno(),
@@ -905,27 +905,67 @@ class ConductorController extends Controller
             return;
         }
 
-        // Si no es conductor, buscar en clientes
+        // NUEVO: Si no se encuentra en conductores, buscar en clientes_financiar
+        require_once "app/models/Cliente.php";
         $cliente = new Cliente();
         $datosCliente = $cliente->buscarClienteFinanciar($dni);
 
         if ($datosCliente) {
-            // Es un cliente - los clientes siempre pagan al contado
+            $clienteId = $datosCliente['id'];
+
+            // Verificar estado de pago del cliente
+            $yaPago = $cliente->verificarPagoCliente($clienteId);
+            $pagoPendiente = $cliente->verificarPagoPendiente($clienteId);
+
+            $estadoPago = [
+                "tiene_pago" => $yaPago,
+                "tiene_pendiente" => ($pagoPendiente !== false),
+                "pago_data" => null,
+                "pendiente_data" => null
+            ];
+
+            // Si ya pagó, obtener datos del pago
+            if ($yaPago) {
+                $datosPago = $cliente->obtenerDatosPagoCliente($clienteId);
+                if ($datosPago) {
+                    $estadoPago["pago_data"] = [
+                        "id" => $datosPago['id'],
+                        "monto_total" => $datosPago['monto_total'],
+                        "monto_pagado" => $datosPago['monto_pagado'],
+                        "vuelto" => $datosPago['vuelto'],
+                        "metodo_pago" => $datosPago['metodo_pago_nombre'],
+                        "fecha_pago" => $datosPago['fecha_pago']
+                    ];
+                }
+            }
+
+            // Si tiene pago pendiente, incluir datos básicos
+            if ($pagoPendiente) {
+                $observaciones = json_decode($pagoPendiente['observaciones'], true);
+                $estadoPago["pendiente_data"] = [
+                    "id" => $pagoPendiente['id'],
+                    "fecha_registro" => $pagoPendiente['fecha_registro'],
+                    "monto" => isset($observaciones['monto_pago']) ? $observaciones['monto_pago'] : '100.00'
+                ];
+            }
+
+            // Cliente encontrado en clientes_financiar
             echo json_encode([
                 "success" => true,
-                "tipo_persona" => "cliente",
+                "tipo" => "cliente", // Identificar que es un cliente, no un conductor
                 "conductor" => [
                     "nombres" => $datosCliente['nombres'],
                     "apellido_paterno" => $datosCliente['apellido_paterno'],
                     "apellido_materno" => $datosCliente['apellido_materno']
                 ],
-                "cuotas" => [] // Los clientes no tienen cuotas
+                "cuotas" => [], // Los clientes no tienen cuotas de inscripción
+                "estado_pago" => $estadoPago // NUEVO: Estado de pago del cliente
             ]);
             return;
         }
 
-        // No se encontró ni conductor ni cliente
-        echo json_encode(["success" => false, "message" => "No se encontró ningún conductor o cliente con ese documento."]);
+        // Si no se encuentra ni en conductores ni en clientes_financiar
+        echo json_encode(["success" => false, "message" => "Conductor no encontrado."]);
     }
 
     public function paymentMade() {
@@ -1252,12 +1292,24 @@ class ConductorController extends Controller
                 
                 if (empty($row['nombre_asesor'])) {
                     $idAsesor = $row['id_asesor'];
-                    $sqlAsesor = "SELECT CONCAT(nombres, ' ', IFNULL(apellidos, '')) AS nombre_asesor 
-                                FROM usuarios WHERE usuario_id = $idAsesor";
-                    $resultAsesor = $this->conexion->query($sqlAsesor);
-                    
-                    if ($resultAsesor && $rowAsesor = $resultAsesor->fetch_assoc()) {
-                        $row['nombre_asesor'] = $rowAsesor['nombre_asesor'];
+
+                    // 🔥 CORREGIDO: Verificar que $idAsesor no sea null o vacío antes de hacer la consulta
+                    if (!empty($idAsesor) && $idAsesor !== null) {
+                        $sqlAsesor = "SELECT CONCAT(nombres, ' ', IFNULL(apellidos, '')) AS nombre_asesor
+                                    FROM usuarios WHERE usuario_id = ?";
+                        $stmtAsesor = $this->conexion->prepare($sqlAsesor);
+                        $stmtAsesor->bind_param("i", $idAsesor);
+                        $stmtAsesor->execute();
+                        $resultAsesor = $stmtAsesor->get_result();
+
+                        if ($resultAsesor && $rowAsesor = $resultAsesor->fetch_assoc()) {
+                            $row['nombre_asesor'] = $rowAsesor['nombre_asesor'];
+                        } else {
+                            $row['nombre_asesor'] = 'Sin asignar';
+                        }
+                    } else {
+                        // Si no hay ID de asesor, poner "Sin asignar"
+                        $row['nombre_asesor'] = 'Sin asignar';
                     }
                 }
                 
