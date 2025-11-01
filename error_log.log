@@ -1,27 +1,117 @@
-[16-Sep-2025 09:27:27 America/Lima] BeneficioController::crearBeneficio() - POST data: Array
-(
-    [nombre] => dsdfvsd
-    [categoria] => 16
-    [descripcion] => vdsfds
-    [cuota_inicial] => 12
-    [cantidad_cuotas] => 23
-    [cuota_mensual] => 23
-    [disponible] => 1
-)
-
-[16-Sep-2025 09:27:27 America/Lima] BeneficioController::crearBeneficio() - FILES data: Array
-(
-    [imagen_principal] => Array
-        (
-            [name] => Razer-raptor-27-5.jpg
-            [type] => image/jpeg
-            [tmp_name] => C:\xampp\tmp\php6F21.tmp
-            [error] => 0
-            [size] => 35816
-        )
-
-)
-
-[16-Sep-2025 09:27:27 America/Lima] BeneficioController::crearBeneficio() - imagenPrincipal: img/beneficios/beneficio_1758032847_68c973cf65850.jpg
-[16-Sep-2025 09:27:27 America/Lima] Beneficio::crear() - Datos recibidos: {"nombre":"dsdfvsd","categoria":16,"descripcion":"vdsfds","cuota_inicial":12,"cantidad_cuotas":23,"cuota_mensual":23,"imagen":"img\/beneficios\/beneficio_1758032847_68c973cf65850.jpg","disponible":1}
-[16-Sep-2025 09:27:27 America/Lima] Beneficio::crear() - Imagen específica: img/beneficios/beneficio_1758032847_68c973cf65850.jpg
+{"res":true}
+VM2186:252 === APLICANDO FILTROS ===
+VM2186:253 Departamento Seleccionado:  string
+VM2186:254 Total beneficios: 25
+VM2186:304 Resultados finales: 25
+VM2186:252 === APLICANDO FILTROS ===
+VM2186:253 Departamento Seleccionado: 8 number
+VM2186:254 Total beneficios: 25
+VM2186:285 Filtrando por departamento...
+VM2186:290 Beneficio: sadcsdcdw departamento_id: 8 number
+VM2186:290 Beneficio: GEELY EMGRAND departamento_id: null object
+VM2186:290 Beneficio: KIA SOLUTO departamento_id: null object
+VM2186:290 Beneficio: LLANTAS departamento_id: null object
+VM2186:290 Beneficio: MANTENIMIENTO INCAMOTORS departamento_id: null object
+VM2186:290 Beneficio: CHIP CORPORATIVO departamento_id: null object
+VM2186:290 Beneficio: BATERIAS departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/8500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/7500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/6500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/5500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS  S/4500 departamento_id: null object
+VM2186:290 Beneficio: SR 250 departamento_id: null object
+VM2186:290 Beneficio: NK 250 departamento_id: null object
+VM2186:290 Beneficio: DUAL 200 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO $17 000 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO $15 000 departamento_id: null object
+VM2186:290 Beneficio: Certificado $13 000 departamento_id: null object
+VM2186:290 Beneficio: LIQUI MOLY departamento_id: null object
+VM2186:290 Beneficio: HYUNDAI departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 PRO 5G departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 PRO departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 departamento_id: null object
+VM2186:290 Beneficio: CEPSA departamento_id: null object
+VM2186:290 Beneficio: CASTROL departamento_id: null object
+VM2186:297   Checking: sadcsdcdw deptId: 8 vs 8 match: true
+VM2186:297   Checking: GEELY EMGRAND deptId: null vs 8 match: true
+VM2186:297   Checking: KIA SOLUTO deptId: null vs 8 match: true
+VM2186:297   Checking: LLANTAS deptId: null vs 8 match: true
+VM2186:297   Checking: MANTENIMIENTO INCAMOTORS deptId: null vs 8 match: true
+VM2186:297   Checking: CHIP CORPORATIVO deptId: null vs 8 match: true
+VM2186:297   Checking: BATERIAS deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/8500 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/7500 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/6500 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/5500 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS  S/4500 deptId: null vs 8 match: true
+VM2186:297   Checking: SR 250 deptId: null vs 8 match: true
+VM2186:297   Checking: NK 250 deptId: null vs 8 match: true
+VM2186:297   Checking: DUAL 200 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO $17 000 deptId: null vs 8 match: true
+VM2186:297   Checking: CERTIFICADO $15 000 deptId: null vs 8 match: true
+VM2186:297   Checking: Certificado $13 000 deptId: null vs 8 match: true
+VM2186:297   Checking: LIQUI MOLY deptId: null vs 8 match: true
+VM2186:297   Checking: HYUNDAI deptId: null vs 8 match: true
+VM2186:297   Checking: REDMI NOTE 14 PRO 5G deptId: null vs 8 match: true
+VM2186:297   Checking: REDMI NOTE 14 PRO deptId: null vs 8 match: true
+VM2186:297   Checking: REDMI NOTE 14 deptId: null vs 8 match: true
+VM2186:297   Checking: CEPSA deptId: null vs 8 match: true
+VM2186:297   Checking: CASTROL deptId: null vs 8 match: true
+VM2186:301 Resultados después del filtro departamento: 25
+VM2186:304 Resultados finales: 25
+VM2186:252 === APLICANDO FILTROS ===
+VM2186:253 Departamento Seleccionado: 17 number
+VM2186:254 Total beneficios: 25
+VM2186:285 Filtrando por departamento...
+VM2186:290 Beneficio: sadcsdcdw departamento_id: 8 number
+VM2186:290 Beneficio: GEELY EMGRAND departamento_id: null object
+VM2186:290 Beneficio: KIA SOLUTO departamento_id: null object
+VM2186:290 Beneficio: LLANTAS departamento_id: null object
+VM2186:290 Beneficio: MANTENIMIENTO INCAMOTORS departamento_id: null object
+VM2186:290 Beneficio: CHIP CORPORATIVO departamento_id: null object
+VM2186:290 Beneficio: BATERIAS departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/8500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/7500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/6500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS S/5500 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO CREDIMOTOS  S/4500 departamento_id: null object
+VM2186:290 Beneficio: SR 250 departamento_id: null object
+VM2186:290 Beneficio: NK 250 departamento_id: null object
+VM2186:290 Beneficio: DUAL 200 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO $17 000 departamento_id: null object
+VM2186:290 Beneficio: CERTIFICADO $15 000 departamento_id: null object
+VM2186:290 Beneficio: Certificado $13 000 departamento_id: null object
+VM2186:290 Beneficio: LIQUI MOLY departamento_id: null object
+VM2186:290 Beneficio: HYUNDAI departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 PRO 5G departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 PRO departamento_id: null object
+VM2186:290 Beneficio: REDMI NOTE 14 departamento_id: null object
+VM2186:290 Beneficio: CEPSA departamento_id: null object
+VM2186:290 Beneficio: CASTROL departamento_id: null object
+VM2186:297   Checking: sadcsdcdw deptId: 8 vs 17 match: false
+VM2186:297   Checking: GEELY EMGRAND deptId: null vs 17 match: true
+VM2186:297   Checking: KIA SOLUTO deptId: null vs 17 match: true
+VM2186:297   Checking: LLANTAS deptId: null vs 17 match: true
+VM2186:297   Checking: MANTENIMIENTO INCAMOTORS deptId: null vs 17 match: true
+VM2186:297   Checking: CHIP CORPORATIVO deptId: null vs 17 match: true
+VM2186:297   Checking: BATERIAS deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/8500 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/7500 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/6500 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS S/5500 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO CREDIMOTOS  S/4500 deptId: null vs 17 match: true
+VM2186:297   Checking: SR 250 deptId: null vs 17 match: true
+VM2186:297   Checking: NK 250 deptId: null vs 17 match: true
+VM2186:297   Checking: DUAL 200 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO $17 000 deptId: null vs 17 match: true
+VM2186:297   Checking: CERTIFICADO $15 000 deptId: null vs 17 match: true
+VM2186:297   Checking: Certificado $13 000 deptId: null vs 17 match: true
+VM2186:297   Checking: LIQUI MOLY deptId: null vs 17 match: true
+VM2186:297   Checking: HYUNDAI deptId: null vs 17 match: true
+VM2186:297   Checking: REDMI NOTE 14 PRO 5G deptId: null vs 17 match: true
+VM2186:297   Checking: REDMI NOTE 14 PRO deptId: null vs 17 match: true
+VM2186:297   Checking: REDMI NOTE 14 deptId: null vs 17 match: true
+VM2186:297   Checking: CEPSA deptId: null vs 17 match: true
+VM2186:297   Checking: CASTROL deptId: null vs 17 match: true
+VM2186:301 Resultados después del filtro departamento: 24
+VM2186:304 Resultados finales: 24

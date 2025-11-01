@@ -1303,4 +1303,316 @@ public function obtenerDepartamentos()
         }
     }
 
+    /**
+     * Verifica si un cliente ya realizó el pago de inscripción
+     *
+     * @param int $clienteId ID del cliente
+     * @return bool True si ya pagó, false si no
+     */
+    public function verificarPagoCliente($clienteId) {
+        try {
+            $sql = "SELECT COUNT(*) as total FROM cliente_pago WHERE cliente_id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $clienteId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+
+            return ($row['total'] > 0);
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::verificarPagoCliente(): " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verifica si un cliente tiene un pago pendiente de aprobación
+     *
+     * @param int $clienteId ID del cliente
+     * @return array|false Datos del pago pendiente o false si no existe
+     */
+    public function verificarPagoPendiente($clienteId) {
+        try {
+            $sql = "SELECT * FROM pagos_pendientes_inscripcion
+                    WHERE tipo_inscripcion = 'cliente'
+                    AND estado = 'pendiente'
+                    AND observaciones LIKE ?
+                    ORDER BY fecha_registro DESC
+                    LIMIT 1";
+
+            $stmt = $this->conectar->prepare($sql);
+            $searchPattern = '%"id_cliente":' . $clienteId . '%';
+            $stmt->bind_param('s', $searchPattern);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                return $row;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::verificarPagoPendiente(): " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene los datos completos del pago de un cliente incluyendo método de pago
+     *
+     * @param int $clienteId ID del cliente
+     * @return array|false Datos completos del pago o false si no existe
+     */
+    public function obtenerDatosPagoCliente($clienteId) {
+        try {
+            $sql = "SELECT cp.*, mp.nombre as metodo_pago_nombre, mp.imagen as metodo_pago_imagen
+                    FROM cliente_pago cp
+                    LEFT JOIN metodos_pago mp ON cp.metodo_pago_id = mp.id_metodo_pago
+                    WHERE cp.cliente_id = ?
+                    ORDER BY cp.fecha_pago DESC
+                    LIMIT 1";
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $clienteId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                return $row;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerDatosPagoCliente(): " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene un cliente por su ID
+     *
+     * @param int $clienteId ID del cliente
+     * @return array|false Datos del cliente o false si no existe
+     */
+    public function obtenerClientePorId($clienteId) {
+        try {
+            $sql = "SELECT * FROM clientes_financiar WHERE id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $clienteId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                return $row;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerClientePorId(): " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene un pago por su ID
+     *
+     * @param int $pagoId ID del pago
+     * @return array|false Datos del pago o false si no existe
+     */
+    public function obtenerPagoPorId($pagoId) {
+        try {
+            $sql = "SELECT cp.*, mp.nombre as metodo_pago
+                    FROM cliente_pago cp
+                    LEFT JOIN metodo_pago mp ON cp.metodo_pago_id = mp.id_metodo_pago
+                    WHERE cp.id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $pagoId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                return $row;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerPagoPorId(): " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtiene todos los clientes para generar contratos
+     *
+     * @return array Lista de clientes con información completa
+     */
+    public function obtenerClientesParaContratos() {
+        try {
+            $sql = "SELECT
+                        cf.id,
+                        cf.n_documento,
+                        cf.nombres,
+                        cf.apellido_paterno,
+                        cf.apellido_materno,
+                        cf.telefono,
+                        cf.correo,
+                        cf.direccion_detallada,
+                        dep.nombre as departamento_nombre,
+                        prov.nombre as provincia_nombre,
+                        dist.nombre as distrito_nombre,
+                        cf.fecha_registro
+                    FROM clientes_financiar cf
+                    LEFT JOIN depast dep ON cf.departamento = dep.iddepast
+                    LEFT JOIN provincet prov ON cf.provincia = prov.idprovincet
+                    LEFT JOIN distritot dist ON cf.distrito = dist.iddistritot
+                    ORDER BY cf.fecha_registro DESC";
+
+            $result = $this->conectar->query($sql);
+
+            // DEBUG: Log de la consulta
+            if (!$result) {
+                error_log("ERROR SQL en obtenerClientesParaContratos: " . $this->conectar->error);
+                error_log("SQL: " . $sql);
+                return [];
+            }
+
+            $clientes = [];
+            $count = 0;
+
+            while ($row = $result->fetch_assoc()) {
+                $count++;
+                $row['direccion_completa'] = trim(
+                    ($row['departamento_nombre'] ?? '') . ', ' .
+                    ($row['provincia_nombre'] ?? '') . ', ' .
+                    ($row['distrito_nombre'] ?? '') . ', ' .
+                    ($row['direccion_detallada'] ?? '')
+                );
+                $clientes[] = $row;
+            }
+
+            // DEBUG: Log del conteo
+            error_log("obtenerClientesParaContratos - Clientes encontrados: " . $count);
+
+            return $clientes;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::obtenerClientesParaContratos(): " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Busca clientes para generar contratos por criterio
+     *
+     * @param string $busqueda Criterio de búsqueda (DNI, nombre, apellido)
+     * @return array Lista de clientes encontrados
+     */
+    public function buscarClientesParaContratos($busqueda) {
+        try {
+            $sql = "SELECT
+                        cf.id,
+                        cf.n_documento,
+                        cf.nombres,
+                        cf.apellido_paterno,
+                        cf.apellido_materno,
+                        cf.telefono,
+                        cf.correo,
+                        cf.direccion_detallada,
+                        dep.nombre as departamento_nombre,
+                        prov.nombre as provincia_nombre,
+                        dist.nombre as distrito_nombre,
+                        cf.fecha_registro
+                    FROM clientes_financiar cf
+                    LEFT JOIN depast dep ON cf.departamento = dep.iddepast
+                    LEFT JOIN provincet prov ON cf.provincia = prov.idprovincet
+                    LEFT JOIN distritot dist ON cf.distrito = dist.iddistritot
+                    WHERE cf.n_documento LIKE ?
+                       OR cf.nombres LIKE ?
+                       OR cf.apellido_paterno LIKE ?
+                       OR cf.apellido_materno LIKE ?
+                    ORDER BY cf.fecha_registro DESC";
+
+            $stmt = $this->conectar->prepare($sql);
+            $searchPattern = "%$busqueda%";
+            $stmt->bind_param("ssss", $searchPattern, $searchPattern, $searchPattern, $searchPattern);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $clientes = [];
+            while ($row = $result->fetch_assoc()) {
+                $row['direccion_completa'] = trim(
+                    ($row['departamento_nombre'] ?? '') . ', ' .
+                    ($row['provincia_nombre'] ?? '') . ', ' .
+                    ($row['distrito_nombre'] ?? '') . ', ' .
+                    ($row['direccion_detallada'] ?? '')
+                );
+                $clientes[] = $row;
+            }
+
+            return $clientes;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::buscarClientesParaContratos(): " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Filtra clientes por rango de fechas de registro
+     *
+     * @param string $fechaInicio Fecha de inicio
+     * @param string $fechaFin Fecha de fin
+     * @return array Lista de clientes filtrados
+     */
+    public function filtrarClientesPorFechaRegistro($fechaInicio, $fechaFin) {
+        try {
+            $sql = "SELECT
+                        cf.id,
+                        cf.n_documento,
+                        cf.nombres,
+                        cf.apellido_paterno,
+                        cf.apellido_materno,
+                        cf.telefono,
+                        cf.correo,
+                        cf.direccion_detallada,
+                        dep.nombre as departamento_nombre,
+                        prov.nombre as provincia_nombre,
+                        dist.nombre as distrito_nombre,
+                        cf.fecha_registro
+                    FROM clientes_financiar cf
+                    LEFT JOIN depast dep ON cf.departamento = dep.iddepast
+                    LEFT JOIN provincet prov ON cf.provincia = prov.idprovincet
+                    LEFT JOIN distritot dist ON cf.distrito = dist.iddistritot
+                    WHERE DATE(cf.fecha_registro) BETWEEN ? AND ?
+                    ORDER BY cf.fecha_registro DESC";
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("ss", $fechaInicio, $fechaFin);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $clientes = [];
+            while ($row = $result->fetch_assoc()) {
+                $row['direccion_completa'] = trim(
+                    ($row['departamento_nombre'] ?? '') . ', ' .
+                    ($row['provincia_nombre'] ?? '') . ', ' .
+                    ($row['distrito_nombre'] ?? '') . ', ' .
+                    ($row['direccion_detallada'] ?? '')
+                );
+                $clientes[] = $row;
+            }
+
+            return $clientes;
+
+        } catch (Exception $e) {
+            error_log("Error en Cliente::filtrarClientesPorFechaRegistro(): " . $e->getMessage());
+            return [];
+        }
+    }
+
 }

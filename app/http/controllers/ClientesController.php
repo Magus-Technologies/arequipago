@@ -791,61 +791,63 @@ class ClientesController extends Controller
          */
         public function obtenerComprobantePago() {
             $clienteModel = new Cliente();
-            
+
             if (!isset($_POST['cliente_id']) || empty($_POST['cliente_id'])) {
                 echo json_encode(['success' => false, 'message' => 'ID de cliente no proporcionado']);
                 return;
             }
-            
+
             $clienteId = intval($_POST['cliente_id']);
-            
+
             // Obtener el pago del cliente
             $pago = $clienteModel->obtenerPagoPorCliente($clienteId);
-            
+
             if (!$pago) {
                 echo json_encode(['success' => false, 'message' => 'No se encontró un pago registrado para este cliente']);
                 return;
             }
-            
+
+            // 🔥 CORREGIDO: Ya no verificamos si el PDF existe físicamente
+            // La nueva ruta /verComprobante/{id} se encargará de regenerarlo si no existe
+
             // Construir la ruta del PDF original
             $pdfPath = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR . "nota_venta_cliente_" . $pago['id'] . ".pdf";
-            
-            // Verificar si el archivo existe
-            if (!file_exists($pdfPath)) {
-                echo json_encode(['success' => false, 'message' => 'El archivo del comprobante no existe']);
-                return;
-            }
-            
+
             // Crear carpeta compartir si no existe
             $compartirDir = "files" . DIRECTORY_SEPARATOR . "compartir" . DIRECTORY_SEPARATOR;
             if (!file_exists($compartirDir)) {
                 mkdir($compartirDir, 0777, true);
             }
-            
-            // Generar nombre único para el archivo compartible
-            $nombreCompartible = "comprobante_" . uniqid() . ".pdf";
-            $rutaCompartible = $compartirDir . $nombreCompartible;
-            
-            // Copiar el PDF a la carpeta compartir
-            if (copy($pdfPath, $rutaCompartible)) {
-                // Obtener la URL base del servidor
-                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-                $host = $_SERVER['HTTP_HOST'];
-                $baseUrl = $protocol . "://" . $host;
-                
-                // Construir URL completa del PDF
-                $pdfUrl = $baseUrl . "/arequipago/" . str_replace(DIRECTORY_SEPARATOR, "/", $rutaCompartible);
-                
-                echo json_encode([
-                    'success' => true,
-                    'pdf_path' => $pdfPath,
-                    'pdf_url' => $pdfUrl,
-                    'pdf_compartible' => $rutaCompartible,
-                    'pago_id' => $pago['id']
-                ]);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Error al crear copia compartible del comprobante']);
+
+            // Solo crear la copia compartible si el PDF original existe
+            $pdfUrl = null;
+            $rutaCompartible = null;
+
+            if (file_exists($pdfPath)) {
+                // Generar nombre único para el archivo compartible
+                $nombreCompartible = "comprobante_" . uniqid() . ".pdf";
+                $rutaCompartible = $compartirDir . $nombreCompartible;
+
+                // Copiar el PDF a la carpeta compartir
+                if (copy($pdfPath, $rutaCompartible)) {
+                    // Obtener la URL base del servidor
+                    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+                    $host = $_SERVER['HTTP_HOST'];
+                    $baseUrl = $protocol . "://" . $host;
+
+                    // Construir URL completa del PDF
+                    $pdfUrl = $baseUrl . "/arequipago/" . str_replace(DIRECTORY_SEPARATOR, "/", $rutaCompartible);
+                }
             }
+
+            // 🔥 CORREGIDO: Siempre devolver success con el pago_id
+            echo json_encode([
+                'success' => true,
+                'pdf_path' => $pdfPath,
+                'pdf_url' => $pdfUrl,
+                'pdf_compartible' => $rutaCompartible,
+                'pago_id' => $pago['id']
+            ]);
         }
 
         private function generarBoletaPago($pagoId, $clienteId) {
@@ -920,6 +922,87 @@ class ClientesController extends Controller
                 
             } catch (Exception $e) {
                 return ['success' => false, 'message' => 'Error al generar PDF: ' . $e->getMessage()];
+            }
+        }
+
+        /**
+         * Obtiene todos los clientes para generar contratos
+         */
+        public function obtenerTodosLosClientes() {
+            $clienteModel = new Cliente();
+
+            try {
+                // DEBUG: Verificar si hay clientes en la tabla
+                $sqlTest = "SELECT COUNT(*) as total FROM clientes_financiar";
+                $resultTest = $this->conectar->query($sqlTest);
+                $rowTest = $resultTest->fetch_assoc();
+                error_log("DEBUG - Total clientes en DB: " . $rowTest['total']);
+
+                $clientes = $clienteModel->obtenerClientesParaContratos();
+
+                error_log("DEBUG - Clientes retornados por modelo: " . count($clientes));
+
+                if ($clientes && count($clientes) > 0) {
+                    echo json_encode(['success' => true, 'clientes' => $clientes]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No hay clientes disponibles', 'debug' => 'Total en DB: ' . $rowTest['total']]);
+                }
+            } catch (Exception $e) {
+                error_log("ERROR en obtenerTodosLosClientes: " . $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Error al obtener clientes: ' . $e->getMessage()]);
+            }
+        }
+
+        /**
+         * Busca clientes por criterio para generar contratos
+         */
+        public function buscarClientesContratos() {
+            $clienteModel = new Cliente();
+
+            if (!isset($_POST['busqueda']) || empty($_POST['busqueda'])) {
+                echo json_encode(['success' => false, 'message' => 'Criterio de búsqueda vacío']);
+                return;
+            }
+
+            $busqueda = trim($_POST['busqueda']);
+
+            try {
+                $clientes = $clienteModel->buscarClientesParaContratos($busqueda);
+
+                if ($clientes && count($clientes) > 0) {
+                    echo json_encode(['success' => true, 'clientes' => $clientes]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se encontraron clientes']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error en la búsqueda: ' . $e->getMessage()]);
+            }
+        }
+
+        /**
+         * Filtra clientes por rango de fechas para generar contratos
+         */
+        public function filtrarClientesPorFecha() {
+            $clienteModel = new Cliente();
+
+            if (!isset($_POST['fecha_inicio']) || !isset($_POST['fecha_fin'])) {
+                echo json_encode(['success' => false, 'message' => 'Fechas no proporcionadas']);
+                return;
+            }
+
+            $fechaInicio = $_POST['fecha_inicio'];
+            $fechaFin = $_POST['fecha_fin'];
+
+            try {
+                $clientes = $clienteModel->filtrarClientesPorFechaRegistro($fechaInicio, $fechaFin);
+
+                if ($clientes && count($clientes) > 0) {
+                    echo json_encode(['success' => true, 'clientes' => $clientes]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se encontraron clientes en ese rango de fechas']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error al filtrar: ' . $e->getMessage()]);
             }
         }
 

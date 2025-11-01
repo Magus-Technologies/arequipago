@@ -44,6 +44,7 @@ Route::post('/aprobarPagoInscripcion', 'PagosPendientesInscripcionController@apr
 Route::post('/rechazarPagoInscripcion', 'PagosPendientesInscripcionController@rechazarPago');
 Route::post('/reactivarPagoInscripcion', 'PagosPendientesInscripcionController@reactivarPago');
 Route::post('/eliminarPagoInscripcion', 'PagosPendientesInscripcionController@eliminarPago');
+Route::get('/verComprobante/:id', 'PagosPendientesInscripcionController@verComprobante');
 
 Route::get('/downloadReport', 'ProductosController@downloadReport');
 
@@ -223,6 +224,12 @@ Route::post('/clienesObtenerDistritos', 'ClientesController@obtenerDistritos');
 Route::post('/deleteCliente', 'ClientesController@eliminarCliente');
 Route::post('/editarCliente', 'ClientesController@verEditarCliente');
 Route::post('/obtenerComprobantePago', 'ClientesController@obtenerComprobantePago');
+
+// NUEVO: Rutas para generar contratos de clientes
+Route::get('/obtenerTodosLosClientes', 'ClientesController@obtenerTodosLosClientes');
+Route::post('/buscarClientesContratos', 'ClientesController@buscarClientesContratos');
+Route::post('/filtrarClientesPorFecha', 'ClientesController@filtrarClientesPorFecha');
+Route::post('/generarContratoCliente', 'GenerarContratosController@generarContratoCliente');
 
 // rutas de GruposFinanciamientoController
 Route::post('/getVariantesGrupo', 'GruposFinanciamientoController@obtenerVariantesGrupo');

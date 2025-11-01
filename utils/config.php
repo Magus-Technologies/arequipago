@@ -14,9 +14,9 @@ define("PASSWORD_SS", "");          // ? Contrase�a definida
  * EMAILS_CONFIG
  * Configuraci�n de correo para producci�n
  */
-define("HOST_SMTP", "matrixsistem.com");
-define("USER_SMTP", "informes@matrixsistem.com");
-define("CLAVE_SMTP", "s(^&2_b5$2lp");
+define("HOST_SMTP", "mail.apperpan.com");
+define("USER_SMTP", "envios@apperpan.com");
+define("CLAVE_SMTP", "C4p1cu4$$");
 define("PUERTO_SMTP", "465");
 
 /**
