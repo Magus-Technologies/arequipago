@@ -204,8 +204,8 @@ class GenerarContratosController extends controller
 
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
-                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19 y 33)
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19) {
+                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33 y 38)
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 38) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -245,6 +245,34 @@ class GenerarContratosController extends controller
                         continue;
                     } catch (\Exception $e) {
                         error_log("Error generando contrato Excel de vehículo ID $idFinanciamiento: " . $e->getMessage());
+                        continue;
+                    }
+                }
+                
+                // Generar contrato PDF para CrediGo Autos Grupo 4 (grupo 38)
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] == 38) {
+                    try {
+                        $htmlContrato = $this->generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona);
+                        
+                        $mpdf = new \Mpdf\Mpdf([
+                            'format' => 'A4',
+                            'margin_left' => 15,
+                            'margin_right' => 15,
+                            'margin_top' => 15,
+                            'margin_bottom' => 15
+                        ]);
+                        
+                        $mpdf->WriteHTML($htmlContrato);
+                        $pdfContent = $mpdf->Output('', 'S');
+                        
+                        $pdfs[] = [
+                            'content' => base64_encode($pdfContent),
+                            'nombre' => "contrato_credigo_grupo4_{$idFinanciamiento}_{$nombrePersona}.pdf"
+                        ];
+                        
+                        continue;
+                    } catch (\Exception $e) {
+                        error_log("Error generando contrato PDF Grupo 4 ID $idFinanciamiento: " . $e->getMessage());
                         continue;
                     }
                 }
@@ -1696,5 +1724,30 @@ class GenerarContratosController extends controller
         } catch (Exception $e) {
             throw new Exception("Error al generar PDF: " . $e->getMessage());
         }
+    }
+    
+    private function generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona) {
+        // Cargar la plantilla HTML
+        $templatePath = 'app/contratos/contrato_credigo_grupo4.html';
+        
+        if (!file_exists($templatePath)) {
+            throw new Exception("No se encontró la plantilla del contrato para el grupo 38");
+        }
+        
+        $html = file_get_contents($templatePath);
+        
+        // Preparar los datos para reemplazar
+        $nombreCompleto = strtoupper($nombrePersona);
+        $tipoDocumento = strtoupper($persona['tipo_doc'] ?? 'DNI');
+        $numeroDocumento = $persona['nro_documento'] ?? $persona['n_documento'] ?? '';
+        $fechaActual = date('d') . ' DE ' . strtoupper($this->obtenerNombreMes(date('m'))) . ' DE ' . date('Y');
+        
+        // Reemplazar los placeholders en el HTML
+        $html = str_replace('{{NOMBRE_COMPLETO}}', $nombreCompleto, $html);
+        $html = str_replace('{{TIPO_DOCUMENTO}}', $tipoDocumento, $html);
+        $html = str_replace('{{NUMERO_DOCUMENTO}}', $numeroDocumento, $html);
+        $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
+        
+        return $html;
     }
 }

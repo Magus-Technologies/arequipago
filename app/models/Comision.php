@@ -57,6 +57,13 @@ class Comision {
     }
 
     /**
+     * Calcula la comisión por ingreso de cliente
+     */
+    public function calcularComisionIngresoCliente() {
+        return ['monto' => 30.00, 'moneda' => 'S/.', 'aplica' => true];
+    }
+    
+    /**
      * Calcula la comisión según las reglas de negocio
      */
     public function calcularComisionFinanciamiento($grupo_financiamiento, $id_variante = null) {
@@ -70,46 +77,59 @@ class Comision {
         }
         
         switch ($planId) {
-            case 19: // CREDI GO VEHÍCULO
+            // CREDI GO AUTOS - Grupo 3
+            case 19:
                 if ($id_variante) {
                     switch (intval($id_variante)) {
-                        case 4: // CERT $13,000
+                        case 4: // $13,000
                             return ['monto' => 30.00, 'moneda' => '$', 'aplica' => true];
-                        case 5: // CERT $15,000
+                        case 5: // $15,000
                             return ['monto' => 40.00, 'moneda' => '$', 'aplica' => true];
-                        case 6: // CERT $17,000
+                        case 6: // $17,000
                             return ['monto' => 50.00, 'moneda' => '$', 'aplica' => true];
                     }
                 }
                 break;
                 
-            case 38: // CrediGo Autos Grupo 4
+            // CREDI GO AUTOS - Grupo 4
+            case 38:
                 if ($id_variante) {
                     switch (intval($id_variante)) {
-                        case 21: // Variante $13,000 - $80 semanal
+                        case 21: // $13,000
                             return ['monto' => 30.00, 'moneda' => '$', 'aplica' => true];
-                        case 22: // Variante $15,000 - $90 semanal
+                        case 22: // $15,000
                             return ['monto' => 40.00, 'moneda' => '$', 'aplica' => true];
-                        case 23: // Variante $17,000 - $100 semanal
+                        case 23: // $17,000
                             return ['monto' => 50.00, 'moneda' => '$', 'aplica' => true];
                     }
                 }
                 break;
                 
-            case 22: // CREDI GO MOTO
+            // CREDI GO MOTOS
+            case 22:
                 return ['monto' => 50.00, 'moneda' => 'S/.', 'aplica' => true];
                 
+            // CELULARES (TODOS)
             case 2: // Redmi 14
+            case 3: // Redmi 14 PRO
+            case 4: // Redmi 14 PRO 5G
                 return ['monto' => 50.00, 'moneda' => 'S/.', 'aplica' => true];
                 
-            case 3: // Redmi 14 PRO
-                return ['monto' => 50.00, 'moneda' => 'S/.', 'aplica' => true]; // 400 + 50
+            // LLANTAS
+            case 14:
+                return ['monto' => 15.00, 'moneda' => 'S/.', 'aplica' => true];
                 
-            case 4: // Redmi 14 PRO 5G
-                return ['monto' => 50.00, 'moneda' => 'S/.', 'aplica' => true]; // 500 + 50
+            // ACEITES
+            case 15:
+                return ['monto' => 15.00, 'moneda' => 'S/.', 'aplica' => true];
                 
-            case 33: // MOTO YA
-                return ['monto' => 150.00, 'moneda' => 'S/.', 'aplica' => true];
+            // BATERÍAS
+            case 16:
+                return ['monto' => 15.00, 'moneda' => 'S/.', 'aplica' => true];
+                
+            // MOTO YA
+            case 33:
+                return ['monto' => 100.00, 'moneda' => 'S/.', 'aplica' => true];
         }
         
         return $comision;
@@ -128,12 +148,15 @@ class Comision {
                         WHEN c.tipo_comision = 'financiamiento' THEN 
                             CONCAT('Comisión por financiamiento - ',
                                 CASE 
-                                    WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Vehículo'
-                                    WHEN f.grupo_financiamiento = '38' THEN 'CrediGo Autos Grupo 4'
-                                    WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Moto'
-                                    WHEN f.grupo_financiamiento = '2' THEN 'Redmi 14'
-                                    WHEN f.grupo_financiamiento = '3' THEN 'Redmi 14 Pro'
-                                    WHEN f.grupo_financiamiento = '4' THEN 'Redmi 14 Pro 5G'
+                                    WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Autos'
+                                    WHEN f.grupo_financiamiento = '38' THEN 'CREDI GO Autos Grupo 4'
+                                    WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Motos'
+                                    WHEN f.grupo_financiamiento = '2' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '3' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '4' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '14' THEN 'Llantas'
+                                    WHEN f.grupo_financiamiento = '15' THEN 'Aceites'
+                                    WHEN f.grupo_financiamiento = '16' THEN 'Baterías'
                                     WHEN f.grupo_financiamiento = '33' THEN 'MOTO YA'
                                     ELSE CONCAT('Plan ID: ', f.grupo_financiamiento)
                                 END
@@ -256,12 +279,15 @@ class Comision {
                         WHEN c.tipo_comision = 'financiamiento' THEN
                             CONCAT('Financiamiento - Plan: ', 
                                 CASE 
-                                    WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Vehículo'
-                                    WHEN f.grupo_financiamiento = '38' THEN 'CrediGo Autos Grupo 4'
-                                    WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Moto'
-                                    WHEN f.grupo_financiamiento = '2' THEN 'Redmi 14'
-                                    WHEN f.grupo_financiamiento = '3' THEN 'Redmi 14 Pro'
-                                    WHEN f.grupo_financiamiento = '4' THEN 'Redmi 14 Pro 5G'
+                                    WHEN f.grupo_financiamiento = '19' THEN 'CREDI GO Autos'
+                                    WHEN f.grupo_financiamiento = '38' THEN 'CREDI GO Autos Grupo 4'
+                                    WHEN f.grupo_financiamiento = '22' THEN 'CREDI GO Motos'
+                                    WHEN f.grupo_financiamiento = '2' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '3' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '4' THEN 'Celulares'
+                                    WHEN f.grupo_financiamiento = '14' THEN 'Llantas'
+                                    WHEN f.grupo_financiamiento = '15' THEN 'Aceites'
+                                    WHEN f.grupo_financiamiento = '16' THEN 'Baterías'
                                     WHEN f.grupo_financiamiento = '33' THEN 'MOTO YA'
                                     ELSE CONCAT('Plan ID: ', f.grupo_financiamiento)
                                 END,

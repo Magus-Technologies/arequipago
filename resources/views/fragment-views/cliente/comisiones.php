@@ -186,9 +186,15 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             font-weight: bold;
         }
 
-        /* Agregar esta nueva regla CSS */
+        /* Ajustes de tamaño de fuente por columna */
+        /* Columna Tipo - letra más pequeña */
         .table td:nth-child(4) {
-            font-size: 1.1rem;
+            font-size: 0.85rem;
+        }
+        
+        /* Columna Descripción - letra más grande */
+        .table td:nth-child(5) {
+            font-size: 1.05rem;
         }
 
         /* Media Queries para dispositivos móviles */
