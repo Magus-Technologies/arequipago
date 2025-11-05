@@ -79,6 +79,11 @@ class EditarConductorController extends Controller
                 }
             }
 
+            // 9. Enviar foto al API externo si se cambió
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                $this->enviarFotoAPIExterno($_POST['n_document'], $_FILES['photo']);
+            }
+
             $this->enviarRespuesta(true, 'Registro completado con éxito.', ['id_conductor' => $id_conductor]);
 
         } catch (Exception $e) {
@@ -702,6 +707,22 @@ class EditarConductorController extends Controller
             $stmt->bind_param("i", $id_inscripcion);
             $stmt->execute();
         }
+
+        // Enviar foto al API externo si se cambió
+        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            // Obtener el número de documento del conductor
+            $sql = "SELECT nro_documento FROM conductores WHERE id_conductor = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("i", $id_conductor);
+            $stmt->execute();
+            $stmt->bind_result($nro_documento);
+            $stmt->fetch();
+            $stmt->close();
+            
+            if ($nro_documento) {
+                $this->enviarFotoAPIExterno($nro_documento, $_FILES['photo']);
+            }
+        }
         
         return ['status' => 'success', 'message' => 'Datos actualizados correctamente.'];
     }
@@ -743,6 +764,41 @@ class EditarConductorController extends Controller
             return str_replace("\\", "/", $targetFile); // Convertir cualquier barra invertida a barra normal
         }
         return null;
+    }
+
+    private function enviarFotoAPIExterno($nro_documento, $foto_file)
+    {
+        try {
+            $url = 'https://magusemail.com/arequipago-api/public/api/upload-profile-picture';
+            
+            $ch = curl_init();
+            
+            $post_data = [
+                'nro_documento' => $nro_documento,
+                'foto_perfil' => new CURLFile($foto_file['tmp_name'], $foto_file['type'], $foto_file['name'])
+            ];
+            
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($http_code == 200) {
+                error_log("Foto actualizada exitosamente en API externo para documento: " . $nro_documento);
+            } else {
+                error_log("Error al actualizar foto en API externo. HTTP Code: " . $http_code . " - Response: " . $response);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Excepción al actualizar foto en API externo: " . $e->getMessage());
+        }
     }
 
 }

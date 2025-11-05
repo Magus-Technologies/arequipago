@@ -83,6 +83,11 @@ class RegistrarConductorController extends Controller
                 return;
             }
 
+            // 10. Enviar foto al API externo si existe
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                $this->enviarFotoAPIExterno($_POST['n_document'], $_FILES['photo']);
+            }
+
             $this->enviarRespuesta(true, 'Registro completado con éxito.', ['id_conductor' => $id_conductor]);
 
         } catch (Exception $e) {
@@ -671,6 +676,41 @@ public function buscarConductor()
         } catch (Exception $e) {
             error_log("Error en procesarLogoYango: " . $e->getMessage());
             throw new Exception('Error al procesar Logo YANGO: ' . $e->getMessage());
+        }
+    }
+
+    private function enviarFotoAPIExterno($nro_documento, $foto_file)
+    {
+        try {
+            $url = 'https://magusemail.com/arequipago-api/public/api/upload-profile-picture';
+            
+            $ch = curl_init();
+            
+            $post_data = [
+                'nro_documento' => $nro_documento,
+                'foto_perfil' => new CURLFile($foto_file['tmp_name'], $foto_file['type'], $foto_file['name'])
+            ];
+            
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($http_code == 200) {
+                error_log("Foto enviada exitosamente al API externo para documento: " . $nro_documento);
+            } else {
+                error_log("Error al enviar foto al API externo. HTTP Code: " . $http_code . " - Response: " . $response);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Excepción al enviar foto al API externo: " . $e->getMessage());
         }
     }
 }
