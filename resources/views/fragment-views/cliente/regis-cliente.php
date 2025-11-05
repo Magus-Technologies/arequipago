@@ -179,6 +179,51 @@
             border-radius: 10px;
         }
 
+        /* Estilos para mejorar scroll en móviles */
+        body {
+            padding-bottom: 100px; /* Espacio extra al final */
+        }
+
+        .container-custom {
+            margin-bottom: 80px; /* Más espacio al final del contenedor */
+        }
+
+        /* Botones fijos en móviles */
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 120px; /* Más espacio en móviles */
+            }
+            
+            .container-custom {
+                margin-bottom: 100px;
+            }
+            
+            .btn-container-mobile {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                padding: 15px 20px;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+                z-index: 1000;
+                border-top: 1px solid #ddd;
+            }
+            
+            .btn-container-mobile .btn {
+                width: 48%;
+                margin: 0 1%;
+            }
+        }
+
+        /* Asegurar que el contenido sea scrolleable */
+        html, body {
+            height: auto;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
     </style>
 </head>
 <body>
@@ -401,10 +446,18 @@
                 </div>
             </div>
 
-            <!-- Botón de Guardar -->
-            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <!-- Botones de Guardar - Desktop -->
+            <div class="d-none d-md-flex gap-2 justify-content-md-end">
                 <button type="button" id="btnVolver" class="btn btn-secondary" onclick="window.location.href='ver-clientes'">Volver</button>
                 <button type="submit" class="btn btn-custom">Guardar Cliente</button>
+            </div>
+            
+            <!-- Botones de Guardar - Mobile (Fijos) -->
+            <div class="d-md-none btn-container-mobile">
+                <div class="d-flex justify-content-between">
+                    <button type="button" id="btnVolverMobile" class="btn btn-secondary" onclick="window.location.href='ver-clientes'">Volver</button>
+                    <button type="submit" class="btn btn-custom">Guardar Cliente</button>
+                </div>
             </div>
         </form>
     </div>

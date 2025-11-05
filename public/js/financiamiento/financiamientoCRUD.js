@@ -42,7 +42,15 @@ function saveFinanciamiento(event) {
   const grupoFinanciamiento = $("#grupo").val();
   let cantidadProducto = $("#cantidad").val(); // 🔹 Cambiado a 'let' para poder modificarlo en plan personalizado
 
-    // NUEVO: Obtener nombre personalizado si es plan editable
+  // DESHABILITADO: Ya no validamos campos de CrediYango en el registro
+  // El cronograma se generará cuando se entregue el vehículo
+  // if (!validarCamposCrediYango()) {
+  //   btn.disabled = false;
+  //   Swal.close();
+  //   return;
+  // }
+
+  // NUEVO: Obtener nombre personalizado si es plan editable
   let nombrePersonalizado = null;
   if (grupoFinanciamiento === "42" || grupoFinanciamiento === 42) {
     nombrePersonalizado = $("#nombrePersonalizado").val().trim();
@@ -120,9 +128,9 @@ function saveFinanciamiento(event) {
   valorCuota = parseFloat(valorCuota);
 
   const estado = $("#estado").val();
-  const fechaInicio = $("#fechaInicio").val();
-  const fechaFin = $("#fechaFin").val();
-  const fechaHoraActual = $("#fechaHoraActual").val();
+  let fechaInicio = $("#fechaInicio").val();
+  let fechaFin = $("#fechaFin").val();
+  let fechaHoraActual = $("#fechaHoraActual").val();
   // Obtener valor de cobrar mora (solo para directores)
   let cobrarMora = 1; // Valor por defecto
   if (planGlobal && typeof planGlobal.cobrar_mora !== 'undefined') {
@@ -139,6 +147,22 @@ function saveFinanciamiento(event) {
       verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
   }
 
+  // DESHABILITADO: Ya no obtenemos campos de CrediYango al registrar
+  // Las fechas se capturarán cuando se entregue el vehículo
+  let fechaEntrega = null;
+  let fechaInicioPagosCalculada = null;
+
+  // const fechaEntregaInput = document.getElementById('fechaEntrega');
+  // const fechaInicioPagosInput = document.getElementById('fechaInicioPagosCalculada');
+  //
+  // if (fechaEntregaInput && fechaEntregaInput.value) {
+  //   fechaEntrega = fechaEntregaInput.value;
+  // }
+  //
+  // if (fechaInicioPagosInput && fechaInicioPagosInput.value) {
+  //   fechaInicioPagosCalculada = fechaInicioPagosInput.value;
+  // }
+
   const fechasVencimiento = []; // Crear un arreglo vacío para almacenar las fechas
   $("#contenedorFechas span").each(function () {
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento
@@ -150,13 +174,14 @@ function saveFinanciamiento(event) {
     }
   });
 
-  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42)
+  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42) o CrediYango (ID 45)
   const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
-  
+  const esCrediYango = (grupoFinanciamiento === '45' || grupoFinanciamiento === 45);
+
   const idProducto = productoSeleccionado?.id;
 
-  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado
-  if (!esPlanPersonalizado && !idProducto) {
+  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado ni CrediYango
+  if (!esPlanPersonalizado && !esCrediYango && !idProducto) {
     Swal.fire("Error", "Debe seleccionar un producto.", "error");
     return;
   }
@@ -172,8 +197,71 @@ function saveFinanciamiento(event) {
       return;
     }
   }
-  
-  if (esPlanPersonalizado) {
+
+  if (esCrediYango) {
+    // 🚗 Para CrediYango, validar solo campos básicos mínimos
+    // NO validamos fechas porque se calculan automáticamente al entregar el vehículo
+    const camposCrediYango = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Monto total': montoTotal,
+      'Cuota inicial': cuotaInicial,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Número de documento': numeroDocumento
+    };
+
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposCrediYango)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "CrediYango - Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // 🚗 NUEVO: Para CrediYango, establecer cantidad de producto en 1 por defecto si no existe
+    if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
+      cantidadProducto = '1';
+      console.log('🚗 CrediYango - Cantidad de producto establecida en 1');
+    }
+
+    // 🚗 NUEVO: Para CrediYango, establecer producto ID 37 por defecto (vehículo no entregado)
+    // Esto se enviará al backend para que se asigne automáticamente
+    console.log('🚗 CrediYango - Se asignará producto ID 37 por defecto (vehículo no entregado)');
+
+    // 🚗 NUEVO: Para CrediYango, establecer fechas por defecto si están vacías
+    // Las fechas reales se calcularán al entregar el vehículo
+    if (!fechaInicio || fechaInicio === '') {
+      // Usar fecha actual como placeholder
+      const hoy = new Date();
+      fechaInicio = hoy.toISOString().split('T')[0];
+      console.log('🚗 CrediYango - Fecha de inicio establecida como hoy:', fechaInicio);
+    }
+
+    if (!fechaFin || fechaFin === '') {
+      // Calcular fecha estimada (200 semanas = ~3.8 años)
+      const hoy = new Date();
+      const fechaFinEstimada = new Date(hoy);
+      fechaFinEstimada.setDate(fechaFinEstimada.getDate() + (200 * 7)); // 200 cuotas semanales
+      fechaFin = fechaFinEstimada.toISOString().split('T')[0];
+      console.log('🚗 CrediYango - Fecha de fin estimada:', fechaFin);
+    }
+
+    if (!fechaHoraActual || fechaHoraActual === '') {
+      // Establecer fecha y hora actual
+      const ahora = new Date();
+      fechaHoraActual = ahora.toISOString().slice(0, 16); // Formato: YYYY-MM-DDTHH:MM
+      console.log('🚗 CrediYango - Fecha y hora actual establecida:', fechaHoraActual);
+    }
+  } else if (esPlanPersonalizado) {
     // 🔹 Para planes personalizados, validar campos específicos (SIN cantidad de producto)
     const camposPersonalizados = {
       'Grupo de financiamiento': grupoFinanciamiento,
@@ -283,6 +371,8 @@ function saveFinanciamiento(event) {
         tasa: tasa, // Modificado: Añadido el parámetro tasa que faltaba
         cobrar_mora: cobrarMora,
         verificacion_domiciliaria: verificacionDomiciliaria,
+        fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
+        fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -290,18 +380,18 @@ function saveFinanciamiento(event) {
          // Preparar array de pagos a generar
           const pagos = [];
           const metodoPago = $("#metodoPago").val() || "Efectivo"; // Valor por defecto
-                  
-          if (montoInscrip > 0) {
-            pagos.push({
-              monto: montoInscrip,
-              tipo: "Monto de Inscripción",
-            });
-          }
           
+          // CORREGIDO: Priorizar Cuota Inicial sobre Monto de Inscripción
           if (cuotaInicial > 0) {
             pagos.push({
               monto: cuotaInicial,
               tipo: "Cuota Inicial",
+            });
+          } else if (montoInscrip > 0) {
+            // Solo agregar monto de inscripción si NO hay cuota inicial
+            pagos.push({
+              monto: montoInscrip,
+              tipo: "Monto de Inscripción",
             });
           }
           // Solo hacer la llamada si hay pagos para generar
@@ -377,23 +467,25 @@ function saveFinanciamiento(event) {
             tasa: tasa,
             cobrar_mora: cobrarMora,
             verificacion_domiciliaria: verificacionDomiciliaria,
+            fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
+            fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
           },
           success: function (response) {
             if (response.success) {
               // Preparar array de pagos a generar
               const pagos = [];
 
-              if (montoInscrip > 0) {
-                pagos.push({
-                  monto: montoInscrip,
-                  tipo: "Monto de Inscripción",
-                });
-              }
-
+              // CORREGIDO: Priorizar Cuota Inicial sobre Monto de Inscripción
               if (cuotaInicial > 0) {
                 pagos.push({
                   monto: cuotaInicial,
                   tipo: "Cuota Inicial",
+                });
+              } else if (montoInscrip > 0) {
+                // Solo agregar monto de inscripción si NO hay cuota inicial
+                pagos.push({
+                  monto: montoInscrip,
+                  tipo: "Monto de Inscripción",
                 });
               }
               // Solo hacer la llamada si hay pagos para generar

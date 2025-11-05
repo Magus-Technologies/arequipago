@@ -240,10 +240,8 @@ async function handleGeneratePDFs(
       // Procesar cada PDF recibido del servidor
       data.pdfs.forEach((pdfData, index) => {
         if (pdfData.base64 && pdfData.tipo) {
-          // Almacenar el PDF en base64 para usarlo luego
-          // Nota: Guardamos cada PDF con un identificador único basado en su tipo
-          const pdfKey = `pdf_${pdfData.tipo}_${idFinanciamiento}`;
-          localStorage.setItem(pdfKey, pdfData.base64);
+          // Los PDFs se generan en el backend y se descargan directamente
+          // No es necesario almacenar en localStorage
 
           // Crear blob desde base64 para la descarga directa
           const pdfContent = atob(pdfData.base64);

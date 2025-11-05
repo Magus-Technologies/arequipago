@@ -73,6 +73,57 @@ function selectPlan(idPlan) {
       nombrePersonalizadoInput.required = false;
       nombrePersonalizadoInput.value = '';
     }
+    
+    // NUEVO: Limpiar mensaje de CrediYango si se selecciona otro grupo
+    const contenedorFechas = document.getElementById("contenedorFechas");
+    if (contenedorFechas && contenedorFechas.innerHTML.includes("CrediYango")) {
+      contenedorFechas.innerHTML = '';
+      console.log("🧹 Limpiando mensaje de CrediYango al seleccionar otro grupo");
+    }
+  }
+
+  // NUEVO: Para CrediYango, mostrar mensaje inmediatamente
+  if (idPlan === "45" || idPlan === 45) {
+    console.log("🚗 CREDIYANGO - Mostrando mensaje inmediatamente al seleccionar grupo");
+    
+    const contenedorFechas = document.getElementById("contenedorFechas");
+    if (contenedorFechas) {
+      contenedorFechas.innerHTML = `
+        <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+          <div class="text-center">
+            <i class="fas fa-truck fa-3x mb-3" style="color: #1976d2;"></i>
+            <h6 class="fw-bold mb-2" style="color: #0d47a1;">CrediYango - Entrega de Vehículo</h6>
+            <p class="mb-0" style="color: #1565c0;">
+              El cronograma de pagos se generará automáticamente cuando marque el vehículo como <strong>entregado</strong>.
+            </p>
+            <hr style="border-color: #90caf9; opacity: 0.3;">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              Podrá entregar el vehículo desde la vista de detalles del financiamiento.
+            </small>
+          </div>
+        </div>
+      `;
+    }
+    // Limpiar el botón de cronograma si existe
+    const contenedorBoton = document.getElementById("contenedorBotonCronograma");
+    if (contenedorBoton) {
+      contenedorBoton.innerHTML = '';
+    }
+  }
+
+  // DESHABILITADO: Los campos de fecha ya no se muestran al registrar CrediYango
+  // Ahora el cronograma se genera cuando se entrega el vehículo
+  const fechaEntregaRowContainer = document.getElementById('fechaEntregaRowContainer');
+
+  // Siempre ocultar los campos de fecha en el formulario de registro
+  if (fechaEntregaRowContainer) {
+    fechaEntregaRowContainer.style.display = 'none';
+    // Limpiar valores
+    const fechaEntregaInput = document.getElementById('fechaEntrega');
+    const fechaInicioPagosInput = document.getElementById('fechaInicioPagosCalculada');
+    if (fechaEntregaInput) fechaEntregaInput.value = '';
+    if (fechaInicioPagosInput) fechaInicioPagosInput.value = '';
   }
 
 
@@ -974,7 +1025,9 @@ function seleccionarVariante(index) {
   $("#valorCuota").val(variante.monto_cuota);
   $("#cuotas").val(variante.cantidad_cuotas);
   $("#tasaInteres").val(variante.tasa_interes);
-  $("#montoSinIntereses").val(variante.monto_sin_interes || "");
+  // MODIFICADO: Formatear el monto sin intereses con 2 decimales
+  const montoSinInteresesFormateado = variante.monto_sin_interes ? parseFloat(variante.monto_sin_interes).toFixed(2) : "";
+  $("#montoSinIntereses").val(montoSinInteresesFormateado);
 
   // Agrega DESPUÉS de esas líneas:
   // NUEVO: Para variantes de celular, calcular y fijar valor de cuota
@@ -1244,13 +1297,30 @@ function verificarInputsVacios() {
     camposMontoEspeciales.forEach((id) => {
       const input = document.getElementById(id);
       if (input) {
-        input.style.backgroundColor = "#e9ecef";
-        input.style.color = "#6c757d";
-        input.style.border = "1px solid #ced4da";
-        input.disabled = true;
-        input.readOnly = true;
-        input.style.pointerEvents = "none";
-        input.style.cursor = "not-allowed";
+        // MODIFICADO: Verificar si es CrediGo Autos Grupo 4 con variante para montoSinIntereses
+        const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
+        const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+        
+        if (id === "montoSinIntereses" && esCrediGoGrupo4 && tieneVarianteSeleccionada) {
+          // Para montoSinIntereses en CrediGo Autos Grupo 4 con variante, mantener habilitado
+          input.style.backgroundColor = "#ffffff";
+          input.style.color = "#212529";
+          input.style.border = "1px solid #ced4da";
+          input.disabled = false;
+          input.readOnly = false;
+          input.style.pointerEvents = "auto";
+          input.style.cursor = "text";
+          console.log("✅ Campo montoSinIntereses mantenido habilitado para CrediGo Autos Grupo 4");
+        } else {
+          // Para otros casos, deshabilitar normalmente
+          input.style.backgroundColor = "#e9ecef";
+          input.style.color = "#6c757d";
+          input.style.border = "1px solid #ced4da";
+          input.disabled = true;
+          input.readOnly = true;
+          input.style.pointerEvents = "none";
+          input.style.cursor = "not-allowed";
+        }
       }
     });
   }
@@ -1327,13 +1397,29 @@ function verificarInputsVacios() {
 
   // ... resto del código original igual
 
-  // Mantener el campo 'montoSinIntereses' deshabilitado y estilizado como deshabilitado
+  // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4
   const montoSinInteresesInput = document.getElementById("montoSinIntereses");
   if (montoSinInteresesInput) {
-    montoSinInteresesInput.disabled = true; // Mantenerlo deshabilitado
-    montoSinInteresesInput.style.backgroundColor = "#f5fffa"; // Fondo gris claro
-    montoSinInteresesInput.style.color = "#6c757d"; // Texto gris
-    montoSinInteresesInput.classList.add("disabled-input"); // Clase de deshabilitado
+    // Verificar si es CrediGo Autos Grupo 4 (ID 38) con variante seleccionada
+    const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
+    const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+    
+    if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
+      // Para CrediGo Autos Grupo 4 con variante, mantener el campo habilitado y con estilo normal
+      montoSinInteresesInput.disabled = false;
+      montoSinInteresesInput.style.backgroundColor = "#ffffff";
+      montoSinInteresesInput.style.color = "#212529";
+      montoSinInteresesInput.classList.remove("disabled-input");
+      montoSinInteresesInput.style.pointerEvents = "auto";
+      montoSinInteresesInput.style.cursor = "text";
+      console.log("✅ Campo montoSinIntereses habilitado para CrediGo Autos Grupo 4");
+    } else {
+      // Para otros planes, mantenerlo deshabilitado
+      montoSinInteresesInput.disabled = true;
+      montoSinInteresesInput.style.backgroundColor = "#f5fffa";
+      montoSinInteresesInput.style.color = "#6c757d";
+      montoSinInteresesInput.classList.add("disabled-input");
+    }
   }
 
   // Aplicar estilos a los tooltips
@@ -1540,13 +1626,29 @@ function NotGrupo() {
       }
     });
 
-    // Mantener el campo 'montoSinIntereses' deshabilitado y estilizado como deshabilitado
+    // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4
     const montoSinInteresesInput = document.getElementById("montoSinIntereses");
     if (montoSinInteresesInput) {
-      montoSinInteresesInput.disabled = true; // NUEVO: Mantenerlo deshabilitado
-      montoSinInteresesInput.style.backgroundColor = "#f5fffa"; // NUEVO: Fondo gris claro
-      montoSinInteresesInput.style.color = "#6c757d"; // NUEVO: Texto gris
-      montoSinInteresesInput.classList.add("disabled-input"); // NUEVO: Clase de deshabilitado
+      // Verificar si es CrediGo Autos Grupo 4 (ID 38) con variante seleccionada
+      const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
+      const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+      
+      if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
+        // Para CrediGo Autos Grupo 4 con variante, mantener el campo habilitado y con estilo normal
+        montoSinInteresesInput.disabled = false;
+        montoSinInteresesInput.style.backgroundColor = "#ffffff";
+        montoSinInteresesInput.style.color = "#212529";
+        montoSinInteresesInput.classList.remove("disabled-input");
+        montoSinInteresesInput.style.pointerEvents = "auto";
+        montoSinInteresesInput.style.cursor = "text";
+        console.log("✅ Campo montoSinIntereses habilitado para CrediGo Autos Grupo 4 (segunda ocurrencia)");
+      } else {
+        // Para otros planes, mantenerlo deshabilitado
+        montoSinInteresesInput.disabled = true;
+        montoSinInteresesInput.style.backgroundColor = "#f5fffa";
+        montoSinInteresesInput.style.color = "#6c757d";
+        montoSinInteresesInput.classList.add("disabled-input");
+      }
     }
 
     // Aplicar estilos a los tooltips
@@ -3041,7 +3143,14 @@ function habilitarModoPersonalizado() {
       (cuotaInicial || cuotas || tasaInteres)
     ) {
       console.log("✅ Hay datos suficientes, calculando...");
-      if (typeof calcularFinanciamiento === "function") {
+      
+      // NUEVO: Verificar si es CrediYango antes de calcular
+      const grupoSeleccionado = document.getElementById("grupo")?.value;
+      const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+      
+      if (esCrediYangoSeleccionado) {
+        console.log("🚗 CREDIYANGO detectado - NO ejecutando calcularFinanciamiento automático");
+      } else if (typeof calcularFinanciamiento === "function") {
         calcularFinanciamiento();
       }
     } else {
@@ -3075,4 +3184,150 @@ function recalcularCronogramaPlanEditable() {
       frecuencia: frecuencia ? "✓" : "✗"
     });
   }
+}
+
+// NUEVA FUNCIÓN: Recalcular fecha de inicio de pagos para CrediYango
+function recalcularFechaInicioPagosYango() {
+    const fechaEntregaInput = document.getElementById('fechaEntrega');
+    const fechaInicioPagosInput = document.getElementById('fechaInicioPagosCalculada');
+    const fechaInicioInput = document.getElementById('fechaInicio');
+    
+    if (!fechaEntregaInput || !fechaInicioPagosInput) {
+        console.warn('Campos de CrediYango no encontrados');
+        return;
+    }
+    
+    const fechaEntrega = fechaEntregaInput.value;
+    
+    if (!fechaEntrega) {
+        // Si no hay fecha de entrega, limpiar fecha de inicio de pagos
+        fechaInicioPagosInput.value = '';
+        if (fechaInicioInput) fechaInicioInput.value = '';
+        return;
+    }
+    
+    try {
+        // Calcular fecha de inicio de pagos: fecha_entrega + 7 días
+        const fechaEntregaObj = new Date(fechaEntrega + 'T00:00:00');
+        const fechaInicioPagos = new Date(fechaEntregaObj);
+        fechaInicioPagos.setDate(fechaInicioPagos.getDate() + 7);
+        
+        // Formatear fecha para el input
+        const fechaFormateada = fechaInicioPagos.toISOString().split('T')[0];
+        
+        // Actualizar campos
+        fechaInicioPagosInput.value = fechaFormateada;
+        if (fechaInicioInput) {
+            fechaInicioInput.value = fechaFormateada;
+        }
+        
+        console.log('🚗 CrediYango - Fecha de entrega:', fechaEntrega);
+        console.log('🚗 CrediYango - Fecha de inicio de pagos calculada:', fechaFormateada);
+        
+        // Recalcular cronograma si hay un plan seleccionado
+        if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45) {
+            setTimeout(() => {
+                calcularCronogramaDinamico();
+            }, 300);
+        }
+        
+        // Mostrar notificación al usuario
+        mostrarNotificacionCrediYango(fechaEntrega, fechaFormateada);
+        
+    } catch (error) {
+        console.error('Error al calcular fecha de inicio de pagos:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al calcular la fecha de inicio de pagos. Verifique la fecha de entrega.',
+            confirmButtonText: 'Entendido'
+        });
+    }
+}
+
+// NUEVA FUNCIÓN: Mostrar notificación específica para CrediYango
+function mostrarNotificacionCrediYango(fechaEntrega, fechaInicioPagos) {
+    const fechaEntregaFormateada = new Date(fechaEntrega + 'T00:00:00').toLocaleDateString('es-PE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const fechaInicioPagosFormateada = new Date(fechaInicioPagos + 'T00:00:00').toLocaleDateString('es-PE', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    Swal.fire({
+        icon: 'success',
+        title: '🚗 CrediYango - Fechas Calculadas',
+        html: `
+            <div style="text-align: left; padding: 10px;">
+                <p><strong>📅 Fecha de Entrega:</strong><br>
+                   ${fechaEntregaFormateada}</p>
+                
+                <p><strong>💰 Inicio de Pagos:</strong><br>
+                   ${fechaInicioPagosFormateada}</p>
+                
+                <div style="background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <small><i class="fas fa-info-circle"></i> 
+                    Los pagos comenzarán automáticamente 7 días después de la entrega del vehículo.</small>
+                </div>
+            </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#28a745'
+    });
+}
+
+// NUEVA FUNCIÓN: Validar campos de CrediYango antes de guardar
+function validarCamposCrediYango() {
+    // Solo validar si es plan CrediYango (ID 45)
+    if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 45) {
+        return true;
+    }
+    
+    const fechaEntregaInput = document.getElementById('fechaEntrega');
+    const estadoSelect = document.getElementById('estado');
+    
+    if (!fechaEntregaInput || !estadoSelect) {
+        return true; // Si no existen los campos, no validar
+    }
+    
+    const fechaEntrega = fechaEntregaInput.value;
+    const estado = estadoSelect.value;
+    
+    // Si el estado es "Vendido - Pendiente de Entrega", la fecha de entrega es obligatoria
+    if (estado === 'Vendido - Pendiente de Entrega' && !fechaEntrega) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Fecha de Entrega Requerida',
+            text: 'Para el estado "Vendido - Pendiente de Entrega" debe especificar la fecha de entrega del vehículo.',
+            confirmButtonText: 'Entendido'
+        });
+        fechaEntregaInput.focus();
+        return false;
+    }
+    
+    // Si hay fecha de entrega, validar que no sea anterior a hoy
+    if (fechaEntrega) {
+        const hoy = new Date();
+        const fechaEntregaObj = new Date(fechaEntrega + 'T00:00:00');
+        
+        if (fechaEntregaObj < hoy.setHours(0, 0, 0, 0)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Fecha Inválida',
+                text: 'La fecha de entrega no puede ser anterior a hoy.',
+                confirmButtonText: 'Entendido'
+            });
+            fechaEntregaInput.focus();
+            return false;
+        }
+    }
+    
+    return true;
 }
