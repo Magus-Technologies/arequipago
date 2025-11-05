@@ -212,6 +212,13 @@
 
             // Obtener el precio del producto seleccionado
             console.log("funciona calcularMonto");
+            
+            // NUEVO: Verificar que productoSeleccionado no sea null
+            if (!productoSeleccionado || !productoSeleccionado.precio_venta) {
+                console.log("⚠️ No hay producto seleccionado o no tiene precio");
+                return;
+            }
+            
             console.log("el valor obtenido es:", productoSeleccionado.precio_venta);
             const precio = parseFloat(productoSeleccionado.precio_venta);
 

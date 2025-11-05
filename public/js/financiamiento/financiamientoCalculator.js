@@ -2,6 +2,40 @@ function calcularFinanciamiento() {
   console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
+  // NUEVO: CrediYango - No calcular cronograma, se generará al entregar vehículo
+  // IMPORTANTE: Solo mostrar mensaje si hay un GRUPO seleccionado Y es CrediYango
+  const grupoSeleccionado = document.getElementById("grupo")?.value;
+  const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+  
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45 && esCrediYangoSeleccionado) {
+    console.log("🚗 CREDIYANGO - El cronograma se generará al entregar el vehículo");
+    const contenedorFechas = document.getElementById("contenedorFechas");
+    if (contenedorFechas) {
+      contenedorFechas.innerHTML = `
+        <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+          <div class="text-center">
+            <i class="fas fa-truck fa-3x mb-3" style="color: #1976d2;"></i>
+            <h6 class="fw-bold mb-2" style="color: #0d47a1;">CrediYango - Entrega de Vehículo</h6>
+            <p class="mb-0" style="color: #1565c0;">
+              El cronograma de pagos se generará automáticamente cuando marque el vehículo como <strong>entregado</strong>.
+            </p>
+            <hr style="border-color: #90caf9; opacity: 0.3;">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              Podrá entregar el vehículo desde la vista de detalles del financiamiento.
+            </small>
+          </div>
+        </div>
+      `;
+    }
+    // Limpiar el botón de cronograma si existe
+    const contenedorBoton = document.getElementById("contenedorBotonCronograma");
+    if (contenedorBoton) {
+      contenedorBoton.innerHTML = '';
+    }
+    return; // Salir sin calcular cronograma
+  }
+
   // NUEVO: Permitir cálculo para plan personalizado
   if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 42) {
     console.log("🎨 PLAN PERSONALIZADO - Calculando con valores manuales");
@@ -124,7 +158,7 @@ function calcularFinanciamiento() {
   }
 
   // Obtener cantidad de cuotas
-  const cantidadCuotas = parseInt(document.getElementById("cuotas").value);
+  let cantidadCuotas = parseInt(document.getElementById("cuotas").value);
   if (!cantidadCuotas || cantidadCuotas <= 0) {
     console.warn("Cantidad de cuotas inválida");
     return;
@@ -160,10 +194,26 @@ function calcularFinanciamiento() {
       valorCuota = (montoTotal - cuotaInicial) / cantCuotas;
       console.log("📱 CELULARES - Cuota calculada ÚNICA VEZ:", valorCuota);
     }
-  } else {
-    // Para otros planes, mantener lógica original
-    valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
-  }
+} else {
+    // ✅ NUEVO: Para CrediGo Autos Grupo 4 (ID 38), mantener cuota fija y recalcular semanas
+    if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38 && planGlobal.monto_cuota) {
+        // Usar el valor de cuota fijo de la variante
+        valorCuota = parseFloat(planGlobal.monto_cuota);
+        
+        // ✅ RECALCULAR la cantidad de cuotas (semanas) con la cuota fija
+        const montoRestante = montoTotal - cuotaInicial;
+        const nuevasCuotas = Math.ceil(montoRestante / valorCuota);
+        
+        // Actualizar el campo de cuotas
+        document.getElementById("cuotas").value = nuevasCuotas;
+        cantidadCuotas = nuevasCuotas;
+        
+        console.log("💡 G4 - Cuota fija:", valorCuota, "| Nuevas semanas:", nuevasCuotas);
+    } else {
+        // Para otros planes, mantener lógica original
+        valorCuota = (montoTotal - cuotaInicial) / cantidadCuotas;
+    }
+}
 
   console.log("Valor de la cuota calculado: ", valorCuota);
   
@@ -387,6 +437,19 @@ function mostrarFechasVencimiento(
     "🔍 Plan actual:",
     planGlobal ? `ID ${planGlobal.idplan_financiamiento}` : "ninguno"
   );
+
+  // NUEVO: No mostrar cronograma para CrediYango (ID 45)
+  // IMPORTANTE: Solo aplicar si hay un GRUPO CrediYango seleccionado
+  const grupoSeleccionado = document.getElementById("grupo")?.value;
+  const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+  
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45 && esCrediYangoSeleccionado) {
+    console.log(
+      "🚗 CREDIYANGO - SALTANDO mostrarFechasVencimiento(), cronograma se generará al entregar vehículo"
+    );
+    return; // Salir sin mostrar nada
+  }
+
   const contenedorFechas = document.getElementById("contenedorFechas"); // Asegúrate de tener un contenedor para las fechas
   contenedorFechas.innerHTML = ""; // Limpiar el contenedor antes de agregar las nuevas fechas
 
@@ -539,6 +602,18 @@ function calcularCronogramaDinamico() {
     );
     recalcularSoloFechasCelular();
     return; // Salir completamente para evitar cualquier recálculo
+  }
+
+  // NUEVO: No ejecutar para CrediYango (ID 45) - El cronograma se genera al entregar
+  // IMPORTANTE: Solo aplicar si hay un GRUPO CrediYango seleccionado
+  const grupoSeleccionado = document.getElementById("grupo")?.value;
+  const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+  
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45 && esCrediYangoSeleccionado) {
+    console.log(
+      "🚗 CREDIYANGO - SALTANDO calcularCronogramaDinamico(), cronograma se generará al entregar vehículo"
+    );
+    return; // Salir completamente
   }
 
   // NUEVO: No ejecutar para plan corporativo ID 36
@@ -913,6 +988,19 @@ function mostrarFechasVencimientoPlan(fechasVencimiento, valorcuota) {
     "🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:",
     fechasVencimiento
   );
+
+  // NUEVO: No mostrar cronograma para CrediYango (ID 45)
+  // IMPORTANTE: Solo aplicar si hay un GRUPO CrediYango seleccionado
+  const grupoSeleccionado = document.getElementById("grupo")?.value;
+  const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+  
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45 && esCrediYangoSeleccionado) {
+    console.log(
+      "🚗 CREDIYANGO - SALTANDO mostrarFechasVencimientoPlan(), cronograma se generará al entregar vehículo"
+    );
+    return; // Salir sin mostrar nada
+  }
+
   const contenedorFechas = document.getElementById("contenedorFechas");
   contenedorFechas.innerHTML = "";
 
@@ -991,6 +1079,19 @@ function calcularFinanciamientoConFechaIngreso(plan) {
   console.log(
     "🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular"
   );
+
+  // NUEVO: No ejecutar para CrediYango (ID 45)
+  // IMPORTANTE: Solo aplicar si hay un GRUPO CrediYango seleccionado
+  const grupoSeleccionado = document.getElementById("grupo")?.value;
+  const esCrediYangoSeleccionado = grupoSeleccionado === '45' || grupoSeleccionado === 45;
+  
+  if (plan && parseInt(plan.idplan_financiamiento) === 45 && esCrediYangoSeleccionado) {
+    console.log(
+      "🚗 CREDIYANGO - SALTANDO calcularFinanciamientoConFechaIngreso(), cronograma se generará al entregar vehículo"
+    );
+    return; // Salir completamente
+  }
+
   const cuotaInicial = parseFloat(plan.cuota_inicial);
 
   const tasaInteres = parseFloat(plan.tasa_interes) / 100;
@@ -1094,7 +1195,18 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     // 🔹 Actualizamos los campos de `monto` (total) y `montoSinIntereses`
     document.getElementById("monto").value = nuevoMontoTotal;
 
-    document.getElementById("montoSinIntereses").value = nuevoMontoSinIntereses;
+    // MODIFICADO: No recalcular montoSinIntereses para CrediGo Autos Grupo 4 con variantes
+    const esCrediGoGrupo4 = plan && parseInt(plan.idplan_financiamiento) === 38;
+    const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+    
+    if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
+      // Para CrediGo Autos Grupo 4 con variante, mantener el valor original de la variante
+      console.log("✅ Manteniendo montoSinIntereses original para CrediGo Autos Grupo 4 con variante");
+      // No modificar el campo montoSinIntereses
+    } else {
+      // Para otros planes, aplicar el cálculo normal
+      document.getElementById("montoSinIntereses").value = nuevoMontoSinIntereses.toFixed(2);
+    }
 
     // Calculamos las nuevas fechas de vencimiento con el monto ajustado
     let fechasVencimiento = [];

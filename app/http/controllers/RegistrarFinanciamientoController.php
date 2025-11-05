@@ -21,6 +21,18 @@ class RegistrarFinanciamientoController extends Controller
         try {
             // Obtener los datos recibidos por POST
             $datos = $_POST;
+
+            // NUEVO: Detectar si es CrediYango al inicio
+            $esCrediYango = isset($datos['grupo_financiamiento']) &&
+                           ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45);
+
+            // NUEVO: Para CrediYango, asignar automáticamente producto ID 37 (vehículo no entregado)
+            if ($esCrediYango) {
+                $datos['id_producto'] = 37; // ID del producto "vehículo no entregado"
+                $datos['cantidad_producto'] = 1; // Cantidad fija
+                error_log("CrediYango: Asignando producto ID 37 por defecto");
+            }
+
             // Obtener valor de cobrar mora con valor por defecto
             $datos['cobrar_mora'] = isset($datos['cobrar_mora']) ? intval($datos['cobrar_mora']) : 1;
 
@@ -32,7 +44,39 @@ class RegistrarFinanciamientoController extends Controller
             // Obtener valor de verificación domiciliaria
             $verificacion_domiciliaria = isset($datos['verificacion_domiciliaria']) ? intval($datos['verificacion_domiciliaria']) : null;
 
-            $fechasVencimiento = $datos['fechas_vencimiento'];
+            // NUEVO: Campos para CrediYango
+            $fechaEntrega = isset($datos['fecha_entrega']) && !empty($datos['fecha_entrega']) ? $datos['fecha_entrega'] : null;
+            $fechaInicioPagosCalculada = null;
+            
+            // Si hay fecha de entrega, calcular fecha de inicio de pagos automáticamente
+            if ($fechaEntrega) {
+                $fechaEntregaObj = new DateTime($fechaEntrega);
+                $fechaEntregaObj->add(new DateInterval('P7D')); // Agregar 7 días
+                $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
+                
+                // Actualizar las fechas del cronograma si es CrediYango (ID 45)
+                if (isset($datos['grupo_financiamiento']) && $datos['grupo_financiamiento'] == '45') {
+                    $datos['fecha_inicio'] = $fechaInicioPagosCalculada;
+                    // Recalcular fecha_fin basándose en la nueva fecha de inicio
+                    $cantidadCuotas = intval($datos['cuotas']);
+                    $frecuencia = $datos['frecuencia'] ?? 'semanal';
+                    
+                    $fechaFinObj = new DateTime($fechaInicioPagosCalculada);
+                    if ($frecuencia === 'semanal') {
+                        $fechaFinObj->add(new DateInterval('P' . ($cantidadCuotas * 7) . 'D'));
+                    } else {
+                        $fechaFinObj->add(new DateInterval('P' . $cantidadCuotas . 'M'));
+                    }
+                    $datos['fecha_fin'] = $fechaFinObj->format('Y-m-d');
+                }
+            }
+            
+            // Agregar los campos de CrediYango a los datos
+            $datos['fecha_entrega'] = $fechaEntrega;
+            $datos['fecha_inicio_pagos_calculada'] = $fechaInicioPagosCalculada;
+
+            // Para CrediYango, fechasVencimiento puede ser null o vacío (se generan al entregar)
+            $fechasVencimiento = isset($datos['fechas_vencimiento']) ? $datos['fechas_vencimiento'] : [];
             
 // NUEVO: Detectar si es plan editable (ID 42)
 $esPlanPersonalizado = (isset($datos['grupo_financiamiento']) && 
@@ -211,21 +255,28 @@ foreach ($camposRequeridos as $campo) {
             $cuotas = $datos['cuotas'];
             $valorCuota = $datos['valorCuota'];
 
-            // Iterar sobre las fechas de vencimiento y guardar cada cuota
-            for ($i = 0; $i < count($fechasVencimiento); $i++) {
-                $cuotaModel = new CuotaFinanciamiento();
-                // Convertir la fecha de vencimiento a formato 'Y-m-d'
-                $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
-                
-                // ✅ MODIFICADO: Pasar la moneda a guardarCuota
-                $cuotaModel->guardarCuota(
-                    $idFinanciamiento, 
-                    $i + 1, 
-                    $valorCuota, 
-                    $fechaVencimiento, 
-                    $datos['grupo_financiamiento'],
-                    $datos['tipo_moneda']  // ✅ NUEVO: Pasar la moneda
-                );
+            // MODIFICADO: Solo generar cuotas si NO es CrediYango
+            // Para CrediYango, las cuotas se generan cuando se entrega el vehículo
+            if (!$esCrediYango && !empty($fechasVencimiento) && is_array($fechasVencimiento)) {
+                // Iterar sobre las fechas de vencimiento y guardar cada cuota
+                for ($i = 0; $i < count($fechasVencimiento); $i++) {
+                    $cuotaModel = new CuotaFinanciamiento();
+                    // Convertir la fecha de vencimiento a formato 'Y-m-d'
+                    $fechaVencimiento = date('Y-m-d', strtotime($fechasVencimiento[$i]));
+
+                    // ✅ MODIFICADO: Pasar la moneda a guardarCuota
+                    $cuotaModel->guardarCuota(
+                        $idFinanciamiento,
+                        $i + 1,
+                        $valorCuota,
+                        $fechaVencimiento,
+                        $datos['grupo_financiamiento'],
+                        $datos['tipo_moneda']  // ✅ NUEVO: Pasar la moneda
+                    );
+                }
+            } else if ($esCrediYango) {
+                // Log para CrediYango
+                error_log("CrediYango: Financiamiento guardado sin cuotas. ID: $idFinanciamiento. Las cuotas se generarán al entregar el vehículo.");
             }
 
             // 💥 Modificado: Solo registrar el movimiento si corresponde
@@ -302,17 +353,21 @@ foreach ($camposRequeridos as $campo) {
             echo json_encode(['status' => 'error', 'message' => 'No se pudo obtener el ID del usuario.']);
             return;
         }
-            
-        if (!isset($_POST['fechasVencimiento']) || empty($_POST['fechasVencimiento'])) {  
-            echo json_encode(['status' => 'error', 'message' => 'Las fechas de vencimiento son obligatorias.']); // Mensaje de error si no existen fechas
-            return; // Detener la ejecución de la función si no hay fechas de vencimiento
-        }
-        
+
         // Recibir datos del POST
         $cliente = $_POST['cliente'];
         $idProducto = $_POST['idProducto'];
         $codigoAsociado = $_POST['codigoAsociado'];
         $grupo_financiamiento = $_POST['grupo_financiamiento'];
+
+        // MODIFICADO: Validar fechas de vencimiento solo si NO es CrediYango (grupo 45)
+        // CrediYango generará el cronograma cuando se entregue el vehículo
+        $esCrediYango = ($grupo_financiamiento == '45' || $grupo_financiamiento == 45);
+
+        if (!$esCrediYango && (!isset($_POST['fechasVencimiento']) || empty($_POST['fechasVencimiento']))) {
+            echo json_encode(['status' => 'error', 'message' => 'Las fechas de vencimiento son obligatorias.']);
+            return;
+        }
         $monto_total = $_POST['monto_total'];
         $cuota_inicial = $_POST['cuota_inicial'];
         $cuotas = $_POST['cuotas'];

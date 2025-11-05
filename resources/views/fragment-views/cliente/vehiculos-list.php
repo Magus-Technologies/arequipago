@@ -330,7 +330,7 @@
                                         <option value="">Seleccionar</option>
                                         <option value="Manual">Manual</option>
                                         <option value="Automático">Automático</option>
-                                        <option value="Automática">Automática</option>
+                                        <!-- <option value="Automática">Automática</option> -->
                                     </select>
                                 </div>
                             </div>
@@ -759,18 +759,86 @@
             const rucInput = document.getElementById("rucInput_vehiculo").value;
 
             if (rucInput.length === 11) {
+                // Mostrar loader con SweetAlert
+                Swal.fire({
+                    title: 'Consultando RUC...',
+                    text: 'Por favor espere mientras verificamos la información',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 $.ajax({
-                    url: "/ajs/conductor/doc/cliente",
+                    url: _URL + "/ajs/conductor/doc/cliente",
                     type: "POST",
                     data: { doc: rucInput },
+                    dataType: 'json', // Asegurar que jQuery parsee como JSON
                     success: function(resp) {
-                        if (resp.razonSocial) {
-                            document.getElementById("razon_vehiculo").value = resp.razonSocial;
+                        // Cerrar el loader
+                        Swal.close();
+                        
+                        console.log('Respuesta RUC (tipo):', typeof resp);
+                        console.log('Respuesta RUC (contenido):', resp);
+                        console.log('razonSocial existe?:', 'razonSocial' in resp);
+                        console.log('razonSocial valor:', resp.razonSocial);
+                        console.log('razonSocial tipo:', typeof resp.razonSocial);
+                        
+                        // Si la respuesta es string, intentar parsear
+                        let parsedResp = resp;
+                        if (typeof resp === 'string') {
+                            try {
+                                parsedResp = JSON.parse(resp);
+                                console.log('Respuesta parseada:', parsedResp);
+                            } catch (e) {
+                                console.error('Error al parsear JSON:', e);
+                                Swal.fire('Error', 'Error al procesar respuesta del servidor', 'error');
+                                return;
+                            }
+                        }
+                        
+                        // Verificar si la respuesta tiene razonSocial y no está vacía
+                        if (parsedResp && 
+                            parsedResp.razonSocial && 
+                            parsedResp.razonSocial.toString().trim() !== '' &&
+                            parsedResp.razonSocial !== null &&
+                            parsedResp.razonSocial !== undefined) {
+                            
+                            const razonSocial = parsedResp.razonSocial.toString().trim();
+                            document.getElementById("razon_vehiculo").value = razonSocial;
+                            console.log('RUC encontrado exitosamente:', razonSocial);
+                            
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡RUC encontrado!',
+                                text: `Razón Social: ${razonSocial}`,
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            
                         } else {
-                            Swal.fire('Advertencia', 'RUC no encontrado', 'warning');
+                            // Mostrar más información sobre por qué falló
+                            console.log('RUC no encontrado. Respuesta completa:', parsedResp);
+                            console.log('Condiciones de validación:');
+                            console.log('- parsedResp existe:', !!parsedResp);
+                            console.log('- razonSocial existe:', !!parsedResp?.razonSocial);
+                            console.log('- razonSocial no vacío:', parsedResp?.razonSocial?.toString().trim() !== '');
+                            console.log('- razonSocial no null:', parsedResp?.razonSocial !== null);
+                            console.log('- razonSocial no undefined:', parsedResp?.razonSocial !== undefined);
+                            
+                            Swal.fire('Advertencia', 'RUC no encontrado o sin razón social válida', 'warning');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        // Cerrar el loader en caso de error
+                        Swal.close();
+                        
+                        console.error('Error al consultar RUC:', error);
+                        console.error('Respuesta del servidor:', xhr.responseText);
                         Swal.fire('Error', 'Error al consultar RUC', 'error');
                     }
                 });
@@ -787,6 +855,9 @@
             const categoriaSelect = $('#categoria_producto_vehiculo');
             categoriaSelect.prop('disabled', false);
             const categoriaValue = categoriaSelect.val();
+            
+            // Obtener el texto de la categoría (nombre) en lugar del value (ID)
+            const categoriaText = categoriaSelect.find('option:selected').text();
             categoriaSelect.prop('disabled', true);
 
             // Datos básicos
@@ -794,7 +865,7 @@
             formData.append('codigo_producto', $('#codigo_producto_vehiculo').val());
             formData.append('tipo_producto', 'fisico');
             formData.append('cantidad_producto', $('#cantidad_producto_vehiculo').val());
-            formData.append('categoria_producto', categoriaValue);
+            formData.append('categoria_producto', categoriaText);
 
             // Datos de vehículo
             formData.append('marca_vehiculo', $('#marca_vehiculo_modal').val());

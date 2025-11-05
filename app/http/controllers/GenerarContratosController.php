@@ -1,27 +1,27 @@
 <?php
-require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MPDF
+require_once 'utils/lib/mpdf/vendor/autoload.php';  // Incluir el autoload de MPDF
 
 use Mpdf\Mpdf;
 
-require_once "app/models/Financiamiento.php";
-require_once "app/models/Conductor.php";
-require_once "app/models/Productov2.php";
-require_once "app/models/CaracteristicaProducto.php";
-require_once "app/models/CuotaFinanciamiento.php";
-require_once "app/models/Vehiculo.php";
-require_once "app/models/ConductorPagoModel.php";
-require_once "app/models/ConductorCuotaModel.php";
-require_once "app/models/ConductorRegFinanciamientoModel.php";
-require_once "app/models/DireccionConductor.php";
-require_once "app/models/Inscripcion.php";
-require_once "app/models/Requisito.php";
-require_once "app/models/Observacion.php";
-require_once "app/models/ContactoEmergencia.php";
-require_once "app/models/Cliente.php";
-require_once "app/models/GrupoFinanciamientoModel.php";
+require_once 'app/models/Financiamiento.php';
+require_once 'app/models/Conductor.php';
+require_once 'app/models/Productov2.php';
+require_once 'app/models/CaracteristicaProducto.php';
+require_once 'app/models/CuotaFinanciamiento.php';
+require_once 'app/models/Vehiculo.php';
+require_once 'app/models/ConductorPagoModel.php';
+require_once 'app/models/ConductorCuotaModel.php';
+require_once 'app/models/ConductorRegFinanciamientoModel.php';
+require_once 'app/models/DireccionConductor.php';
+require_once 'app/models/Inscripcion.php';
+require_once 'app/models/Requisito.php';
+require_once 'app/models/Observacion.php';
+require_once 'app/models/ContactoEmergencia.php';
+require_once 'app/models/Cliente.php';
+require_once 'app/models/GrupoFinanciamientoModel.php';
 
-require_once 'utils/lib/vendor/autoload.php'; // Importar PhpSpreadsheet
-require_once 'utils/lib/exel/vendor/autoload.php'; // Importar PhpSpreadsheet
+require_once 'utils/lib/vendor/autoload.php';  // Importar PhpSpreadsheet
+require_once 'utils/lib/exel/vendor/autoload.php';  // Importar PhpSpreadsheet
 
 class GenerarContratosController extends controller
 {
@@ -35,7 +35,7 @@ class GenerarContratosController extends controller
 
     public function searchFinanciamientos()
     {
-        $input = json_decode(file_get_contents("php://input"), true);
+        $input = json_decode(file_get_contents('php://input'), true);
         $query = $input['query'] ?? '';
 
         $financiamientoModel = new Financiamiento();
@@ -45,48 +45,49 @@ class GenerarContratosController extends controller
         echo json_encode($resultados);
     }
 
-    public function obtenerFinanciamientoDetalle() {
+    public function obtenerFinanciamientoDetalle()
+    {
         $idFinanciamiento = $_GET['id_financiamiento'];
-    
+
         // Consulta principal: Financiamiento
         $model = new Financiamiento();
-        $financiamiento = $model->getFinanciamientoById($idFinanciamiento); // Se usa el modelo correctamente
-    
+        $financiamiento = $model->getFinanciamientoById($idFinanciamiento);  // Se usa el modelo correctamente
+
         if (!$financiamiento) {
             echo json_encode(['error' => 'No se encontró el financiamiento.']);
             return;
         }
-    
+
         // Información del conductor
-        $conductor = $model->getConductorById($financiamiento['id_conductor']); // Se usa el modelo correctamente
-        $direccion = $model->getDireccionCompleta($financiamiento['id_conductor']); 
-    
+        $conductor = $model->getConductorById($financiamiento['id_conductor']);  // Se usa el modelo correctamente
+        $direccion = $model->getDireccionCompleta($financiamiento['id_conductor']);
+
         // Información del producto
         $producto = null;
         if ($financiamiento['idproductosv2'] !== null) {  // Verificamos si idproductosv2 no es null
-            $producto = $model->getProductoById($financiamiento['idproductosv2']); // Solo buscamos el producto si existe
+            $producto = $model->getProductoById($financiamiento['idproductosv2']);  // Solo buscamos el producto si existe
         }
-        $producto = $model->getProductoById($financiamiento['idproductosv2']); // Se obtiene el producto
-    
+        $producto = $model->getProductoById($financiamiento['idproductosv2']);  // Se obtiene el producto
+
         // Si no se encuentra el producto, se maneja el caso y se devuelve un objeto vacío
         if (!$producto) {
-            $producto = ['codigo' => 'N/A', 'nombre' => 'Producto no disponible']; // Se asigna un valor por defecto si no existe
+            $producto = ['codigo' => 'N/A', 'nombre' => 'Producto no disponible'];  // Se asigna un valor por defecto si no existe
         }
-    
+
         // Respuesta
         $response = [
             'financiamiento' => $financiamiento,
             'conductor' => array_merge($conductor, ['direccion' => $direccion]),
-            'producto' => $producto, // Se agrega el producto
+            'producto' => $producto,  // Se agrega el producto
         ];
-    
+
         echo json_encode($response);
     }
 
     public function obtenerFinanciamientosPorFecha()
     {
         // Obtener el rango de fechas desde la solicitud AJAX
-        $input = json_decode(file_get_contents("php://input"), true);
+        $input = json_decode(file_get_contents('php://input'), true);
         $fechaInicio = $input['fecha_inicio'] ?? '';
         $fechaFin = $input['fecha_fin'] ?? '';
 
@@ -105,7 +106,6 @@ class GenerarContratosController extends controller
         echo json_encode($resultados);
     }
 
-    
     public function generar()
     {
         $input = json_decode(file_get_contents('php://input'), true);
@@ -118,7 +118,7 @@ class GenerarContratosController extends controller
 
         $financiamientoModel = new Financiamiento();
         $conductorModel = new Conductor();
-        $clienteModel = new Cliente(); 
+        $clienteModel = new Cliente();
         $productoModel = new Productov2();
         $celularModel = new Celular();
         $caracteristicasModel = new CaracteristicaProducto();
@@ -132,28 +132,28 @@ class GenerarContratosController extends controller
             try {
                 $financiamiento = $financiamientoModel->getFinanciamientoById($idFinanciamiento);
 
-                if (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] == 2) { 
-                    echo json_encode([ 
-                        'success' => false,  
-                        'errores' => ["No se puede generar contrato, El financiamiento fue rechazado"], 
-                        'pdfs' => [], 
-                        'mensaje' => "No se puede generar contrato, El financiamiento fue rechazado" // 
-                    ]); // 🚀
-                    return; // 🚀
-                } elseif (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] === 0) { // 🚀
-                    echo json_encode([ // 🚀
-                        'success' => false, // 🚀
-                        'errores' => ["No se puede generar contrato, El financiamiento está pendiente"], // 🚀
-                        'pdfs' => [], // 🚀
-                        'mensaje' => "No se puede generar contrato, El financiamiento está pendiente" // 🚀
-                    ]); // 🚀
-                    return; // 🚀
+                if (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] == 2) {
+                    echo json_encode([
+                        'success' => false,
+                        'errores' => ['No se puede generar contrato, El financiamiento fue rechazado'],
+                        'pdfs' => [],
+                        'mensaje' => 'No se puede generar contrato, El financiamiento fue rechazado'  //
+                    ]);  // 🚀
+                    return;  // 🚀
+                } elseif (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] === 0) {  // 🚀
+                    echo json_encode([  // 🚀
+                        'success' => false,  // 🚀
+                        'errores' => ['No se puede generar contrato, El financiamiento está pendiente'],  // 🚀
+                        'pdfs' => [],  // 🚀
+                        'mensaje' => 'No se puede generar contrato, El financiamiento está pendiente'  // 🚀
+                    ]);  // 🚀
+                    return;  // 🚀
                 }
 
                 // Determinar si es conductor o cliente
-                $tipoPersona = 'conductor'; // Por defecto, asumimos conductor
+                $tipoPersona = 'conductor';  // Por defecto, asumimos conductor
                 $persona = null;
-                
+
                 // Verificamos si tiene id_conductor
                 if (empty($financiamiento['id_conductor'])) {
                     // Es un cliente, cargamos sus datos
@@ -161,9 +161,9 @@ class GenerarContratosController extends controller
                     $persona = $clienteModel->getClienteById($financiamiento['id_cliente']);
                     // Concatenamos nombre completo del cliente
                     $nombrePersona = trim(
-                        $persona['nombres'] . ' ' .
-                        $persona['apellido_paterno'] . ' ' .
-                        $persona['apellido_materno']
+                        $persona['nombres'] . ' '
+                        . $persona['apellido_paterno'] . ' '
+                        . $persona['apellido_materno']
                     );
                 } else {
                     // Es un conductor, usamos el código existente
@@ -171,27 +171,25 @@ class GenerarContratosController extends controller
                     $persona = $financiamientoModel->getConductorById($financiamiento['id_conductor']);
                     // Reusamos el código existente para concatenar nombre
                     $nombrePersona = trim(
-                        $persona['nombres'] . ' ' .
-                        $persona['apellido_paterno'] . ' ' .
-                        $persona['apellido_materno']
+                        $persona['nombres'] . ' '
+                        . $persona['apellido_paterno'] . ' '
+                        . $persona['apellido_materno']
                     );
                 }
 
                 $producto = $financiamientoModel->obtenerProductoConCategoria($financiamiento['idproductosv2']);
-                
+
                 // Normalización de la categoría del producto
-                $categoriaProducto = trim(strtolower(str_replace(['é','á'], ['e','a'], $producto['categoria'])));
+                $categoriaProducto = trim(strtolower(str_replace(['é', 'á'], ['e', 'a'], $producto['categoria'])));
                 $esCelular = preg_match('/^celular(es)?$/', $categoriaProducto);
                 $categoriaProducto = trim(strtolower(str_replace(
                     ['é', 'á', 'í', 'ó', 'ú'],
                     ['e', 'a', 'i', 'o', 'u'],
                     $producto['categoria']
                 )));
-                
-                     
+
                 // Comparación
                 $esVehiculo = in_array($categoriaProducto, ['vehiculo', 'vehiculo(s)', 'vehiculos']);
-         
 
                 // Obtener características según la categoría
                 if ($esCelular) {
@@ -204,8 +202,8 @@ class GenerarContratosController extends controller
 
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
-                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33 y 38)
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 38) {
+                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33, 38 y 45)
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 38 && $financiamiento['grupo_financiamiento'] != 45) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -217,14 +215,14 @@ class GenerarContratosController extends controller
                             $nombrePersona,
                             $requisitosModel
                         );
-                       
+
                         if ($excelFile) {
                             $excels[] = [
                                 'content' => base64_encode($excelFile),
                                 'nombre' => "contrato_vehiculo_{$idFinanciamiento}_{$nombrePersona}.xlsx"
                             ];
                         }
-                        
+
                         // NUEVO: Generar acta de entrega si el vehículo ya fue entregado
                         if (isset($financiamiento['vehiculo_entregado']) && $financiamiento['vehiculo_entregado'] == 1) {
                             try {
@@ -232,7 +230,7 @@ class GenerarContratosController extends controller
                                 $vehiculo = $this->obtenerDatosVehiculoEntrega($financiamiento);
                                 $html = $this->cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo);
                                 $pdfEntrega = $this->generarPDFEntrega($html);
-                                
+
                                 $pdfs[] = [
                                     'content' => base64_encode($pdfEntrega),
                                     'nombre' => "acta_entrega_vehiculo_{$idFinanciamiento}_{$nombrePersona}.pdf"
@@ -241,19 +239,19 @@ class GenerarContratosController extends controller
                                 error_log("Error generando acta de entrega para financiamiento ID $idFinanciamiento: " . $e->getMessage());
                             }
                         }
-                        
+
                         continue;
                     } catch (\Exception $e) {
                         error_log("Error generando contrato Excel de vehículo ID $idFinanciamiento: " . $e->getMessage());
                         continue;
                     }
                 }
-                
+
                 // Generar contrato PDF para CrediGo Autos Grupo 4 (grupo 38)
                 if ($esVehiculo && $financiamiento['grupo_financiamiento'] == 38) {
                     try {
                         $htmlContrato = $this->generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona);
-                        
+
                         $mpdf = new \Mpdf\Mpdf([
                             'format' => 'A4',
                             'margin_left' => 15,
@@ -261,26 +259,59 @@ class GenerarContratosController extends controller
                             'margin_top' => 15,
                             'margin_bottom' => 15
                         ]);
-                        
+
                         $mpdf->WriteHTML($htmlContrato);
                         $pdfContent = $mpdf->Output('', 'S');
-                        
+
                         $pdfs[] = [
                             'content' => base64_encode($pdfContent),
                             'nombre' => "contrato_credigo_grupo4_{$idFinanciamiento}_{$nombrePersona}.pdf"
                         ];
-                        
+
                         continue;
                     } catch (\Exception $e) {
                         error_log("Error generando contrato PDF Grupo 4 ID $idFinanciamiento: " . $e->getMessage());
                         continue;
                     }
                 }
-               
-             
-                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33 || $financiamiento['grupo_financiamiento'] == 19) {
+
+                // NUEVO: Generar contrato PDF para CrediYango (grupo 45)
+                if ($financiamiento['grupo_financiamiento'] == 45) {
+                    try {
+                        $htmlContrato = $this->generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona);
+
+                        $mpdf = new \Mpdf\Mpdf([
+                            'format' => 'A4',
+                            'margin_left' => 15,
+                            'margin_right' => 15,
+                            'margin_top' => 15,
+                            'margin_bottom' => 15
+                        ]);
+
+                        $mpdf->WriteHTML($htmlContrato);
+                        $pdfContent = $mpdf->Output('', 'S');
+
+                        $pdfs[] = [
+                            'content' => base64_encode($pdfContent),
+                            'nombre' => "contrato_crediyango_{$idFinanciamiento}_{$nombrePersona}.pdf"
+                        ];
+
+                        continue;
+                    } catch (\Exception $e) {
+                        error_log("Error generando contrato PDF CrediYango ID $idFinanciamiento: " . $e->getMessage());
+                        continue;
+                    }
+                }
+
+                // MODIFICADO: Excluir CrediYango (grupo 45) de la lógica de categorías
+                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33 || $financiamiento['grupo_financiamiento'] == 19 || $financiamiento['grupo_financiamiento'] == 45) {
+                    // Si es CrediYango (45), ya se procesó arriba, saltar esta lógica
+                    if ($financiamiento['grupo_financiamiento'] == 45) {
+                        continue;
+                    }
+                    
                     if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 22, 19])) {
-                        throw new Exception("No hay un modelo de contrato para este producto.");
+                        throw new Exception('No hay un modelo de contrato para este producto.');
                     }
 
                     $plantillas = $this->generarPlantillaContrato(
@@ -294,7 +325,6 @@ class GenerarContratosController extends controller
                     );
 
                     foreach ($plantillas as $nombrePlantilla => $html) {
-                       
                         // Condicional para márgenes
                         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
                             // Sin márgenes para el contrato de Motos
@@ -309,18 +339,18 @@ class GenerarContratosController extends controller
                         } else {
                             // Márgenes por defecto para los otros contratos
                             $mpdf = new \Mpdf\Mpdf([
-                                'margin_left' => 30, // Margen izquierdo (en milímetros)
+                                'margin_left' => 30,  // Margen izquierdo (en milímetros)
                                 'margin_right' => 30,
                             ]);
                         }
                         $mpdf->WriteHTML($html);
-        
+
                         // Crear un nombre único para cada archivo
                         $nombreArchivo = "contrato_{$idFinanciamiento}_{$nombrePersona}_{$nombrePlantilla}.pdf";
-        
-                        $pdfContent = $mpdf->Output('', 'S'); // Devuelve el contenido directamente
+
+                        $pdfContent = $mpdf->Output('', 'S');  // Devuelve el contenido directamente
                         $pdfs[] = [
-                            'content' => base64_encode($pdfContent), // Codificado en Base64
+                            'content' => base64_encode($pdfContent),  // Codificado en Base64
                             'nombre' => $nombreArchivo
                         ];
                     }
@@ -336,175 +366,175 @@ class GenerarContratosController extends controller
             'errores' => $errores,
             'pdfs' => $pdfs,
             'excels' => $excels,
-            'mensaje' => !empty($errores) ? "Error" : null
+            'mensaje' => !empty($errores) ? 'Error' : null
         ]);
     }
 
-      // 😊 Nuevo método para generar contrato de Excel para vehículos
-      private function generarContratoExcelVehiculo($financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas, $nombrePersona, $requisitosModel)
-      {
-      
-          // 😊 Aumentar límite de memoria y optimizar configuración para Excel
+    // 😊 Nuevo método para generar contrato de Excel para vehículos
+    private function generarContratoExcelVehiculo($financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas, $nombrePersona, $requisitosModel)
+    {
+        // 😊 Aumentar límite de memoria y optimizar configuración para Excel
         ini_set('memory_limit', '1024M');
-        ini_set('max_execution_time', 300); // 5 minutos
+        ini_set('max_execution_time', 300);  // 5 minutos
 
-          $GrupoFinanciamientoModel = new GrupoFinanciamientoModel();
-          // Ruta al archivo Excel de plantilla
-          $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "exel";
-          $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "Financiamiento-Vehicular.xlsx";
-          
-          // Verificar que el archivo existe
-          if (!file_exists($rutaArchivo)) {
-              throw new Exception("Plantilla de contrato de vehículo no encontrada: $rutaArchivo");
-          }
-          
-          // Cargar el archivo Excel
-          $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($rutaArchivo);
-          $worksheet = $spreadsheet->getActiveSheet();
-          
-          // Obtener datos adicionales necesarios
-          $idPersona = $tipoPersona === 'conductor' ? $financiamiento['id_conductor'] : $financiamiento['id_cliente'];
-          
-          // Obtener la dirección completa según el tipo de persona
-          if ($tipoPersona === 'conductor') {
-              $datosDireccion = $this->obtenerDatosDireccionConductor($idPersona);
-              $estadosRequisitos = $requisitosModel->obtenerEstadoRequisitos($idPersona);
-          } else {
-              $direccionClienteModel = new Cliente(); // 😊 Crear instancia del modelo
-              $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($idPersona);
-              $estadosRequisitos = $this->obtenerEstadosRequisitoCliente($idPersona);
-          }
-          
-          // Obtener datos del grupo de financiamiento
-            $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
+        $GrupoFinanciamientoModel = new GrupoFinanciamientoModel();
+        // Ruta al archivo Excel de plantilla
+        $rutaBase = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'exel';
+        $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'Financiamiento-Vehicular.xlsx';
 
-            // 😊 Obtener tipo vehicular para determinar la moneda correcta
-            $idGrupoFinanciamiento = $financiamiento['grupo_financiamiento'];
-            $tipoVehicular = $GrupoFinanciamientoModel->getTipoVehicular($idGrupoFinanciamiento);
+        // Verificar que el archivo existe
+        if (!file_exists($rutaArchivo)) {
+            throw new Exception("Plantilla de contrato de vehículo no encontrada: $rutaArchivo");
+        }
 
-            // Llenar el Excel con los datos
-          
-          // 1. Número de teléfono - Celda H6
-          $worksheet->setCellValue('H6', $persona['telefono'] ?? '');
-          
-          // 2. Apellido Paterno - Celda B9
-          $worksheet->setCellValue('B9', $persona['apellido_paterno'] ?? '');
-          
-          // 3. Apellido Materno - Celda D9
-          $worksheet->setCellValue('D9', $persona['apellido_materno'] ?? '');
-          
-          // 4. Nombres - Celda F9
-          $worksheet->setCellValue('F9', $persona['nombres'] ?? '');
-          
-          // 5. Número de documento - Celda H9
-          $worksheet->setCellValue('H9', $tipoPersona === 'conductor' ? 
-              ($persona['nro_documento'] ?? '') : 
-              ($persona['n_documento'] ?? ''));
-          
-          // 6. Dirección - Celda B13
-          $worksheet->setCellValue('B13', $datosDireccion['direccion_detalle'] ?? '');
-          
-          // 7. Distrito - Celda H13
-          $worksheet->setCellValue('H13', $datosDireccion['distrito'] ?? '');
-          
-          // 8. Provincia - Celda B15
-          $worksheet->setCellValue('B15', $datosDireccion['provincia'] ?? '');
-          
-          // 9. Departamento - Celda E15
-          $worksheet->setCellValue('E15', $datosDireccion['departamento'] ?? '');
-          
-          // 10. Nro de licencia - Celda H15 (solo para conductor)
-          if ($tipoPersona === 'conductor') {
-              $worksheet->setCellValue('H15', $persona['nro_licencia'] ?? '');
-          }
+        // Cargar el archivo Excel
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($rutaArchivo);
+        $worksheet = $spreadsheet->getActiveSheet();
 
-          $worksheet->setCellValue('B17', $persona['correo'] ?? '');
-          
-          // 12. Código de Asociado - Celda C20
-          $worksheet->setCellValue('B20', $financiamiento['codigo_asociado'] ?? '');
-          
-          // 13. Grupo de financiamiento - Celda D20
-          $worksheet->setCellValue('D20', $grupoInfo['nombre'] ?? '');
-          
-          // 14. Duración del grupo - Celda H20
-          $worksheet->setCellValue('H20', $grupoInfo['duracion'] ?? '');
-          
-          // 15. Duración del contrato - Celda B22
-          $duracionContrato = $this->calcularDuracion(
-              $financiamiento['fecha_inicio'] ?? null, 
-              $financiamiento['fecha_fin'] ?? null
-          );
-          $worksheet->setCellValue('B22', $duracionContrato);
-          
-          // 16. Fecha de inicio - Celda E22
-          if (isset($grupoInfo['fecha_inicio'])) {
-              $fechaInicio = date('d/m/Y', strtotime($grupoInfo['fecha_inicio']));
-              $worksheet->setCellValue('E22', $fechaInicio);
-          }
-          
-          // 17. Periodicidad - Celda H22
-          $worksheet->setCellValue('H22', $grupoInfo['frecuencia'] ?? '');
-          
-          // 18. Monto sin intereses - Celda C25
-          if (isset($grupoInfo['monto_sin_interes']) && isset($grupoInfo['moneda'])) {
-              $montoConPrefijo = $grupoInfo['moneda'] . ' ' . $grupoInfo['monto_sin_interes'];
-              $worksheet->setCellValue('B25', $montoConPrefijo);
-          }
-          
-          // 19. Monto de inscripción - Celda I27
-          $worksheet->setCellValue('I27', $financiamiento['monto_inscrip'] ?? '0.00');
-          
-          // 😊 20. Configurar moneda en celda H27 según tipo vehicular con alineación
-            if ($tipoVehicular === 'moto') {
-                // Para motos usar soles (S/)
-                $worksheet->setCellValue('H27', 'S/');
-                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
-            } else {
-                // Para vehículos usar dólares (US$)
-                $worksheet->setCellValue('H27', 'US$');
-                $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
-            }
+        // Obtener datos adicionales necesarios
+        $idPersona = $tipoPersona === 'conductor' ? $financiamiento['id_conductor'] : $financiamiento['id_cliente'];
 
-          // 21. Marcar documentos según estados
-          $this->marcarDocumentosEnExcel($worksheet, $estadosRequisitos, $tipoPersona);
+        // Obtener la dirección completa según el tipo de persona
+        if ($tipoPersona === 'conductor') {
+            $datosDireccion = $this->obtenerDatosDireccionConductor($idPersona);
+            $estadosRequisitos = $requisitosModel->obtenerEstadoRequisitos($idPersona);
+        } else {
+            $direccionClienteModel = new Cliente();  // 😊 Crear instancia del modelo
+            $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($idPersona);
+            $estadosRequisitos = $this->obtenerEstadosRequisitoCliente($idPersona);
+        }
 
-          // 22. Fecha actual con formato personalizado - Celda C44
-            setlocale(LC_TIME, 'es_ES.UTF-8'); // Para sistemas que soportan UTF-8 (Linux/macOS)
-            $fechaFormateada = strftime('%d de %B del %Y', strtotime(date('Y-m-d')));
+        // Obtener datos del grupo de financiamiento
+        $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
 
-            // Para Windows o en caso strftime no funcione bien con español, usa esta alternativa:
-            $meses = [
-                '01' => 'enero', '02' => 'febrero', '03' => 'marzo', '04' => 'abril',
-                '05' => 'mayo', '06' => 'junio', '07' => 'julio', '08' => 'agosto',
-                '09' => 'septiembre', '10' => 'octubre', '11' => 'noviembre', '12' => 'diciembre'
-            ];
-            $dia = date('d');
-            $mes = $meses[date('m')];
-            $anio = date('Y');
-            $fechaFormateada = "$dia de $mes del $anio";
+        // 😊 Obtener tipo vehicular para determinar la moneda correcta
+        $idGrupoFinanciamiento = $financiamiento['grupo_financiamiento'];
+        $tipoVehicular = $GrupoFinanciamientoModel->getTipoVehicular($idGrupoFinanciamiento);
 
-            $worksheet->setCellValue('C44', $fechaFormateada);
+        // Llenar el Excel con los datos
 
-          
-          // Guardar el archivo en un flujo de salida
-          $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-          ob_start();
-          $writer->save('php://output');
-          $excelContent = ob_get_clean();
-          
-          return $excelContent;
-      }
+        // 1. Número de teléfono - Celda H6
+        $worksheet->setCellValue('H6', $persona['telefono'] ?? '');
 
-        // 😊 Nuevo método para calcular duración
-    private function calcularDuracion($fechaInicio, $fechaFin) {
+        // 2. Apellido Paterno - Celda B9
+        $worksheet->setCellValue('B9', $persona['apellido_paterno'] ?? '');
+
+        // 3. Apellido Materno - Celda D9
+        $worksheet->setCellValue('D9', $persona['apellido_materno'] ?? '');
+
+        // 4. Nombres - Celda F9
+        $worksheet->setCellValue('F9', $persona['nombres'] ?? '');
+
+        // 5. Número de documento - Celda H9
+        $worksheet->setCellValue('H9', $tipoPersona === 'conductor'
+            ? ($persona['nro_documento'] ?? '')
+            : ($persona['n_documento'] ?? ''));
+
+        // 6. Dirección - Celda B13
+        $worksheet->setCellValue('B13', $datosDireccion['direccion_detalle'] ?? '');
+
+        // 7. Distrito - Celda H13
+        $worksheet->setCellValue('H13', $datosDireccion['distrito'] ?? '');
+
+        // 8. Provincia - Celda B15
+        $worksheet->setCellValue('B15', $datosDireccion['provincia'] ?? '');
+
+        // 9. Departamento - Celda E15
+        $worksheet->setCellValue('E15', $datosDireccion['departamento'] ?? '');
+
+        // 10. Nro de licencia - Celda H15 (solo para conductor)
+        if ($tipoPersona === 'conductor') {
+            $worksheet->setCellValue('H15', $persona['nro_licencia'] ?? '');
+        }
+
+        $worksheet->setCellValue('B17', $persona['correo'] ?? '');
+
+        // 12. Código de Asociado - Celda C20
+        $worksheet->setCellValue('B20', $financiamiento['codigo_asociado'] ?? '');
+
+        // 13. Grupo de financiamiento - Celda D20
+        $worksheet->setCellValue('D20', $grupoInfo['nombre'] ?? '');
+
+        // 14. Duración del grupo - Celda H20
+        $worksheet->setCellValue('H20', $grupoInfo['duracion'] ?? '');
+
+        // 15. Duración del contrato - Celda B22
+        $duracionContrato = $this->calcularDuracion(
+            $financiamiento['fecha_inicio'] ?? null,
+            $financiamiento['fecha_fin'] ?? null
+        );
+        $worksheet->setCellValue('B22', $duracionContrato);
+
+        // 16. Fecha de inicio - Celda E22
+        if (isset($grupoInfo['fecha_inicio'])) {
+            $fechaInicio = date('d/m/Y', strtotime($grupoInfo['fecha_inicio']));
+            $worksheet->setCellValue('E22', $fechaInicio);
+        }
+
+        // 17. Periodicidad - Celda H22
+        $worksheet->setCellValue('H22', $grupoInfo['frecuencia'] ?? '');
+
+        // 18. Monto sin intereses - Celda C25
+        if (isset($grupoInfo['monto_sin_interes']) && isset($grupoInfo['moneda'])) {
+            $montoConPrefijo = $grupoInfo['moneda'] . ' ' . $grupoInfo['monto_sin_interes'];
+            $worksheet->setCellValue('B25', $montoConPrefijo);
+        }
+
+        // 19. Monto de inscripción - Celda I27
+        $worksheet->setCellValue('I27', $financiamiento['monto_inscrip'] ?? '0.00');
+
+        // 😊 20. Configurar moneda en celda H27 según tipo vehicular con alineación
+        if ($tipoVehicular === 'moto') {
+            // Para motos usar soles (S/)
+            $worksheet->setCellValue('H27', 'S/');
+            $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+        } else {
+            // Para vehículos usar dólares (US$)
+            $worksheet->setCellValue('H27', 'US$');
+            $worksheet->getStyle('H27')->getAlignment()->setIndent(1);
+        }
+
+        // 21. Marcar documentos según estados
+        $this->marcarDocumentosEnExcel($worksheet, $estadosRequisitos, $tipoPersona);
+
+        // 22. Fecha actual con formato personalizado - Celda C44
+        setlocale(LC_TIME, 'es_ES.UTF-8');  // Para sistemas que soportan UTF-8 (Linux/macOS)
+        $fechaFormateada = strftime('%d de %B del %Y', strtotime(date('Y-m-d')));
+
+        // Para Windows o en caso strftime no funcione bien con español, usa esta alternativa:
+        $meses = [
+            '01' => 'enero', '02' => 'febrero', '03' => 'marzo', '04' => 'abril',
+            '05' => 'mayo', '06' => 'junio', '07' => 'julio', '08' => 'agosto',
+            '09' => 'septiembre', '10' => 'octubre', '11' => 'noviembre', '12' => 'diciembre'
+        ];
+        $dia = date('d');
+        $mes = $meses[date('m')];
+        $anio = date('Y');
+        $fechaFormateada = "$dia de $mes del $anio";
+
+        $worksheet->setCellValue('C44', $fechaFormateada);
+
+        // Guardar el archivo en un flujo de salida
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        ob_start();
+        $writer->save('php://output');
+        $excelContent = ob_get_clean();
+
+        return $excelContent;
+    }
+
+    // 😊 Nuevo método para calcular duración
+
+    private function calcularDuracion($fechaInicio, $fechaFin)
+    {
         if (!$fechaInicio || !$fechaFin) {
             return '';
         }
-        
+
         $inicio = new DateTime($fechaInicio);
         $fin = new DateTime($fechaFin);
         $diff = $inicio->diff($fin);
-        
+
         // Si es más de 30 días, mostrar en meses
         if ($diff->days > 30) {
             $meses = floor($diff->days / 30);
@@ -515,13 +545,15 @@ class GenerarContratosController extends controller
     }
 
     // 😊 Nuevo método para obtener dirección del conductor
-    private function obtenerDatosDireccionConductor($idConductor) {
-        $direccionConductorModel = new DireccionConductor(); // 😊 Suponiendo que existe este modelo
+    private function obtenerDatosDireccionConductor($idConductor)
+    {
+        $direccionConductorModel = new DireccionConductor();  // 😊 Suponiendo que existe este modelo
         return $direccionConductorModel->obtenerDatosDireccion($idConductor);
     }
 
-     // 😊 Nuevo método para obtener estados de requisitos del cliente
-     private function obtenerEstadosRequisitoCliente($idCliente) {
+    // 😊 Nuevo método para obtener estados de requisitos del cliente
+    private function obtenerEstadosRequisitoCliente($idCliente)
+    {
         $resultado = [
             'doc_identidad' => 0,
             'recibo_servicios' => 0,
@@ -529,27 +561,28 @@ class GenerarContratosController extends controller
             'soat_doc' => 0,
             'tarjeta_propiedad' => 0
         ];
-        
+
         // Consultar datos de la tabla clientes_financiar
-        $sql = "SELECT doc_identidad, recibo_servicios FROM clientes_financiar WHERE id = ?";
+        $sql = 'SELECT doc_identidad, recibo_servicios FROM clientes_financiar WHERE id = ?';
         $stmt = $this->conexion->prepare($sql);
-        
+
         if ($stmt) {
             $stmt->bind_param('i', $idCliente);
             $stmt->execute();
             $result = $stmt->get_result()->fetch_assoc();
-            
+
             if ($result) {
                 $resultado['doc_identidad'] = !empty($result['doc_identidad']) ? 1 : 0;
                 $resultado['recibo_servicios'] = !empty($result['recibo_servicios']) ? 1 : 0;
             }
         }
-        
+
         return $resultado;
     }
 
-     // 😊 Nuevo método para marcar documentos en el Excel
-     private function marcarDocumentosEnExcel($worksheet, $estados, $tipoPersona) {
+    // 😊 Nuevo método para marcar documentos en el Excel
+    private function marcarDocumentosEnExcel($worksheet, $estados, $tipoPersona)
+    {
         // Mapeo de estados a celdas en el Excel
         $mapeo = [
             'doc_identidad' => 'C32',
@@ -558,10 +591,10 @@ class GenerarContratosController extends controller
             'soat_doc' => 'E33',
             'tarjeta_propiedad' => 'H33'
         ];
-        
+
         // Valor para marcar como entregado
         $marcaEntregado = 'X';
-        
+
         // Marcar los documentos según su estado
         foreach ($mapeo as $documento => $celda) {
             // Solo marcamos si el estado es 1 (documento entregado)
@@ -570,30 +603,29 @@ class GenerarContratosController extends controller
             } else {
                 $worksheet->setCellValue($celda, '');
             }
-            
+
             // Para cliente, solo marcar doc_identidad y recibo_servicios
             if ($tipoPersona === 'cliente' && !in_array($documento, ['doc_identidad', 'recibo_servicios'])) {
                 $worksheet->setCellValue($celda, '');
             }
         }
     }
-    
+
     private function generarPlantillaContrato($categoria, $financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas)
     {
-
         $idPersona = $tipoPersona === 'conductor' ? $financiamiento['id_conductor'] : $financiamiento['id_cliente'];
-        
+
         if ($tipoPersona === 'conductor') {
             $datosDireccion = $this->obtenerDatosDireccionConductor($idPersona);
         } else {
             $direccionClienteModel = new Cliente();
             $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($idPersona);
         }
-        
+
         $provincia = $datosDireccion['provincia'] ?? 'AREQUIPA';
         $provinciaCapitalizada = ucwords(strtolower($provincia));
 
-        $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos";  // Usamos DIRECTORY_SEPARATOR
+        $rutaBase = 'app' . DIRECTORY_SEPARATOR . 'contratos';  // Usamos DIRECTORY_SEPARATOR
 
         // Formatear fecha y hora
         $fechaCreacion = strtotime($financiamiento['fecha_creacion']);
@@ -607,9 +639,9 @@ class GenerarContratosController extends controller
 
         // Concatenar nombre completo de la persona (conductor o cliente)
         $nombrePersona = trim(
-            $persona['nombres'] . ' ' .
-            $persona['apellido_paterno'] . ' ' .
-            $persona['apellido_materno']
+            $persona['nombres'] . ' '
+            . $persona['apellido_paterno'] . ' '
+            . $persona['apellido_materno']
         );
 
         // Generar textos dinámicos según tipo de persona
@@ -625,31 +657,33 @@ class GenerarContratosController extends controller
             <p><strong>EL CONDUCTOR</strong> reconoce que esta autorización se otorga como parte de las condiciones contractuales y que, en caso de no contar con fondos suficientes, la empresa podrá tomar las medidas legales necesarias para recuperar la deuda.</p>';
         }
 
-        $aro = ''; 
+        $aro = '';
         $perfil = '';
         // Selección de la plantilla según la categoría
         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 33) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_MotosYa.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_MotosYa.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipLinea.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 19) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "credigo_autos.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigo_autos.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_Motos.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_Motos.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_incamotors.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_incamotors.html';
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 45) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'crediYango.html';
         } elseif ($categoria === 'Llantas') {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_llantas.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_llantas.html';
         } elseif ($categoria === 'Aceites') {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_aceites.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_aceites.html';
         } elseif ($categoria === 'Baterías') {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_baterias.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_baterias.html';
         } elseif (in_array(strtolower($categoria), ['chip (linea corporativa)', 'chip', 'chip corporativo'])) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipLinea.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif ($categoria === 'Celular') {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "contrato_celular.html";
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_celular.html';
             if (isset($financiamiento['second_product']) && $financiamiento['second_product'] !== null) {
-                $rutaArchivoChip = $rutaBase . DIRECTORY_SEPARATOR . "contrato_chipLinea.html";
+                $rutaArchivoChip = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
                 if (!file_exists($rutaArchivoChip)) {
                     throw new Exception("Archivo de contrato no encontrado: $rutaArchivoChip");
                 }
@@ -657,18 +691,18 @@ class GenerarContratosController extends controller
 
                 $financiamientoModel = new Financiamiento();
                 $caracteristicasModel = new CaracteristicaProducto();
-                
+
                 $producto2 = $financiamientoModel->obtenerProductoConCategoria($financiamiento['second_product']);
                 $caracteristicas2 = $caracteristicasModel->obtenerCaracteristicas($financiamiento['second_product']);
 
                 $planMensual = '';
                 $operadora = '';
-                $plan = ""; 
-                foreach ($caracteristicas2 as $caracteristica2) { // ***Recorrer características***
+                $plan = '';
+                foreach ($caracteristicas2 as $caracteristica2) {  // ***Recorrer características***
                     if ($caracteristica2['nombre_caracteristicas'] === 'plan_mensual') {
-                        $plan = $caracteristica2['valor_caracteristica']; 
+                        $plan = $caracteristica2['valor_caracteristica'];
                     } elseif ($caracteristica2['nombre_caracteristicas'] === 'operadora') {
-                        $operadora = $caracteristica2['valor_caracteristica']; 
+                        $operadora = $caracteristica2['valor_caracteristica'];
                     }
                 }
 
@@ -682,7 +716,7 @@ class GenerarContratosController extends controller
                 $plantillaChip = str_replace('<span id="licencia">', $persona['nro_licencia'] ?? '', $plantillaChip);
                 $plantillaChip = str_replace('<span id="cantidad">', $financiamiento['cantidad_producto'], $plantillaChip);
 
-                 // Solo incluir licencia si es conductor
+                // Solo incluir licencia si es conductor
                 if ($tipoPersona === 'conductor') {
                     $plantillaChip = str_replace('<span id="licencia">', $persona['nro_licencia'], $plantillaChip);
                 } else {
@@ -700,96 +734,86 @@ class GenerarContratosController extends controller
                 $rutaArchivoSalida = "$rutaBase\contrato_chipLinea_relleno.html";
                 file_put_contents($rutaArchivoSalida, $plantillaChip);
 
-                
                 $plantillas['plantillaChip'] = $plantillaChip;
             }
         } else {
-            throw new Exception("Categoría desconocida: $categoria"); // Manejo de errores para categorías no soportadas
+            throw new Exception("Categoría desconocida: $categoria");  // Manejo de errores para categorías no soportadas
         }
 
         if (!file_exists($rutaArchivo)) {
             throw new Exception("Archivo de contrato no encontrado: $rutaArchivo");
         }
-            
+
         $plantilla = file_get_contents($rutaArchivo);
-         
 
         if ($categoria === 'Aceites') {
-            $cantidadTotal = $financiamiento['cantidad_producto'] * $producto['cantidad_unidad']; // Multiplicación de cantidad por cantidad_unidad
+            $cantidadTotal = $financiamiento['cantidad_producto'] * $producto['cantidad_unidad'];  // Multiplicación de cantidad por cantidad_unidad
         }
 
-        
         if ($categoria === 'Llantas') {
-            $aro = null; // Inicializa la variable
-            $perfil = null; // Inicializa la variable
+            $aro = null;  // Inicializa la variable
+            $perfil = null;  // Inicializa la variable
             foreach ($caracteristicas as $caracteristica) {
-               
-                $nombreCaracteristica = strtolower($caracteristica['nombre_caracteristicas']); // Convertir a minúsculas
-        
+                $nombreCaracteristica = strtolower($caracteristica['nombre_caracteristicas']);  // Convertir a minúsculas
+
                 if ($nombreCaracteristica === 'aro') {
-                    $aro = $caracteristica['valor_caracteristica']; // Asignar aro
+                    $aro = $caracteristica['valor_caracteristica'];  // Asignar aro
                 } elseif ($nombreCaracteristica === 'perfil') {
-                    $perfil = $caracteristica['valor_caracteristica']; // Asignar perfil
+                    $perfil = $caracteristica['valor_caracteristica'];  // Asignar perfil
                 }
             }
-      
         }
 
-            // Inicializar variables para celular
-            $chipLinea = ''; // Valor por defecto
-            $marcaEquipo = ''; // Valor por defecto
-            $modelo = ''; // Valor por defecto
-            $imei = ''; // Valor por defecto
-            $serie = ''; // Valor por defecto
-            $color = ''; // Valor por defecto
-            $cargador = ''; // Valor por defecto
-            $cableUsb = ''; // Valor por defecto
-            $manualUsuario = ''; // Valor por defecto
-            $cajaEstuche = ''; // Valor por defecto
+        // Inicializar variables para celular
+        $chipLinea = '';  // Valor por defecto
+        $marcaEquipo = '';  // Valor por defecto
+        $modelo = '';  // Valor por defecto
+        $imei = '';  // Valor por defecto
+        $serie = '';  // Valor por defecto
+        $color = '';  // Valor por defecto
+        $cargador = '';  // Valor por defecto
+        $cableUsb = '';  // Valor por defecto
+        $manualUsuario = '';  // Valor por defecto
+        $cajaEstuche = '';  // Valor por defecto
 
-            
-            // Si la categoría es Celular, asignar las características correspondientes
-            if ($categoria === 'Celular') { // ***Modificación para celular***
-                foreach ($caracteristicas as $caracteristica) { // ***Recorrer características***
-                    if ($caracteristica['nombre_caracteristicas'] === 'chip_linea') {
-                        $chipLinea = $caracteristica['valor_caracteristica']; // Asignar chip de línea
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'marca_equipo') {
-                        $marcaEquipo = $caracteristica['valor_caracteristica']; // Asignar marca
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'modelo') {
-                        $modelo = $caracteristica['valor_caracteristica']; // Asignar modelo
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'nro_imei') {
-                        $imei = $caracteristica['valor_caracteristica']; // Asignar IMEI
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'nro_serie') {
-                        $serie = $caracteristica['valor_caracteristica']; // Asignar serie
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'colorc') {
-                        $color = $caracteristica['valor_caracteristica']; // Asignar color
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'cargador') {
-                        $cargador = $caracteristica['valor_caracteristica']; // Asignar cargador
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'cable_usb') {
-                        $cableUsb = $caracteristica['valor_caracteristica']; // Asignar cable USB
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'manual_usuario') {
-                        $manualUsuario = $caracteristica['valor_caracteristica']; // Asignar manual del usuario
-                    } elseif ($caracteristica['nombre_caracteristicas'] === 'estuche') {
-                        $cajaEstuche = $caracteristica['valor_caracteristica']; // Asignar caja/estuche
-                    }
+        // Si la categoría es Celular, asignar las características correspondientes
+        if ($categoria === 'Celular') {  // ***Modificación para celular***
+            foreach ($caracteristicas as $caracteristica) {  // ***Recorrer características***
+                if ($caracteristica['nombre_caracteristicas'] === 'chip_linea') {
+                    $chipLinea = $caracteristica['valor_caracteristica'];  // Asignar chip de línea
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'marca_equipo') {
+                    $marcaEquipo = $caracteristica['valor_caracteristica'];  // Asignar marca
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'modelo') {
+                    $modelo = $caracteristica['valor_caracteristica'];  // Asignar modelo
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'nro_imei') {
+                    $imei = $caracteristica['valor_caracteristica'];  // Asignar IMEI
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'nro_serie') {
+                    $serie = $caracteristica['valor_caracteristica'];  // Asignar serie
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'colorc') {
+                    $color = $caracteristica['valor_caracteristica'];  // Asignar color
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'cargador') {
+                    $cargador = $caracteristica['valor_caracteristica'];  // Asignar cargador
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'cable_usb') {
+                    $cableUsb = $caracteristica['valor_caracteristica'];  // Asignar cable USB
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'manual_usuario') {
+                    $manualUsuario = $caracteristica['valor_caracteristica'];  // Asignar manual del usuario
+                } elseif ($caracteristica['nombre_caracteristicas'] === 'estuche') {
+                    $cajaEstuche = $caracteristica['valor_caracteristica'];  // Asignar caja/estuche
                 }
             }
-
-             
+        }
 
         // Determinar el texto de frecuencia // ***Cambio añadido aquí***
-        $frecuencyTexto='';
-        $frecuenciaTexto = ''; // Valor por defecto
+        $frecuencyTexto = '';
+        $frecuenciaTexto = '';  // Valor por defecto
         if ($financiamiento['frecuencia'] === 'mensual') {
             $frecuenciaTexto = 'mensualmente';
-            $frecuencyTexto = 'mensuales'; // Si frecuencia es mensual, se usa "mensualmente"
+            $frecuencyTexto = 'mensuales';  // Si frecuencia es mensual, se usa "mensualmente"
         } elseif ($financiamiento['frecuencia'] === 'semanal') {
-            $frecuenciaTexto = 'semanalmente'; // Si frecuencia es semanal, se usa "semanalmente"
+            $frecuenciaTexto = 'semanalmente';  // Si frecuencia es semanal, se usa "semanalmente"
             $frecuencyTexto = 'semanales';
         }
 
-       
-    
         // Reemplazar etiquetas en la plantilla
         $reemplazos = [
             'hora' => $hora,
@@ -800,9 +824,8 @@ class GenerarContratosController extends controller
             'provincia' => $provinciaCapitalizada,
             'nombre_conductor' => $nombrePersona,
             'dni' => $persona['nro_documento'] ?? $persona['n_documento'] ?? '',
-        
-            'cantidad' => $categoria === 'Aceites' ? $cantidadTotal : $financiamiento['cantidad_producto'], // Usar cantidad calculada para aceites
-            'unidad_medida' => $producto['unidad_medida'], // Añadido para aceites
+            'cantidad' => $categoria === 'Aceites' ? $cantidadTotal : $financiamiento['cantidad_producto'],  // Usar cantidad calculada para aceites
+            'unidad_medida' => $producto['unidad_medida'],  // Añadido para aceites
             'marca' => $producto['nombre'],
             'precio_total' => $financiamiento['monto_total'],
             'num_cuotas' => $financiamiento['cuotas'],
@@ -811,26 +834,24 @@ class GenerarContratosController extends controller
             'monto_cuota' => number_format($cuotas[0]['monto'], 2),
             'aro' => $aro,
             'perfil' => $perfil,
-            'chip_linea' => $chipLinea, // ***Nuevo campo para chip de línea***
-            'marca_equipo' => $marcaEquipo, // ***Nuevo campo para marca de equipo***
-            'modelo' => $modelo, // ***Nuevo campo para modelo***
-            'imei' => $imei, // ***Nuevo campo para IMEI***
-            'serie' => $serie, // ***Nuevo campo para serie***
-            'color' => $color, // ***Nuevo campo para color***
-            'cargador' => $cargador, // ***Nuevo campo para cargador***
-            'cable_usb' => $cableUsb, // ***Nuevo campo para cable USB***
-            'manual_usuario' => $manualUsuario, // ***Nuevo campo para manual del usuario***
+            'chip_linea' => $chipLinea,  // ***Nuevo campo para chip de línea***
+            'marca_equipo' => $marcaEquipo,  // ***Nuevo campo para marca de equipo***
+            'modelo' => $modelo,  // ***Nuevo campo para modelo***
+            'imei' => $imei,  // ***Nuevo campo para IMEI***
+            'serie' => $serie,  // ***Nuevo campo para serie***
+            'color' => $color,  // ***Nuevo campo para color***
+            'cargador' => $cargador,  // ***Nuevo campo para cargador***
+            'cable_usb' => $cableUsb,  // ***Nuevo campo para cable USB***
+            'manual_usuario' => $manualUsuario,  // ***Nuevo campo para manual del usuario***
             'caja_estuche' => $cajaEstuche,
             'frecuency' => $frecuencyTexto,
             'frecuencia' => $frecuenciaTexto,
             'producto' => $producto['nombre'],
             'cuotas' => $financiamiento['cuotas'],
-            'cuota_mensual' => number_format($cuotas[0]['monto'], 2), 
+            'cuota_mensual' => number_format($cuotas[0]['monto'], 2),
             'conductor' => $nombrePersona,
-            
             'plan_mensual' => $chipLinea,
             'precio' => $producto['precio'],
-
             // Nuevos campos dinámicos
             'persona' => $textoRol,
             'persona_mayus' => strtoupper($textoRol),
@@ -841,11 +862,10 @@ class GenerarContratosController extends controller
             'dni_firma' => $persona['nro_documento'] ?? $persona['n_documento'] ?? '',
             'operadora' => 'AREQUIPA GO',
             'precio_letras' => $this->numeroALetras($producto['precio']),
-            'numero_linea' => '', // Se llenará con las características del producto
-
+            'numero_linea' => '',  // Se llenará con las características del producto
             // Nuevos campos para Plan Chip Movil
-            'plan_descripcion' => '', // Default empty
-            'numero_linea' => '' // Default empty
+            'plan_descripcion' => '',  // Default empty
+            'numero_linea' => ''  // Default empty
         ];
 
         // Lógica para Plan Chip Movil (ID 35)
@@ -874,17 +894,16 @@ class GenerarContratosController extends controller
                 }
             }
         }
-    
+
         // Si es conductor, incluir licencia; si no, dejarla en blanco
         if ($tipoPersona === 'conductor') {
             $reemplazos['licencia'] = $persona['nro_licencia'];
         } else {
             $reemplazos['licencia'] = '';
         }
-    
+
         foreach ($reemplazos as $id => $valor) {
             $plantilla = str_replace("<span id=\"$id\"></span>", $valor, $plantilla);
-            
         }
 
         // Reemplazos específicos para credigo_autos.html (dobles llaves) - SOLO grupo 19
@@ -896,16 +915,43 @@ class GenerarContratosController extends controller
             $plantilla = str_replace('{{MES}}', $this->obtenerNombreMes($mes), $plantilla);
             $plantilla = str_replace('{{ANIO}}', $anio, $plantilla);
             $plantilla = str_replace('{{FECHA_ACTUAL}}', "$dia/" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio", $plantilla);
-        }   
-        
+        }
+
+        // NUEVO: Reemplazos específicos para CrediYango (dobles llaves) - SOLO grupo 45
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 45) {
+            // Aplicar reemplazos específicos para CrediYango
+            $plantilla = str_replace('{{NOMBRE_COMPLETO}}', strtoupper($nombrePersona), $plantilla);
+            $plantilla = str_replace('{{NRO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            $plantilla = str_replace('{{NUMERO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            $plantilla = str_replace('{{TIPO_DOCUMENTO}}', strtoupper($persona['tipo_doc'] ?? 'DNI'), $plantilla);
+            
+            // Obtener dirección si existe
+            $direccion = '';
+            if ($tipoPersona === 'conductor') {
+                $datosDireccion = $this->obtenerDatosDireccionConductor($financiamiento['id_conductor']);
+                $direccion = $datosDireccion['direccion_detalle'] ?? '';
+            } else {
+                $direccionClienteModel = new Cliente();
+                $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($financiamiento['id_cliente']);
+                $direccion = $datosDireccion['direccion_detalle'] ?? '';
+            }
+            $plantilla = str_replace('{{DIRECCION}}', $direccion, $plantilla);
+            
+            // Fechas
+            $plantilla = str_replace('{{DIA}}', $dia, $plantilla);
+            $plantilla = str_replace('{{MES}}', $this->obtenerNombreMes($mes), $plantilla);
+            $plantilla = str_replace('{{ANIO}}', $anio, $plantilla);
+            $plantilla = str_replace('{{FECHA_ACTUAL}}', "$dia/" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio", $plantilla);
+        }
+
         // Generar lista de cuotas
         $listaCuotas = '';
         foreach ($cuotas as $index => $cuota) {
             $fechaCuota = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
-            $listaCuotas .= "<li><strong>" . ($index + 1) . "a cuota:</strong> S/ {$cuota['monto']} - Fecha: $fechaCuota</li>";
+            $listaCuotas .= '<li><strong>' . ($index + 1) . "a cuota:</strong> S/ {$cuota['monto']} - Fecha: $fechaCuota</li>";
         }
-        $plantilla = str_replace("<ul id=\"lista_cuotas\"></ul>", "<ul>$listaCuotas</ul>", $plantilla);
-    
+        $plantilla = str_replace('<ul id="lista_cuotas"></ul>', "<ul>$listaCuotas</ul>", $plantilla);
+
         // Lógica específica para Plan Mantenimiento IncaMotors (ID 44)
         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
             // Reemplazos específicos para el contrato de IncaMotors
@@ -936,14 +982,14 @@ class GenerarContratosController extends controller
             $plantilla = str_replace('<span id="clausulaConductor"></span>', $clausulaConductor, $plantilla);
             $plantilla = str_replace('<span id="nombre_firma"></span>', $nombrePersona, $plantilla);
             $plantilla = str_replace('<span id="dni_firma"></span>', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
-            
+
             // Generar cronograma de cuotas para IncaMotors
             $cronogramaCuotas = '';
             foreach ($cuotas as $index => $cuota) {
                 $fechaCuota = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
                 $montoCuota = number_format($cuota['monto'], 2);
                 $moneda = $financiamiento['moneda'] ?? 'S/.';
-                $cronogramaCuotas .= "<p><strong>Cuota " . ($index + 1) . ":</strong> $moneda $montoCuota - Vencimiento: $fechaCuota</p>";
+                $cronogramaCuotas .= '<p><strong>Cuota ' . ($index + 1) . ":</strong> $moneda $montoCuota - Vencimiento: $fechaCuota</p>";
             }
             // Reemplazar el contenido del div cronogramaCuotas
             $plantilla = str_replace('<!-- Las cuotas se cargarán dinámicamente aquí -->', $cronogramaCuotas, $plantilla);
@@ -954,16 +1000,16 @@ class GenerarContratosController extends controller
         return $plantillas;
     }
 
-    public function generarContratosRegistro() {
+    public function generarContratosRegistro()
+    {
+        $input = file_get_contents('php://input');  // Leer el cuerpo de la solicitud
+        $data = json_decode($input, true);  // Decodificar el JSON recibido
 
-        $input = file_get_contents('php://input'); // Leer el cuerpo de la solicitud
-        $data = json_decode($input, true); // Decodificar el JSON recibido
-    
         $financiamientoModel = new Financiamiento();
         $vehiculoModel = new Vehiculo();
         $pagoModel = new ConductorPagoModel();
         $cuotasModel = new ConductorCuotaModel();
-        $conductorRegFinanciamientoModel = new ConductorRegFinanciamientoModel(); // Nuevo modelo para obtener financiamiento
+        $conductorRegFinanciamientoModel = new ConductorRegFinanciamientoModel();  // Nuevo modelo para obtener financiamiento
         $conductorModel = new Conductor();
         $direccionConductorModel = new DireccionConductor();
         $inscripcionModel = new Inscripcion();
@@ -971,65 +1017,63 @@ class GenerarContratosController extends controller
         $observacionModel = new Observacion();
         $contactoEmergenciaModel = new ContactoEmergencia();
         $conductorPago = new ConductorPagoModel();
-        
-        $resultados = []; // Inicializar el array de resultados
-        $pdfs = []; 
-        $errores = []; // Para registrar errores
-    
+
+        $resultados = [];  // Inicializar el array de resultados
+        $pdfs = [];
+        $errores = [];  // Para registrar errores
+
         // Cargar la plantilla Excel
-        $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "exel";
-        $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . "DATOS GENERALES Lonely.xlsx";
+        $rutaBase = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'exel';
+        $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'DATOS GENERALES Lonely.xlsx';
         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($rutaArchivo);
         $sheet = $spreadsheet->getActiveSheet();
 
         // Iterar sobre los conductores recibidos en el array
         foreach ($data['conductores'] as $conductor) {
             // Usar las claves correctas según el JSON
-            $idConductor = $conductor['id_conductor']; // Cambiado de 'id' a 'id_conductor'
+            $idConductor = $conductor['id_conductor'];  // Cambiado de 'id' a 'id_conductor'
             $dni = $conductor['dni'];
-            $nombresCompletos = $conductor['nombre_completo']; // Cambiado de 'nombres_completos' a 'nombre_completo'
-    
-            try {
+            $nombresCompletos = $conductor['nombre_completo'];  // Cambiado de 'nombres_completos' a 'nombre_completo'
 
+            try {
                 // Obtener los datos relacionados con el conductor
                 $datosConductor = $conductorModel->getMissingData($idConductor);
                 $datosDireccion = $direccionConductorModel->obtenerDatosDireccion($idConductor);
                 $datosInscripcion = $inscripcionModel->obtenerInscripcionPorConductor($idConductor);
                 $estadoRequisitos = $requisitosModel->obtenerEstadoRequisitos($idConductor);
                 $observacion = $observacionModel->obtenerObservacion($idConductor);
-                $direccion = $financiamientoModel->getDireccionCompleta($idConductor); // Obtener la dirección completa
-                $vehiculo = $vehiculoModel->obtenerDatosVehiculo($idConductor); // Obtener los datos del vehículo
-                $tipoPago = $pagoModel->obtenerTipoPago($idConductor); // Obtener el tipo de pago
+                $direccion = $financiamientoModel->getDireccionCompleta($idConductor);  // Obtener la dirección completa
+                $vehiculo = $vehiculoModel->obtenerDatosVehiculo($idConductor);  // Obtener los datos del vehículo
+                $tipoPago = $pagoModel->obtenerTipoPago($idConductor);  // Obtener el tipo de pago
                 $datoPago = $conductorPago->obtenerPagosPorConductor($idConductor);
                 // Obtener los datos del contacto de emergencia
-                $contactoEmergenciaModel->setIdConductor($idConductor); // Establecer el id del conductor en el modelo de contacto de emergencia
-                $contactoEmergenciaModel->obtenerDatosporConductor(); // Llamar al método para extraer los datos
+                $contactoEmergenciaModel->setIdConductor($idConductor);  // Establecer el id del conductor en el modelo de contacto de emergencia
+                $contactoEmergenciaModel->obtenerDatosporConductor();  // Llamar al método para extraer los datos
                 $contactoEmergencia = [
-                    'nombres' => $contactoEmergenciaModel->getNombres(), // Obtener nombres
-                    'telefono' => $contactoEmergenciaModel->getTelefono(), // Obtener teléfono
-                    'parentesco' => $contactoEmergenciaModel->getParentesco(), // Obtener parentesco
+                    'nombres' => $contactoEmergenciaModel->getNombres(),  // Obtener nombres
+                    'telefono' => $contactoEmergenciaModel->getTelefono(),  // Obtener teléfono
+                    'parentesco' => $contactoEmergenciaModel->getParentesco(),  // Obtener parentesco
                 ];
-
 
                 // Crear el array de datos para este conductor
                 $datos = [
-                    'id_conductor' => $idConductor, // Almacenar el id del conductor
-                    'tipo_doc' => $datosConductor['tipo_doc'] ?? 'DNI', // Agregar el tipo de documento
+                    'id_conductor' => $idConductor,  // Almacenar el id del conductor
+                    'tipo_doc' => $datosConductor['tipo_doc'] ?? 'DNI',  // Agregar el tipo de documento
                     'telefono' => $datosConductor['telefono'] ?? 'No registrado',
                     'apellido_paterno' => $datosConductor['apellido_paterno'] ?? 'No registrado',
                     'apellido_materno' => $datosConductor['apellido_materno'] ?? 'No registrado',
                     'nombres' => $datosConductor['nombres'] ?? 'No registrado',
-                    'nombres_completos' => $conductor['nombre_completo'], // Cambiado de $data['nombres_completo']
+                    'nombres_completos' => $conductor['nombre_completo'],  // Cambiado de $data['nombres_completo']
                     'dni' => $conductor['dni'] ?? 'Sin DNI',
-                    'direccion_completa' => $direccion, 
-                    'placa' => $vehiculo['placa'] ?? 'Sin placa', // Placa, con valor por defecto
-                    'marca' => $vehiculo['marca'] ?? 'Sin marca', // Marca, con valor por defecto
-                    'modelo' => $vehiculo['modelo'] ?? 'Sin modelo', // Modelo, con valor por defecto
-                    'color' => $vehiculo['color'] ?? 'Sin color', // Color, con valor por defecto
-                    'anio' => $vehiculo['anio'] ?? 'Sin año', 
+                    'direccion_completa' => $direccion,
+                    'placa' => $vehiculo['placa'] ?? 'Sin placa',  // Placa, con valor por defecto
+                    'marca' => $vehiculo['marca'] ?? 'Sin marca',  // Marca, con valor por defecto
+                    'modelo' => $vehiculo['modelo'] ?? 'Sin modelo',  // Modelo, con valor por defecto
+                    'color' => $vehiculo['color'] ?? 'Sin color',  // Color, con valor por defecto
+                    'anio' => $vehiculo['anio'] ?? 'Sin año',
                     'condicion' => $vehiculo['condicion'] ?? 'Sin condición',
                     'monto_pago' => isset($datoPago[0]['monto_pago']) ? $datoPago[0]['monto_pago'] : 'No registrado',
-                    'tipo_pago' => $tipoPago, // Tipo de pago
+                    'tipo_pago' => $tipoPago,  // Tipo de pago
                     'nro_licencia' => $datosConductor['nro_licencia'] ?? 'No registrado',
                     'correo' => $datosConductor['correo'] ?? 'No registrado',
                     'numUnidad' => $datosConductor['numUnidad'] ?? 'No registrado',
@@ -1043,11 +1087,11 @@ class GenerarContratosController extends controller
                     'fecha_inscripcion' => $datosInscripcion['fecha_inscripcion'] ?? 'No registrado',
                     'estado_requisitos' => $estadoRequisitos,
                     'observacion' => $observacion ?? 'Sin observaciones',
-                    'contacto_emergencia' => $contactoEmergencia, // Añadido: incluir datos del contacto de emergencia
+                    'contacto_emergencia' => $contactoEmergencia,  // Añadido: incluir datos del contacto de emergencia
                 ];
 
                 // Obtener la fecha actual en formato "d/m/Y"
-                $fechaActual = date('d/m/Y'); // Nueva línea para obtener la fecha actual
+                $fechaActual = date('d/m/Y');  // Nueva línea para obtener la fecha actual
 
                 // Rellenar el archivo Excel con los datos
                 $sheet->setCellValue('G5', $datos['telefono']);
@@ -1058,7 +1102,7 @@ class GenerarContratosController extends controller
                 $sheet->setCellValue('A10', $datos['contacto_emergencia']['telefono']);
                 $sheet->setCellValue('C10', $datos['contacto_emergencia']['parentesco']);
                 $sheet->setCellValue('E10', $datos['contacto_emergencia']['nombres']);
-                $sheet->setCellValue('A12', $datos['direccion_completa2']['detalle']);//Les cambie el nómbre a 2 para evitar que se confunda con el direccion_completa de arriba
+                $sheet->setCellValue('A12', $datos['direccion_completa2']['detalle']);  // Les cambie el nómbre a 2 para evitar que se confunda con el direccion_completa de arriba
                 $sheet->setCellValue('G12', $datos['direccion_completa2']['distrito']);
                 $sheet->setCellValue('A14', $datos['direccion_completa2']['provincia']);
                 $sheet->setCellValue('D14', $datos['direccion_completa2']['departamento']);
@@ -1101,14 +1145,16 @@ class GenerarContratosController extends controller
                 $sheet->getStyle('D23')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
                 // Configuración para impresión - centrar contenido en la página física
-                $sheet->getPageSetup()
+                $sheet
+                    ->getPageSetup()
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_PORTRAIT)
                     ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4)
                     ->setHorizontalCentered(true)  // ESTO centra horizontalmente al imprimir
-                    ->setVerticalCentered(false);   // Mantener arriba, no centrar verticalmente
+                    ->setVerticalCentered(false);  // Mantener arriba, no centrar verticalmente
 
                 // Configurar márgenes para impresión
-                $sheet->getPageMargins()
+                $sheet
+                    ->getPageMargins()
                     ->setTop(0.75)
                     ->setRight(0.25)
                     ->setLeft(0.25)
@@ -1117,12 +1163,12 @@ class GenerarContratosController extends controller
                     ->setFooter(0.3);
 
                 // Configurar el área de impresión si es necesario
-                $sheet->getPageSetup()->setPrintArea('A1:H40'); // Ajusta el rango según tu contenido
+                $sheet->getPageSetup()->setPrintArea('A1:H40');  // Ajusta el rango según tu contenido
 
                 // Escalar para que quepa en una página
                 $sheet->getPageSetup()->setFitToPage(true);
                 $sheet->getPageSetup()->setFitToWidth(1);
-                $sheet->getPageSetup()->setFitToHeight(0); // 0 = automático
+                $sheet->getPageSetup()->setFitToHeight(0);  // 0 = automático
 
                 // Marcar los documentos presentados
                 $documentos = $datos['estado_requisitos'];
@@ -1147,37 +1193,33 @@ class GenerarContratosController extends controller
                     $sheet->setCellValue('D23', '');
                 }
 
-                //$sheet->setCellValue('B29', $documentos['doc_otro1'] == 1 ? '✔' : '');
-                //$sheet->setCellValue('B30', $documentos['doc_otro2'] == 1 ? '✔' : '');
-                //$sheet->setCellValue('B31', $documentos['doc_otro3'] == 1 ? '✔' : '');
-        
+                // $sheet->setCellValue('B29', $documentos['doc_otro1'] == 1 ? '✔' : '');
+                // $sheet->setCellValue('B30', $documentos['doc_otro2'] == 1 ? '✔' : '');
+                // $sheet->setCellValue('B31', $documentos['doc_otro3'] == 1 ? '✔' : '');
+
                 // Verificar si el tipo de pago es 2 (financiamiento)
                 if ($tipoPago == 2) {
                     // Obtener el ID del financiamiento para este conductor
                     $idFinanciamiento = $conductorRegFinanciamientoModel->obtenerIdFinanciamiento($idConductor);
                     // Obtener las cuotas asociadas a este financiamiento
-               
+
                     $datos['cuotas'] = $cuotasModel->obtenerCronogramaPagos($idFinanciamiento);
-                   
+
                     // Obtener el financiamiento del conductor usando el modelo Conductor
-                    $financiamiento = $conductorModel->obtenerDatosPago($idConductor); // Agregado: Se obtiene el financiamiento del conductor
+                    $financiamiento = $conductorModel->obtenerDatosPago($idConductor);  // Agregado: Se obtiene el financiamiento del conductor
 
-                    $datos['monto_inicial'] = $financiamiento['financiamiento']['monto_inicial']; // Corregido: Ahora accede dentro de 'financiamiento'
-                    $datos['fecha_pago'] = $financiamiento['fecha_pago']; // Esto está bien, ya que 'fecha_pago' está en el nivel principal
-
+                    $datos['monto_inicial'] = $financiamiento['financiamiento']['monto_inicial'];  // Corregido: Ahora accede dentro de 'financiamiento'
+                    $datos['fecha_pago'] = $financiamiento['fecha_pago'];  // Esto está bien, ya que 'fecha_pago' está en el nivel principal
                 }
 
-          
                 $html = $this->generarPlantillahtmltoPdf($datos);
-              
 
                 // Crear PDF
                 $mpdf = new \Mpdf\Mpdf();
-                
-                
+
                 $provincia = $datosDireccion['provincia'] ?? 'AREQUIPA';
                 $provinciaUpper = strtoupper($provincia);
-                $fechaActual = date('d/m/Y'); 
+                $fechaActual = date('d/m/Y');
 
                 $htmlCompleto = $this->generarPlantillahtmltoPdf($datos);
 
@@ -1196,23 +1238,22 @@ class GenerarContratosController extends controller
 
                 $mpdf->WriteHTML($htmlSeccion2);
 
-
                 $nombreArchivo = "contrato_{$conductor['dni']}.pdf";
-                $pdfContent = $mpdf->Output('', 'S'); // Generar el PDF en memoria
+                $pdfContent = $mpdf->Output('', 'S');  // Generar el PDF en memoria
 
                 // Almacenar PDF en base64
-                $pdfs[] = [ // Changed from associative array to indexed array
+                $pdfs[] = [  // Changed from associative array to indexed array
                     'content' => base64_encode($pdfContent),
                     'nombre' => $nombreArchivo
                 ];
                 // Guardar los cambios en el archivo Excel
                 $nombreArchivoExcel = "ANEXO 01 - DT FLOTA_{$conductor['dni']}.xlsx";
-                $spreadsheet->getActiveSheet()->getProtection()->setSheet(true); // Activar protección de la hoja
-                $spreadsheet->getActiveSheet()->getProtection()->setPassword('tu_contraseña'); // Establecer contraseña para la protección
-                
+                $spreadsheet->getActiveSheet()->getProtection()->setSheet(true);  // Activar protección de la hoja
+                $spreadsheet->getActiveSheet()->getProtection()->setPassword('tu_contraseña');  // Establecer contraseña para la protección
+
                 $spreadsheet->getActiveSheet()->getStyle('G5')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H5')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A8, B8, C8, D8, E8, F8, G8, H8
                 $spreadsheet->getActiveSheet()->getStyle('A8')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B8')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1222,7 +1263,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F8')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G8')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H8')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A10, B10, C10, D10, E10, F10, G10, H10
                 $spreadsheet->getActiveSheet()->getStyle('A10')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B10')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1232,7 +1273,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F10')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G10')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H10')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A12, B12, C12, D12, E12, F12, G12, H12
                 $spreadsheet->getActiveSheet()->getStyle('A12')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B12')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1242,7 +1283,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F12')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G12')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H12')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A14, B14, C14, D14, E14, F14, G14, H14
                 $spreadsheet->getActiveSheet()->getStyle('A14')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B14')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1252,7 +1293,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F14')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G14')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H14')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A16, B16, C16, D16, E16, F16, G16, H16
                 $spreadsheet->getActiveSheet()->getStyle('A16')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B16')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1262,7 +1303,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F16')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G16')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H16')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A19, B19, C19, D19, E19, F19, G19, H19
                 $spreadsheet->getActiveSheet()->getStyle('A19')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B19')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1272,7 +1313,7 @@ class GenerarContratosController extends controller
                 $spreadsheet->getActiveSheet()->getStyle('F19')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('G19')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('H19')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
-                
+
                 // Desbloquear las celdas A21, B21, C21, D21, E21, F21, G21, H21
                 $spreadsheet->getActiveSheet()->getStyle('A21')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
                 $spreadsheet->getActiveSheet()->getStyle('B21')->getProtection()->setLocked(\PhpOffice\PhpSpreadsheet\Style\Protection::PROTECTION_UNPROTECTED);
@@ -1300,35 +1341,28 @@ class GenerarContratosController extends controller
                     'excel' => $base64Excel,
                     'nombre_excel' => $nombreArchivoExcel
                 ];
-
-                
-
             } catch (\Exception $e) {
                 $errores[] = [
                     'id_conductor' => $idConductor,
                     'error' => $e->getMessage()
                 ];
             }
-            
-
-            
         }
         // Retornar respuesta JSON
         echo json_encode([
             'success' => empty($errores),
             'resultados' => $resultados,
-            'pdfs' => $pdfs, // Changed from associative array to indexed array
+            'pdfs' => $pdfs,  // Changed from associative array to indexed array
             'exels' => $exels,
             'errores' => $errores
         ]);
-        
     }
 
-    public function generarPlantillahtmltoPdf($datos) {
-        $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos";  // Usamos DIRECTORY_SEPARATOR
-        $rutaArchivo =  $rutaBase . DIRECTORY_SEPARATOR . "contratoSyA.html";
+    public function generarPlantillahtmltoPdf($datos)
+    {
+        $rutaBase = 'app' . DIRECTORY_SEPARATOR . 'contratos';  // Usamos DIRECTORY_SEPARATOR
+        $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contratoSyA.html';
 
-        
         $html = file_get_contents($rutaArchivo);
 
         // Reemplazar los valores de los spans con los datos del conductor
@@ -1346,16 +1380,16 @@ class GenerarContratosController extends controller
         $html = str_replace('<span id="placa_vehiculo2">', $datos['placa'], $html);
         $html = str_replace('<span id="nombre_conductor">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_conductor">', $datos['dni'], $html);
-        
+
         // Formatear el monto solo si es un número
         $montoFormateado = is_numeric($datos['monto_pago']) ? number_format($datos['monto_pago'], 2) : $datos['monto_pago'];
         $html = str_replace('<span id="monto_pago"></span>', '.' . $montoFormateado, $html);
         $html = str_replace('<span id="nombre_conductor2">', $datos['nombres_completos'], $html);
         $html = str_replace('<span id="dni_conductor2">', $datos['dni'], $html);
-        
-        $condicionMin = strtolower(trim($datos['condicion'])); // Convertir toda la cadena a minúsculas y eliminar espacios
-       
-        $html = str_replace('<span id="condicion_vehiculo">', $condicionMin, $html); // Usar la condición modificada
+
+        $condicionMin = strtolower(trim($datos['condicion']));  // Convertir toda la cadena a minúsculas y eliminar espacios
+
+        $html = str_replace('<span id="condicion_vehiculo">', $condicionMin, $html);  // Usar la condición modificada
 
         // Marcar el tipo de pago
         if ($datos['tipo_pago'] == 1) {
@@ -1370,51 +1404,53 @@ class GenerarContratosController extends controller
             $html = str_replace('<span class="checkbox"></span> PAGO AL CONTADO', '', $html);
 
             // Generar el HTML para la información del monto inicial
-            $infoHtml = '<div id="info-inicial">'; // Contenedor para el monto inicial y fecha de pago
-            $infoHtml .= '<p style="margin-left: 25px;">◉ Inicial Monto: S/. ' . $datos['monto_inicial'] . ' Fecha: ' . $datos['fecha_pago'] . '</p>'; // Modificado: Agregado margen de 15px a la izquierda
-            $infoHtml .= '</div>'; // Cierre del contenedor
+            $infoHtml = '<div id="info-inicial">';  // Contenedor para el monto inicial y fecha de pago
+            $infoHtml .= '<p style="margin-left: 25px;">◉ Inicial Monto: S/. ' . $datos['monto_inicial'] . ' Fecha: ' . $datos['fecha_pago'] . '</p>';  // Modificado: Agregado margen de 15px a la izquierda
+            $infoHtml .= '</div>';  // Cierre del contenedor
 
             // Generar el HTML para el cronograma de cuotas
-            $cuotasHtml = '<div id="cronograma-cuotas">'; // Contenedor de cuotas
-           
+            $cuotasHtml = '<div id="cronograma-cuotas">';  // Contenedor de cuotas
+
             $cuotasHtml = '<ul>';
             foreach ($datos['cuotas'] as $index => $cuota) {
-                $cuotasHtml .= "<li>Cuota " . ($index + 1) . ": Monto: <span id='cuota" . ($index + 1) . "_monto'>" . $cuota['monto_cuota'] . "</span> Fecha: <span id='cuota" . ($index + 1) . "_fecha'>" . $cuota['fecha_vencimiento'] . "</span></li>";
+                $cuotasHtml .= '<li>Cuota ' . ($index + 1) . ": Monto: <span id='cuota" . ($index + 1) . "_monto'>" . $cuota['monto_cuota'] . "</span> Fecha: <span id='cuota" . ($index + 1) . "_fecha'>" . $cuota['fecha_vencimiento'] . '</span></li>';
             }
             $cuotasHtml .= '</ul>';
-            $cuotasHtml .= '</div>'; // Cerrar el contenedor de c
+            $cuotasHtml .= '</div>';  // Cerrar el contenedor de c
 
             // Reemplazar el marcador de cuotas en el HTML
-            $html = str_replace('<div id="info-inicial"></div>', $infoHtml, $html); // Agregado: Inserta la información del monto inicial en su div
+            $html = str_replace('<div id="info-inicial"></div>', $infoHtml, $html);  // Agregado: Inserta la información del monto inicial en su div
             $html = str_replace('<div id="cronograma-cuotas"></div>', $cuotasHtml, $html);
         }
 
-        //var_dump($html); // Esto mostrará el HTML ya con los datos reemplazados
-        ///exit(); // Detener la ejecución para inspeccionar el resultado
-        return $html; // Retornar el HTML generado
+        // var_dump($html); // Esto mostrará el HTML ya con los datos reemplazados
+        // /exit(); // Detener la ejecución para inspeccionar el resultado
+        return $html;  // Retornar el HTML generado
     }
-    
-    private function numeroALetras($numero) {
+
+    private function numeroALetras($numero)
+    {
         $unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
         $decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
         $especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
-        
-        $entero = (int)$numero;
-        
+
+        $entero = (int) $numero;
+
         if ($entero < 10) {
             return $unidades[$entero];
         } elseif ($entero < 20) {
             return $especiales[$entero - 10];
         } elseif ($entero < 100) {
-            $dec = (int)($entero / 10);
+            $dec = (int) ($entero / 10);
             $uni = $entero % 10;
             return $decenas[$dec] . ($uni > 0 ? ' y ' . $unidades[$uni] : '');
         }
-        
-        return (string)$entero; // Para números mayores, retornar como string
+
+        return (string) $entero;  // Para números mayores, retornar como string
     }
-    
-    private function obtenerNombreMes($numeroMes) {
+
+    private function obtenerNombreMes($numeroMes)
+    {
         $meses = [
             '01' => 'enero', '02' => 'febrero', '03' => 'marzo', '04' => 'abril',
             '05' => 'mayo', '06' => 'junio', '07' => 'julio', '08' => 'agosto',
@@ -1436,7 +1472,7 @@ class GenerarContratosController extends controller
             // Recibir ID del financiamiento
             $input = json_decode(file_get_contents('php://input'), true);
             $idFinanciamiento = $input['id_financiamiento'] ?? null;
-            
+
             // Validar ID
             if (!$idFinanciamiento) {
                 echo json_encode([
@@ -1445,36 +1481,35 @@ class GenerarContratosController extends controller
                 ]);
                 return;
             }
-            
+
             // Obtener datos necesarios
             $financiamiento = $this->obtenerDatosFinanciamientoEntrega($idFinanciamiento);
             $cliente = $this->obtenerDatosClienteEntrega($financiamiento);
             $vehiculo = $this->obtenerDatosVehiculoEntrega($financiamiento);
-            
+
             // Cargar y llenar template
             $html = $this->cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo);
-            
+
             // Generar PDF
             $pdf = $this->generarPDFEntrega($html);
-            
+
             // Preparar nombre del archivo
             $nombreCliente = trim(
-                ($cliente['nombres'] ?? '') . '_' . 
-                ($cliente['apellido_paterno'] ?? '') . '_' . 
-                ($cliente['apellido_materno'] ?? '')
+                ($cliente['nombres'] ?? '') . '_'
+                . ($cliente['apellido_paterno'] ?? '') . '_'
+                . ($cliente['apellido_materno'] ?? '')
             );
             $nombreCliente = preg_replace('/[^A-Za-z0-9_]/', '_', $nombreCliente);
             $nombreArchivo = "acta_entrega_vehiculo_{$idFinanciamiento}_{$nombreCliente}.pdf";
-            
+
             // Retornar PDF en base64
             echo json_encode([
                 'success' => true,
                 'pdf' => base64_encode($pdf),
                 'nombre' => $nombreArchivo
             ]);
-            
         } catch (Exception $e) {
-            error_log("Error en generarContratoEntregaVehiculo: " . $e->getMessage());
+            error_log('Error en generarContratoEntregaVehiculo: ' . $e->getMessage());
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -1489,11 +1524,11 @@ class GenerarContratosController extends controller
     {
         $financiamientoModel = new Financiamiento();
         $financiamiento = $financiamientoModel->getFinanciamientoById($idFinanciamiento);
-        
+
         if (!$financiamiento) {
             throw new Exception("Financiamiento no encontrado con ID: $idFinanciamiento");
         }
-        
+
         return $financiamiento;
     }
 
@@ -1504,13 +1539,13 @@ class GenerarContratosController extends controller
     {
         $cliente = [];
         $direccion = [];
-        
+
         // Determinar si es conductor o cliente
         if (!empty($financiamiento['id_conductor'])) {
             // Es un conductor
             $financiamientoModel = new Financiamiento();
             $cliente = $financiamientoModel->getConductorById($financiamiento['id_conductor']);
-            
+
             // Obtener dirección del conductor
             $direccionConductorModel = new DireccionConductor();
             $direccion = $direccionConductorModel->obtenerDatosDireccion($financiamiento['id_conductor']);
@@ -1518,14 +1553,14 @@ class GenerarContratosController extends controller
             // Es un cliente
             $clienteModel = new Cliente();
             $cliente = $clienteModel->getClienteById($financiamiento['id_cliente']);
-            
+
             // Obtener dirección del cliente
             $direccion = $clienteModel->obtenerDatosDireccionCliente($financiamiento['id_cliente']);
         }
-        
+
         // Combinar datos del cliente con su dirección
         $cliente['direccion'] = $direccion;
-        
+
         return $cliente;
     }
 
@@ -1545,7 +1580,7 @@ class GenerarContratosController extends controller
         $producto = $financiamientoModel->obtenerProductoConCategoria($financiamiento['idproductosv2']);
 
         if (!$producto) {
-            throw new Exception("Producto no encontrado con ID: " . $financiamiento['idproductosv2']);
+            throw new Exception('Producto no encontrado con ID: ' . $financiamiento['idproductosv2']);
         }
 
         // Obtener características del producto del almacén
@@ -1613,9 +1648,9 @@ class GenerarContratosController extends controller
         if (!$direccion || !is_array($direccion)) {
             return 'Dirección no disponible';
         }
-        
+
         $partes = [];
-        
+
         if (!empty($direccion['direccion_detalle'])) {
             $partes[] = $direccion['direccion_detalle'];
         }
@@ -1628,7 +1663,7 @@ class GenerarContratosController extends controller
         if (!empty($direccion['departamento'])) {
             $partes[] = $direccion['departamento'];
         }
-        
+
         return !empty($partes) ? implode(', ', $partes) : 'Dirección no disponible';
     }
 
@@ -1642,7 +1677,7 @@ class GenerarContratosController extends controller
             '05' => 'MAYO', '06' => 'JUNIO', '07' => 'JULIO', '08' => 'AGOSTO',
             '09' => 'SEPTIEMBRE', '10' => 'OCTUBRE', '11' => 'NOVIEMBRE', '12' => 'DICIEMBRE'
         ];
-        
+
         $mesFormateado = str_pad($numeroMes, 2, '0', STR_PAD_LEFT);
         return $meses[$mesFormateado] ?? 'ENERO';
     }
@@ -1652,14 +1687,14 @@ class GenerarContratosController extends controller
      */
     private function cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo)
     {
-        $rutaTemplate = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "entrga_vehiculo.html";
-        
+        $rutaTemplate = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'entrga_vehiculo.html';
+
         if (!file_exists($rutaTemplate)) {
             throw new Exception("Template no encontrado: $rutaTemplate");
         }
-        
+
         $html = file_get_contents($rutaTemplate);
-        
+
         // Preparar datos para reemplazo
         $datos = [
             // Datos del vehículo (producto del almacén)
@@ -1670,37 +1705,34 @@ class GenerarContratosController extends controller
             'placa' => $vehiculo['placa'] ?? 'N/A',
             'color' => $vehiculo['color'] ?? 'N/A',
             'anio' => $vehiculo['anio'] ?? 'N/A',
-            
             // Datos del asociado
             'nombre_asociado' => trim(
-                ($cliente['nombres'] ?? '') . ' ' . 
-                ($cliente['apellido_paterno'] ?? '') . ' ' . 
-                ($cliente['apellido_materno'] ?? '')
+                ($cliente['nombres'] ?? '') . ' '
+                . ($cliente['apellido_paterno'] ?? '') . ' '
+                . ($cliente['apellido_materno'] ?? '')
             ),
             'dni_asociado' => $cliente['nro_documento'] ?? $cliente['n_documento'] ?? 'N/A',
             'domicilio_asociado' => $this->formatearDireccionEntrega($cliente['direccion'] ?? []),
             'celular_asociado' => $cliente['telefono'] ?? 'N/A',
             'correo_asociado' => $cliente['correo'] ?? 'N/A',
-            
             // Fecha de firma
             'dia_firma' => date('d'),
             'mes_firma' => $this->obtenerNombreMesEntrega(date('m')),
             'anio_firma' => date('Y'),
-            
             // Datos para firma (repetidos para la sección de firmas)
             'nombre_firma' => trim(
-                ($cliente['nombres'] ?? '') . ' ' . 
-                ($cliente['apellido_paterno'] ?? '') . ' ' . 
-                ($cliente['apellido_materno'] ?? '')
+                ($cliente['nombres'] ?? '') . ' '
+                . ($cliente['apellido_paterno'] ?? '') . ' '
+                . ($cliente['apellido_materno'] ?? '')
             ),
             'dni_firma' => $cliente['nro_documento'] ?? $cliente['n_documento'] ?? 'N/A'
         ];
-        
+
         // Reemplazar placeholders en el HTML
         foreach ($datos as $campo => $valor) {
             $html = str_replace("{{{$campo}}}", $valor, $html);
         }
-        
+
         return $html;
     }
 
@@ -1717,19 +1749,20 @@ class GenerarContratosController extends controller
                 'margin_bottom' => 15,
                 'format' => 'A4'
             ]);
-            
+
             $mpdf->WriteHTML($html);
-            
-            return $mpdf->Output('', 'S'); // Retornar como string
+
+            return $mpdf->Output('', 'S');  // Retornar como string
         } catch (Exception $e) {
-            throw new Exception("Error al generar PDF: " . $e->getMessage());
+            throw new Exception('Error al generar PDF: ' . $e->getMessage());
         }
     }
 
     /**
      * Genera el contrato de un cliente usando el template contrato_clientes.html
      */
-    public function generarContratoCliente() {
+    public function generarContratoCliente()
+    {
         header('Content-Type: application/json');
 
         // Leer el body JSON
@@ -1757,10 +1790,10 @@ class GenerarContratosController extends controller
             // Construir nombre completo y dirección
             $nombreClienteCompleto = trim($cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno']);
             $direccionCompleta = trim(
-                ($cliente['departamento_nombre'] ?? '') . ', ' .
-                ($cliente['provincia_nombre'] ?? '') . ', ' .
-                ($cliente['distrito_nombre'] ?? '') . ', ' .
-                ($cliente['direccion_detallada'] ?? '')
+                ($cliente['departamento_nombre'] ?? '') . ', '
+                . ($cliente['provincia_nombre'] ?? '') . ', '
+                . ($cliente['distrito_nombre'] ?? '') . ', '
+                . ($cliente['direccion_detallada'] ?? '')
             );
 
             // Leer template HTML
@@ -1803,7 +1836,6 @@ class GenerarContratosController extends controller
                 'filename' => $filename,
                 'message' => 'Contrato generado exitosamente'
             ]);
-
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -1811,29 +1843,70 @@ class GenerarContratosController extends controller
             ]);
         }
     }
-    
-    private function generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona) {
+
+    private function generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona)
+    {
         // Cargar la plantilla HTML
         $templatePath = 'app/contratos/contrato_credigo_grupo4.html';
-        
+
         if (!file_exists($templatePath)) {
-            throw new Exception("No se encontró la plantilla del contrato para el grupo 38");
+            throw new Exception('No se encontró la plantilla del contrato para el grupo 38');
         }
-        
+
         $html = file_get_contents($templatePath);
-        
+
         // Preparar los datos para reemplazar
         $nombreCompleto = strtoupper($nombrePersona);
         $tipoDocumento = strtoupper($persona['tipo_doc'] ?? 'DNI');
         $numeroDocumento = $persona['nro_documento'] ?? $persona['n_documento'] ?? '';
         $fechaActual = date('d') . ' DE ' . strtoupper($this->obtenerNombreMes(date('m'))) . ' DE ' . date('Y');
-        
+
         // Reemplazar los placeholders en el HTML
         $html = str_replace('{{NOMBRE_COMPLETO}}', $nombreCompleto, $html);
         $html = str_replace('{{TIPO_DOCUMENTO}}', $tipoDocumento, $html);
         $html = str_replace('{{NUMERO_DOCUMENTO}}', $numeroDocumento, $html);
         $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
-        
+
+        return $html;
+    }
+
+    // NUEVO: Método específico para generar contrato CrediYango (grupo 45)
+    private function generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona)
+    {
+        // Cargar la plantilla HTML de CrediYango
+        $templatePath = 'app/contratos/crediYango.html';
+
+        if (!file_exists($templatePath)) {
+            throw new Exception('No se encontró la plantilla del contrato CrediYango');
+        }
+
+        $html = file_get_contents($templatePath);
+
+        // Preparar los datos para reemplazar
+        $nombreCompleto = strtoupper($nombrePersona);
+        $tipoDocumento = strtoupper($persona['tipo_doc'] ?? 'DNI');
+        $numeroDocumento = $persona['nro_documento'] ?? $persona['n_documento'] ?? '';
+        $fechaActual = date('d') . '/' . str_pad(date('m'), 2, '0', STR_PAD_LEFT) . '/' . date('Y');
+
+        // Obtener dirección según el tipo de persona
+        $direccion = '';
+        if ($tipoPersona === 'conductor') {
+            $datosDireccion = $this->obtenerDatosDireccionConductor($financiamiento['id_conductor']);
+            $direccion = $datosDireccion['direccion_detalle'] ?? 'Dirección no registrada';
+        } else {
+            $direccionClienteModel = new Cliente();
+            $datosDireccion = $direccionClienteModel->obtenerDatosDireccionCliente($financiamiento['id_cliente']);
+            $direccion = $datosDireccion['direccion_detalle'] ?? 'Dirección no registrada';
+        }
+
+        // Reemplazar todos los placeholders en el HTML
+        $html = str_replace('{{NOMBRE_COMPLETO}}', $nombreCompleto, $html);
+        $html = str_replace('{{NRO_DOCUMENTO}}', $numeroDocumento, $html);
+        $html = str_replace('{{NUMERO_DOCUMENTO}}', $numeroDocumento, $html);
+        $html = str_replace('{{TIPO_DOCUMENTO}}', $tipoDocumento, $html);
+        $html = str_replace('{{DIRECCION}}', $direccion, $html);
+        $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
+
         return $html;
     }
 }

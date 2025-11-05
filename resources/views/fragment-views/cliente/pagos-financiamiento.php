@@ -905,6 +905,34 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 // MODIFICADO: Solo mostrar input de mora si cobrar_mora es 1 y la cuota está vencida
                 if (!cuotaPagada && vencida && cobraMora === 1) {
                     let moraContainer = $('<div class="mora-container" style="display: none;"></div>'); 
+                    
+                    // NUEVO: Agregar radio buttons para elegir opción de mora
+                    let opcionesMora = $('<div class="opciones-mora mb-2"></div>');
+                    
+                    let radioPagarMora = $(`
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="mora_${cuota.idcuotas_financiamiento}" id="pagar_mora_${cuota.idcuotas_financiamiento}" value="pagar" checked>
+                            <label class="form-check-label" for="pagar_mora_${cuota.idcuotas_financiamiento}">
+                                <small>Pagar mora</small>
+                            </label>
+                        </div>
+                    `);
+                    
+                    let radioPendienteMora = $(`
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="mora_${cuota.idcuotas_financiamiento}" id="pendiente_mora_${cuota.idcuotas_financiamiento}" value="pendiente">
+                            <label class="form-check-label" for="pendiente_mora_${cuota.idcuotas_financiamiento}">
+                                <small><strong style="color: #ffc107;">Pendiente Mora</strong></small>
+                            </label>
+                        </div>
+                    `);
+                    
+                    opcionesMora.append(radioPagarMora);
+                    opcionesMora.append(radioPendienteMora);
+                    moraContainer.append(opcionesMora);
+                    
+                    // Input de mora (visible por defecto)
+                    let inputMoraContainer = $('<div class="input-mora-container"></div>');
                     let inputMora = $('<input type="number" class="form-control mora-input me-2">');
                     inputMora.css("width", "120px");
                     inputMora.attr("placeholder", "Mora");
@@ -921,8 +949,28 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                     inputMora.on("input", function() {
                         actualizarMoraCheckbox(checkbox, this.value);
                     });
+                    
+                    inputMoraContainer.append(inputMora);
+                    moraContainer.append(inputMoraContainer);
+                    
+                    // NUEVO: Eventos para manejar cambio de opción de mora
+                    radioPagarMora.find('input').on('change', function() {
+                        if (this.checked) {
+                            inputMoraContainer.show();
+                            data.moraPendiente = false;
+                            actualizarMoraCheckbox(checkbox, inputMora.val() || 0);
+                        }
+                    });
+                    
+                    radioPendienteMora.find('input').on('change', function() {
+                        if (this.checked) {
+                            inputMoraContainer.hide();
+                            data.moraPendiente = true;
+                            data.mora = parseFloat(inputMora.val()) || 0; // Guardar el monto pero no cobrarlo
+                            actualizarMoraCheckbox(checkbox, 0); // Para el cálculo del total, mora = 0
+                        }
+                    });
 
-                    moraContainer.append(inputMora);
                     cuotaDiv.append(moraContainer);  
                 }
             }
@@ -1311,20 +1359,41 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             } // 🗡️
         }
         
-        // MODIFICADO: Recorremos los checkboxes marcados para obtener el valor actual de la mora // ✅
-        const cuotasParaGuardar = []; // ✅
-        $("#lista_cuotas input[type='checkbox']:checked").each(function() { // ✅
-            const checkbox = $(this); // ✅
-            const data = JSON.parse(checkbox.attr("data-id")); // ✅
-            const moraInput = checkbox.closest('.d-flex').find('.mora-container input.mora-input'); // ✅
-            if (moraInput.length > 0 && moraInput.is(':visible')) { // ✅
-                data.mora = parseFloat(moraInput.val()) || 0; // ✅ Actualizamos la mora si el input es visible // ✅
+        // MODIFICADO: Recorremos los checkboxes marcados para obtener el valor actual de la mora y estado pendiente
+        const cuotasParaGuardar = [];
+        $("#lista_cuotas input[type='checkbox']:checked").each(function() {
+            const checkbox = $(this);
+            const data = JSON.parse(checkbox.attr("data-id"));
+            const moraContainer = checkbox.closest('.form-group').find('.mora-container');
+            
+            // Verificar si hay opciones de mora
+            if (moraContainer.length > 0) {
+                const radioPendiente = moraContainer.find('input[value="pendiente"]:checked');
+                const moraInput = moraContainer.find('input.mora-input');
+                
+                if (radioPendiente.length > 0) {
+                    // NUEVO: Mora marcada como pendiente
+                    data.moraPendiente = true;
+                    data.montoMoraOriginal = parseFloat(moraInput.val()) || 0; // Monto que se debe
+                    data.mora = 0; // No se paga ahora
+                    console.log("✅ Cuota con mora PENDIENTE:", data.idCuota, "Monto adeudado:", data.montoMoraOriginal);
+                } else {
+                    // Mora se paga normalmente
+                    data.moraPendiente = false;
+                    data.mora = parseFloat(moraInput.val()) || 0;
+                    console.log("✅ Cuota con mora PAGADA:", data.idCuota, "Monto:", data.mora);
+                }
+            } else {
+                // Sin mora
+                data.moraPendiente = false;
+                data.mora = 0;
             }
-            cuotasParaGuardar.push(data); // ✅
-        }); // ✅
+            
+            cuotasParaGuardar.push(data);
+        });
 
-        // MODIFICADO: Añadimos las cuotas seleccionadas (con la mora actualizada) como JSON // ✅
-        formData.append('cuotas', JSON.stringify(cuotasParaGuardar)); // ✅
+        // MODIFICADO: Añadimos las cuotas seleccionadas con información de mora pendiente
+        formData.append('cuotas', JSON.stringify(cuotasParaGuardar));
         
         // Mostramos un indicador de carga
         Swal.fire({
@@ -1369,11 +1438,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
                     localStorage.setItem('pdfBase64', response.pdf); // Guardar el PDF en localStorage
 
+                    // NUEVO: Verificar si hay moras pendientes para mostrar mensaje especial
+                    let morasPendientes = cuotasParaGuardar.filter(cuota => cuota.moraPendiente === true);
+                    let mensajeCompleto = response.message || 'El pago se ha registrado correctamente';
+                    
+                    if (morasPendientes.length > 0) {
+                        mensajeCompleto += `\n\n⚠️ IMPORTANTE: Se registraron ${morasPendientes.length} mora(s) como PENDIENTES.\nEstas deberán ser pagadas posteriormente.`;
+                    }
+
                     Swal.fire({
                         icon: 'success',
                         title: '¡Pago realizado!',
-                        text: response.message || 'El pago se ha registrado correctamente',
-                        confirmButtonText: 'Ver Comprobante'
+                        text: mensajeCompleto,
+                        confirmButtonText: 'Ver Comprobante',
+                        footer: morasPendientes.length > 0 ? '<small>Las moras pendientes aparecerán en futuros reportes</small>' : ''
                     }).then((result) => {
                         $('#modalComprobante').modal('show'); // Mostrar modal al hacer clic en "Ver Comprobante"
                     });

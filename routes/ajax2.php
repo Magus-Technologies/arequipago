@@ -95,3 +95,11 @@ Route::post("/ajs/add/users","ConsultasController@saveUser");
 
 
 Route::post('/ajs/aprobarPagoPendiente', 'PagosController@aprobarPagoPendiente');
+
+// RUTAS PARA MORAS PENDIENTES
+Route::get('/ajs/getMorasPendientes', 'FinanciamientoController@getMorasPendientes');
+Route::get('/ajs/getContadorMorasPendientes', 'FinanciamientoController@getContadorMorasPendientes');
+Route::post('/ajs/pagarMoraPendiente', 'FinanciamientoController@pagarMoraPendiente');
+
+// RUTA PARA ENTREGAR VEHÍCULO CREDIYANGO Y GENERAR CRONOGRAMA
+Route::post('/ajs/entregarVehiculoCrediYango', 'FinanciamientoController@entregarVehiculoCrediYango');

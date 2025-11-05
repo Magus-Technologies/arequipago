@@ -330,6 +330,18 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                             <i class="fas fa-receipt me-2"></i>Ver Boletas de Pago Inicial
                                                         </button>
                                                     </div>
+                                                    
+                                                    <!-- NUEVO: Botón para descargar cronograma -->
+                                                    <div id="btnDescargarCronograma" style="display: none; margin-top: 15px;">
+                                                        <button type="button" class="btn btn-info btn-sm w-100" onclick="descargarCronogramaDesdeModal()">
+                                                            <i class="fas fa-calendar-alt me-2"></i>Descargar Cronograma
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- NUEVO: Estado de entrega del vehículo -->
+                                                    <div id="estadoEntregaVehiculo" style="display: none; margin-top: 15px;">
+                                                        <!-- Se llenará dinámicamente -->
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -380,6 +392,42 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                     id="modalFinanciamientoGrupo"></span></p>
             <p><i class="fas fa-check-circle me-2"></i><strong>Estado:</strong><span
                     id="modalFinanciamientoEstado"></span></p>
+            
+            <!-- NUEVO: Sección específica para CrediYango -->
+            <div id="seccionCrediYango" style="display: none;">
+                <hr style="margin: 15px 0; border-color: #28a745;">
+                <div style="background-color: #e8f5e8; padding: 12px; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <h6 style="color: #155724; margin-bottom: 10px;">
+                        <i class="fas fa-truck me-2"></i><strong>Información de Entrega CrediYango</strong>
+                    </h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p style="margin-bottom: 8px;">
+                                <i class="fas fa-calendar-alt me-2" style="color: #28a745;"></i>
+                                <strong>Fecha de Entrega:</strong><br>
+                                <span id="modalFechaEntrega" class="text-success fw-bold">No programada</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p style="margin-bottom: 8px;">
+                                <i class="fas fa-calendar-check me-2" style="color: #17a2b8;"></i>
+                                <strong>Inicio de Pagos:</strong><br>
+                                <span id="modalFechaInicioPagos" class="text-info fw-bold">No calculado</span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <div id="estadoEntregaCrediYango">
+                                <!-- Se llenará dinámicamente según el estado -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <p><i class="fas fa-calendar-day me-2"></i><strong>Fecha Inicio:</strong><span
                     id="modalFechaInicio"></span></p>
             <p><i class="fas fa-calendar-check me-2"></i><strong>Fecha Fin:</strong><span
@@ -600,7 +648,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                                 class="fas fa-id-card"></i></span>
                                                         <input type="text" class="form-control" id="numeroDocumento"
                                                             placeholder="Número de documento" oninput="searchNumDoc()">
-                                                        <button type="button" class="btn btn-outline-secondary"
+                                                        <button type="button" class="btn btn-primary"
                                                             id="buscarClienteBtn" onclick="getDataCliente()">
                                                             <i class="fa fa-search"></i>
                                                         </button>
@@ -838,6 +886,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 </div>
 
 
+
+
                                             </div>
 
                                             <div class="row mb-4">
@@ -867,6 +917,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     </div>
                                                 </div>
                                             </div>
+
+
 
                                             <div class="row mb-4">
                                                 <div class="col-md-4 mb-3">
@@ -1015,6 +1067,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                                 class="fas fa-check-circle"></i></span>
                                                         <select class="form-select" id="estado" required disabled>
                                                             <option value="En progreso">En progreso</option>
+                                                            <option value="Vendido - Pendiente de Entrega">Vendido - Pendiente de Entrega</option>
                                                             <option value="Finalizado">Finalizado</option>
                                                         </select>
                                                     </div>
@@ -1030,6 +1083,39 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                             id="fechaHoraActual" value="" required>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            <!-- NUEVO: Campos para CrediYango - MISMO ANCHO QUE LOS OTROS CAMPOS -->
+                                            <div class="row mb-4" id="fechaEntregaRowContainer" style="display: none;">
+                                                <div class="col-md-4 mb-3" id="fechaEntregaContainer" style="float: left; width: 33.33%; display: inline-block; padding-right: 15px;">
+                                                    <label for="fechaEntrega" class="form-label">Fecha de Entrega del Vehículo</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                                        <input type="date" class="form-control" id="fechaEntrega" onchange="recalcularFechaInicioPagosYango()">
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Los pagos iniciarán automáticamente 7 días después
+                                                    </small>
+                                                </div>
+
+                                                <div class="col-md-4 mb-3" id="fechaInicioPagosCalculadaContainer" style="float: left; width: 33.33%; display: inline-block; padding-left: 15px; padding-right: 15px;">
+                                                    <label for="fechaInicioPagosCalculada" class="form-label">Fecha de Inicio de Pagos (Calculada)</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="fas fa-calculator"></i></span>
+                                                        <input type="date" class="form-control" id="fechaInicioPagosCalculada" readonly style="background-color: #f8f9fa;">
+                                                    </div>
+                                                    <small class="text-success">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        Se calcula automáticamente: Fecha entrega + 7 días
+                                                    </small>
+                                                </div>
+
+                                                <div class="col-md-4 mb-3" style="float: left; width: 33.33%; display: inline-block; padding-left: 15px;">
+                                                    <!-- Espacio vacío para mantener la proporción de 3 columnas -->
+                                                    <div style="height: 1px;"></div>
+                                                </div>
+                                                <div style="clear: both;"></div>
                                             </div>
                                         </div>
                                     </div>

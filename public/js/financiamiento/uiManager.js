@@ -81,41 +81,107 @@ function seleccionarFila(fila, financiamiento) {
 }
 
 function llenarTablaCuotas(financiamiento) {
-  var tablaCuotas = document.querySelector("#tablaCuotas tbody"); //
+  var tablaCuotas = document.querySelector("#tablaCuotas tbody");
   tablaCuotas.innerHTML = ""; // Limpiar la tabla antes de llenarla
 
-  financiamiento.cuotas.forEach((cuota) => {
-    var fila = document.createElement("tr");
+  // Verificar si hay cuotas disponibles
+  if (!financiamiento.cuotas || financiamiento.cuotas.length === 0) {
+    // Para CrediYango sin entregar, mostrar mensaje explicativo
+    const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == '45' || 
+                        financiamiento.financiamiento.grupo_financiamiento == 45;
+    const productoId = financiamiento.producto ? financiamiento.producto.idproductosv2 : null;
+    
+    if (esCrediYango && productoId == 37) {
+      // CrediYango no entregado
+      var filaVacia = document.createElement("tr");
+      filaVacia.innerHTML = `
+        <td colspan="3" class="text-center py-4">
+          <div class="alert alert-info mb-0" style="border: none; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+            <i class="fas fa-info-circle fa-2x mb-2" style="color: #1976d2;"></i>
+            <h6 class="fw-bold mb-2" style="color: #0d47a1;">Cronograma Pendiente</h6>
+            <p class="mb-0" style="color: #1565c0;">
+              El cronograma de pagos se generará automáticamente cuando marque el vehículo como <strong>entregado</strong>.
+            </p>
+          </div>
+        </td>
+      `;
+    } else {
+      // Otros casos sin cuotas
+      var filaVacia = document.createElement("tr");
+      filaVacia.innerHTML = `
+        <td colspan="3" class="text-center py-3 text-muted">
+          <i class="fas fa-exclamation-circle me-2"></i>No hay cuotas disponibles
+        </td>
+      `;
+    }
+    tablaCuotas.appendChild(filaVacia);
+  } else {
+    // Hay cuotas, mostrarlas normalmente
+    financiamiento.cuotas.forEach((cuota) => {
+      var fila = document.createElement("tr");
+      var moneda = financiamiento.moneda ? financiamiento.moneda : "S/.";
 
-    var moneda = financiamiento.moneda ? financiamiento.moneda : "S/.";
+      // ✅ CORREGIDO: Parsear y formatear el monto correctamente
+      var monto = parseFloat(cuota.monto || cuota.monto_cuota_base || 0);
+      var montoFormateado = monto.toFixed(2);
 
-    fila.innerHTML = `
-                <td>${cuota.fecha_vencimiento}</td>
-                <td>${moneda} ${cuota.monto}</td>
-                <td>${cuota.estado}</td>
-            `;
-    tablaCuotas.appendChild(fila);
-  });
+      // Encabezado de tabla: Fecha de Vencimiento | Monto | Estado
+      fila.innerHTML = `
+        <td>${cuota.fecha_vencimiento || ''}</td>
+        <td>${moneda} ${montoFormateado}</td>
+        <td>${cuota.estado || 'pendiente'}</td>
+      `;
+      tablaCuotas.appendChild(fila);
+    });
+  }
 
   document.getElementById("tablaCuotas").style.display = "table";
 }
 
 let idFinanciamientoSeleccionado = null;
+let idConductorClienteActual = null; // NUEVO: Guardar ID del conductor/cliente actual
+let financiamientoSeleccionadoCompleto = null; // NUEVO: Guardar todos los datos del financiamiento
 
 function seleccionarFinanciamiento(row) {
   try {
     let financiamiento = JSON.parse(row.getAttribute("data-financiamiento"));
     idFinanciamientoSeleccionado =
       financiamiento.financiamiento.idfinanciamiento;
+
+    // NUEVO: Guardar el financiamiento completo para usar en descarga de cronograma
+    financiamientoSeleccionadoCompleto = financiamiento;
+
+    // NUEVO: Guardar el ID del conductor o cliente para poder recargar después
+    if (financiamiento.conductor && financiamiento.conductor.idconductor) {
+      idConductorClienteActual = financiamiento.conductor.idconductor;
+    } else if (financiamiento.financiamiento.id_conductor) {
+      idConductorClienteActual = financiamiento.financiamiento.id_conductor;
+    } else if (financiamiento.financiamiento.id_cliente) {
+      idConductorClienteActual = financiamiento.financiamiento.id_cliente;
+    }
+
     let simboloMoneda = financiamiento.financiamiento.moneda;
 
-    // NUEVO: Verificar si el producto es ID 37 para mostrar botón "Entregar vehículo"
+    // CORREGIDO: Verificar si debe mostrar botón "Entregar vehículo"
+    // Para CrediYango, el estado de entrega se determina por el ID del producto:
+    // - ID 37 = vehículo no entregado (mostrar botón)
+    // - Otro ID = vehículo ya entregado (no mostrar botón)
     const btnEntregarVehiculo = document.getElementById("btnEntregarVehiculo");
     if (btnEntregarVehiculo) {
-      if (
-        financiamiento.producto &&
-        financiamiento.producto.idproductosv2 == 37
-      ) {
+      const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == '45' || financiamiento.financiamiento.grupo_financiamiento == 45;
+      const esProductoVehiculo = financiamiento.producto && financiamiento.producto.idproductosv2 == 37;
+      
+      // Para CrediYango: mostrar botón solo si el producto es ID 37 (no entregado)
+      // Para otros vehículos: mostrar botón si es producto ID 37
+      if (esCrediYango) {
+        // CrediYango: mostrar botón solo si producto es ID 37 (no entregado)
+        if (esProductoVehiculo) {
+          btnEntregarVehiculo.style.display = "inline-block";
+        } else {
+          btnEntregarVehiculo.style.display = "none";
+        }
+      } else if (esProductoVehiculo) {
+        // Otros vehículos: mostrar botón si es producto ID 37
         btnEntregarVehiculo.style.display = "inline-block";
       } else {
         btnEntregarVehiculo.style.display = "none";
@@ -168,6 +234,57 @@ function seleccionarFinanciamiento(row) {
         btnBoletasIniciales.style.display = "block";
       } else {
         btnBoletasIniciales.style.display = "none";
+      }
+    }
+
+    // NUEVO: Mostrar botón de cronograma si hay cuotas disponibles
+    const btnDescargarCronograma = document.getElementById("btnDescargarCronograma");
+    if (btnDescargarCronograma) {
+      const tieneCuotas = financiamiento.financiamiento.cuotas && 
+                         financiamiento.financiamiento.cuotas.length > 0;
+      
+      if (tieneCuotas) {
+        btnDescargarCronograma.style.display = "block";
+      } else {
+        btnDescargarCronograma.style.display = "none";
+      }
+    }
+
+    // NUEVO: Mostrar estado de entrega del vehículo para CrediYango
+    const estadoEntregaVehiculo = document.getElementById("estadoEntregaVehiculo");
+    if (estadoEntregaVehiculo) {
+      const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == '45' || 
+                          financiamiento.financiamiento.grupo_financiamiento == 45;
+      
+      if (esCrediYango) {
+        const productoId = financiamiento.producto ? financiamiento.producto.idproductosv2 : null;
+        const fechaEntrega = financiamiento.financiamiento.fecha_entrega;
+        let estadoHTML = '';
+        
+        if (productoId == 37) {
+          // Vehículo no entregado
+          estadoHTML = `
+            <div class="alert alert-warning py-2 px-3 mb-0" style="border-left: 4px solid #ffc107;">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Vehículo Pendiente de Entrega</strong>
+              ${fechaEntrega ? `<br><small>Fecha programada: ${new Date(fechaEntrega + 'T00:00:00').toLocaleDateString('es-PE')}</small>` : ''}
+            </div>
+          `;
+        } else {
+          // Vehículo ya entregado
+          estadoHTML = `
+            <div class="alert alert-success py-2 px-3 mb-0" style="border-left: 4px solid #28a745;">
+              <i class="fas fa-check-circle me-2"></i>
+              <strong>Vehículo Entregado</strong>
+              ${fechaEntrega ? `<br><small>Fecha de entrega: ${new Date(fechaEntrega + 'T00:00:00').toLocaleDateString('es-PE')}</small>` : ''}
+            </div>
+          `;
+        }
+        
+        estadoEntregaVehiculo.innerHTML = estadoHTML;
+        estadoEntregaVehiculo.style.display = "block";
+      } else {
+        estadoEntregaVehiculo.style.display = "none";
       }
     }
 
@@ -247,6 +364,9 @@ function seleccionarFinanciamiento(row) {
       elementos.estado.innerText =
         financiamiento.financiamiento.estado || "N/A";
     }
+
+    // NUEVO: Mostrar sección CrediYango si aplica
+    mostrarSeccionCrediYangoModal(financiamiento);
 
     // NUEVO: Llenar campos según tipo de plan
     if (financiamiento.financiamiento.es_vehiculo) {
@@ -336,10 +456,12 @@ function seleccionarFinanciamiento(row) {
     let cuotasTable = document.getElementById("modalCuotasTable");
     if (cuotasTable) {
       cuotasTable.innerHTML = ""; // Limpiar contenido anterior
+      
       if (
         financiamiento.financiamiento.cuotas &&
         financiamiento.financiamiento.cuotas.length > 0
       ) {
+        // Hay cuotas, mostrarlas normalmente
         let tableHeader = `
                     <thead>
                         <tr>
@@ -364,8 +486,47 @@ function seleccionarFinanciamiento(row) {
           .join("");
         cuotasTable.innerHTML = tableHeader + tableBody + `</tbody>`;
       } else {
-        cuotasTable.innerHTML =
-          "<tr><td colspan='4'>No hay cuotas disponibles</td></tr>";
+        // No hay cuotas, verificar si es CrediYango
+        const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == '45' || 
+                            financiamiento.financiamiento.grupo_financiamiento == 45;
+        const productoId = financiamiento.producto ? financiamiento.producto.idproductosv2 : null;
+        
+        let tableHeader = `
+                    <thead>
+                        <tr>
+                            <th>N° Cuota</th>
+                            <th>Monto</th>
+                            <th>Fecha Vencimiento</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+        if (esCrediYango && productoId == 37) {
+          // CrediYango no entregado - mensaje explicativo
+          cuotasTable.innerHTML = tableHeader + `
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <div class="alert alert-info mb-0" style="border: none; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                  <i class="fas fa-info-circle fa-2x mb-2" style="color: #1976d2;"></i>
+                  <h6 class="fw-bold mb-2" style="color: #0d47a1;">Cronograma Pendiente</h6>
+                  <p class="mb-0" style="color: #1565c0;">
+                    El cronograma de <strong>200 cuotas semanales</strong> se generará automáticamente cuando marque el vehículo como entregado.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>`;
+        } else {
+          // Otros casos sin cuotas
+          cuotasTable.innerHTML = tableHeader + `
+            <tr>
+              <td colspan="4" class="text-center py-3 text-muted">
+                <i class="fas fa-exclamation-circle me-2"></i>No hay cuotas disponibles
+              </td>
+            </tr>
+          </tbody>`;
+        }
       }
     } else {
       console.error("❌ Elemento 'modalCuotasTable' no encontrado");
@@ -499,7 +660,15 @@ function asignarEventListenersFinanciamiento() {
     .addEventListener("input", calcularFinanciamiento);
   document
     .getElementById("fechaInicio")
-    .addEventListener("change", calcularFinanciamiento);
+    .addEventListener("change", function() {
+      // ✅ FIX: No ejecutar calcularFinanciamiento para planes corporativos
+      // porque ya tienen su propia lógica en calcularFinanciamientoConFechaIngreso
+      if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
+        console.log("🚫 SALTANDO calcularFinanciamiento() para plan corporativo ID 36");
+        return;
+      }
+      calcularFinanciamiento();
+    });
   document
     .getElementById("cuotas")
     .addEventListener("input", calcularFinanciamiento);
@@ -519,7 +688,15 @@ function mostrarModalEntregarVehiculo() {
     idFinanciamientoSeleccionado
   );
 
-  // Crear modal tecnológico con div
+  // Verificar si es CrediYango para mostrar modal específico
+  const esCrediYango = verificarSiEsCrediYango();
+
+  if (esCrediYango) {
+    mostrarModalEntregarCrediYango();
+    return;
+  }
+
+  // Modal para vehículos regulares (producto ID 37)
   const modalHTML = `
         <div id="modalEntregarVehiculo" class="modal-entregar-vehiculo">
             <div class="modal-content-vehiculo">
@@ -1340,4 +1517,581 @@ function enviarBoletaPorWhatsApp(idPago, concepto) {
       });
     },
   });
+}
+
+// NUEVA FUNCIÓN: Mostrar sección CrediYango en el modal
+function mostrarSeccionCrediYangoModal(financiamiento) {
+    const seccionCrediYango = document.getElementById('seccionCrediYango');
+    const modalFechaEntrega = document.getElementById('modalFechaEntrega');
+    const modalFechaInicioPagos = document.getElementById('modalFechaInicioPagos');
+    const estadoEntregaCrediYango = document.getElementById('estadoEntregaCrediYango');
+    
+    if (!seccionCrediYango) return;
+    
+    // Verificar si es CrediYango (grupo 45 o tiene fechas de entrega)
+    const esCrediYango = financiamiento.financiamiento.grupo_financiamiento === '45' || 
+                        financiamiento.financiamiento.grupo_financiamiento === 45 ||
+                        financiamiento.financiamiento.fecha_entrega;
+    
+    if (esCrediYango) {
+        // Mostrar la sección
+        seccionCrediYango.style.display = 'block';
+        
+        // Llenar fecha de entrega
+        if (modalFechaEntrega) {
+            const fechaEntrega = financiamiento.financiamiento.fecha_entrega;
+            if (fechaEntrega) {
+                const fechaFormateada = new Date(fechaEntrega + 'T00:00:00').toLocaleDateString('es-PE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                modalFechaEntrega.innerHTML = `<i class="fas fa-calendar-alt me-1"></i>${fechaFormateada}`;
+                modalFechaEntrega.className = 'text-success fw-bold';
+            } else {
+                modalFechaEntrega.innerHTML = '<i class="fas fa-clock me-1"></i>Pendiente de programar';
+                modalFechaEntrega.className = 'text-warning fw-bold';
+            }
+        }
+        
+        // Llenar fecha de inicio de pagos
+        if (modalFechaInicioPagos) {
+            const fechaInicioPagos = financiamiento.financiamiento.fecha_inicio_pagos_calculada;
+            if (fechaInicioPagos) {
+                const fechaFormateada = new Date(fechaInicioPagos + 'T00:00:00').toLocaleDateString('es-PE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                modalFechaInicioPagos.innerHTML = `<i class="fas fa-calendar-check me-1"></i>${fechaFormateada}`;
+                modalFechaInicioPagos.className = 'text-info fw-bold';
+            } else {
+                modalFechaInicioPagos.innerHTML = '<i class="fas fa-question-circle me-1"></i>No calculado';
+                modalFechaInicioPagos.className = 'text-muted fw-bold';
+            }
+        }
+        
+        // CORREGIDO: Mostrar estado de entrega según el ID del producto
+        if (estadoEntregaCrediYango) {
+            const productoId = financiamiento.producto ? financiamiento.producto.idproductosv2 : null;
+            const fechaEntrega = financiamiento.financiamiento.fecha_entrega;
+            let estadoHTML = '';
+            
+            // Para CrediYango, el estado de entrega se determina por el ID del producto:
+            // - ID 37 = vehículo no entregado
+            // - Otro ID = vehículo ya entregado
+            if (productoId == 37) {
+                // Vehículo no entregado
+                if (fechaEntrega) {
+                    // Tiene fecha programada
+                    const fechaEntregaObj = new Date(fechaEntrega + 'T00:00:00');
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    
+                    if (fechaEntregaObj <= hoy) {
+                        // La fecha ya pasó pero aún no se ha marcado como entregado
+                        estadoHTML = `
+                            <div class="alert alert-warning py-2 px-3 mb-0" style="border-left: 4px solid #ffc107;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Entrega Pendiente - Fecha Vencida</strong>
+                                <br><small>La fecha de entrega programada ya pasó. Marque el vehículo como entregado.</small>
+                            </div>
+                        `;
+                    } else {
+                        // Fecha futura
+                        estadoHTML = `
+                            <div class="alert alert-info py-2 px-3 mb-0" style="border-left: 4px solid #17a2b8;">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Vehículo Vendido - Entrega Programada</strong>
+                                <br><small>El vehículo está vendido y la entrega está programada.</small>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Sin fecha programada
+                    estadoHTML = `
+                        <div class="alert alert-warning py-2 px-3 mb-0" style="border-left: 4px solid #ffc107;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Vehículo Vendido - Pendiente de Entrega</strong>
+                            <br><small>El vehículo ha sido vendido pero aún no se ha entregado al cliente.</small>
+                        </div>
+                    `;
+                }
+            } else {
+                // Vehículo ya entregado (producto ID diferente a 37)
+                estadoHTML = `
+                    <div class="alert alert-success py-2 px-3 mb-0" style="border-left: 4px solid #28a745;">
+                        <i class="fas fa-truck me-2"></i>
+                        <strong>Vehículo Entregado - Pagos en Curso</strong>
+                        <br><small>El vehículo ha sido entregado y el cronograma de pagos está activo.</small>
+                    </div>
+                `;
+            }
+            
+            estadoEntregaCrediYango.innerHTML = estadoHTML;
+        }
+        
+        console.log('🚗 CrediYango - Sección mostrada en modal con datos:', {
+            fechaEntrega: financiamiento.financiamiento.fecha_entrega,
+            fechaInicioPagos: financiamiento.financiamiento.fecha_inicio_pagos_calculada,
+            estado: financiamiento.financiamiento.estado
+        });
+        
+    } else {
+        // Ocultar la sección para otros tipos de financiamiento
+        seccionCrediYango.style.display = 'none';
+    }
+}
+
+// ========================================
+// NUEVAS FUNCIONES PARA ENTREGA DE CREDIYANGO
+// ========================================
+
+/**
+ * Verifica si el financiamiento seleccionado es CrediYango (grupo 45)
+ */
+function verificarSiEsCrediYango() {
+    // Buscar en TODAS las tablas posibles (tablaFinanciamientos y detalleSelect)
+    const tablas = ['#tablaFinanciamientos tbody tr', '#detalleSelect tbody tr'];
+
+    for (let selector of tablas) {
+        const rows = document.querySelectorAll(selector);
+        for (let row of rows) {
+            try {
+                const financiamiento = JSON.parse(row.getAttribute('data-financiamiento'));
+                if (financiamiento.financiamiento.idfinanciamiento == idFinanciamientoSeleccionado) {
+                    const grupo = financiamiento.financiamiento.grupo_financiamiento;
+                    const esCrediYango = grupo == '45' || grupo == 45;
+                    console.log('✅ Financiamiento encontrado:', {
+                        id: idFinanciamientoSeleccionado,
+                        grupo: grupo,
+                        esCrediYango: esCrediYango,
+                        tabla: selector
+                    });
+                    return esCrediYango;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+    }
+
+    console.warn('⚠️ No se encontró el financiamiento en ninguna tabla:', idFinanciamientoSeleccionado);
+    return false;
+}
+
+/**
+ * Muestra modal específico para entregar vehículo CrediYango
+ * Solo pide fecha de entrega
+ */
+function mostrarModalEntregarCrediYango() {
+    console.log('🚗 Mostrando modal de entrega para CrediYango');
+
+    const modalHTML = `
+        <div id="modalEntregarCrediYango" class="modal-entregar-vehiculo">
+            <div class="modal-content-vehiculo">
+                <div class="modal-header-vehiculo" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h5><i class="fas fa-truck me-2"></i>Entregar Vehículo - CrediYango</h5>
+                    <button type="button" class="btn-close-vehiculo" onclick="cerrarModalEntregarCrediYango()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body-vehiculo">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Al registrar la fecha de entrega se generará automáticamente el cronograma de 200 cuotas semanales.
+                        La fecha de inicio de pagos será 7 días después de la entrega.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fechaEntregaCrediYango" class="form-label">
+                            <i class="fas fa-calendar-alt me-2"></i>Fecha de Entrega del Vehículo
+                        </label>
+                        <input type="date"
+                               id="fechaEntregaCrediYango"
+                               class="form-control"
+                               required
+                               value="${new Date().toISOString().split('T')[0]}"
+                               max="${new Date().toISOString().split('T')[0]}">
+                        <small class="text-muted">Seleccione la fecha en que se entregó el vehículo al cliente</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-car me-2"></i>Seleccionar Vehículo a Entregar
+                        </label>
+                        <input type="text" id="buscarVehiculoCrediYango" class="form-control mb-2"
+                            placeholder="Buscar por código o nombre" onkeyup="buscarVehiculosCrediYango()">
+
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm" id="tablaVehiculosCrediYango">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th style="width: 5%;">Elegir</th>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th>Stock</th>
+                                        <th>Precio</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyVehiculosCrediYango">
+                                    <!-- Se llenarán los productos -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="previewFechaInicio" style="display: none;" class="alert alert-success">
+                        <strong>Fecha de inicio de pagos:</strong> <span id="fechaInicioCalculadaPreview"></span>
+                    </div>
+                </div>
+                <div class="modal-footer-vehiculo">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEntregarCrediYango()">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmarEntregaCrediYango()">
+                        <i class="fas fa-check me-2"></i>Confirmar Entrega y Generar Cronograma
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Agregar modal al body
+    document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+    // Mostrar modal con animación
+    const modal = document.getElementById("modalEntregarCrediYango");
+    modal.style.display = "flex";
+    modal.offsetHeight;
+    modal.classList.add("show");
+
+    // Cargar productos vehiculares
+    cargarProductosVehiculosCrediYango();
+
+    // Agregar evento para calcular fecha de inicio cuando cambie la fecha de entrega
+    document.getElementById('fechaEntregaCrediYango').addEventListener('change', function() {
+        calcularFechaInicioPagosPreview();
+    });
+    
+    // Calcular fecha inicial
+    calcularFechaInicioPagosPreview();
+}
+
+function cargarProductosVehiculosCrediYango() {
+    $.ajax({
+        url: "/arequipago/obtenerProductosVehiculos",
+        type: "GET",
+        dataType: "json",
+        success: function (data) {
+            mostrarProductosVehiculosCrediYango(data.productos || []);
+        },
+        error: function () {
+            console.error("Error al cargar productos vehiculares CrediYango");
+            Swal.fire('Error', 'Error al cargar los productos vehiculares', 'error');
+        },
+    });
+}
+
+function mostrarProductosVehiculosCrediYango(productos) {
+    const tbody = $("#tbodyVehiculosCrediYango");
+    tbody.empty();
+
+    productos.forEach((producto) => {
+        const cantidad = parseInt(producto.cantidad) || 0;
+        const sinStock = cantidad === 0;
+
+        tbody.append(`
+            <tr class="vehiculo-row-crediyango ${sinStock ? "sin-stock" : ""}" data-id-producto="${producto.idproductosv2}">
+                <td>
+                    ${sinStock
+                        ? '<span class="text-danger"><i class="fas fa-times"></i></span>'
+                        : `<input type="radio" name="vehiculoCrediYango" class="vehiculo-checkbox-crediyango" value="${producto.idproductosv2}">`
+                    }
+                </td>
+                <td>${producto.codigo || "N/A"}</td>
+                <td>${producto.nombre || "N/A"}</td>
+                <td class="${sinStock ? "text-danger fw-bold" : "text-success"}">${cantidad}</td>
+                <td>US$ ${parseFloat(producto.precio_venta || 0).toFixed(2)}</td>
+            </tr>
+        `);
+    });
+
+    // Event listener para selección
+    $(".vehiculo-checkbox-crediyango").on("change", function () {
+        $(".vehiculo-row-crediyango").removeClass("vehiculo-seleccionado");
+        $(this).closest("tr").addClass("vehiculo-seleccionado");
+    });
+
+    // Event listener para mostrar alerta al hacer clic en productos sin stock
+    $(".sin-stock").on("click", function () {
+        Swal.fire('Sin Stock', 'Este vehículo no tiene stock disponible', 'warning');
+    });
+}
+
+function buscarVehiculosCrediYango() {
+    const searchTerm = $("#buscarVehiculoCrediYango").val();
+
+    $.ajax({
+        url: "/arequipago/buscarProductosVehiculos",
+        type: "GET",
+        data: { searchTerm: searchTerm },
+        dataType: "json",
+        success: function (data) {
+            mostrarProductosVehiculosCrediYango(data.productos || []);
+        },
+        error: function () {
+            console.error("Error al buscar productos vehiculares CrediYango");
+        },
+    });
+}
+
+/**
+ * Calcula y muestra preview de la fecha de inicio de pagos
+ */
+function calcularFechaInicioPagosPreview() {
+    const fechaEntregaInput = document.getElementById('fechaEntregaCrediYango');
+    const fechaEntrega = fechaEntregaInput.value;
+
+    if (fechaEntrega) {
+        const fecha = new Date(fechaEntrega + 'T00:00:00');
+        fecha.setDate(fecha.getDate() + 7); // Agregar 7 días
+
+        const fechaFormateada = fecha.toLocaleDateString('es-PE', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        document.getElementById('fechaInicioCalculadaPreview').textContent = fechaFormateada;
+        document.getElementById('previewFechaInicio').style.display = 'block';
+    }
+}
+
+/**
+ * Cierra el modal de entrega de CrediYango
+ */
+function cerrarModalEntregarCrediYango() {
+    const modal = document.getElementById("modalEntregarCrediYango");
+    if (modal) {
+        modal.classList.remove("show");
+        setTimeout(() => {
+            modal.remove();
+        }, 200);
+    }
+}
+
+/**
+ * Confirma la entrega del vehículo CrediYango y genera el cronograma
+ */
+function confirmarEntregaCrediYango() {
+    const fechaEntrega = document.getElementById('fechaEntregaCrediYango').value;
+    const productoSeleccionado = $('input[name="vehiculoCrediYango"]:checked').val();
+
+    if (!fechaEntrega) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe seleccionar la fecha de entrega del vehículo'
+        });
+        return;
+    }
+
+    if (!productoSeleccionado) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe seleccionar un vehículo para entregar'
+        });
+        return;
+    }
+
+    // Obtener nombre del producto seleccionado
+    const filaSeleccionada = $(`input[value="${productoSeleccionado}"]`).closest('tr');
+    const nombreProducto = filaSeleccionada.find('td:nth-child(3)').text();
+
+    // Confirmar acción
+    Swal.fire({
+        title: '¿Confirmar entrega CrediYango?',
+        html: `
+            <div class="text-start">
+                <p><strong>Vehículo:</strong> ${nombreProducto}</p>
+                <p><strong>Fecha de entrega:</strong> ${fechaEntrega}</p>
+                <p><strong>Cronograma:</strong> Se generarán 200 cuotas semanales automáticamente</p>
+                <p><strong>Inicio de pagos:</strong> 7 días después de la entrega</p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, confirmar entrega',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            procesarEntregaCrediYango(fechaEntrega, productoSeleccionado);
+        }
+    });
+}
+
+/**
+ * Procesa la entrega del vehículo CrediYango en el backend
+ */
+// NUEVA FUNCIÓN: Descargar cronograma desde el modal
+function descargarCronogramaDesdeModal() {
+    if (!idFinanciamientoSeleccionado || !financiamientoSeleccionadoCompleto) {
+        Swal.fire('Error', 'No hay financiamiento seleccionado', 'error');
+        return;
+    }
+
+    const fin = financiamientoSeleccionadoCompleto.financiamiento;
+    const conductor = financiamientoSeleccionadoCompleto.conductor || {};
+    const cuotas = fin.cuotas || [];
+
+    if (cuotas.length === 0) {
+        Swal.fire('Error', 'No hay cuotas disponibles para generar el cronograma', 'error');
+        return;
+    }
+
+    // Preparar los datos del cronograma
+    const cronogramaDatos = cuotas.map((cuota, index) => ({
+        numero: index + 1,
+        fecha: cuota.fecha_vencimiento,
+        monto: parseFloat(cuota.monto || cuota.monto_cuota_base || 0),
+        estado: cuota.estado || 'Pendiente'
+    }));
+
+    // Preparar todos los datos que el backend necesita
+    const datosParaEnviar = {
+        nombreCliente: conductor.nombre_completo || conductor.nombre || 'Cliente',
+        numeroDocumento: conductor.nro_documento || conductor.n_documento || fin.numero_documento || '',
+        fechaInicio: fin.fecha_inicio || fin.fecha_inicio_pagos_calculada || '',
+        monto: parseFloat(fin.monto_total || 0),
+        tasaInteres: parseFloat(fin.tasa || fin.tasa_interes || 0),
+        frecuenciaPago: fin.frecuencia || fin.frecuencia_pago || 'Semanal',
+        tipoMoneda: fin.moneda || 'S/.',
+        cronograma: cronogramaDatos
+    };
+
+    console.log('📊 Datos para generar cronograma:', datosParaEnviar);
+
+    Swal.fire({
+        title: 'Generando Cronograma...',
+        html: 'Preparando el cronograma de pagos...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    $.ajax({
+        url: '/arequipago/generarCronogramaPDF',
+        method: 'POST',
+        data: JSON.stringify(datosParaEnviar),
+        contentType: 'application/json',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cronograma Generado',
+                    text: 'Descargando archivo...',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+
+                // Crear enlace temporal para descargar
+                const link = document.createElement('a');
+                link.href = 'data:application/pdf;base64,' + response.pdf;
+                link.download = response.nombre || 'cronograma.pdf';
+                link.click();
+            } else {
+                Swal.fire('Error', response.message || 'No se pudo generar el cronograma', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al generar cronograma:', error);
+            console.error('Response:', xhr.responseText);
+            Swal.fire('Error', 'Error al generar el cronograma. Intente nuevamente.', 'error');
+        }
+    });
+}
+
+function procesarEntregaCrediYango(fechaEntrega, idProducto) {
+    Swal.fire({
+        title: 'Procesando CrediYango...',
+        html: 'Registrando entrega y generando cronograma de 200 cuotas...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    $.ajax({
+        url: '/arequipago/ajs/entregarVehiculoCrediYango',
+        type: 'POST',
+        data: {
+            id_financiamiento: idFinanciamientoSeleccionado,
+            fecha_entrega: fechaEntrega,
+            id_producto: idProducto
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Vehículo Entregado',
+                    html: `
+                        <p>${response.message}</p>
+                        <p><strong>Fecha de entrega:</strong> ${response.fecha_entrega_formateada}</p>
+                        <p><strong>Fecha de inicio de pagos:</strong> ${response.fecha_inicio_pagos_formateada}</p>
+                        <p><strong>Cronograma:</strong> ${response.total_pagos} cuotas generadas</p>
+                    `,
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    cerrarModalEntregarCrediYango();
+
+                    // Cerrar modal de detalles
+                    const modalDetalles = bootstrap.Modal.getInstance(document.getElementById('staticBackdrop2'));
+                    if (modalDetalles) {
+                        modalDetalles.hide();
+                    }
+
+                    // ✅ Recargar automáticamente sin necesidad de refrescar la página
+                    console.log('🔄 Recargando vista automáticamente...');
+
+                    // Opción 1: Si existe cargarFinanciamientos (vista de lista general)
+                    if (typeof cargarFinanciamientos === 'function') {
+                        console.log('📋 Recargando lista general de financiamientos');
+                        cargarFinanciamientos();
+                    }
+
+                    // Opción 2: Si estamos viendo el detalle de un conductor/cliente específico
+                    if (idConductorClienteActual && typeof mostrarDetallesCliente === 'function') {
+                        console.log('👤 Recargando detalles del cliente:', idConductorClienteActual);
+                        setTimeout(() => {
+                            mostrarDetallesCliente(idConductorClienteActual);
+                        }, 300); // Pequeño delay para que se cierre el modal primero
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Error al procesar la entrega'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al entregar vehículo CrediYango:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al procesar la entrega. Por favor, intente nuevamente.'
+            });
+        }
+    });
 }
