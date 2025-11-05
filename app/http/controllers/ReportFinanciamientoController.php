@@ -692,7 +692,8 @@ class ReportFinanciamientoController extends Controller
           
             // Asignar valores por defecto a método de pago y concepto // MODIFICADO: Asignar valores por defecto
             $metodoPago = !empty($pago['metodo_pago']) ? $pago['metodo_pago'] : ""; // MODIFICADO: Asignar valor por defecto
-            $concepto = !empty($pago['concepto']) ? $pago['concepto'] : "";
+            // CORREGIDO: Usar el parámetro $tipoPago en lugar del valor de la base de datos
+            $concepto = !empty($tipoPago) ? $tipoPago : (!empty($pago['concepto']) ? $pago['concepto'] : "");
 
 
             $html = '

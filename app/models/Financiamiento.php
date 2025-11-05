@@ -72,7 +72,20 @@ class Financiamiento
             ? $datos['nombre_personalizado']
             : null;
 
-        // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id y aprobado
+        // NUEVO: Campos para CrediYango - fecha de entrega y fecha de inicio de pagos calculada
+        $fechaEntrega = isset($datos['fecha_entrega']) && $datos['fecha_entrega'] !== ''
+            ? $datos['fecha_entrega']
+            : null;
+        
+        $fechaInicioPagosCalculada = null;
+        if ($fechaEntrega) {
+            // Calcular fecha de inicio de pagos: fecha_entrega + 7 días
+            $fechaEntregaObj = new DateTime($fechaEntrega);
+            $fechaEntregaObj->add(new DateInterval('P7D')); // Agregar 7 días
+            $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
+        }
+
+        // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado y campos CrediYango
         $query = 'INSERT INTO financiamiento (
                 id_conductor, 
                 id_cliente,
@@ -98,8 +111,10 @@ class Financiamiento
                 tasa,
                 usuario_id,           -- 💥 Modificado: Campo añadido
                 aprobado,             -- 💥 Modificado: Campo añadido
-            cobrar_mora           -- NUEVO: Campo para cobrar mora
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
+                cobrar_mora,          -- NUEVO: Campo para cobrar mora
+                fecha_entrega,        -- NUEVO: Campo para CrediYango
+                fecha_inicio_pagos_calculada  -- NUEVO: Campo para CrediYango
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -107,10 +122,10 @@ class Financiamiento
             die('Error al preparar la consulta: ' . $this->conectar->error);
         }
 
-        // 💥 Modificado: Actualizado bind_param para incluir usuario_id y aprobado
-        // CORREGIDO: 25 tipos para 25 variables - moneda en posición 19 es 's' (string)
+        // 💥 Modificado: Actualizado bind_param para incluir usuario_id, aprobado y campos CrediYango
+        // CORREGIDO: 27 tipos para 27 variables - agregando fecha_entrega y fecha_inicio_pagos_calculada
         $stmt->bind_param(
-            'iiiiisidddisssssidsdddiii',
+            'iiiiisidddisssssidsdddiiiss',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
@@ -135,7 +150,9 @@ class Financiamiento
             $datos['tasa'],
             $usuario_id,
             $aprobado,
-            $cobrarMora
+            $cobrarMora,
+            $fechaEntrega,
+            $fechaInicioPagosCalculada
         );
 
         $resultado = $stmt->execute();
@@ -892,21 +909,25 @@ class Financiamiento
         foreach ($cuotasSeleccionadas as $cuota) {
             $idCuota = $cuota['idCuota'];
             $mora = $cuota['mora'];
+            
+            // NUEVO: Manejar campos de moras pendientes
+            $estadoMora = isset($cuota['estado_mora']) ? $cuota['estado_mora'] : 'pagada';
+            $montoMoraOriginal = isset($cuota['monto_mora_original']) ? $cuota['monto_mora_original'] : null;
 
-            // Insertamos en la tabla detalle_pago_financiamiento con el idPago en lugar de idFinanciamiento
-            $insertSql = 'INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora) VALUES (?, ?, ?)';
+            // MODIFICADO: Insertamos en la tabla detalle_pago_financiamiento con los nuevos campos
+            $insertSql = 'INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora, estado_mora, monto_mora_original) VALUES (?, ?, ?, ?, ?)';
             $insertStmt = $this->conectar->prepare($insertSql);  // Usamos $this->conectar
 
             if (!$insertStmt) {  // Verificamos si $insertStmt es falso
                 die('Error en la preparación de la consulta SQL de inserción: ' . $this->conectar->error);  // Mostramos el error específico
             }
 
-            $insertStmt->bind_param('iid', $idPago, $idCuota, $mora);  // CORREGIDO: Usamos $idPago en lugar de $idFinanciamiento
+            $insertStmt->bind_param('iidsd', $idPago, $idCuota, $mora, $estadoMora, $montoMoraOriginal);  // MODIFICADO: Agregados nuevos parámetros
             $insertStmt->execute();  // Ejecutamos el insert
 
             // Comprobamos errores (opcional, puedes agregar logs aquí si lo prefieres)
             if ($insertStmt->affected_rows > 0) {
-                error_log("Cuota $idCuota registrada en detalle_pago_financiamiento con ID de pago $idPago y mora $mora.");  // Mensaje de éxito
+                error_log("Cuota $idCuota registrada en detalle_pago_financiamiento con ID de pago $idPago, mora $mora, estado_mora $estadoMora.");  // Mensaje de éxito actualizado
             } else {
                 error_log("Error al registrar cuota $idCuota en detalle_pago_financiamiento.");  // Mensaje de error si no se guarda
             }

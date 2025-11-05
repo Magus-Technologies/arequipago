@@ -1073,6 +1073,20 @@ class FinanciamientoController extends Controller
                         $cuota['comision_canal_digital'] = $comisionCanalDigital;
                         $cuota['monto_cuota_base'] = isset($cuotaInfo['monto_cuota_base']) ? $cuotaInfo['monto_cuota_base'] : $cuota['monto'];
                     }
+
+                    // NUEVO: Manejar moras pendientes
+                    if (isset($cuota['moraPendiente']) && $cuota['moraPendiente'] === true) {
+                        // Si la mora está marcada como pendiente, guardar el monto original y poner mora en 0
+                        $cuota['monto_mora_original'] = $cuota['mora'] ?? 0;
+                        $cuota['mora'] = 0; // No se cobra la mora ahora
+                        $cuota['estado_mora'] = 'pendiente';
+                        error_log("🔍 [MORA PENDIENTE] Cuota {$cuota['idCuota']}: mora original = {$cuota['monto_mora_original']}, mora actual = 0");
+                    } else {
+                        // Mora se paga normalmente
+                        $cuota['estado_mora'] = 'pagada';
+                        $cuota['monto_mora_original'] = null;
+                        error_log("🔍 [MORA PAGADA] Cuota {$cuota['idCuota']}: mora = {$cuota['mora']}");
+                    }
                 }
                 unset($cuota); // Romper la referencia
 
@@ -2415,6 +2429,234 @@ class FinanciamientoController extends Controller
                 ]);
             }
         }
+
+    /**
+     * NUEVA FUNCIÓN: Entregar vehículo CrediYango y generar cronograma de pagos
+     * Se ejecuta cuando se marca un financiamiento CrediYango como entregado
+     */
+    public function entregarVehiculoCrediYango()
+    {
+        try {
+            error_log("=== ENTREGA CREDIYANGO - INICIO ===");
+
+            $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+            $fechaEntrega = $_POST['fecha_entrega'] ?? null;
+            $idProducto = $_POST['id_producto'] ?? null; // NUEVO: ID del producto real a entregar
+
+            error_log("ID Financiamiento: " . $idFinanciamiento);
+            error_log("Fecha Entrega: " . $fechaEntrega);
+            error_log("ID Producto: " . $idProducto);
+
+            if (!$idFinanciamiento || !$fechaEntrega) {
+                throw new Exception('Faltan parámetros requeridos');
+            }
+
+            // Validar que el financiamiento existe y es CrediYango
+            $query = "SELECT f.*, p.nombre_plan, p.tasa_interes as tasa, p.frecuencia_pago,
+                      p.cantidad_cuotas as cuotas, p.monto_cuota
+                      FROM financiamiento f
+                      LEFT JOIN planes_financiamiento p ON f.grupo_financiamiento = p.idplan_financiamiento
+                      WHERE f.idfinanciamiento = ?";
+
+            $stmt = mysqli_prepare($this->conexion, $query);
+            mysqli_stmt_bind_param($stmt, 'i', $idFinanciamiento);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $financiamiento = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$financiamiento) {
+                throw new Exception('Financiamiento no encontrado');
+            }
+
+            if ($financiamiento['grupo_financiamiento'] != 45) {
+                throw new Exception('Este financiamiento no es CrediYango');
+            }
+
+            // Calcular fecha de inicio de pagos (fecha_entrega + 7 días)
+            $fechaEntregaObj = new DateTime($fechaEntrega);
+            $fechaInicioPagos = clone $fechaEntregaObj;
+            $fechaInicioPagos->add(new DateInterval('P7D'));
+            $fechaInicioPagosStr = $fechaInicioPagos->format('Y-m-d');
+
+            // Iniciar transacción
+            mysqli_begin_transaction($this->conexion);
+
+            // 1. Actualizar el financiamiento con las fechas, estado y producto entregado
+            $queryUpdate = "UPDATE financiamiento
+                           SET fecha_entrega = ?,
+                               fecha_inicio_pagos_calculada = ?,
+                               fecha_inicio = ?,
+                               estado = 'Vehiculo Entregado',
+                               cobrar_mora = 1" .
+                               ($idProducto ? ", idproductosv2 = ?" : "") .
+                           " WHERE idfinanciamiento = ?";
+
+            $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
+            
+            if ($idProducto) {
+                mysqli_stmt_bind_param($stmtUpdate, 'sssii', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idProducto, $idFinanciamiento);
+                
+                // NUEVO: Reducir stock del producto entregado
+                $queryStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ? AND cantidad > 0";
+                $stmtStock = mysqli_prepare($this->conexion, $queryStock);
+                mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
+                
+                if (!mysqli_stmt_execute($stmtStock) || mysqli_stmt_affected_rows($stmtStock) === 0) {
+                    throw new Exception('Error: El vehículo seleccionado ya no tiene stock disponible');
+                }
+                mysqli_stmt_close($stmtStock);
+            } else {
+                mysqli_stmt_bind_param($stmtUpdate, 'sssi', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
+            }
+
+            if (!mysqli_stmt_execute($stmtUpdate)) {
+                throw new Exception('Error al actualizar el financiamiento');
+            }
+            mysqli_stmt_close($stmtUpdate);
+
+            // 2. Generar cronograma de pagos
+            $cuotas = intval($financiamiento['cuotas']);
+            $montoTotal = floatval($financiamiento['monto_total']);
+            $cuotaInicial = floatval($financiamiento['cuota_inicial']);
+            $montoSinIntereses = floatval($financiamiento['monto_sin_interes'] ?? 0);
+
+            // ✅ CORREGIDO: Usar el monto del plan si existe, sino calcular
+            // El plan CrediYango (ID 45) tiene monto_cuota definido en planes_financiamiento
+            $montoCuotaPlan = isset($financiamiento['monto_cuota']) ? floatval($financiamiento['monto_cuota']) : null;
+
+            if ($montoCuotaPlan && $montoCuotaPlan > 0) {
+                // Usar el valor de cuota del plan
+                $montoCuota = $montoCuotaPlan;
+                error_log("✅ Usando monto_cuota del plan: $montoCuota");
+            } else {
+                // Calcular: (monto_total - cuota_inicial) / cuotas
+                $montoCuota = ($montoTotal - $cuotaInicial) / $cuotas;
+                error_log("⚠️ Calculando monto_cuota: $montoCuota");
+            }
+
+            error_log("Monto Total: $montoTotal");
+            error_log("Cuota Inicial: $cuotaInicial");
+            error_log("Monto Sin Intereses: $montoSinIntereses");
+            error_log("Monto a financiar: " . ($montoTotal - $cuotaInicial));
+            error_log("Monto por cuota FINAL: $montoCuota");
+            error_log("Cantidad de cuotas: $cuotas");
+
+            // ✅ VALIDACIÓN: Asegurarse de que montoCuota nunca sea 0
+            if ($montoCuota <= 0) {
+                throw new Exception("Error: El monto de cuota calculado es 0 o negativo. Verifique los datos del plan.");
+            }
+
+            // ✅ CORREGIDO: Usar frecuencia_pago en lugar de frecuencia
+            $frecuencia = $financiamiento['frecuencia_pago'];
+            $moneda = $financiamiento['moneda'];
+
+            error_log("Frecuencia de pago: $frecuencia");
+            error_log("Moneda: $moneda");
+
+            // Calcular fechas de vencimiento según frecuencia
+            $fechasVencimiento = [];
+            $fechaBase = clone $fechaInicioPagos;
+
+            for ($i = 0; $i < $cuotas; $i++) {
+                $fechasVencimiento[] = $fechaBase->format('Y-m-d');
+
+                // Incrementar según frecuencia
+                switch (strtolower($frecuencia)) {
+                    case 'semanal':
+                        $fechaBase->add(new DateInterval('P7D'));
+                        break;
+                    case 'quincenal':
+                        $fechaBase->add(new DateInterval('P15D'));
+                        break;
+                    case 'mensual':
+                        $fechaBase->add(new DateInterval('P1M'));
+                        break;
+                    default:
+                        $fechaBase->add(new DateInterval('P7D'));
+                }
+            }
+
+            // 3. Insertar cuotas en la base de datos
+            // ✅ CORREGIDO: Usar los mismos campos que CuotaFinanciamiento
+            $queryInsertCuota = "INSERT INTO cuotas_financiamiento
+                                (id_financiamiento, numero_cuota, monto, monto_cuota_base,
+                                 comision_canal_digital, descuento_aplicado, moneda_cuota,
+                                 fecha_vencimiento, estado, fecha_pago)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente', NULL)";
+
+            $stmtInsertCuota = mysqli_prepare($this->conexion, $queryInsertCuota);
+
+            // Calcular comisión según moneda
+            $comisionCanalDigital = null;
+            if ($moneda === 'S/.') {
+                $comisionCanalDigital = 0.50;
+            } elseif ($moneda === '$') {
+                $comisionCanalDigital = 0.20;
+            }
+            $descuentoAplicado = 0.00;
+
+            foreach ($fechasVencimiento as $index => $fechaVencimiento) {
+                $numeroCuota = $index + 1;
+                $montoCuotaBase = $montoCuota; // El monto original sin comisiones
+
+                mysqli_stmt_bind_param(
+                    $stmtInsertCuota,
+                    'iiddddss',
+                    $idFinanciamiento,
+                    $numeroCuota,
+                    $montoCuota,
+                    $montoCuotaBase,
+                    $comisionCanalDigital,
+                    $descuentoAplicado,
+                    $moneda,
+                    $fechaVencimiento
+                );
+
+                if (!mysqli_stmt_execute($stmtInsertCuota)) {
+                    throw new Exception('Error al insertar cuota ' . $numeroCuota);
+                }
+            }
+            mysqli_stmt_close($stmtInsertCuota);
+
+            error_log("✅ Cuotas insertadas exitosamente: " . count($fechasVencimiento));
+
+            // Confirmar transacción
+            mysqli_commit($this->conexion);
+
+            error_log("✅ Transacción confirmada");
+            error_log("=== ENTREGA CREDIYANGO - FIN EXITOSO ===");
+
+            // Formatear fechas para respuesta
+            $fechaEntregaFormateada = $fechaEntregaObj->format('d/m/Y');
+            $fechaInicioPagosFormateada = $fechaInicioPagos->format('d/m/Y');
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Vehículo CrediYango entregado exitosamente',
+                'fecha_entrega' => $fechaEntrega,
+                'fecha_inicio_pagos' => $fechaInicioPagosStr,
+                'fecha_entrega_formateada' => $fechaEntregaFormateada,
+                'fecha_inicio_pagos_formateada' => $fechaInicioPagosFormateada,
+                'total_pagos' => count($fechasVencimiento),
+                'monto_cuota' => number_format($montoCuota, 2)
+            ]);
+
+        } catch (Exception $e) {
+            // Revertir transacción en caso de error
+            if (mysqli_connect_errno() === 0) {
+                mysqli_rollback($this->conexion);
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function anularPago() {
       if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $idPago = $_POST['idpagos_financiamiento'];
@@ -2430,6 +2672,160 @@ class FinanciamientoController extends Controller
           echo json_encode($resultado);
       }
     }
-        
+
+    // NUEVA FUNCIÓN: Obtener moras pendientes
+    public function getMorasPendientes()
+    {
+        try {
+            $conexion = (new Conexion())->getConexion();
+            
+            $query = "SELECT 
+                dp.iddetalle_pago_financiamiento,
+                CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) as cliente_nombre,
+                CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) as cliente_financiar_nombre,
+                p.nombre as producto_nombre,
+                cuota.numero_cuota,
+                dp.monto_mora_original as monto_mora,
+                cuota.fecha_vencimiento,
+                f.moneda,
+                dp.created_at as fecha_registro,
+                f.idfinanciamiento
+            FROM detalle_pago_financiamiento dp
+            JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
+            JOIN financiamiento f ON dp.idfinanciamiento = f.idfinanciamiento
+            LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+            LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
+            JOIN productosv2 p ON f.idproductosv2 = p.id_producto
+            WHERE dp.estado_mora = 'pendiente'
+            ORDER BY cuota.fecha_vencimiento ASC";
+            
+            $result = mysqli_query($conexion, $query);
+            $morasPendientes = [];
+            
+            while ($row = mysqli_fetch_assoc($result)) {
+                $clienteNombre = $row['cliente_nombre'] ?: $row['cliente_financiar_nombre'];
+                
+                $morasPendientes[] = [
+                    'id_mora_pendiente' => $row['iddetalle_pago_financiamiento'],
+                    'cliente_nombre' => $clienteNombre,
+                    'producto_nombre' => $row['producto_nombre'],
+                    'numero_cuota' => $row['numero_cuota'],
+                    'monto_mora' => $row['monto_mora'],
+                    'fecha_vencimiento' => $row['fecha_vencimiento'],
+                    'moneda' => $row['moneda'],
+                    'fecha_registro' => $row['fecha_registro'],
+                    'id_financiamiento' => $row['idfinanciamiento']
+                ];
+            }
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'data' => $morasPendientes
+            ]);
+            
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener moras pendientes: ' . $e->getMessage()
+            ]);
+        }
     }
-    
+
+    // NUEVA FUNCIÓN: Obtener contador de moras pendientes
+    public function getContadorMorasPendientes()
+    {
+        try {
+            $conexion = (new Conexion())->getConexion();
+            
+            $query = "SELECT COUNT(*) as cantidad FROM detalle_pago_financiamiento WHERE estado_mora = 'pendiente'";
+            $result = mysqli_query($conexion, $query);
+            $row = mysqli_fetch_assoc($result);
+            
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'cantidad' => $row['cantidad']
+            ]);
+            
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener contador: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    // NUEVA FUNCIÓN: Pagar mora pendiente
+    public function pagarMoraPendiente()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $idMoraPendiente = $_POST['id_mora_pendiente'] ?? null;
+                $montoMora = $_POST['monto_mora'] ?? null;
+                $metodoPago = $_POST['metodo_pago'] ?? 'efectivo';
+                
+                if (!$idMoraPendiente || !$montoMora) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Faltan datos obligatorios'
+                    ]);
+                    return;
+                }
+                
+                $conexion = (new Conexion())->getConexion();
+                mysqli_begin_transaction($conexion);
+                
+                // Obtener información del detalle de pago
+                $queryDetalle = "SELECT * FROM detalle_pago_financiamiento WHERE iddetalle_pago_financiamiento = ? AND estado_mora = 'pendiente'";
+                $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);
+                mysqli_stmt_bind_param($stmtDetalle, 'i', $idMoraPendiente);
+                mysqli_stmt_execute($stmtDetalle);
+                $resultDetalle = mysqli_stmt_get_result($stmtDetalle);
+                $detallePago = mysqli_fetch_assoc($resultDetalle);
+                
+                if (!$detallePago) {
+                    throw new Exception('Mora pendiente no encontrada');
+                }
+                
+                // Crear nuevo pago solo para la mora
+                $queryPago = "INSERT INTO pagos_financiamiento (id_financiamiento, monto_total, metodo_pago, fecha_pago, observaciones, estado, created_at, updated_at) VALUES (?, ?, ?, NOW(), 'Pago de mora pendiente', 1, NOW(), NOW())";
+                $stmtPago = mysqli_prepare($conexion, $queryPago);
+                mysqli_stmt_bind_param($stmtPago, 'ids', $detallePago['idfinanciamiento'], $montoMora, $metodoPago);
+                mysqli_stmt_execute($stmtPago);
+                $pagoMoraId = mysqli_insert_id($conexion);
+                
+                // Actualizar el detalle original
+                $queryUpdate = "UPDATE detalle_pago_financiamiento SET estado_mora = 'pagada', mora = ?, updated_at = NOW() WHERE iddetalle_pago_financiamiento = ?";
+                $stmtUpdate = mysqli_prepare($conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmtUpdate, 'di', $montoMora, $idMoraPendiente);
+                mysqli_stmt_execute($stmtUpdate);
+                
+                // Crear nuevo detalle para el pago de la mora
+                $queryNuevoDetalle = "INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora, estado_mora, created_at, updated_at) VALUES (?, ?, ?, 'pagada', NOW(), NOW())";
+                $stmtNuevoDetalle = mysqli_prepare($conexion, $queryNuevoDetalle);
+                mysqli_stmt_bind_param($stmtNuevoDetalle, 'iid', $detallePago['idfinanciamiento'], $detallePago['id_cuota'], $montoMora);
+                mysqli_stmt_execute($stmtNuevoDetalle);
+                
+                mysqli_commit($conexion);
+                
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Mora pagada correctamente',
+                    'pago_id' => $pagoMoraId
+                ]);
+                
+            } catch (Exception $e) {
+                mysqli_rollback($conexion);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al procesar pago de mora: ' . $e->getMessage()
+                ]);
+            }
+        }
+    }
+}

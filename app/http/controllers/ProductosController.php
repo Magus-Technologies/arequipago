@@ -2261,11 +2261,28 @@ private function esCategoríaCelular($categoriaNormalizada) {
     {
         try {
             $productoModel = new Productov2();
-            $vehiculos = $productoModel->obtenerProductosPorCategoria('Vehiculo');
+            
+            // Buscar tanto por nombre como por ID de categoría para compatibilidad con datos antiguos
+            $vehiculosPorNombre = $productoModel->obtenerProductosPorCategoria('Vehículo');
+            $vehiculosPorId = $productoModel->obtenerProductosPorCategoria('15');
+            
+            // Combinar ambos resultados y eliminar duplicados
+            $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId);
+            
+            // Eliminar duplicados basándose en el ID del producto
+            $vehiculosUnicos = [];
+            $idsVistos = [];
+            
+            foreach ($vehiculos as $vehiculo) {
+                if (!in_array($vehiculo['idproductosv2'], $idsVistos)) {
+                    $vehiculosUnicos[] = $vehiculo;
+                    $idsVistos[] = $vehiculo['idproductosv2'];
+                }
+            }
 
             echo json_encode([
                 'success' => true,
-                'vehiculos' => $vehiculos
+                'vehiculos' => $vehiculosUnicos
             ]);
 
         } catch (Exception $e) {
@@ -2275,6 +2292,47 @@ private function esCategoríaCelular($categoriaNormalizada) {
                 'error' => 'Error al obtener vehículos',
                 'vehiculos' => []
             ]);
+        }
+    }
+
+    /**
+     * Obtener el nombre de la categoría por su ID
+     */
+    private function obtenerNombreCategoria($categoriaId)
+    {
+        try {
+            // Si ya es un nombre (no es numérico), devolverlo tal como está
+            if (!is_numeric($categoriaId)) {
+                return $categoriaId;
+            }
+
+            // Conectar a la base de datos usando el mismo método que el modelo
+            $conexion = new Conexion();
+            $conn = $conexion->getConexion();
+
+            $sql = "SELECT nombre FROM categoria_producto WHERE idcategoria_producto = ?";
+            $stmt = $conn->prepare($sql);
+            
+            if (!$stmt) {
+                error_log("Error al preparar consulta de categoría: " . $conn->error);
+                return $categoriaId; // Devolver el ID si hay error
+            }
+
+            $stmt->bind_param('i', $categoriaId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                $stmt->close();
+                return $row['nombre'];
+            } else {
+                $stmt->close();
+                return $categoriaId; // Devolver el ID si no se encuentra
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerNombreCategoria: " . $e->getMessage());
+            return $categoriaId; // Devolver el ID si hay error
         }
     }
 
