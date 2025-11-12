@@ -363,8 +363,34 @@ class ReportFinanciamientoController extends Controller
                     <p>Boleta N°: ' . $nroBoleta . '</p>
                     <p>Producto: ' . $producto['nombre'] . '</p>
                     <p>Nombre del Financiamiento: ' . $producto['nombre'] . '</p>
-                    <p>Grupo de Financiamiento: ' . $plan['nombre_plan'] . '</p>
-                    <p>Nombre: ' . $nombrePersona . '</p>  <!-- MODIFICADO: Cambiado "Conductor" por "Nombre" -->
+                    <p>Grupo de Financiamiento: ' . $plan['nombre_plan'] . '</p>';
+            
+            // ✅ NUEVO: Agregar estado de entrega si existe
+            if (!empty($financiamiento['estado_entrega'])) {
+                $estadoEntrega = $financiamiento['estado_entrega'];
+                $estadoTexto = '';
+                $estadoColor = '';
+                
+                if ($estadoEntrega === 'pendiente') {
+                    $estadoTexto = 'Pendiente de Entrega';
+                    $estadoColor = '#ff9800'; // Naranja
+                } else if ($estadoEntrega === 'entregado') {
+                    $estadoTexto = 'Vehículo Entregado';
+                    $estadoColor = '#4caf50'; // Verde
+                }
+                
+                if ($estadoTexto) {
+                    $html .= '<p><strong>Estado de Entrega:</strong> <span style="color: ' . $estadoColor . '; font-weight: bold;">' . $estadoTexto . '</span></p>';
+                    
+                    // Si está entregado y hay fecha de entrega, mostrarla
+                    if ($estadoEntrega === 'entregado' && !empty($financiamiento['fecha_entrega'])) {
+                        $fechaEntrega = date('d/m/Y', strtotime($financiamiento['fecha_entrega']));
+                        $html .= '<p style="font-size: 11px; color: #666;">Fecha de Entrega: ' . $fechaEntrega . '</p>';
+                    }
+                }
+            }
+            
+            $html .= '    <p>Nombre: ' . $nombrePersona . '</p>  <!-- MODIFICADO: Cambiado "Conductor" por "Nombre" -->
                 <p>Documento: ' . $tipoDocumento . ' N° ' . $numeroDocumento . '</p>  <!-- MODIFICADO: Usando variables -->
                     <p>Método de Pago: ' . $pago['metodo_pago'] . '</p>
                 </div>
@@ -776,8 +802,34 @@ class ReportFinanciamientoController extends Controller
                     <p>Boleta N°: ' . $nroBoleta . '</p>
                     <p>Producto: ' . $producto['nombre'] . '</p>
                     <p>Nombre del Financiamiento: ' . $producto['nombre'] . '</p>
-                    <p>Grupo de Financiamiento: ' . $plan['nombre_plan'] . '</p>
-                     <p>Cliente: ' . $nombreCompleto . '</p>
+                    <p>Grupo de Financiamiento: ' . $plan['nombre_plan'] . '</p>';
+            
+            // ✅ NUEVO: Agregar estado de entrega si existe
+            if (!empty($financiamiento['estado_entrega'])) {
+                $estadoEntrega = $financiamiento['estado_entrega'];
+                $estadoTexto = '';
+                $estadoColor = '';
+                
+                if ($estadoEntrega === 'pendiente') {
+                    $estadoTexto = 'Pendiente de Entrega';
+                    $estadoColor = '#ff9800'; // Naranja
+                } else if ($estadoEntrega === 'entregado') {
+                    $estadoTexto = 'Vehículo Entregado';
+                    $estadoColor = '#4caf50'; // Verde
+                }
+                
+                if ($estadoTexto) {
+                    $html .= '<p><strong>Estado de Entrega:</strong> <span style="color: ' . $estadoColor . '; font-weight: bold;">' . $estadoTexto . '</span></p>';
+                    
+                    // Si está entregado y hay fecha de entrega, mostrarla
+                    if ($estadoEntrega === 'entregado' && !empty($financiamiento['fecha_entrega'])) {
+                        $fechaEntrega = date('d/m/Y', strtotime($financiamiento['fecha_entrega']));
+                        $html .= '<p style="font-size: 11px; color: #666;">Fecha de Entrega: ' . $fechaEntrega . '</p>';
+                    }
+                }
+            }
+            
+            $html .= '     <p>Cliente: ' . $nombreCompleto . '</p>
                     <p>Documento: ' . $tipoDoc . ' N° ' . $nroDocumento . '</p>
                     <p>Método de Pago: ' . $metodoPago . '</p> 
                     <p>Concepto: ' . $concepto . '</p> 

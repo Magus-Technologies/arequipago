@@ -247,4 +247,11 @@ class FragmentController extends Controller
     {
         return $this->view("fragment-views/cliente/vehiculos-list");
     }
+
+    public function resumenFinanciamientos(){
+        return $this->view("fragment-views/cliente/resumen-financiamientos");
+    }
+    public function adjudicaciones(){
+        return $this->view("fragment-views/cliente/adjudicaciones");
+    }
 }

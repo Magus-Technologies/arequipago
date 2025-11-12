@@ -646,12 +646,8 @@
 
         // Función para editar vehículo
         function editarVehiculo(id) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Editar Vehículo',
-                text: 'Esta funcionalidad se integrará con el formulario de edición existente',
-                confirmButtonText: 'Entendido'
-            });
+            // Abrir el modal de edición de producto
+            abrirModalEditarProducto(id);
         }
 
         // Función para eliminar vehículo
@@ -920,5 +916,8 @@
             });
         }
     </script>
+
+    <!-- Incluir el componente modal de edición de producto -->
+    <?php include __DIR__ . '/../../components/modal-editar-producto.php'; ?>
 </body>
 </html>

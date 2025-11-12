@@ -1,0 +1,151 @@
+You are running Vue in development mode.
+Make sure to turn on production mode when deploying for production.
+See more tips at https://vuejs.org/guide/deployment.html
+module-financiamiento:1122 {"res":true}
+VM1768:3 reversion de estilos
+VM1777:2211 📋 Campo de verificación domiciliaria ocultado (no es vehicular)
+VM1769:328 Asignando event listeners nuevamente
+VM1778:1103 Fecha y hora seteadas: 2025-11-11T15:12
+VM1777:2253 🔒 Frecuencia de pago bloqueada (no es vehicular)
+VM1770:287 ➕ Click en Nuevo Financiamiento - Ocultando papelera
+VM1774:191 Datos recibidos en searchNumDoc: [{…}]
+VM1774:253 Registro seleccionado: {id_conductor: 418, nro_documento: '77425200', nombres: 'EMER RODRIGO', apellido_paterno: 'YARLEQUE', apellido_materno: 'ZAPATA', …}
+VM1777:1911 ID de variante limpiado
+VM1777:2488 🗑️ Valores originales del plan limpiados
+VM1777:121 ✅ Sección de productos mostrada
+VM1777:3674 🔍 Plan 9 - Aplicando filtro de categoría: Vehículo
+VM1775:36 🚗 cargarProductosPorCategoria('Vehículo') llamada
+VM1775:8 🔍 Cargando productos con filtro de categoría: Vehículo
+VM1777:3791 ✅ Resumen actualizado: FINANCIAMIENTO VEHICULAR (Grupo 1)
+VM1767:253 Valor seleccionado en grupo: 9
+VM1777:1911 ID de variante limpiado
+VM1777:2488 🗑️ Valores originales del plan limpiados
+VM1777:121 ✅ Sección de productos mostrada
+VM1777:3674 🔍 Plan 9 - Aplicando filtro de categoría: Vehículo
+VM1775:36 🚗 cargarProductosPorCategoria('Vehículo') llamada
+VM1775:8 🔍 Cargando productos con filtro de categoría: Vehículo
+VM1777:3791 ✅ Resumen actualizado: FINANCIAMIENTO VEHICULAR (Grupo 1)
+VM1777:2234 🔓 Frecuencia de pago desbloqueada para tipo vehicular: vehiculo
+VM1777:2200 📋 Campo de verificación domiciliaria mostrado para tipo: vehiculo
+VM1777:333 el plan seleccionado es:  {idplan_financiamiento: 9, nombre_plan: 'Financiamiento Vehicular Grupo 1', cuota_inicial: '0.00', monto_cuota: '100.00', cantidad_cuotas: '156.00', …}
+VM1768:3 reversion de estilos
+7VM1777:629 bloqueo de inputs
+VM1777:1916 Calculando monto inscripción para tipo: vehiculo monto sin interés: 14000.00
+VM1777:1962 Monto de inscripción aplicado y bloqueado: $ 280.00 para tipo vehiculo
+VM1777:2609 ✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada
+VM1777:2803 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM1777:2493 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM1777:2085 ✅ Director detectado - fechaIngreso habilitado para edición
+VM1775:25 ✅ Productos cargados con filtro: Vehículo (5 resultados)
+VM1777:579 🚗 Ejecutando calcularFinanciamientoConFechaIngreso con delay
+VM1776:1079 🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular
+VM1776:1106 🔄 Frecuencia utilizada: semanal - Select habilitado: true
+VM1776:1225 📊 Número inicial de cuota calculado: 84 | cuotasRestantes: 83
+VM1776:1241 📅 Fecha original de ingreso: 11/11/2025
+VM1776:1245 📅 Fecha ajustada al lunes: 17/11/2025
+VM1776:1259 📅 Días movidos por ajuste al lunes: 6
+VM1776:1299 📄 Llamando a mostrarFechasVencimiento desde calcularFinanciamientoConFechaIngreso
+VM1776:1302 📄 Fechas calculadas: (73) ['17/11/2025', '24/11/2025', '1/12/2025', '8/12/2025', '15/12/2025', '22/12/2025', '29/12/2025', '5/1/2026', '12/1/2026', '19/1/2026', '26/1/2026', '2/2/2026', '9/2/2026', '16/2/2026', '23/2/2026', '2/3/2026', '9/3/2026', '16/3/2026', '23/3/2026', '30/3/2026', '6/4/2026', '13/4/2026', '20/4/2026', '27/4/2026', '4/5/2026', '11/5/2026', '18/5/2026', '25/5/2026', '1/6/2026', '8/6/2026', '15/6/2026', '22/6/2026', '29/6/2026', '6/7/2026', '13/7/2026', '20/7/2026', '27/7/2026', '3/8/2026', '10/8/2026', '17/8/2026', '24/8/2026', '31/8/2026', '7/9/2026', '14/9/2026', '21/9/2026', '28/9/2026', '5/10/2026', '12/10/2026', '19/10/2026', '26/10/2026', '2/11/2026', '9/11/2026', '16/11/2026', '23/11/2026', '30/11/2026', '7/12/2026', '14/12/2026', '21/12/2026', '28/12/2026', '4/1/2027', '11/1/2027', '18/1/2027', '25/1/2027', '1/2/2027', '8/2/2027', '15/2/2027', '22/2/2027', '1/3/2027', '8/3/2027', '15/3/2027', '22/3/2027', '29/3/2027', '5/4/2027']
+VM1776:432 🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas: (73) [Mon Nov 17 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 24 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 01 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 15 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 22 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 29 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 05 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 12 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 19 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 26 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 30 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 06 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 13 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 20 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 27 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 04 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 18 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 25 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 01 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 08 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 15 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 22 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 29 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 06 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 13 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 20 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 27 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 03 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 10 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 17 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 24 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 31 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 07 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 14 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 21 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 28 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 05 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 12 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 19 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 26 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 30 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 07 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 14 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 21 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 28 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 04 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 11 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 18 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 25 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 01 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 08 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 15 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 22 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 01 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 08 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 15 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 22 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 29 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 05 2027 00:00:00 GMT-0500 (hora estándar de Perú)]
+VM1776:436 🔍 Plan actual: ID 9
+VM1776:470 📅 Fecha ajustada al próximo lunes para plan vehicular
+VM1777:2493 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM1775:25 ✅ Productos cargados con filtro: Vehículo (5 resultados)
+VM1777:2693 🛡️ Observer de protección activado para fechaInicio
+VM1777:3130 🛡️ Observer de protección activado para cuotaInicial
+VM1777:2234 🔓 Frecuencia de pago desbloqueada para tipo vehicular: vehiculo
+VM1777:2200 📋 Campo de verificación domiciliaria mostrado para tipo: vehiculo
+VM1777:333 el plan seleccionado es:  {idplan_financiamiento: 9, nombre_plan: 'Financiamiento Vehicular Grupo 1', cuota_inicial: '0.00', monto_cuota: '100.00', cantidad_cuotas: '156.00', …}
+VM1768:3 reversion de estilos
+7VM1777:629 bloqueo de inputs
+VM1777:1916 Calculando monto inscripción para tipo: vehiculo monto sin interés: 14000.00
+VM1777:1962 Monto de inscripción aplicado y bloqueado: $ 280.00 para tipo vehiculo
+VM1777:2609 ✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada
+VM1777:2803 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM1777:2085 ✅ Director detectado - fechaIngreso habilitado para edición
+VM1777:579 🚗 Ejecutando calcularFinanciamientoConFechaIngreso con delay
+VM1776:1079 🚀 EJECUTANDO: calcularFinanciamientoConFechaIngreso() - Función vehicular
+VM1776:1106 🔄 Frecuencia utilizada: semanal - Select habilitado: true
+VM1776:1225 📊 Número inicial de cuota calculado: 84 | cuotasRestantes: 83
+VM1776:1241 📅 Fecha original de ingreso: 11/11/2025
+VM1776:1245 📅 Fecha ajustada al lunes: 17/11/2025
+VM1776:1259 📅 Días movidos por ajuste al lunes: 6
+VM1776:1299 📄 Llamando a mostrarFechasVencimiento desde calcularFinanciamientoConFechaIngreso
+VM1776:1302 📄 Fechas calculadas: (73) ['17/11/2025', '24/11/2025', '1/12/2025', '8/12/2025', '15/12/2025', '22/12/2025', '29/12/2025', '5/1/2026', '12/1/2026', '19/1/2026', '26/1/2026', '2/2/2026', '9/2/2026', '16/2/2026', '23/2/2026', '2/3/2026', '9/3/2026', '16/3/2026', '23/3/2026', '30/3/2026', '6/4/2026', '13/4/2026', '20/4/2026', '27/4/2026', '4/5/2026', '11/5/2026', '18/5/2026', '25/5/2026', '1/6/2026', '8/6/2026', '15/6/2026', '22/6/2026', '29/6/2026', '6/7/2026', '13/7/2026', '20/7/2026', '27/7/2026', '3/8/2026', '10/8/2026', '17/8/2026', '24/8/2026', '31/8/2026', '7/9/2026', '14/9/2026', '21/9/2026', '28/9/2026', '5/10/2026', '12/10/2026', '19/10/2026', '26/10/2026', '2/11/2026', '9/11/2026', '16/11/2026', '23/11/2026', '30/11/2026', '7/12/2026', '14/12/2026', '21/12/2026', '28/12/2026', '4/1/2027', '11/1/2027', '18/1/2027', '25/1/2027', '1/2/2027', '8/2/2027', '15/2/2027', '22/2/2027', '1/3/2027', '8/3/2027', '15/3/2027', '22/3/2027', '29/3/2027', '5/4/2027']
+VM1776:432 🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas: (73) [Mon Nov 17 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 24 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 01 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 15 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 22 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 29 2025 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 05 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 12 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 19 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 26 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 30 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 06 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 13 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 20 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 27 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 04 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 18 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 25 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 01 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 08 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 15 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 22 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jun 29 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 06 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 13 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 20 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 27 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 03 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 10 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 17 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 24 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Aug 31 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 07 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 14 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 21 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Sep 28 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 05 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 12 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 19 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Oct 26 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 02 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 09 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 16 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 23 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Nov 30 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 07 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 14 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 21 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Dec 28 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 04 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 11 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 18 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 25 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 01 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 08 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 15 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Feb 22 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 01 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 08 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 15 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 22 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Mar 29 2027 00:00:00 GMT-0500 (hora estándar de Perú), Mon Apr 05 2027 00:00:00 GMT-0500 (hora estándar de Perú)]
+VM1776:436 🔍 Plan actual: ID 9
+VM1776:470 📅 Fecha ajustada al próximo lunes para plan vehicular
+VM1777:2693 🛡️ Observer de protección activado para fechaInicio
+VM1777:3130 🛡️ Observer de protección activado para cuotaInicial
+2VM1769:328 Asignando event listeners nuevamente
+VM1777:768 ✅ Plan con fechas definidas - NO recalculando cronograma
+VM1777:2493 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM1777:768 ✅ Plan con fechas definidas - NO recalculando cronograma
+VM1777:2609 ✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada
+VM1777:2693 🛡️ Observer de protección activado para fechaInicio
+VM1777:2803 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM1777:3130 🛡️ Observer de protección activado para cuotaInicial
+VM1777:2493 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM1777:2609 ✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada
+VM1777:2693 🛡️ Observer de protección activado para fechaInicio
+VM1777:2803 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM1777:3130 🛡️ Observer de protección activado para cuotaInicial
+VM1777:2266 📅 Frecuencia cambiada a: mensual
+VM1777:2306 💾 Valores originales almacenados: {cuotas_restantes_originales: 73, monto_cuota_original: 100, frecuencia_pago_original: 'semanal', monto_total_original: 7300}
+VM1777:2331 🔄 Aplicando conversión matemática con monto total fijo: 7300
+VM1777:2362 📊 Conversión - Nuevas cuotas: 17 Nuevo valor: 429.4117647058824
+VM1776:432 🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas: (17) [Tue Nov 11 2025 00:00:00 GMT-0500 (hora estándar de Perú), Thu Dec 11 2025 00:00:00 GMT-0500 (hora estándar de Perú), Sun Jan 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Wed Feb 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Wed Mar 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Sat Apr 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon May 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Thu Jun 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Sat Jul 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Tue Aug 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Fri Sep 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Sun Oct 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Wed Nov 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Fri Dec 11 2026 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jan 11 2027 00:00:00 GMT-0500 (hora estándar de Perú), Thu Feb 11 2027 00:00:00 GMT-0500 (hora estándar de Perú), Thu Mar 11 2027 00:00:00 GMT-0500 (hora estándar de Perú)]
+VM1776:436 🔍 Plan actual: ID 9
+VM1776:470 📅 Fecha ajustada al próximo lunes para plan vehicular
+VM1777:2478 ✅ Cronograma recalculado con número inicial: 84
+VM1776:2 🚀 EJECUTANDO: calcularFinanciamiento() - Función principal
+VM1776:3 Entrando a calcularFinanciamiento...
+VM1776:59 📊 montoSinInteresesRaw: 7300.00 -> parseado: 7300
+VM1776:74 🔄 Frecuencia utilizada en calcularFinanciamiento: mensual - Select habilitado: true
+VM1776:82 Valores iniciales:  {montoRaw: '7300', cuotaInicialRaw: '0.00', tasaInteresRaw: '0.00', frecuenciaPago: 'mensual', tipoMoneda: 'Dólares'}
+VM1776:96 💰 Usando monto del plan global: 15600
+VM1776:106 Monto total final: 15600
+VM1776:117 Valores parseados:  {montoTotal: 15600, cuotaInicial: 0, tasaInteres: 0, fechaInicio: '2024-04-08'}
+VM1776:167 Cantidad de cuotas válida:  17
+VM1776:173 Tasa de interés por período:  0
+VM1776:218 Valor de la cuota calculado:  917.6470588235294
+VM1776:259 Valor de la cuota seteado en el input
+VM1776:349 📅 Día original de la primera cuota: 8
+VM1776:351 Primera fecha de vencimiento: 8/4/2024
+VM1776:356 Calculando fechas de vencimiento...
+VM1776:399 📅 Cuota 2: Usando día 8 del mes
+VM1776:405 Fecha 1:  8/5/2024
+VM1776:399 📅 Cuota 3: Usando día 8 del mes
+VM1776:405 Fecha 2:  8/6/2024
+VM1776:399 📅 Cuota 4: Usando día 8 del mes
+VM1776:405 Fecha 3:  8/7/2024
+VM1776:399 📅 Cuota 5: Usando día 8 del mes
+VM1776:405 Fecha 4:  8/8/2024
+VM1776:399 📅 Cuota 6: Usando día 8 del mes
+VM1776:405 Fecha 5:  8/9/2024
+VM1776:399 📅 Cuota 7: Usando día 8 del mes
+VM1776:405 Fecha 6:  8/10/2024
+VM1776:399 📅 Cuota 8: Usando día 8 del mes
+VM1776:405 Fecha 7:  8/11/2024
+VM1776:399 📅 Cuota 9: Usando día 8 del mes
+VM1776:405 Fecha 8:  8/12/2024
+VM1776:399 📅 Cuota 10: Usando día 8 del mes
+VM1776:405 Fecha 9:  8/1/2025
+VM1776:399 📅 Cuota 11: Usando día 8 del mes
+VM1776:405 Fecha 10:  8/2/2025
+VM1776:399 📅 Cuota 12: Usando día 8 del mes
+VM1776:405 Fecha 11:  8/3/2025
+VM1776:399 📅 Cuota 13: Usando día 8 del mes
+VM1776:405 Fecha 12:  8/4/2025
+VM1776:399 📅 Cuota 14: Usando día 8 del mes
+VM1776:405 Fecha 13:  8/5/2025
+VM1776:399 📅 Cuota 15: Usando día 8 del mes
+VM1776:405 Fecha 14:  8/6/2025
+VM1776:399 📅 Cuota 16: Usando día 8 del mes
+VM1776:405 Fecha 15:  8/7/2025
+VM1776:399 📅 Cuota 17: Usando día 8 del mes
+VM1776:405 Fecha 16:  8/8/2025
+VM1776:432 🔍 EJECUTANDO: mostrarFechasVencimiento() con fechas: (17) [Mon Apr 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Wed May 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Sat Jun 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Mon Jul 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Thu Aug 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Sun Sep 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Tue Oct 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Fri Nov 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Sun Dec 08 2024 00:00:00 GMT-0500 (hora estándar de Perú), Wed Jan 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Sat Feb 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Sat Mar 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Tue Apr 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Thu May 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Sun Jun 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Tue Jul 08 2025 00:00:00 GMT-0500 (hora estándar de Perú), Fri Aug 08 2025 00:00:00 GMT-0500 (hora estándar de Perú)]
+VM1776:436 🔍 Plan actual: ID 9
+VM1776:470 📅 Fecha ajustada al próximo lunes para plan vehicular
+VM1776:418 Fecha fin calculada y seteada:  2025-08-08

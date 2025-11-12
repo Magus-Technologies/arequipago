@@ -597,22 +597,20 @@ class FinanciamientoController extends Controller
                 $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
                 $productosPorPagina = 5; // Número de productos por página
 
+                // ✅ NUEVO: Obtener filtro de categoría si existe (para CrediYango)
+                $categoria = isset($_GET['categoria']) ? trim($_GET['categoria']) : null;
 
                 // Mostrar los valores de entrada
-                //var_dump(['pagina' => $pagina, 'productosPorPagina' => $productosPorPagina]);
-
+                //var_dump(['pagina' => $pagina, 'productosPorPagina' => $productosPorPagina, 'categoria' => $categoria]);
 
                 // Crear una instancia del modelo ProductoV2
                 $productoV2 = new ProductoV2();
 
-                // Obtener los productos con paginación
-                $productos = $productoV2->obtenerProductos($pagina, $productosPorPagina);
-
+                // ✅ NUEVO: Obtener los productos con paginación y filtro de categoría
+                $productos = $productoV2->obtenerProductos($pagina, $productosPorPagina, $categoria);
 
                 // Mostrar los datos obtenidos del modelo
                 //var_dump($productos);
-
-
 
                 // Devolver los productos en formato JSON
                 echo json_encode([
@@ -625,7 +623,7 @@ class FinanciamientoController extends Controller
                 echo json_encode(['error' => 'Hubo un error al obtener los productos']);
                 exit;
             }
-            
+
         }
 
         public function searchProductos() {
@@ -1514,11 +1512,11 @@ class FinanciamientoController extends Controller
         public function getFinanciamientos_pendientes()
         {
             $financiamientoModel = new Financiamiento();
-            $financiamientos = $financiamientoModel->getAllFinanciamientos();
+            $financiamientos = $financiamientoModel->getFinanciamientosPendientesYRechazados();
 
             $pendientes = 0;
             foreach ($financiamientos as $fin) {
-                if ($fin['aprobado'] !== null && $fin['aprobado'] !== '' && $fin['aprobado'] == 0) { 
+                if ($fin['aprobado'] !== null && $fin['aprobado'] !== '' && $fin['aprobado'] == 0) {
                     $pendientes++;
                 }
             }
@@ -1535,8 +1533,8 @@ class FinanciamientoController extends Controller
             $conductorModel = new Conductor(); // 🚀 Cambio: instanciado aquí
             $clienteModel = new Cliente(); // 🚀 Cambio: instanciado aquí
             $productoModel = new Productov2();
-            // Obtener todos los financiamientos
-            $financiamientos = $financiamientoModel->getAllFinanciamientos();
+            // Obtener financiamientos pendientes y rechazados
+            $financiamientos = $financiamientoModel->getFinanciamientosPendientesYRechazados();
             
             $pendientes = [];
             $rechazados = [];
@@ -1717,21 +1715,38 @@ class FinanciamientoController extends Controller
             // Registrar comisión por financiamiento aprobado
             $this->registrarComisionFinanciamiento($financiamiento);
 
+            // Registrar en log_aprobaciones_financiamiento
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $usuario_aprobacion = isset($_SESSION['usuario_id']) ? intval($_SESSION['usuario_id']) : null;
+
+            if ($usuario_aprobacion) {
+                $queryLog = "INSERT INTO log_aprobaciones_financiamiento (id_financiamiento, accion, usuario_id, motivo)
+                             VALUES ($id, 'aprobado', $usuario_aprobacion, NULL)";
+                $resultLog = $this->conexion->query($queryLog);
+
+                if (!$resultLog) {
+                    error_log("Error al guardar en log_aprobaciones_financiamiento: " . $this->conexion->error);
+                }
+            }
+
             // Responder éxito
-        
+
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'message' => 'Financiamiento aprobado correctamente']);
-            
-        
+
+
         }
 
         // Método para rechazar un financiamiento
         public function rechazarFinanciamiento() {
 
             $id = $_POST['id'] ?? 0;
-        
+            $motivo = $_POST['motivo'] ?? '';
+
             if (!$id) {
-                
+
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'ID no proporcionado']);
                 return;
@@ -1740,9 +1755,9 @@ class FinanciamientoController extends Controller
             // Verificar si el financiamiento existe
             $queryVerificar = "SELECT idfinanciamiento FROM financiamiento WHERE idfinanciamiento = $id";
             $resultVerificar = $this->conexion->query($queryVerificar);
-            
+
             if ($resultVerificar->num_rows === 0) {
-                
+
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'Financiamiento no encontrado']);
                 return;
@@ -1753,16 +1768,34 @@ class FinanciamientoController extends Controller
             $resultActualizar = $this->conexion->query($queryActualizar);
 
             if (!$resultActualizar) {
-            
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error al rechazar el financiamiento']);
+                echo json_encode(['status' => 'error', 'message' => 'Error al rechazar el financiamiento: ' . $this->conexion->error]);
                 return;
+            }
+
+            // Registrar en log_aprobaciones_financiamiento (guarda motivo, usuario y fecha automáticamente)
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $usuario_rechazo = isset($_SESSION['usuario_id']) ? intval($_SESSION['usuario_id']) : null;
+
+            if ($usuario_rechazo) {
+                $motivo_escaped = $this->conexion->real_escape_string($motivo);
+                $queryLog = "INSERT INTO log_aprobaciones_financiamiento (id_financiamiento, accion, usuario_id, motivo)
+                             VALUES ($id, 'rechazado', $usuario_rechazo, '$motivo_escaped')";
+                $resultLog = $this->conexion->query($queryLog);
+
+                if (!$resultLog) {
+                    error_log("Error al guardar en log_aprobaciones_financiamiento (rechazo): " . $this->conexion->error);
+                }
+            } else {
+                error_log("No se pudo guardar en log: usuario_rechazo es NULL. Sesión: " . print_r($_SESSION, true));
             }
 
             // Responder éxito
             header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'message' => 'Financiamiento rechazado correctamente']);
-            
+
         }
 
      // Método para reactivar un financiamiento
@@ -1803,6 +1836,7 @@ class FinanciamientoController extends Controller
     public function deleteFinanciamientoRechazado()
     {
         $id = $_POST['id'] ?? 0;
+        $motivo = $_POST['motivo'] ?? '';
 
         if (!$id) {
             header('Content-Type: application/json');
@@ -1810,12 +1844,61 @@ class FinanciamientoController extends Controller
             return;
         }
 
+        // Obtener información del financiamiento antes de eliminarlo (para restaurar stock)
+        $queryInfo = "SELECT idproductosv2, cantidad FROM financiamiento WHERE idfinanciamiento = ?";
+        $stmtInfo = $this->conexion->prepare($queryInfo);
+        if ($stmtInfo) {
+            $stmtInfo->bind_param("i", $id);
+            $stmtInfo->execute();
+            $resultInfo = $stmtInfo->get_result();
+
+            if ($resultInfo->num_rows > 0) {
+                $financiamiento = $resultInfo->fetch_assoc();
+                $idProducto = $financiamiento['idproductosv2'];
+                $cantidad = $financiamiento['cantidad'];
+
+                // Restaurar el stock del producto
+                if ($idProducto && $cantidad > 0) {
+                    $queryRestaurar = "UPDATE productosv2 SET CANTIDAD = CANTIDAD + ? WHERE idproductosv2 = ?";
+                    $stmtRestaurar = $this->conexion->prepare($queryRestaurar);
+                    if ($stmtRestaurar) {
+                        $stmtRestaurar->bind_param("ii", $cantidad, $idProducto);
+                        $stmtRestaurar->execute();
+                        $stmtRestaurar->close();
+                    }
+                }
+            }
+            $stmtInfo->close();
+        }
+
+        // Registrar la eliminación en log_aprobaciones_financiamiento
+        $motivo_escaped = $this->conexion->real_escape_string($motivo);
+        $usuario_eliminacion = isset($_SESSION['usuario_id']) ? intval($_SESSION['usuario_id']) : null;
+
+        // Guardar en log_aprobaciones_financiamiento
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if ($usuario_eliminacion) {
+            $queryLog = "INSERT INTO log_aprobaciones_financiamiento (id_financiamiento, accion, usuario_id, motivo)
+                         VALUES ($id, 'eliminado', $usuario_eliminacion, '$motivo_escaped')";
+            $resultLog = $this->conexion->query($queryLog);
+
+            if (!$resultLog) {
+                error_log("Error al guardar en log_aprobaciones_financiamiento (eliminación): " . $this->conexion->error);
+            }
+        } else {
+            error_log("No se pudo guardar en log: usuario_eliminacion es NULL. Sesión: " . print_r($_SESSION, true));
+        }
+
+        // Eliminar el financiamiento
         $stmt = $this->conexion->prepare("DELETE FROM financiamiento WHERE idfinanciamiento = ?");
         if ($stmt) {
             $stmt->bind_param("i", $id);
             if ($stmt->execute()) {
                 header('Content-Type: application/json');
-                echo json_encode(['status' => 'success', 'message' => 'Financiamiento eliminado correctamente']);
+                echo json_encode(['status' => 'success', 'message' => 'Financiamiento eliminado correctamente y stock restaurado']);
             } else {
                 header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'message' => 'Error al eliminar el financiamiento']);
@@ -1831,8 +1914,8 @@ class FinanciamientoController extends Controller
     {
         $financiamientoModel = new Financiamiento();
 
-        $financiamientos = $financiamientoModel->getAllFinanciamientos();
-        
+        $financiamientos = $financiamientoModel->getFinanciamientosPendientesYRechazados();
+
         $contador = 0;
 
         foreach ($financiamientos as $financiamiento) {
@@ -2128,6 +2211,60 @@ class FinanciamientoController extends Controller
             }
         }
 
+        // NUEVA FUNCIÓN: Marcar como cobrable (revertir incobrable)
+        public function marcarComoCobrable()
+        {
+            if ($_POST) {
+                $id_persona = $_POST['id_persona'] ?? null;
+                $tipo_persona = $_POST['tipo_persona'] ?? null;
+
+                if (!$id_persona || !$tipo_persona) {
+                    echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+                    return;
+                }
+
+                try {
+                    mysqli_begin_transaction($this->conexion);
+
+                    if ($tipo_persona == 'conductor') {
+                        // Actualizar financiamientos de inscripción
+                        $query1 = "UPDATE conductor_regfinanciamiento 
+                                   SET incobrable = 0 
+                                   WHERE id_conductor = ?";
+                        $stmt1 = mysqli_prepare($this->conexion, $query1);
+                        mysqli_stmt_bind_param($stmt1, 'i', $id_persona);
+                        mysqli_stmt_execute($stmt1);
+                        mysqli_stmt_close($stmt1);
+
+                        // Actualizar financiamientos generales
+                        $query2 = "UPDATE financiamiento 
+                                   SET incobrable = 0 
+                                   WHERE id_conductor = ?";
+                        $stmt2 = mysqli_prepare($this->conexion, $query2);
+                        mysqli_stmt_bind_param($stmt2, 'i', $id_persona);
+                        mysqli_stmt_execute($stmt2);
+                        mysqli_stmt_close($stmt2);
+                    } else {
+                        // Para clientes
+                        $query = "UPDATE financiamiento 
+                                  SET incobrable = 0 
+                                  WHERE id_cliente = ?";
+                        $stmt = mysqli_prepare($this->conexion, $query);
+                        mysqli_stmt_bind_param($stmt, 'i', $id_persona);
+                        mysqli_stmt_execute($stmt);
+                        mysqli_stmt_close($stmt);
+                    }
+
+                    mysqli_commit($this->conexion);
+                    echo json_encode(['success' => true, 'message' => 'Marcado como cobrable exitosamente']);
+
+                } catch (Exception $e) {
+                    mysqli_rollback($this->conexion);
+                    echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+                }
+            }
+        }
+
         public function obtenerCuotasVencidasFiltradas()
         {
             if ($_POST) {
@@ -2167,8 +2304,8 @@ class FinanciamientoController extends Controller
 
                         UNION 
 
-                        SELECT 
-                            c.id_conductor, 
+                        SELECT
+                            c.id_conductor,
                             CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
                             COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
                             SUM(cf.monto) AS deuda_total,
@@ -2178,51 +2315,51 @@ class FinanciamientoController extends Controller
                             c.telefono,
                             f.moneda,
                             'conductor' AS tipo_persona
-                        FROM 
+                        FROM
                             cuotas_financiamiento cf
-                        INNER JOIN 
+                        INNER JOIN
                             financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
-                        INNER JOIN 
+                        INNER JOIN
                             conductores c ON f.id_conductor = c.id_conductor
-                        INNER JOIN 
+                        INNER JOIN
                             productosv2 p ON f.idproductosv2 = p.idproductosv2
-                        WHERE 
-                            cf.fecha_vencimiento < '$fecha_actual' 
+                        WHERE
+                            cf.fecha_vencimiento < '$fecha_actual'
                             AND cf.estado = 'En Progreso'
                              AND f.estado_eliminado = 0
                             $incobrable_condition
-                        GROUP BY 
-                            c.id_conductor, p.nombre
+                        GROUP BY
+                            c.id_conductor, p.nombre, f.moneda, c.numUnidad, c.desvinculado, c.telefono, c.nombres, c.apellido_paterno, c.apellido_materno
 
                         UNION
                     
-                        SELECT 
-                            cl.id AS id_conductor, 
-                            CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo, 
-                            COUNT(cf.idcuotas_financiamiento) AS num_cuotas, 
-                            SUM(cf.monto) AS deuda_total, 
-                            p.nombre AS tipo_financiamiento, 
-                            NULL AS numUnidad, 
-                            0 AS desvinculado, 
-                            cl.telefono, 
+                        SELECT
+                            cl.id AS id_conductor,
+                            CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo,
+                            COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
+                            SUM(cf.monto) AS deuda_total,
+                            p.nombre AS tipo_financiamiento,
+                            NULL AS numUnidad,
+                            0 AS desvinculado,
+                            cl.telefono,
                             f.moneda,
-                            'cliente' AS tipo_persona 
-                        FROM 
-                            cuotas_financiamiento cf 
-                        INNER JOIN 
-                            financiamiento f ON cf.id_financiamiento = f.idfinanciamiento 
-                        INNER JOIN 
-                            clientes_financiar cl ON f.id_cliente = cl.id 
-                        INNER JOIN 
-                            productosv2 p ON f.idproductosv2 = p.idproductosv2 
-                        WHERE 
-                            cf.fecha_vencimiento < '$fecha_actual' 
-                            AND cf.estado = 'En Progreso' 
+                            'cliente' AS tipo_persona
+                        FROM
+                            cuotas_financiamiento cf
+                        INNER JOIN
+                            financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                        INNER JOIN
+                            clientes_financiar cl ON f.id_cliente = cl.id
+                        INNER JOIN
+                            productosv2 p ON f.idproductosv2 = p.idproductosv2
+                        WHERE
+                            cf.fecha_vencimiento < '$fecha_actual'
+                            AND cf.estado = 'En Progreso'
                             AND f.id_cliente IS NOT NULL
                              AND f.estado_eliminado = 0
                             $incobrable_condition
-                        GROUP BY 
-                            cl.id, p.nombre 
+                        GROUP BY
+                            cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno 
                     ";
                     
                     $result = $this->conexion->query($query);
@@ -2378,18 +2515,27 @@ class FinanciamientoController extends Controller
             try {
                 $idProducto = $_POST['id_producto'] ?? null;
                 $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
-                
+                $fechaEntrega = $_POST['fecha_entrega'] ?? null; // ✅ NUEVO
+
                 if (!$idProducto || !$idFinanciamiento) {
                     throw new Exception('Faltan parámetros requeridos');
                 }
-                
-                // Actualizar el financiamiento
-                $queryUpdate = "UPDATE financiamiento 
-                            SET idproductosv2 = ?, cobrar_mora = 1 
+
+                // ✅ NUEVO: Si no se proporciona fecha, usar la fecha actual
+                if (!$fechaEntrega) {
+                    $fechaEntrega = date('Y-m-d');
+                }
+
+                // ✅ MODIFICADO: Actualizar el financiamiento con producto, fecha y estado_entrega
+                $queryUpdate = "UPDATE financiamiento
+                            SET idproductosv2 = ?,
+                                fecha_entrega = ?,
+                                estado_entrega = 'entregado',
+                                cobrar_mora = 1
                             WHERE idfinanciamiento = ?";
-                
+
                 $stmt = mysqli_prepare($this->conexion, $queryUpdate);
-                mysqli_stmt_bind_param($stmt, 'ii', $idProducto, $idFinanciamiento);
+                mysqli_stmt_bind_param($stmt, 'isi', $idProducto, $fechaEntrega, $idFinanciamiento);
                 
                 if (mysqli_stmt_execute($stmt)) {
 
@@ -2429,6 +2575,58 @@ class FinanciamientoController extends Controller
                 ]);
             }
         }
+
+    /**
+     * ✅ NUEVO: Registrar entrega de vehículo solo con fecha (sin cambiar producto)
+     * Para financiamientos que ya tienen el producto asignado (no ID 37)
+     * Solo actualiza: fecha_entrega y estado_entrega = 'entregado'
+     */
+    public function entregarVehiculoSoloFecha()
+    {
+        try {
+            $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+            $fechaEntrega = $_POST['fecha_entrega'] ?? null;
+
+            if (!$idFinanciamiento || !$fechaEntrega) {
+                throw new Exception('Faltan parámetros requeridos');
+            }
+
+            error_log("📅 Registrando entrega solo con fecha - ID Financiamiento: $idFinanciamiento, Fecha: $fechaEntrega");
+
+            // Actualizar solo fecha_entrega y estado_entrega (mantener el producto actual)
+            $queryUpdate = "UPDATE financiamiento
+                           SET fecha_entrega = ?,
+                               estado_entrega = 'entregado',
+                               cobrar_mora = 1
+                           WHERE idfinanciamiento = ?";
+
+            $stmt = mysqli_prepare($this->conexion, $queryUpdate);
+            mysqli_stmt_bind_param($stmt, 'si', $fechaEntrega, $idFinanciamiento);
+
+            if (mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_close($stmt);
+
+                error_log("✅ Entrega registrada exitosamente - No se modificó el producto ni el stock");
+
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Entrega registrada con éxito',
+                    'id_financiamiento' => $idFinanciamiento
+                ]);
+            } else {
+                throw new Exception('Error al registrar la entrega');
+            }
+
+        } catch (Exception $e) {
+            error_log("❌ Error al registrar entrega solo con fecha: " . $e->getMessage());
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 
     /**
      * NUEVA FUNCIÓN: Entregar vehículo CrediYango y generar cronograma de pagos
@@ -2482,38 +2680,28 @@ class FinanciamientoController extends Controller
             // Iniciar transacción
             mysqli_begin_transaction($this->conexion);
 
-            // 1. Actualizar el financiamiento con las fechas, estado y producto entregado
+            // ✅ MODIFICADO: Actualizar el financiamiento con las fechas, estado y estado_entrega
+            // Ya no se cambia el producto, se mantiene el seleccionado en el registro
             $queryUpdate = "UPDATE financiamiento
                            SET fecha_entrega = ?,
                                fecha_inicio_pagos_calculada = ?,
                                fecha_inicio = ?,
                                estado = 'Vehiculo Entregado',
-                               cobrar_mora = 1" .
-                               ($idProducto ? ", idproductosv2 = ?" : "") .
-                           " WHERE idfinanciamiento = ?";
+                               estado_entrega = 'entregado',
+                               cobrar_mora = 1
+                           WHERE idfinanciamiento = ?";
 
             $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
-            
-            if ($idProducto) {
-                mysqli_stmt_bind_param($stmtUpdate, 'sssii', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idProducto, $idFinanciamiento);
-                
-                // NUEVO: Reducir stock del producto entregado
-                $queryStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ? AND cantidad > 0";
-                $stmtStock = mysqli_prepare($this->conexion, $queryStock);
-                mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
-                
-                if (!mysqli_stmt_execute($stmtStock) || mysqli_stmt_affected_rows($stmtStock) === 0) {
-                    throw new Exception('Error: El vehículo seleccionado ya no tiene stock disponible');
-                }
-                mysqli_stmt_close($stmtStock);
-            } else {
-                mysqli_stmt_bind_param($stmtUpdate, 'sssi', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
-            }
+            mysqli_stmt_bind_param($stmtUpdate, 'sssi', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
 
             if (!mysqli_stmt_execute($stmtUpdate)) {
                 throw new Exception('Error al actualizar el financiamiento');
             }
             mysqli_stmt_close($stmtUpdate);
+
+            // ✅ NOTA: El stock ya fue reducido al momento del registro inicial
+            // No es necesario reducir stock nuevamente aquí
+            error_log("✅ Estado actualizado a 'entregado' - Stock ya fue reducido en el registro");
 
             // 2. Generar cronograma de pagos
             $cuotas = intval($financiamiento['cuotas']);
@@ -2679,7 +2867,7 @@ class FinanciamientoController extends Controller
         try {
             $conexion = (new Conexion())->getConexion();
             
-            $query = "SELECT 
+            $query = "SELECT
                 dp.iddetalle_pago_financiamiento,
                 CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) as cliente_nombre,
                 CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) as cliente_financiar_nombre,
@@ -2688,14 +2876,13 @@ class FinanciamientoController extends Controller
                 dp.monto_mora_original as monto_mora,
                 cuota.fecha_vencimiento,
                 f.moneda,
-                dp.created_at as fecha_registro,
                 f.idfinanciamiento
             FROM detalle_pago_financiamiento dp
             JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
             JOIN financiamiento f ON dp.idfinanciamiento = f.idfinanciamiento
             LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
             LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
-            JOIN productosv2 p ON f.idproductosv2 = p.id_producto
+            JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
             WHERE dp.estado_mora = 'pendiente'
             ORDER BY cuota.fecha_vencimiento ASC";
             
@@ -2704,7 +2891,7 @@ class FinanciamientoController extends Controller
             
             while ($row = mysqli_fetch_assoc($result)) {
                 $clienteNombre = $row['cliente_nombre'] ?: $row['cliente_financiar_nombre'];
-                
+
                 $morasPendientes[] = [
                     'id_mora_pendiente' => $row['iddetalle_pago_financiamiento'],
                     'cliente_nombre' => $clienteNombre,
@@ -2713,15 +2900,14 @@ class FinanciamientoController extends Controller
                     'monto_mora' => $row['monto_mora'],
                     'fecha_vencimiento' => $row['fecha_vencimiento'],
                     'moneda' => $row['moneda'],
-                    'fecha_registro' => $row['fecha_registro'],
                     'id_financiamiento' => $row['idfinanciamiento']
                 ];
             }
-            
+
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
-                'data' => $morasPendientes
+                'moras' => $morasPendientes
             ]);
             
         } catch (Exception $e) {
@@ -2826,6 +3012,183 @@ class FinanciamientoController extends Controller
                     'message' => 'Error al procesar pago de mora: ' . $e->getMessage()
                 ]);
             }
+        }
+    }
+
+    /**
+     * NUEVO: Obtener resumen general de financiamientos por plan
+     * Solo accesible para directores (rol 3)
+     */
+    public function obtenerResumenFinanciamientos()
+    {
+        try {
+            error_log("=== OBTENER RESUMEN FINANCIAMIENTOS - INICIO ===");
+            error_log("Sesión ID rol: " . ($_SESSION['id_rol'] ?? 'NO DEFINIDO'));
+            
+            // Verificar permisos
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                error_log("Acceso denegado - Rol: " . ($_SESSION['id_rol'] ?? 'NO DEFINIDO'));
+                echo json_encode(['success' => false, 'error' => 'Acceso denegado']);
+                return;
+            }
+            
+            error_log("Permisos verificados correctamente");
+
+            // Obtener resumen por plan de financiamiento
+            $queryPlanes = "
+                SELECT
+                    pf.idplan_financiamiento,
+                    pf.nombre_plan,
+                    COUNT(DISTINCT
+                        CASE
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor != 0 THEN CONCAT('C', f.id_conductor)
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente != 0 THEN CONCAT('L', f.id_cliente)
+                            ELSE NULL
+                        END
+                    ) as total_conductores,
+                    COUNT(f.idfinanciamiento) as total_financiamientos,
+                    SUM(CAST(COALESCE(NULLIF(f.cantidad_producto, ''), '1') AS UNSIGNED)) as total_unidades,
+                    SUM(f.monto_total) as monto_total_plan
+                FROM financiamiento f
+                INNER JOIN planes_financiamiento pf ON CAST(f.grupo_financiamiento AS UNSIGNED) = pf.idplan_financiamiento
+                WHERE f.estado != 'eliminado'
+                AND f.estado != 'rechazado'
+                AND f.estado_eliminado = 0
+                AND f.grupo_financiamiento REGEXP '^[0-9]+$'
+                GROUP BY pf.idplan_financiamiento, pf.nombre_plan
+                ORDER BY total_financiamientos DESC
+            ";
+
+            $stmt = $this->conexion->prepare($queryPlanes);
+            $stmt->execute();
+            $resultPlanes = $stmt->get_result();
+            
+            $resumenPlanes = [];
+            $totalesGenerales = [
+                'total_conductores' => 0,
+                'total_financiamientos' => 0,
+                'total_unidades' => 0,
+                'monto_total' => 0
+            ];
+
+            while ($row = $resultPlanes->fetch_assoc()) {
+                $resumenPlanes[] = $row;
+                $totalesGenerales['total_financiamientos'] += $row['total_financiamientos'];
+                $totalesGenerales['total_unidades'] += $row['total_unidades'];
+                $totalesGenerales['monto_total'] += $row['monto_total_plan'];
+            }
+
+            // Obtener total único de conductores/clientes (sin duplicados entre planes)
+            $queryTotalConductores = "
+                SELECT COUNT(DISTINCT
+                    CASE
+                        WHEN f.id_conductor IS NOT NULL AND f.id_conductor != 0 THEN CONCAT('C', f.id_conductor)
+                        WHEN f.id_cliente IS NOT NULL AND f.id_cliente != 0 THEN CONCAT('L', f.id_cliente)
+                        ELSE NULL
+                    END
+                ) as total_conductores_unicos
+                FROM financiamiento f
+                WHERE f.estado != 'eliminado'
+                AND f.estado != 'rechazado'
+                AND f.estado_eliminado = 0
+            ";
+            $stmtTotal = $this->conexion->prepare($queryTotalConductores);
+            $stmtTotal->execute();
+            $resultTotal = $stmtTotal->get_result();
+            $totalConductores = $resultTotal->fetch_assoc();
+            $totalesGenerales['total_conductores'] = $totalConductores['total_conductores_unicos'];
+
+            error_log("Datos procesados correctamente. Planes: " . count($resumenPlanes));
+            error_log("Totales generales: " . json_encode($totalesGenerales));
+            
+            echo json_encode([
+                'success' => true,
+                'resumenPlanes' => $resumenPlanes,
+                'totalesGenerales' => $totalesGenerales
+            ]);
+            
+            error_log("=== OBTENER RESUMEN FINANCIAMIENTOS - FIN EXITOSO ===");
+
+        } catch (Exception $e) {
+            error_log("ERROR en obtenerResumenFinanciamientos: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener resumen: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * NUEVO: Obtener detalle de un plan específico de financiamiento
+     * Solo accesible para directores (rol 3)
+     */
+    public function obtenerDetalleFinanciamientoPlan()
+    {
+        try {
+            // Verificar permisos
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                echo json_encode(['success' => false, 'error' => 'Acceso denegado']);
+                return;
+            }
+
+            $planId = $_GET['planId'] ?? null;
+            
+            if (!$planId) {
+                echo json_encode(['success' => false, 'error' => 'ID de plan requerido']);
+                return;
+            }
+
+            $query = "
+                SELECT
+                    COALESCE(c.nombres, cl.nombres) as nombres,
+                    COALESCE(c.apellido_paterno, cl.apellido_paterno) as apellido_paterno,
+                    COALESCE(c.apellido_materno, cl.apellido_materno) as apellido_materno,
+                    COALESCE(c.nro_documento, cl.n_documento) as nro_documento,
+                    c.numUnidad as numero_unidad,
+                    p.nombre as producto_nombre,
+                    COALESCE(NULLIF(f.cantidad_producto, ''), '1') as cantidad_unidades,
+                    f.monto_total,
+                    f.estado,
+                    f.fecha_creacion as fecha_registro,
+                    f.moneda,
+                    CASE
+                        WHEN f.id_conductor IS NOT NULL AND f.id_conductor != 0 THEN 'Conductor'
+                        WHEN f.id_cliente IS NOT NULL AND f.id_cliente != 0 THEN 'Cliente'
+                        ELSE 'Desconocido'
+                    END as tipo_persona
+                FROM financiamiento f
+                LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+                LEFT JOIN clientes_financiar cl ON f.id_cliente = cl.id
+                LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                WHERE CAST(f.grupo_financiamiento AS UNSIGNED) = ?
+                AND f.estado != 'eliminado'
+                AND f.estado_eliminado = 0
+                AND f.grupo_financiamiento REGEXP '^[0-9]+$'
+                ORDER BY COALESCE(c.nombres, cl.nombres) ASC
+            ";
+            
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bind_param("i", $planId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $detalles = [];
+            while ($row = $result->fetch_assoc()) {
+                $detalles[] = $row;
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'detalles' => $detalles
+            ]);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener detalle: ' . $e->getMessage()
+            ]);
         }
     }
 }

@@ -11,7 +11,6 @@ class Beneficio
     private $cuota_inicial;
     private $cantidad_cuotas;
     private $cuota_mensual;
-
     // Campos anteriores (mantenidos por compatibilidad)
     private $precio_contado;
     private $precio_financiado;
@@ -38,86 +37,262 @@ class Beneficio
     }
 
     // ============ GETTERS Y SETTERS ============
-    public function getId() { return $this->id; }
-    public function setId($id) { $this->id = $id; }
+    public function getId()
+    {
+        return $this->id;
+    }
 
-    public function getNombre() { return $this->nombre; }
-    public function setNombre($nombre) { $this->nombre = $nombre; }
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
 
-    public function getCategoria() { return $this->categoria; }
-    public function setCategoria($categoria) { $this->categoria = $categoria; }
+    public function getNombre()
+    {
+        return $this->nombre;
+    }
 
-    public function getPlanFinanciamientoId() { return $this->plan_financiamiento_id; }
-    public function setPlanFinanciamientoId($plan_financiamiento_id) { $this->plan_financiamiento_id = $plan_financiamiento_id; }
+    public function setNombre($nombre)
+    {
+        $this->nombre = $nombre;
+    }
 
-    public function getDescripcion() { return $this->descripcion; }
-    public function setDescripcion($descripcion) { $this->descripcion = $descripcion; }
+    public function getCategoria()
+    {
+        return $this->categoria;
+    }
+
+    public function setCategoria($categoria)
+    {
+        $this->categoria = $categoria;
+    }
+
+    public function getPlanFinanciamientoId()
+    {
+        return $this->plan_financiamiento_id;
+    }
+
+    public function setPlanFinanciamientoId($plan_financiamiento_id)
+    {
+        $this->plan_financiamiento_id = $plan_financiamiento_id;
+    }
+
+    public function getDescripcion()
+    {
+        return $this->descripcion;
+    }
+
+    public function setDescripcion($descripcion)
+    {
+        $this->descripcion = $descripcion;
+    }
 
     // Getters y Setters para nuevos campos de financiamiento
-    public function getCuotaInicial() { return $this->cuota_inicial; }
-    public function setCuotaInicial($cuota_inicial) { $this->cuota_inicial = $cuota_inicial; }
+    public function getCuotaInicial()
+    {
+        return $this->cuota_inicial;
+    }
 
-    public function getCantidadCuotas() { return $this->cantidad_cuotas; }
-    public function setCantidadCuotas($cantidad_cuotas) { $this->cantidad_cuotas = $cantidad_cuotas; }
+    public function setCuotaInicial($cuota_inicial)
+    {
+        $this->cuota_inicial = $cuota_inicial;
+    }
 
-    public function getCuotaMensual() { return $this->cuota_mensual; }
-    public function setCuotaMensual($cuota_mensual) { $this->cuota_mensual = $cuota_mensual; }
+    public function getCantidadCuotas()
+    {
+        return $this->cantidad_cuotas;
+    }
 
-    public function getPrecioContado() { return $this->precio_contado; }
-    public function setPrecioContado($precio_contado) { $this->precio_contado = $precio_contado; }
+    public function setCantidadCuotas($cantidad_cuotas)
+    {
+        $this->cantidad_cuotas = $cantidad_cuotas;
+    }
 
-    public function getPrecioFinanciado() { return $this->precio_financiado; }
-    public function setPrecioFinanciado($precio_financiado) { $this->precio_financiado = $precio_financiado; }
+    public function getCuotaMensual()
+    {
+        return $this->cuota_mensual;
+    }
 
-    public function getCuotasDisponibles() { return $this->cuotas_disponibles; }
-    public function setCuotasDisponibles($cuotas_disponibles) { $this->cuotas_disponibles = $cuotas_disponibles; }
+    public function setCuotaMensual($cuota_mensual)
+    {
+        $this->cuota_mensual = $cuota_mensual;
+    }
 
-    public function getTasaInteres() { return $this->tasa_interes; }
-    public function setTasaInteres($tasa_interes) { $this->tasa_interes = $tasa_interes; }
+    public function getPrecioContado()
+    {
+        return $this->precio_contado;
+    }
 
-    public function getRequisitos() { return $this->requisitos; }
-    public function setRequisitos($requisitos) { $this->requisitos = $requisitos; }
+    public function setPrecioContado($precio_contado)
+    {
+        $this->precio_contado = $precio_contado;
+    }
 
-    public function getImagenPrincipal() { return $this->imagen_principal; }
-    public function setImagenPrincipal($imagen_principal) { $this->imagen_principal = $imagen_principal; }
+    public function getPrecioFinanciado()
+    {
+        return $this->precio_financiado;
+    }
 
-    public function getGaleriaImagenes() { return $this->galeria_imagenes; }
-    public function setGaleriaImagenes($galeria_imagenes) { $this->galeria_imagenes = $galeria_imagenes; }
+    public function setPrecioFinanciado($precio_financiado)
+    {
+        $this->precio_financiado = $precio_financiado;
+    }
 
-    public function getStockDisponible() { return $this->stock_disponible; }
-    public function setStockDisponible($stock_disponible) { $this->stock_disponible = $stock_disponible; }
+    public function getCuotasDisponibles()
+    {
+        return $this->cuotas_disponibles;
+    }
 
-    public function getDisponible() { return $this->disponible; }
-    public function setDisponible($disponible) { $this->disponible = $disponible; }
+    public function setCuotasDisponibles($cuotas_disponibles)
+    {
+        $this->cuotas_disponibles = $cuotas_disponibles;
+    }
 
+    public function getTasaInteres()
+    {
+        return $this->tasa_interes;
+    }
 
-    public function getCodigoProducto() { return $this->codigo_producto; }
-    public function setCodigoProducto($codigo_producto) { $this->codigo_producto = $codigo_producto; }
+    public function setTasaInteres($tasa_interes)
+    {
+        $this->tasa_interes = $tasa_interes;
+    }
 
-    public function getMarca() { return $this->marca; }
-    public function setMarca($marca) { $this->marca = $marca; }
+    public function getRequisitos()
+    {
+        return $this->requisitos;
+    }
 
-    public function getModelo() { return $this->modelo; }
-    public function setModelo($modelo) { $this->modelo = $modelo; }
+    public function setRequisitos($requisitos)
+    {
+        $this->requisitos = $requisitos;
+    }
 
-    public function getEspecificaciones() { return $this->especificaciones; }
-    public function setEspecificaciones($especificaciones) { $this->especificaciones = $especificaciones; }
+    public function getImagenPrincipal()
+    {
+        return $this->imagen_principal;
+    }
 
-    public function getPeso() { return $this->peso; }
-    public function setPeso($peso) { $this->peso = $peso; }
+    public function setImagenPrincipal($imagen_principal)
+    {
+        $this->imagen_principal = $imagen_principal;
+    }
 
-    public function getDimensiones() { return $this->dimensiones; }
-    public function setDimensiones($dimensiones) { $this->dimensiones = $dimensiones; }
+    public function getGaleriaImagenes()
+    {
+        return $this->galeria_imagenes;
+    }
 
-    public function getGarantiaMeses() { return $this->garantia_meses; }
-    public function setGarantiaMeses($garantia_meses) { $this->garantia_meses = $garantia_meses; }
+    public function setGaleriaImagenes($galeria_imagenes)
+    {
+        $this->galeria_imagenes = $galeria_imagenes;
+    }
 
-    public function getProveedor() { return $this->proveedor; }
-    public function setProveedor($proveedor) { $this->proveedor = $proveedor; }
+    public function getStockDisponible()
+    {
+        return $this->stock_disponible;
+    }
 
-    public function getConexion() { 
-    return $this->conectar; 
-}
+    public function setStockDisponible($stock_disponible)
+    {
+        $this->stock_disponible = $stock_disponible;
+    }
+
+    public function getDisponible()
+    {
+        return $this->disponible;
+    }
+
+    public function setDisponible($disponible)
+    {
+        $this->disponible = $disponible;
+    }
+
+    public function getCodigoProducto()
+    {
+        return $this->codigo_producto;
+    }
+
+    public function setCodigoProducto($codigo_producto)
+    {
+        $this->codigo_producto = $codigo_producto;
+    }
+
+    public function getMarca()
+    {
+        return $this->marca;
+    }
+
+    public function setMarca($marca)
+    {
+        $this->marca = $marca;
+    }
+
+    public function getModelo()
+    {
+        return $this->modelo;
+    }
+
+    public function setModelo($modelo)
+    {
+        $this->modelo = $modelo;
+    }
+
+    public function getEspecificaciones()
+    {
+        return $this->especificaciones;
+    }
+
+    public function setEspecificaciones($especificaciones)
+    {
+        $this->especificaciones = $especificaciones;
+    }
+
+    public function getPeso()
+    {
+        return $this->peso;
+    }
+
+    public function setPeso($peso)
+    {
+        $this->peso = $peso;
+    }
+
+    public function getDimensiones()
+    {
+        return $this->dimensiones;
+    }
+
+    public function setDimensiones($dimensiones)
+    {
+        $this->dimensiones = $dimensiones;
+    }
+
+    public function getGarantiaMeses()
+    {
+        return $this->garantia_meses;
+    }
+
+    public function setGarantiaMeses($garantia_meses)
+    {
+        $this->garantia_meses = $garantia_meses;
+    }
+
+    public function getProveedor()
+    {
+        return $this->proveedor;
+    }
+
+    public function setProveedor($proveedor)
+    {
+        $this->proveedor = $proveedor;
+    }
+
+    public function getConexion()
+    {
+        return $this->conectar;
+    }
+
     // ============ MÉTODOS PRINCIPALES ============
 
     /**
@@ -147,10 +322,10 @@ class Beneficio
                 throw new Exception('La cuota mensual es obligatoria');
             }
 
-            $sql = "INSERT INTO beneficios (
-                        nombre, plan_financiamiento_id, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual,
+            $sql = 'INSERT INTO beneficios (
+                        nombre, plan_financiamiento_id, categoria, descripcion, cuota_inicial, cantidad_cuotas, cuota_mensual, pago_inscripcion,
                         moneda, nombre_plan_personalizado, frecuencia_pago, imagen, disponible, departamento_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -166,28 +341,30 @@ class Beneficio
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
             $cuota_mensual = $datos['cuota_mensual'];
+            $pago_inscripcion = isset($datos['pago_inscripcion']) && $datos['pago_inscripcion'] !== null ? $datos['pago_inscripcion'] : null;
             $moneda = isset($datos['moneda']) && !empty($datos['moneda']) ? $datos['moneda'] : null;
             $nombre_plan_personalizado = isset($datos['nombre_plan_personalizado']) && !empty($datos['nombre_plan_personalizado']) ? $datos['nombre_plan_personalizado'] : null;
             $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
-            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int)$datos['departamento_id'] : null;
+            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int) $datos['departamento_id'] : null;
 
             $stmt->bind_param(
-                'siisdidssssii',
-                $nombre,                       // s - string
-                $plan_financiamiento_id,       // i - integer
-                $categoria,                    // i - integer (nullable)
-                $descripcion,                  // s - string
-                $cuota_inicial,                // d - decimal
-                $cantidad_cuotas,              // i - integer
-                $cuota_mensual,                // d - decimal
-                $moneda,                       // s - string (nullable)
-                $nombre_plan_personalizado,    // s - string (nullable)
-                $frecuencia_pago,              // s - string (nullable)
-                $imagen,                       // s - string
-                $disponible,                   // i - integer
-                $departamento_id               // i - integer (nullable)
+                'siisdidsssssii',
+                $nombre,  // s - string
+                $plan_financiamiento_id,  // i - integer
+                $categoria,  // i - integer (nullable)
+                $descripcion,  // s - string
+                $cuota_inicial,  // d - decimal
+                $cantidad_cuotas,  // i - integer
+                $cuota_mensual,  // d - decimal
+                $pago_inscripcion,  // d - decimal (nullable)
+                $moneda,  // s - string (nullable)
+                $nombre_plan_personalizado,  // s - string (nullable)
+                $frecuencia_pago,  // s - string (nullable)
+                $imagen,  // s - string
+                $disponible,  // i - integer
+                $departamento_id  // i - integer (nullable)
             );
 
             if (!$stmt->execute()) {
@@ -210,58 +387,58 @@ class Beneficio
     public function obtenerTodos($filtros = [])
     {
         try {
-            $sql = "SELECT b.*,
+            $sql = 'SELECT b.*,
                     COALESCE(b.moneda, p.moneda) as moneda,
                     COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display
                     FROM beneficios b
                     LEFT JOIN planes_financiamiento p ON b.plan_financiamiento_id = p.idplan_financiamiento
-                    WHERE 1=1";
+                    WHERE 1=1';
             $params = [];
-            $types = "";
+            $types = '';
 
             // Aplicar filtros
             if (!empty($filtros['categoria'])) {
-                $sql .= " AND b.categoria = ?";
+                $sql .= ' AND b.categoria = ?';
                 $params[] = $filtros['categoria'];
-                $types .= "i";
+                $types .= 'i';
             }
 
             if (!empty($filtros['plan_financiamiento_id'])) {
-                $sql .= " AND b.plan_financiamiento_id = ?";
+                $sql .= ' AND b.plan_financiamiento_id = ?';
                 $params[] = $filtros['plan_financiamiento_id'];
-                $types .= "i";
+                $types .= 'i';
             }
 
             if (!empty($filtros['disponible'])) {
-                $sql .= " AND b.disponible = ?";
+                $sql .= ' AND b.disponible = ?';
                 $params[] = $filtros['disponible'];
-                $types .= "i";
+                $types .= 'i';
             }
 
             // Filtro por departamento
             if (isset($filtros['departamento_id'])) {
                 if ($filtros['departamento_id'] === 'nacional') {
                     // Beneficios nacionales (sin departamento específico)
-                    $sql .= " AND b.departamento_id IS NULL";
+                    $sql .= ' AND b.departamento_id IS NULL';
                 } else if (!empty($filtros['departamento_id'])) {
                     // Beneficios de un departamento específico O nacionales
-                    $sql .= " AND (b.departamento_id = ? OR b.departamento_id IS NULL)";
+                    $sql .= ' AND (b.departamento_id = ? OR b.departamento_id IS NULL)';
                     $params[] = $filtros['departamento_id'];
-                    $types .= "i";
+                    $types .= 'i';
                 }
             }
 
             if (!empty($filtros['busqueda'])) {
-                $sql .= " AND (b.nombre LIKE ? OR b.descripcion LIKE ? OR b.marca LIKE ? OR b.modelo LIKE ?)";
+                $sql .= ' AND (b.nombre LIKE ? OR b.descripcion LIKE ? OR b.marca LIKE ? OR b.modelo LIKE ?)';
                 $busqueda = '%' . $filtros['busqueda'] . '%';
                 $params[] = $busqueda;
                 $params[] = $busqueda;
                 $params[] = $busqueda;
                 $params[] = $busqueda;
-                $types .= "ssss";
+                $types .= 'ssss';
             }
 
-            $sql .= " ORDER BY b.fecha_creacion DESC";
+            $sql .= ' ORDER BY b.fecha_creacion DESC';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -298,7 +475,7 @@ class Beneficio
     public function obtenerPorId($id)
     {
         try {
-            $sql = "SELECT * FROM beneficios WHERE id = ?";
+            $sql = 'SELECT * FROM beneficios WHERE id = ?';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -330,11 +507,11 @@ class Beneficio
     public function actualizar($id, $datos)
     {
         try {
-            $sql = "UPDATE beneficios SET
+            $sql = 'UPDATE beneficios SET
                         nombre = ?, plan_financiamiento_id = ?, categoria = ?, descripcion = ?, cuota_inicial = ?,
-                        cantidad_cuotas = ?, cuota_mensual = ?, moneda = ?, nombre_plan_personalizado = ?, frecuencia_pago = ?, imagen = ?,
+                        cantidad_cuotas = ?, cuota_mensual = ?, pago_inscripcion = ?, moneda = ?, nombre_plan_personalizado = ?, frecuencia_pago = ?, imagen = ?,
                         disponible = ?, departamento_id = ?, fecha_actualizacion = CURRENT_TIMESTAMP
-                    WHERE id = ?";
+                    WHERE id = ?';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -358,29 +535,31 @@ class Beneficio
             $cuota_inicial = $datos['cuota_inicial'];
             $cantidad_cuotas = $datos['cantidad_cuotas'];
             $cuota_mensual = $datos['cuota_mensual'];
+            $pago_inscripcion = isset($datos['pago_inscripcion']) && $datos['pago_inscripcion'] !== null ? $datos['pago_inscripcion'] : null;
             $moneda = isset($datos['moneda']) && !empty($datos['moneda']) ? $datos['moneda'] : null;
             $nombre_plan_personalizado = isset($datos['nombre_plan_personalizado']) && !empty($datos['nombre_plan_personalizado']) ? $datos['nombre_plan_personalizado'] : null;
             $frecuencia_pago = isset($datos['frecuencia_pago']) && !empty($datos['frecuencia_pago']) ? $datos['frecuencia_pago'] : null;
             $imagen = isset($datos['imagen']) && $datos['imagen'] !== null && $datos['imagen'] !== '' ? $datos['imagen'] : null;
             $disponible = $datos['disponible'];
-            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int)$datos['departamento_id'] : null;
+            $departamento_id = isset($datos['departamento_id']) && $datos['departamento_id'] !== null && $datos['departamento_id'] !== '' ? (int) $datos['departamento_id'] : null;
 
             $stmt->bind_param(
-                'siisdidssssiii',
-                $nombre,                       // s - string
-                $plan_financiamiento_id,       // i - integer
-                $categoria,                    // i - integer (nullable)
-                $descripcion,                  // s - string
-                $cuota_inicial,                // d - decimal
-                $cantidad_cuotas,              // i - integer
-                $cuota_mensual,                // d - decimal
-                $moneda,                       // s - string (nullable)
-                $nombre_plan_personalizado,    // s - string (nullable)
-                $frecuencia_pago,              // s - string (nullable)
-                $imagen,                       // s - string
-                $disponible,                   // i - integer
-                $departamento_id,              // i - integer (nullable)
-                $id                            // i - integer
+                'siisdidsssssiii',
+                $nombre,  // s - string
+                $plan_financiamiento_id,  // i - integer
+                $categoria,  // i - integer (nullable)
+                $descripcion,  // s - string
+                $cuota_inicial,  // d - decimal
+                $cantidad_cuotas,  // i - integer
+                $cuota_mensual,  // d - decimal
+                $pago_inscripcion,  // d - decimal (nullable)
+                $moneda,  // s - string (nullable)
+                $nombre_plan_personalizado,  // s - string (nullable)
+                $frecuencia_pago,  // s - string (nullable)
+                $imagen,  // s - string
+                $disponible,  // i - integer
+                $departamento_id,  // i - integer (nullable)
+                $id  // i - integer
             );
 
             if (!$stmt->execute()) {
@@ -403,7 +582,7 @@ class Beneficio
     public function eliminar($id)
     {
         try {
-            $sql = "DELETE FROM beneficios WHERE id = ?";
+            $sql = 'DELETE FROM beneficios WHERE id = ?';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -432,7 +611,7 @@ class Beneficio
     public function cambiarDisponibilidad($id, $disponible)
     {
         try {
-            $sql = "UPDATE beneficios SET disponible = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?";
+            $sql = 'UPDATE beneficios SET disponible = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -526,42 +705,41 @@ class Beneficio
     /**
      * Obtener categorías disponibles
      */
-public function obtenerCategorias()
-{
-    try {
-        $sql = "SELECT cp.idcategoria_producto, cp.nombre, 
+    public function obtenerCategorias()
+    {
+        try {
+            $sql = 'SELECT cp.idcategoria_producto, cp.nombre, 
                        COUNT(b.id) as total_productos
                 FROM categoria_producto cp
                 LEFT JOIN beneficios b ON b.categoria = cp.idcategoria_producto
                                         AND b.disponible = 1
                 GROUP BY cp.idcategoria_producto, cp.nombre
-                ORDER BY cp.nombre";
+                ORDER BY cp.nombre';
 
-        $stmt = $this->conectar->prepare($sql);
+            $stmt = $this->conectar->prepare($sql);
 
-        if (!$stmt) {
-            throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $categorias = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $categorias[] = $row;
+            }
+
+            $stmt->close();
+            return $categorias;
+        } catch (Exception $e) {
+            error_log('Error en Beneficio::obtenerCategorias(): ' . $e->getMessage());
+            return [];
         }
-
-        if (!$stmt->execute()) {
-            throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
-        }
-
-        $result = $stmt->get_result();
-        $categorias = [];
-
-        while ($row = $result->fetch_assoc()) {
-            $categorias[] = $row;
-        }
-
-        $stmt->close();
-        return $categorias;
-    } catch (Exception $e) {
-        error_log('Error en Beneficio::obtenerCategorias(): ' . $e->getMessage());
-        return [];
     }
-}
-
 
     /**
      * Verificar si existe un código de producto
@@ -569,14 +747,14 @@ public function obtenerCategorias()
     public function existeCodigoProducto($codigo, $excluirId = null)
     {
         try {
-            $sql = "SELECT COUNT(*) as total FROM beneficios WHERE codigo_producto = ?";
+            $sql = 'SELECT COUNT(*) as total FROM beneficios WHERE codigo_producto = ?';
             $params = [$codigo];
-            $types = "s";
+            $types = 's';
 
             if ($excluirId) {
-                $sql .= " AND id != ?";
+                $sql .= ' AND id != ?';
                 $params[] = $excluirId;
-                $types .= "i";
+                $types .= 'i';
             }
 
             $stmt = $this->conectar->prepare($sql);
@@ -608,13 +786,13 @@ public function obtenerCategorias()
     public function obtenerDepartamentosHabilitados()
     {
         try {
-            $sql = "SELECT
+            $sql = 'SELECT
                         d.iddepast,
                         d.nombre
                     FROM depast d
                     INNER JOIN departamentos_habilitados dh ON d.iddepast = dh.iddepast
                     WHERE dh.habilitado = 1
-                    ORDER BY d.nombre ASC";
+                    ORDER BY d.nombre ASC';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -640,5 +818,4 @@ public function obtenerCategorias()
             return [];
         }
     }
-
 }

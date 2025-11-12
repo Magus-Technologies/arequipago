@@ -22,13 +22,139 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
     <title>Financiamiento CrediGO</title>
     <link rel="stylesheet" href="<?= URL::to('public/css/financiamientoView.css') ?>?v=<?= time() ?>">
 
+    <!-- Estilos para botón flotante -->
+    <style>
+        /* Botón flotante de Registros Pendientes */
+        .btn-float-pendientes {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: none;
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            min-width: 130px;
+        }
+
+        .btn-float-pendientes:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.5);
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .btn-float-pendientes:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        /* Texto del botón */
+        .btn-float-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Badge del botón flotante */
+        .badge-float {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animación de pulso para el badge */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                transform: scale(1.15);
+                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Ajuste para pantallas pequeñas */
+        @media (max-width: 768px) {
+            .btn-float-pendientes {
+                padding: 10px 16px;
+                bottom: 20px;
+                right: 20px;
+                font-size: 0.85rem;
+                min-width: 110px;
+            }
+
+            .badge-float {
+                min-width: 24px;
+                height: 24px;
+                font-size: 0.7rem;
+                top: -6px;
+                right: -6px;
+            }
+        }
+
+        /* Tooltip mejorado */
+        .btn-float-pendientes::after {
+            content: attr(title);
+            position: absolute;
+            right: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            font-size: 0.875rem;
+        }
+
+        .btn-float-pendientes:hover::after {
+            opacity: 1;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-3 border rounded shadow-sm p-3">
         <div class="row mb-3">
             <div class="col-12">
-                <h2 class="text-center mb-4">Financiamiento CrediGO</h2>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Financiamiento CrediGO</h2>
+                    <?php if ($id_rol == 3): ?>
+                    <!-- Botón de Resumen -->
+                    <button class="btn btn-info" onclick="irAResumenFinanciamientos()" type="button">
+                        <i class="fas fa-chart-bar me-2"></i>Resumen de Financiamientos
+                    </button>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <div class="col-12">
@@ -54,6 +180,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                             <i class="fas fa-file-contract me-2"></i>Generar Contratos
                         </button>
                     </li>
+
                 </ul>
             </div>
         </div>
@@ -62,434 +189,13 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             <!-- Lista de Clientes -->
             <div class="tab-pane fade show active" id="listaClientes" role="tabpanel"
                 aria-labelledby="listaFinanciamientoNav">
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="card mb-4">
-                            <div class="card-header" style="background-color: #fcf3cf; color: #2E217A;">
-                                <h5><i class="fas fa-users me-2"></i>Lista de Clientes</h5>
-                            </div>
 
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                        <input type="text" class="form-control" id="searchCliente"
-                                            placeholder="Buscar por nombre, documento, número de unidad o grupo"
-                                            oninput="buscarClientes()">
-                                    </div>
-                                </div>
+                <?php include __DIR__ . '/../../components/lista-clientes.php'; ?>
 
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Nombre</th>
-                                                <th>Número de Unidad</th>
-                                                <th>Grupo de Financiamiento</th>
-                                                <th>Cantidad de Financiamientos</th>
-                                                <th id="fechaHeader" class="sortable">Fecha Registro <i
-                                                        class="fas fa-sort"></i></th>
-                                                <!-- Agregado: clase sortable e ícono de ordenamiento -->
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="clientTable">
-                                            <!-- Los datos de los clientes se llenarán aquí -->
-                                        </tbody>
-                                    </table>
-                                </div>
+                <?php include __DIR__ . '/../../components/modal-cronograma-pagos.php'; ?>
 
-                                <div id="resultadosCount" class="text-muted text-center mb-3" style="display: none;">
-                                </div>
+                <?php include __DIR__ . '/../../components/modal-detalles-cliente.php'; ?>
 
-                                <!-- Paginación -->
-                                <nav aria-label="Paginación de clientes">
-                                    <ul class="pagination justify-content-center">
-                                        <li class="page-item" id="prevPageItem">
-                                            <button class="page-link" id="prevPage">
-                                                <i class="fas fa-chevron-left me-1"></i>Anterior
-                                            </button>
-                                        </li>
-                                        <li class="page-item disabled">
-                                            <span class="page-link" id="pageNumber">Página 1</span>
-                                        </li>
-                                        <li class="page-item" id="nextPageItem">
-                                            <button class="page-link" id="nextPage">
-                                                Siguiente<i class="fas fa-chevron-right ms-1"></i>
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="card mb-4">
-                            <div class="card-header " style="background-color: #fcf3cf; color: #2E217A;">
-                                <h5><i class="fas fa-info-circle me-2"></i>Información Rápida</h5>
-                            </div>
-
-                            <div class="card-body">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item"><i class="fas fa-id-card me-2"></i><strong>Tipo de
-                                            Documento:</strong> <span class="ms-2">Seleccione un cliente en la
-                                            tabla</span></li>
-                                    <li class="list-group-item"><i class="fas fa-hashtag me-2"></i><strong>Número de
-                                            Documento:</strong> <span class="ms-2"></span></li>
-                                    <li class="list-group-item"><i class="fas fa-user me-2"></i><strong>Nombre:</strong>
-                                        <span class="ms-2"></span>
-                                    </li>
-                                    <li class="list-group-item"><i class="fas fa-user-tag me-2"></i><strong>Código de
-                                            Asociado:</strong> <!-- Ícono cambiado -->
-                                        <span class="ms-2"></span> <!-- Mantiene la estructura -->
-                                    </li>
-                                    <li class="list-group-item">
-                                        <i class="fas fa-car me-2"></i><strong>Nº Unidad:</strong>
-                                        <span class="ms-2"></span>
-                                    </li>
-                                    <li class="list-group-item"><i
-                                            class="fas fa-file-invoice-dollar me-2 "></i><strong>Cantidad de
-                                            Financiamientos:</strong> <span class="ms-2"></span></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <!-- ✅ Nueva card agregada -->
-                        <div class="card mb-4">
-                            <div id="headerPendientes" class="card-header"
-                                style="background-color: #d4efdf; color: #1d8348;">
-                                <h5>
-                                    <i class="fas fa-exclamation-circle me-2"></i> Financiamientos Pendientes de
-                                    Aprobación
-                                </h5>
-                            </div>
-
-                            <div class="card-body text-center">
-                                <button id="btnPendientes" class="btn btn-success position-relative"
-                                    onclick="window.location.href='/arequipago/financiamientosAprobar'">
-                                    <i class="fas fa-clock me-2"></i> Ver Pendientes
-                                    <!-- 🔔 Circulito tipo notificación -->
-                                    <span id="badgePendientes"
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                        style="display: none; font-size: 0.7rem; padding: 0.6em 0.6em;">
-                                        0
-                                    </span>
-                                </button>
-                            </div>
-                              <div class="card-body text-center pt-0">
-                                   <button id="btnPapelera" class="btn btn-secondary">
-                                        <i class="fas fa-trash-alt me-2"></i> Ver Papelera
-                                    </button>
-                                </div>
-
-                        </div>
-
-                    </div>
-                </div>
-
-
-                <!-- Modal para ver cronograma -->
-                <div class="modal fade" id="paymentScheduleModal" tabindex="-1"
-                    aria-labelledby="paymentScheduleModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="paymentScheduleModalLabel">
-                                    <i class="fas fa-calendar-alt me-2"></i>Cronograma de Pagos
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Selector de financiamiento -->
-                                <div class="mb-3">
-                                    <div id="selectBox" onclick="toggleDropdown()"
-                                        class="form-select d-flex justify-content-between align-items-center">
-                                        <span>Seleccionar un financiamiento</span>
-                                        <i class="fas fa-chevron-down"></i>
-                                    </div>
-                                </div>
-
-                                <!-- Tabla que simula el select (se oculta inicialmente) -->
-                                <div class="table-responsive mb-4">
-                                    <table id="cronogramaSelect" class="table table-hover" style="display: none;">
-                                        <thead>
-                                            <tr>
-                                                <th>Producto</th>
-                                                <th>Grupo</th>
-                                                <th>Cantidad</th>
-                                                <th>Monto</th>
-                                                <th>Categoría</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Se llenará dinámicamente -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- Mensaje cuando no hay cronograma disponible -->
-                                <div id="noCronogramaMessage" class="alert alert-info text-center"
-                                    style="display: none;">
-                                    <i class="fas fa-info-circle fa-2x mb-2"></i>
-                                    <p>No hay cronograma de pagos disponible para este cliente.</p>
-                                </div>
-
-                                <!-- Tabla de cuotas -->
-                                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                    <table id="tablaCuotas" class="table table-striped" style="display: none;">
-                                        <thead class="sticky-top bg-white">
-                                            <tr>
-                                                <th>Fecha de vencimiento</th>
-                                                <th>Monto</th>
-                                                <th>Estado</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Las filas se llenan dinámicamente con JavaScript -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Modal para Ver Detalles -->
-                <div class="modal fade" id="financingDetailsModal" tabindex="-1"
-                    aria-labelledby="financingDetailsModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="financingDetailsModalLabel">
-                                    <i class="fas fa-info-circle me-2"></i>Detalles del Cliente y Financiamiento
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <!-- Selector de financiamiento -->
-                                <div class="mb-3">
-                                    <div id="selectBoxDetalle" onclick="toggleDropdownDetalle()"
-                                        class="form-select d-flex justify-content-between align-items-center">
-                                        <span>Seleccionar un financiamiento</span>
-                                        <i class="fas fa-chevron-down"></i>
-                                    </div>
-                                </div>
-
-                                <!-- Tabla que simula el select (se oculta inicialmente) -->
-                                <div class="table-responsive mb-4">
-                                    <table id="detalleSelect" class="table table-hover" style="display: none;">
-                                        <thead>
-                                            <tr>
-                                                <th>Producto</th>
-                                                <th>Grupo</th>
-                                                <th>Cantidad</th>
-                                                <th>Monto de Compra</th>
-                                                <th>Monto Total</th>
-                                                <th>Categoría</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Se llenará dinámicamente -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div id="detalleFinanciamientoContainer" style="display: none;">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="card mb-3">
-                                                <div class="card-header bg-white" style="color: #2E217A;">
-                                                    <h5><i class="fas fa-user me-2"></i>Datos del Cliente</h5>
-                                                </div>
-                                                <div class="card-body">
-                                                    <p><i class="fas fa-id-card me-2"></i><strong>Documento:
-                                                        </strong><span id="modalClienteDocumento"></span></p>
-                                                    <p><i class="fas fa-user me-2"></i><strong>Nombres: </strong><span
-                                                            id="modalClienteNombres"></span></p>
-                                                    <p><i class="fas fa-map-marker-alt me-2"></i><strong>Dirección:
-                                                        </strong><span id="modalClienteDireccion"></span></p>
-                                                    <p><i class="fas fa-phone me-2"></i><strong>Teléfono: </strong><span
-                                                            id="modalClienteTelefono"></span></p>
-                                                    
-                                                    <!-- NUEVO: Botón para descargar contrato de entrega (solo si vehículo fue entregado) -->
-                                                    <div id="btnDescargarContratoEntrega" style="display: none; margin-top: 15px;">
-                                                        <button type="button" class="btn btn-success btn-sm w-100" onclick="descargarContratoEntregaDesdeModal()">
-                                                            <i class="fas fa-file-download me-2"></i>Descargar Acta de Entrega
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    <!-- NUEVO: Botón para descargar boletas de pago inicial -->
-                                                    <div id="btnDescargarBoletasIniciales" style="display: none; margin-top: 15px;">
-                                                        <button type="button" class="btn btn-primary btn-sm w-100" onclick="mostrarBoletasPagoInicial()">
-                                                            <i class="fas fa-receipt me-2"></i>Ver Boletas de Pago Inicial
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    <!-- NUEVO: Botón para descargar cronograma -->
-                                                    <div id="btnDescargarCronograma" style="display: none; margin-top: 15px;">
-                                                        <button type="button" class="btn btn-info btn-sm w-100" onclick="descargarCronogramaDesdeModal()">
-                                                            <i class="fas fa-calendar-alt me-2"></i>Descargar Cronograma
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    <!-- NUEVO: Estado de entrega del vehículo -->
-                                                    <div id="estadoEntregaVehiculo" style="display: none; margin-top: 15px;">
-                                                        <!-- Se llenará dinámicamente -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-    <div class="card mb-3">
-        <div class="card-header bg-white" style="color: #2E217A;">
-            <h5><i class="fas fa-file-invoice-dollar me-2"></i>Financiamiento</h5>
-        </div>
-        <div class="card-body">
-            <!-- NUEVO: Campo inteligente según tipo de plan -->
-            <div id="campoCapacidadCompra" style="display: none;">
-                <p><i class="fas fa-car me-2"></i><strong>Capacidad de Compra Actual:</strong> 
-                    <span id="modalFinanciamientoCapacidadCompra" class="text-success fw-bold">$0.00</span>
-                </p>
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Monto disponible para comprar un vehículo (considerando semanas perdidas)
-                </small>
-            </div>
-            
-            <!-- Campo normal para todos los planes -->
-            <p><i class="fas fa-dollar-sign me-2"></i><strong>Monto de Compra:</strong> 
-                <span id="modalFinanciamientoMontoCompra" class="text-primary fw-bold">$0.00</span>
-            </p>
-            
-            <p><i class="fas fa-calculator me-2"></i><strong>Monto Total:</strong> 
-                <span id="modalFinanciamientoMontoTotal" class="text-warning fw-bold">$0.00</span>
-            </p>
-            
-            <!-- NUEVO: Información adicional para vehículos -->
-            <div id="infoVehiculo" style="display: none;">
-                <hr>
-                <p><i class="fas fa-calendar-alt me-2"></i><strong>Plan Original:</strong> 
-                    <span id="modalFinanciamientoPlanOriginal" class="text-info">$0.00</span>
-                </p>
-                <p><i class="fas fa-clock me-2"></i><strong>Semanas Perdidas:</strong> 
-                    <span id="modalFinanciamientoSemanasPerdidas" class="text-danger">0</span>
-                </p>
-                <p><i class="fas fa-exclamation-triangle me-2"></i><strong>Dinero Perdido:</strong> 
-                    <span id="modalFinanciamientoDineroPerdido" class="text-danger">$0.00</span>
-                </p>
-            </div>
-            
-            <!-- Campos originales -->
-            <p><i class="fas fa-hashtag me-2"></i><strong>Código Asociado:</strong> 
-                <span id="modalFinanciamientoCodigo"></span></p>
-            <p><i class="fas fa-layer-group me-2"></i><strong>Grupo de Financiamiento: </strong><span
-                    id="modalFinanciamientoGrupo"></span></p>
-            <p><i class="fas fa-check-circle me-2"></i><strong>Estado:</strong><span
-                    id="modalFinanciamientoEstado"></span></p>
-            
-            <!-- NUEVO: Sección específica para CrediYango -->
-            <div id="seccionCrediYango" style="display: none;">
-                <hr style="margin: 15px 0; border-color: #28a745;">
-                <div style="background-color: #e8f5e8; padding: 12px; border-radius: 8px; border-left: 4px solid #28a745;">
-                    <h6 style="color: #155724; margin-bottom: 10px;">
-                        <i class="fas fa-truck me-2"></i><strong>Información de Entrega CrediYango</strong>
-                    </h6>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p style="margin-bottom: 8px;">
-                                <i class="fas fa-calendar-alt me-2" style="color: #28a745;"></i>
-                                <strong>Fecha de Entrega:</strong><br>
-                                <span id="modalFechaEntrega" class="text-success fw-bold">No programada</span>
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <p style="margin-bottom: 8px;">
-                                <i class="fas fa-calendar-check me-2" style="color: #17a2b8;"></i>
-                                <strong>Inicio de Pagos:</strong><br>
-                                <span id="modalFechaInicioPagos" class="text-info fw-bold">No calculado</span>
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <div id="estadoEntregaCrediYango">
-                                <!-- Se llenará dinámicamente según el estado -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <p><i class="fas fa-calendar-day me-2"></i><strong>Fecha Inicio:</strong><span
-                    id="modalFechaInicio"></span></p>
-            <p><i class="fas fa-calendar-check me-2"></i><strong>Fecha Fin:</strong><span
-                    id="modalFechaFin"></span></p>
-            <p><i class="fas fa-user-check me-2"></i><strong>Registrado por:</strong><span
-                    id="modalFinanciamientoUsuarioRegistro"></span></p>
-        </div>
-    </div>
-</div>
-                                    </div>
-
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h5><i class="fas fa-money-bill-wave me-2"></i>Cuotas</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                                <table class="table table-striped" id="modalCuotasTable">
-                                                    <thead class="sticky-top bg-white">
-                                                        <tr>
-                                                            <th>Fecha</th>
-                                                            <th>Monto</th>
-                                                            <th>Estado</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <!-- Las cuotas se agregarán dinámicamente aquí -->
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <?php if ($id_rol == 3): ?>
-                                                <!-- Nuevo botón de editar -->
-                                                <button type="button" class="btn btn-warning me-2"
-                                                    onclick="editarFinanciamiento()" style="margin-top: 15px;">
-                                                    <i class="fas fa-edit me-2"></i>Editar este financiamiento
-                                                </button>
-
-                                                <!-- NUEVO: Botón Entregar vehículo - solo para productos con ID 37 -->
-                                                <button type="button" class="btn btn-success me-2" id="btnEntregarVehiculo"
-                                                    onclick="mostrarModalEntregarVehiculo()" style="margin-top: 15px; display: none;">
-                                                    <i class="fas fa-car me-2"></i>Entregar vehículo
-                                                </button>
-
-                                                <!-- Botón agregado para eliminar financiamiento -->
-                                                <button type="button" class="btn btn-danger mt-3" onclick="deleteFinance()">
-                                                    <i class="fas fa-trash-alt me-2"></i>Eliminar este financiamiento
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="fas fa-times me-2"></i>Cerrar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <!-- Modal para Editar Financiamiento -->
                 <div class="modal fade" id="editarFinanciamientoModal" tabindex="-1"
                     aria-labelledby="editarFinanciamientoModalLabel" aria-hidden="true">
@@ -640,7 +346,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                         </div>
                                         <div class="card-body">
                                             <div class="row">
-                                                <div class="col-md-4 mb-3">
+                                                <div class="col-md-3 mb-3">
                                                     <label for="numeroDocumento" class="form-label">Número de
                                                         Documento</label>
                                                     <div class="input-group">
@@ -658,7 +364,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
                                                 </div>
 
-                                                <div class="col-md-8 mb-3">
+                                                <div class="col-md-6 mb-3">
                                                     <label for="cliente" class="form-label">Cliente</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i
@@ -672,7 +378,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
                                                 </div>
 
-                                                <div class="col-md-4 mb-3">
+                                                <div class="col-md-3 mb-3">
                                                     <label for="codigoAsociado" class="form-label">Código de
                                                         Asociado</label>
                                                     <div class="input-group">
@@ -694,8 +400,82 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                         </div>
                                     </div>
 
-                                    <!-- Sección de selección de producto -->
+                                    <!-- ✅ NUEVO CARD: Elegir Grupo de Financiamiento -->
                                     <div class="card mb-4 border rounded shadow-sm">
+                                        <div class="card-header bg-white border rounded shadow-sm" style="color: #2E217A;">
+                                            <h6><i class="fas fa-layer-group me-2"></i>Elegir Grupo de Financiamiento</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-md-4 mb-3 d-flex align-items-end">
+                                                    <div style="flex: 1;">
+                                                        <label for="grupo" class="form-label">Grupo de Financiamiento</label>
+                                                        <div class="input-group glow-effect-wrapper">
+                                                            <span class="input-group-text"><i class="fas fa-layer-group"></i></span>
+                                                            <select class="form-select" id="grupo" required onchange="checkSelection()">
+                                                                <option value="">Seleccione un grupo</option>
+                                                                <option value="Vehicular">Vehicular</option>
+                                                                <option value="Hipotecario">Hipotecario</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Ícono de información con Tooltip -->
+                                                    <span class="input-group-text tooltip-icon" id="info-tooltip-grupo"
+                                                        onclick="openToolTipGrupo()"
+                                                        title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </span>
+                                                </div>
+
+
+                                                <!-- Campo para nombre personalizado -->
+                                                <div class="col-md-8 mb-3" id="nombrePersonalizadoContainer" style="display: none;">
+                                                    <div style="flex: 1;">
+                                                        <label for="nombrePersonalizado" class="form-label">
+                                                            <i class="fas fa-edit me-2"></i>Nombre del Plan Personalizado
+                                                            <span class="text-danger">*</span>
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"><i class="fas fa-signature"></i></span>
+                                                            <input type="text" class="form-control" id="nombrePersonalizado"
+                                                                   placeholder="Ej: Plan Especial Juan Pérez - Celular Samsung"
+                                                                   maxlength="100">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Checkbox para entrega especial de vehículo (SOLO para plan ID 42) -->
+                                                <div class="col-md-12 mb-3" id="checkboxEntregaEspecialContainer" style="display: none;">
+                                                    <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 15px;">
+                                                        <div class="form-check" style="padding-left: 2.5rem;">
+                                                            <input class="form-check-input"
+                                                                   type="checkbox"
+                                                                   id="checkEntregaVehiculoEspecial"
+                                                                   value="1"
+                                                                   onchange="toggleFiltroVehiculosEspecial()"
+                                                                   style="width: 20px; height: 20px; margin-top: 0.25em;">
+                                                            <label class="form-check-label" for="checkEntregaVehiculoEspecial" style="margin-left: 10px;">
+                                                                <h6 class="mb-1">
+                                                                    <i class="fas fa-car me-2" style="color: #28a745;"></i>
+                                                                    <strong>¿Es financiamiento especial de Auto/Moto?</strong>
+                                                                </h6>
+                                                                <small class="text-muted d-block" style="margin-left: 2rem;">
+                                                                    <i class="fas fa-info-circle me-1"></i>
+                                                                    Marque esta opción si el financiamiento incluye la entrega de un vehículo (auto o moto). Al marcar, se filtrarán solo productos de tipo vehículo/moto.
+                                                                </small>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                 
+
+                                    <!-- Sección de selección de producto -->
+                                    <!-- ✅ MODIFICADO: Oculta inicialmente, se muestra al seleccionar grupo -->
+                                    <div class="card mb-4 border rounded shadow-sm" id="seccionSeleccionProducto" style="display: none;">
                                         <div class="card-header bg-white border rounded shadow-sm"
                                             style="color: #2E217A;">
                                             <h6><i class="fas fa-shopping-cart me-2"></i>Selección de Producto</h6>
@@ -791,8 +571,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                             </div>
                                         </div>
                                     </div>
-
-                                    <!-- Sección de configuración de moneda -->
+                                       <!-- Sección de configuración de moneda -->
                                     <div class="card mb-4 border rounded shadow-sm">
                                         <div class="card-header bg-white border rounded shadow-sm"
                                             style="color: #2E217A;">
@@ -842,57 +621,35 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                 Financiamiento</h6>
                                         </div>
                                         <div class="card-body">
-                                     <div class="row mb-4">
-   <div class="col-md-4 mb-3 d-flex align-items-end">
-    <div style="flex: 1;">
-        <label for="grupo" class="form-label">Grupo de
-            Financiamiento</label>
-        <div class="input-group glow-effect-wrapper">
-            <!-- Cambiado: Agregado div envolvente -->
-            <span class="input-group-text"><i
-                    class="fas fa-layer-group"></i></span>
-            <select class="form-select" id="grupo" required
-                onchange="checkSelection()">
-                <option value="">Seleccione un grupo</option>
-                <option value="Vehicular">Vehicular</option>
-                <option value="Hipotecario">Hipotecario</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Ícono de información con Tooltip -->
-    <span class="input-group-text tooltip-icon" id="info-tooltip-grupo"
-        onclick="openToolTipGrupo()"
-        title="Seleccione un grupo para autocompletar el formulario automáticamente. Si no selecciona, podrá ingresar los datos manualmente.">
-        <i class="fas fa-info-circle"></i>
-    </span>
-</div>
-
-<!-- NUEVO: Campo para nombre personalizado - AL LADO del select y ALINEADO -->
-<div class="col-md-8 mb-3" id="nombrePersonalizadoContainer" style="display: none;">
-
-    <div style="flex: 1;">
-        <label for="nombrePersonalizado" class="form-label">
-            <i class="fas fa-edit me-2"></i>Nombre del Plan Personalizado 
-            <span class="text-danger">*</span>
-        </label>
-        <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-signature"></i></span>
-            <input type="text" class="form-control" id="nombrePersonalizado" 
-                   placeholder="Ej: Plan Especial Juan Pérez - Celular Samsung" 
-                   maxlength="100">
-        </div>
-    </div>
-</div>
-
-
-
-
+                                            <!-- ✅ Resumen visual del financiamiento seleccionado -->
+                                            <div class="row mb-4">
+                                                <div class="col-md-12 mb-3" id="resumenFinanciamientoContainer" style="display: none;">
+                                                    <div class="alert alert-success border-0 shadow-sm" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left: 4px solid #28a745 !important;">
+                                                        <div class="row align-items-center">
+                                                            <div class="col-md-6">
+                                                                <h6 class="mb-2">
+                                                                    <i class="fas fa-check-circle me-2" style="color: #28a745;"></i>
+                                                                    <strong>Tipo de financiamiento seleccionado:</strong>
+                                                                </h6>
+                                                                <p class="mb-0" style="font-size: 1.1em; color: #155724;">
+                                                                    <span id="resumenTipoFinanciamiento">-</span>
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <h6 class="mb-2">
+                                                                    <i class="fas fa-box me-2" style="color: #28a745;"></i>
+                                                                    <strong>Producto seleccionado:</strong>
+                                                                </h6>
+                                                                <p class="mb-0" style="font-size: 1.1em; color: #155724;">
+                                                                    <span id="resumenProducto">-</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div class="row mb-4">
-
-                                                
                                                 <!-- Campo de verificación domiciliaria - solo para financiamientos vehiculares -->
                                                 <div class="col-md-6 mb-3" id="contenedorVerificacionDomiciliaria" style="display: none;">
 
@@ -1167,236 +924,12 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
             <!-- Sección de Generar Contratos -->
             <div class="tab-pane fade" id="generarContratosFrm" role="tabpanel" aria-labelledby="GContratosNav">
-                <div class="card border rounded shadow-sm">
-                    <div class="card-header" style="background-color: #fcf3cf; color: #2E217A;">
-                        <h5><i class="fas fa-file-contract me-2"></i>Generar Contratos</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- Filtro -->
-                        <div class="card mb-4 border rounded shadow-sm">
-                            <div class="card-header bg-white border rounded shadow-sm" style="color: #2E217A;">
-                                <h6><i class="fas fa-search me-2"></i>Buscar Financiamientos</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="input-group mb-1">
-                                    <input type="text" id="buscar-financiamientos" class="form-control"
-                                        placeholder="Ingrese criterios de búsqueda">
-                                    <button class="btn" id="btn-buscar" onclick="buscarFinanciamientos()"
-                                        style="background-color: #f4f750; color: #2E217A;">
-                                        <i class="fas fa-search me-2"></i>Buscar
-                                    </button>
-                                </div>
-                                <p id="error-busqueda" class="text-danger small mt-1" style="display: none;"></p>
-                            </div>
-                        </div>
-
-                        <!-- Tabla de financiamientos -->
-                        <div class="card mb-4 border rounded shadow-sm">
-                            <div class="card-header bg-white border rounded shadow-sm" style="color: #2E217A;">
-                                <h6><i class="fas fa-list me-2"></i>Lista de Financiamientos</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Cliente</th>
-                                                <th>Fecha</th>
-                                                <th>Monto</th>
-                                                <th>Estado</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tbodyContratos">
-                                            <!-- Las filas se cargarán dinámicamente -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Rango de fechas -->
-                        <div class="card mb-4 border rounded shadow-sm">
-                            <div class="card-header bg-white border rounded shadow-sm" style="color: #2E217A;">
-                                <h6><i class="fas fa-calendar-alt me-2"></i>Rango de fechas</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-5">
-                                        <label for="fecha-inicio" class="form-label">Fecha de inicio</label>
-                                        <div class="input-group mb-1">
-                                            <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
-                                            <input type="date" id="fecha-inicio" class="form-control" required>
-                                        </div>
-                                        <p id="error-fecha-inicio" class="text-danger small mt-1"
-                                            style="display: none;"></p>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label for="fecha-fin" class="form-label">Fecha de fin</label>
-                                        <div class="input-group mb-1">
-                                            <span class="input-group-text"><i class="fas fa-calendar-check"></i></span>
-                                            <input type="date" id="fecha-fin" class="form-control" required>
-                                        </div>
-                                        <p id="error-fecha-fin" class="text-danger small mt-1" style="display: none;">
-                                        </p>
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button type="button" onclick="limpiarFechas()"
-                                            class="btn btn-secondary w-100 mb-1">
-                                            <i class="fas fa-eraser me-2"></i>Limpiar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Botón de acción -->
-                        <div class="text-center">
-                            <button id="btn-generar" onclick="GenerarContratos()" class="btn btn-primary btn-lg"
-                                style="background-color: #f4f750; color: #2E217A;">
-                                <i class="fas fa-file-contract me-2"></i>Generar Contratos
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <?php include __DIR__ . '/../../components/generar-contratos.php'; ?>
             </div>
         </div>
 
 
-        <!-- Modal de detalles de financiamiento -->
-        <div class="modal fade" id="modalFinanciamiento" tabindex="-1" aria-labelledby="modalFinanciamientoLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content" id="financiamientoModal">
-                    <!-- Header -->
-                    <div class="modal-header" id="financiamientoModalHeader">
-                        <h5 class="modal-title" id="modalFinanciamientoLabel">
-                            <i class="fas fa-info-circle me-2"></i>Detalles del Financiamiento
-                        </h5>
-                        <button type="button" class="btn-close" id="financiamientoModalClose" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="modal-body" id="financiamientoModalBody">
-                        <!-- Información General -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6><i class="fas fa-info-circle me-2"></i>Información General</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-hashtag me-2"></i><strong>ID del Financiamiento:</strong>
-                                            <span>[ID]</span>
-                                        </p>
-                                        <p><i class="fas fa-calendar-alt me-2"></i><strong>Fecha de Creación:</strong>
-                                            <span>[Fecha]</span>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-check-circle me-2"></i><strong>Estado:</strong>
-                                            <span>[Estado]</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Información del Conductor -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6><i class="fas fa-user me-2"></i>Información del Conductor</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-user me-2"></i><strong>Nombre:</strong>
-                                            <span>[Nombre]</span>
-                                        </p>
-                                        <p><i class="fas fa-map-marker-alt me-2"></i><strong>Dirección:</strong>
-                                            <span>[Dirección]</span>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-phone me-2"></i><strong>Número de Celular:</strong>
-                                            <span>[Número]</span>
-                                        </p>
-                                        <p><i class="fas fa-envelope me-2"></i><strong>Correo:</strong>
-                                            <span>[Correo]</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Información del Producto -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6><i class="fas fa-shopping-cart me-2"></i>Información del Producto</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-barcode me-2"></i><strong>Código de Producto:</strong>
-                                            <span>[Código]</span>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-tag me-2"></i><strong>Nombre del Producto:</strong>
-                                            <span>[Descripción]</span>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-sort-numeric-up me-2"></i><strong>Cantidad:</strong>
-                                            <span>[Cantidad]</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Información del Financiamiento -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6><i class="fas fa-file-invoice-dollar me-2"></i>Información del Financiamiento</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-money-bill me-2"></i><strong>Monto:</strong>
-                                            <span>[Monto]</span>
-                                        </p>
-                                        <p><i class="fas fa-hand-holding-usd me-2"></i><strong>Cuota Inicial:</strong>
-                                            <span>[Cuota Inicial]</span>
-                                        </p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><i class="fas fa-list-ol me-2"></i><strong>Cuotas:</strong>
-                                            <span>[Cuotas]</span>
-                                        </p>
-                                        <p><i class="fas fa-calendar-day me-2"></i><strong>Fecha de Inicio:</strong>
-                                            <span>[Fecha de Inicio]</span>
-                                        </p>
-                                        <p><i class="fas fa-calendar-check me-2"></i><strong>Fecha de Fin:</strong>
-                                            <span>[Fecha de Fin]</span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="modal-footer" id="financiamientoModalFooter">
-                        <button type="button" class="btn btn-secondary" id="financiamientoModalCloseBtn"
-                            data-bs-dismiss="modal">
-                            <i class="fas fa-times me-2"></i>Cerrar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php include __DIR__ . '/../../components/modal-financiamiento-detalle.php'; ?>
     </div>
 
     <script>
@@ -1908,6 +1441,11 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
         // Funcionalidad de papelera
         $(document).ready(function() {
+            // ✅ NUEVO: Configurar event listeners para ocultar papelera al cambiar de tab
+            if (typeof configurarEventListenersNavegacion === 'function') {
+                configurarEventListenersNavegacion();
+            }
+
             // Evento para el botón de la papelera
             $('#btnPapelera').on('click', function() {
                 $('#listaClientes').hide();
@@ -2201,14 +1739,70 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             }
         }
     </script>
+
+    <!-- Botón flotante de Registros Pendientes (solo para directores) -->
+    <?php if ($id_rol == 3): ?>
+    <button
+        id="btnFloatRegistrosPendientes"
+        class="btn btn-warning btn-float-pendientes"
+        type="button"
+        onclick="window.location.href='/arequipago/financiamientosAprobar'"
+        title="Registros Pendientes de Aprobación">
+        <i class="fas fa-bell me-2"></i>
+        <span class="btn-float-text">Pendientes</span>
+        <span class="badge bg-danger badge-float" id="badgeFinanciamientosPendientes" style="display: none;">0</span>
+    </button>
+    <?php endif; ?>
+
     <!-- En tu financiamientoView.php -->
     <script src="<?= URL::to('public/js/financiamiento/utilsManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/uiManager.js') ?>?v=<?= time() ?>"></script>
+
+    <!-- Scripts separados por componente -->
+    <script src="<?= URL::to('public/js/financiamiento/list-clientes.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/modal-cronograma.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/modal-detalles.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/generar-contratos.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/clientesManager.js') ?>?v=<?= time() ?>"></script>
+
     <script src="<?= URL::to('public/js/financiamiento/productosManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCalculator.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/planesManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCRUD.js') ?>?v=<?= time() ?>"></script>
+
+    <!-- Script para actualizar badge de pendientes (solo para directores) -->
+    <?php if ($id_rol == 3): ?>
+    <script>
+        // Función para actualizar el badge del botón flotante
+        function actualizarBadgeFloatPendientes() {
+            $.ajax({
+                url: '/arequipago/getFinanciamientos-aprobar',
+                type: 'POST',
+                dataType: 'json',
+                success: function(data) {
+                    const count = data.pendientes ? data.pendientes.length : 0;
+                    const badge = $('#badgeFinanciamientosPendientes');
+
+                    if (count > 0) {
+                        badge.text(count).show().addClass('badge-pulse');
+                    } else {
+                        badge.hide().removeClass('badge-pulse');
+                    }
+                },
+                error: function() {
+                    console.log('Error al obtener contador de pendientes');
+                }
+            });
+        }
+
+        // Actualizar al cargar la página
+        $(document).ready(function() {
+            actualizarBadgeFloatPendientes();
+            // Actualizar cada 30 segundos
+            setInterval(actualizarBadgeFloatPendientes, 30000);
+        });
+    </script>
+    <?php endif; ?>
 
 </body>
     

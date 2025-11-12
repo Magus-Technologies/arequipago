@@ -37,7 +37,7 @@
     <!-- ============================================================== -->
     <!-- Start right Content here -->
     <!-- ============================================================== -->
-    <div id="contenedor-app" class="container"> <!-- cambiar a container-fluid si es necesario -->
+    <div id="contenedor-app" class="container" style="padding-bottom: 4rem; min-height: calc(100vh - 120px);"> <!-- cambiar a container-fluid si es necesario -->
 
      
              

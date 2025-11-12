@@ -940,7 +940,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Cuota Inicial *</label>
                                         <div class="input-group">
@@ -953,7 +953,7 @@
                                             }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">Cantidad de Cuotas *</label>
                                         <input type="number" class="form-control" v-model="formData.cantidad_cuotas"
@@ -962,7 +962,7 @@
                                             errores.cantidad_cuotas }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">{{ obtenerEtiquetaFrecuenciaFormulario()
                                             }} *</label>
@@ -974,6 +974,19 @@
                                         </div>
                                         <div v-if="errores.cuota_mensual" class="error-message">{{ errores.cuota_mensual
                                             }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label class="form-label fw-semibold">Pago Inscripción</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="currency-pago-inscripcion">{{
+                                                getCurrencySymbol() }}</span>
+                                            <input type="number" class="form-control" v-model="formData.pago_inscripcion"
+                                                step="0.01" min="0" placeholder="0.00">
+                                        </div>
+                                        <small class="text-muted">Opcional - Monto del pago de inscripción</small>
+                                        <div v-if="errores.pago_inscripcion" class="error-message">{{ errores.pago_inscripcion }}</div>
                                     </div>
                                 </div>
                                 <div class="col-12">
@@ -1078,6 +1091,7 @@
                             cuota_inicial: '',
                             cantidad_cuotas: '',
                             cuota_mensual: '',
+                            pago_inscripcion: '',
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
@@ -1437,6 +1451,7 @@
                             cuota_inicial: beneficio.cuota_inicial || '',
                             cantidad_cuotas: beneficio.cantidad_cuotas || '',
                             cuota_mensual: beneficio.cuota_mensual || '',
+                            pago_inscripcion: beneficio.pago_inscripcion || '',
                             moneda: beneficio.moneda || '',
                             nombre_plan_personalizado: beneficio.nombre_plan_personalizado || '',
                             frecuencia_pago: beneficio.frecuencia_pago || '',
@@ -1503,14 +1518,17 @@
                                     <p><strong>Descripción:</strong> ${beneficio.descripcion || 'Sin descripción'}</p>
                                     <hr>
                                     <div class="row">
-                                        <div class="col-4">
+                                        <div class="col-3">
                                             <p><strong>Cuota inicial:</strong><br>${this.getCurrencySymbolForBeneficio(beneficio)} ${beneficio.cuota_inicial}</p>
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-3">
                                             <p><strong>Cantidad de cuotas:</strong><br>${beneficio.cantidad_cuotas} cuotas</p>
                                         </div>
-                                        <div class="col-4">
+                                        <div class="col-3">
                                             <p><strong>${this.obtenerEtiquetaFrecuenciaForBeneficio(beneficio).toLowerCase()}:</strong><br>${this.getCurrencySymbolForBeneficio(beneficio)} ${beneficio.cuota_mensual}</p>
+                                        </div>
+                                        <div class="col-3" v-if="beneficio.pago_inscripcion">
+                                            <p><strong>Pago inscripción:</strong><br>${this.getCurrencySymbolForBeneficio(beneficio)} ${beneficio.pago_inscripcion}</p>
                                         </div>
                                     </div>
                                     <p><strong>Estado:</strong>
@@ -1587,6 +1605,7 @@
                             cuota_inicial: '',
                             cantidad_cuotas: '',
                             cuota_mensual: '',
+                            pago_inscripcion: '',
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
@@ -1814,6 +1833,7 @@
                         formData.append('cuota_inicial', self.formData.cuota_inicial);
                         formData.append('cantidad_cuotas', self.formData.cantidad_cuotas);
                         formData.append('cuota_mensual', self.formData.cuota_mensual);
+                        formData.append('pago_inscripcion', self.formData.pago_inscripcion || '');
                         formData.append('moneda', self.formData.moneda || '');
                         formData.append('nombre_plan_personalizado', self.formData.nombre_plan_personalizado || '');
                         formData.append('frecuencia_pago', self.formData.frecuencia_pago || '');

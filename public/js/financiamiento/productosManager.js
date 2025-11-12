@@ -1,7 +1,15 @@
 
-        function cargarProductos() {
+        function cargarProductos(categoriaFiltro = null) {
+            let url = `/arequipago/obtenerProductos?pagina=${currentPage}`;
+
+            // ✅ NUEVO: Agregar filtro de categoría si se especifica (para CrediYango)
+            if (categoriaFiltro) {
+                url += `&categoria=${encodeURIComponent(categoriaFiltro)}`;
+                console.log(`🔍 Cargando productos con filtro de categoría: ${categoriaFiltro}`);
+            }
+
             $.ajax({
-                url: `/arequipago/obtenerProductos?pagina=${currentPage}`,
+                url: url,
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -11,11 +19,23 @@
                     $('#btnAtras').prop('disabled', currentPage <= 1);
                     $('#btnAdelante').prop('disabled', currentPage >= totalPages);
                     resaltarProductoSeleccionado(); // Ensure selection is maintained after loading products
+
+                    // ✅ NUEVO: Mostrar mensaje si hay filtro activo
+                    if (categoriaFiltro) {
+                        console.log(`✅ Productos cargados con filtro: ${categoriaFiltro} (${data.productos.length} resultados)`);
+                    }
                 },
                 error: function () {
                     alert("Error al cargar los productos");
                 }
             });
+        }
+
+        // ✅ NUEVA FUNCIÓN: Cargar productos solo por categoría (alias para mejor semántica)
+        function cargarProductosPorCategoria(categoria) {
+            console.log(`🚗 cargarProductosPorCategoria('${categoria}') llamada`);
+            currentPage = 1; // Resetear a página 1
+            cargarProductos(categoria);
         }
 
         function buscarProductos() {
@@ -85,8 +105,14 @@
                     unidad_medida: row.find('td:nth-child(5)').text().trim(),
                     perfil: row.find('td:nth-child(6)').text().trim(),
                     aro: row.find('td:nth-child(7)').text().trim(),
-                    precio_venta: row.find('td:nth-child(8)').text().trim()
+                    precio_venta: row.find('td:nth-child(8)').text().trim(),
+                    categoria: row.data('categoria') || '' // ✅ NUEVO: Agregar categoría si está disponible
                 };
+
+                // ✅ NUEVO: Actualizar resumen visual con el producto seleccionado
+                if (typeof actualizarProductoEnResumen === 'function') {
+                    actualizarProductoEnResumen(productoSeleccionado.nombre, productoSeleccionado.categoria);
+                }
 
                 // Solo recalcular si NO es plan de celular
                 const grupoSelect = document.getElementById('grupo');
@@ -199,12 +225,18 @@
             const entregarSiElement = document.getElementById('entregarSi'); // Obtener el elemento del radiobutton "Sí" 
             if (entregarSiElement) { // Verificar si el radiobutton "Sí" existe
                 console.log("El radiobutton 'entregarSí' existe, deteniendo la función calcularMonto."); // Agregar un log para saber que se detuvo
-                // 📌 Llamar a selectPlan SOLO si hay un valor válido seleccionado
-                const idPlan = grupoSelect ? grupoSelect.value : null;
-                if (idPlan && idPlan !== "") {
-                    selectPlan(idPlan);
+                
+                // ✅ NUEVO: NO llamar a selectPlan si ya hay una variante seleccionada
+                if (!window.varianteSeleccionadaId) {
+                    // 📌 Llamar a selectPlan SOLO si hay un valor válido seleccionado Y no hay variante
+                    const idPlan = grupoSelect ? grupoSelect.value : null;
+                    if (idPlan && idPlan !== "") {
+                        selectPlan(idPlan);
+                    } else {
+                        console.log("No se ha seleccionado un grupo válido en el select.");
+                    }
                 } else {
-                    console.log("No se ha seleccionado un grupo válido en el select.");
+                    console.log("✅ Variante seleccionada detectada - NO recargando plan para preservar valores");
                 }
                 
                 return; // Detener la ejecución de la función si el radiobutton existe

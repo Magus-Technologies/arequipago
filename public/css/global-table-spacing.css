@@ -1,0 +1,77 @@
+/* 
+ * CSS Global para espaciado de contenido de vistas
+ * Soluciona el problema de falta de margen inferior SOLO en el contenido principal
+ * NO afecta navbar, header, sidebar u otros elementos del layout
+ */
+
+/* CONTENEDOR PRINCIPAL - Margen inferior para todo el contenido */
+#contenedor-app {
+  padding-bottom: 4rem !important;
+  min-height: calc(100vh - 120px) !important; /* Asegurar altura mínima */
+}
+
+/* Contenedores SOLO dentro del contenedor principal */
+#contenedor-app .container,
+#contenedor-app .container-fluid {
+  padding-bottom: 2rem !important;
+}
+
+/* Asegurar margen inferior en contenedores de tablas SOLO en contenido principal */
+#contenedor-app .table-responsive {
+  margin-bottom: 3rem !important;
+}
+
+/* Espaciado específico para DataTables SOLO en contenido principal */
+#contenedor-app .dataTables_wrapper {
+  margin-bottom: 2rem !important;
+}
+
+/* Espaciado para la información de paginación de DataTables */
+#contenedor-app .dataTables_info {
+  margin-bottom: 1rem !important;
+}
+
+/* Espaciado para los controles de paginación */
+#contenedor-app .dataTables_paginate {
+  margin-bottom: 1rem !important;
+}
+
+/* Espaciado para cards SOLO en contenido principal */
+#contenedor-app .card {
+  margin-bottom: 2rem !important;
+}
+
+#contenedor-app .card .card-body {
+  padding-bottom: 2rem !important;
+}
+
+/* Espaciado específico para tab-content SOLO en contenido principal */
+#contenedor-app .tab-content {
+  margin-bottom: 2rem !important;
+  padding-bottom: 2rem !important;
+}
+
+/* Espaciado para form-section SOLO en contenido principal */
+#contenedor-app .form-section {
+  margin-bottom: 2rem !important;
+}
+
+/* Espaciado para filas y columnas SOLO en contenido principal */
+#contenedor-app .row {
+  margin-bottom: 1rem !important;
+}
+
+/* Espaciado para modales */
+.modal-body {
+  padding-bottom: 2rem !important;
+}
+
+/* Espaciado para cualquier contenido dentro del contenedor principal */
+#contenedor-app > * {
+  margin-bottom: 1.5rem !important;
+}
+
+/* Espaciado específico para el último elemento */
+#contenedor-app > *:last-child {
+  margin-bottom: 3rem !important;
+}

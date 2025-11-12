@@ -26,20 +26,57 @@ class RegistrarFinanciamientoController extends Controller
             $esCrediYango = isset($datos['grupo_financiamiento']) &&
                            ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45);
 
-            // NUEVO: Para CrediYango, asignar automáticamente producto ID 37 (vehículo no entregado)
+            // ✅ CORREGIDO: Normalizar estado_entrega ANTES de cualquier validación
+            // Si NO viene el campo, establecerlo como NULL por defecto
+            if (!isset($datos['estado_entrega'])) {
+                $datos['estado_entrega'] = null;
+            } else {
+                // Si viene, validar que sea un valor correcto
+                $estadoEntregaRaw = trim($datos['estado_entrega']);
+                if ($estadoEntregaRaw === '' || $estadoEntregaRaw === 'null' || $estadoEntregaRaw === 'undefined') {
+                    $datos['estado_entrega'] = null;
+                } else if (!in_array($estadoEntregaRaw, ['pendiente', 'entregado'], true)) {
+                    // Valor inválido, establecer como NULL
+                    error_log("⚠️ WARNING: estado_entrega inválido recibido: '" . $estadoEntregaRaw . "'. Estableciendo como NULL");
+                    $datos['estado_entrega'] = null;
+                }
+            }
+
+            // ✅ NUEVO: Para CrediYango, SIEMPRE establecer estado_entrega como 'pendiente'
+            // Ya no se asigna producto ID 37, ahora se selecciona el vehículo real
             if ($esCrediYango) {
-                $datos['id_producto'] = 37; // ID del producto "vehículo no entregado"
-                $datos['cantidad_producto'] = 1; // Cantidad fija
-                error_log("CrediYango: Asignando producto ID 37 por defecto");
+                $datos['estado_entrega'] = 'pendiente';
+                $datos['cantidad_producto'] = isset($datos['cantidad_producto']) ? $datos['cantidad_producto'] : 1;
+                error_log("🚗 CrediYango detectado - Estableciendo estado_entrega='pendiente'");
+                error_log("🔍 Controlador - estado_entrega después de asignar: '" . var_export($datos['estado_entrega'], true) . "' (tipo: " . gettype($datos['estado_entrega']) . ")");
+                error_log("CrediYango: Registrando con producto real ID " . ($datos['id_producto'] ?? 'N/A') . " y estado_entrega='pendiente'");
+            }
+
+            // 🆕 NUEVO: Detectar si id_producto es "No disponible" y establecer estado_entrega
+            if (isset($datos['id_producto']) && $datos['id_producto'] === "No disponible") {
+                $datos['id_producto'] = 37;
+                $datos['estado_entrega'] = 'pendiente';
+                $datos['cantidad_producto'] = 0;
+                error_log("Producto No disponible: Cambiado a ID 37 con estado_entrega='pendiente'");
+            }
+
+            // 🆕 NUEVO: Si NO es CrediYango y NO es "No disponible", estado_entrega debe ser NULL
+            if (!$esCrediYango && (!isset($datos['estado_entrega']) || $datos['estado_entrega'] === null)) {
+                $datos['estado_entrega'] = null;
             }
 
             // Obtener valor de cobrar mora con valor por defecto
             $datos['cobrar_mora'] = isset($datos['cobrar_mora']) ? intval($datos['cobrar_mora']) : 1;
 
                     // NUEVO: Obtener nombre personalizado si existe
-        $datos['nombre_personalizado'] = isset($datos['nombre_personalizado']) && !empty($datos['nombre_personalizado']) 
-            ? trim($datos['nombre_personalizado']) 
+        $datos['nombre_personalizado'] = isset($datos['nombre_personalizado']) && !empty($datos['nombre_personalizado'])
+            ? trim($datos['nombre_personalizado'])
             : null;
+
+        // ✅ NUEVO: Obtener flag de entrega especial (solo para plan 42)
+        $datos['es_entrega_especial'] = isset($datos['es_entrega_especial']) && intval($datos['es_entrega_especial']) === 1
+            ? 1
+            : 0;
 
             // Obtener valor de verificación domiciliaria
             $verificacion_domiciliaria = isset($datos['verificacion_domiciliaria']) ? intval($datos['verificacion_domiciliaria']) : null;
@@ -184,22 +221,22 @@ foreach ($camposRequeridos as $campo) {
                 return;
             }
 
-            $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+            $rol_usuario = isset($_SESSION['id_rol']) ? intval($_SESSION['id_rol']) : null;
 
             // Instanciar el modelo ProductoV2 para actualizar el stock
             $productoModel = new ProductoV2(); // 🔹 Agregué esta línea para instanciar el modelo ProductoV2
-            
+
             // 💥 Modificado: Obtener los datos del producto antes de actualizar el stock
-            $producto = $productoModel->obtenerProductoPorId($datos['id_producto']); 
+            $producto = $productoModel->obtenerProductoPorId($datos['id_producto']);
             if (!$producto) {
                 throw new Exception("No se encontró el producto con ID: " . $datos['id_producto']);
             }
-            
+
             // 💥 Modificado: Determinar si el producto pertenece a una categoría especial
             $categoria_producto = strtolower(trim($producto['CATEGORIA']));
             $categorias_especiales = ['celular', 'celulares', 'llantas', 'llanta', 'aceites', 'aceite', 'baterias', 'batería', 'baterías', 'bateria'];
             $es_categoria_especial = false;
-            
+
             foreach ($categorias_especiales as $categoria) {
                 if (strpos($categoria_producto, $categoria) !== false) {
                     $es_categoria_especial = true;
@@ -211,15 +248,24 @@ foreach ($camposRequeridos as $campo) {
             $registrar_movimiento = true;
             $aprobado = 1; // Por defecto, aprobado
 
-            // 💥 Modificado: Si es categoría especial y rol 2 (Asesor), no registrar movimiento
-            if ($es_categoria_especial && $rol_usuario == 2) {
-                $registrar_movimiento = false;
-                $aprobado = 0; // No aprobado para asesores con productos especiales
+            // 💥 MEJORADO: Si es ROL 2 (Asesor), marcar como pendiente de aprobación
+            // Los asesores SIEMPRE deben tener sus financiamientos pendientes de aprobación
+            if ($rol_usuario === 2) {
+                $registrar_movimiento = false; // No registrar movimiento hasta que se apruebe
+                $aprobado = 0; // No aprobado para asesores - requiere aprobación del director
             }
 
             // 💥 Modificado: Solo actualizar stock si se debe registrar el movimiento
-            if ($registrar_movimiento) {
+            // 🆕 NUEVO: NO descontar stock para CrediYango (grupo 45) ni para producto ID 37
+            $esCrediYangoDesc = isset($datos['grupo_financiamiento']) &&
+                ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45);
+            $esProductoNoEntregado = $datos['id_producto'] == 37;
+
+            if ($registrar_movimiento && !$esCrediYangoDesc && !$esProductoNoEntregado) {
                 $productoModel->actualizarStock($datos['id_producto'], $datos['cantidad_producto']);
+                error_log("✅ Stock actualizado para producto ID: " . $datos['id_producto']);
+            } else if ($esCrediYangoDesc || $esProductoNoEntregado) {
+                error_log("⏸️ Stock NO descontado - CrediYango o producto no entregado");
             }
 
             // Determinar el código del producto 🔹 Agregado
@@ -345,7 +391,7 @@ foreach ($camposRequeridos as $campo) {
     function SaveFinanciamientoVehicular()
     {
         // 💥 Modificado: Obtenemos el rol del usuario desde la sesión
-        $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+        $rol_usuario = isset($_SESSION['id_rol']) ? intval($_SESSION['id_rol']) : null;
         // 💥 Modificado: Obtenemos el ID del usuario desde la sesión
         $usuario_id = isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : null;
 
@@ -399,14 +445,18 @@ foreach ($camposRequeridos as $campo) {
     
         $idCliente = (isset($_POST['id_cliente']) && $_POST['id_cliente'] !== '' && $_POST['id_cliente'] != 0) ? intval($_POST['id_cliente']) : null;
 
-        // Validar el idProducto
+        // Validar el idProducto y establecer estado_entrega
         $cantidad_producto = ($idProducto === "No disponible") ? 0 : 1;
+        $estado_entrega = null; // Por defecto, sin estado de entrega
+
         if ($idProducto === "No disponible") {
             $idProducto = 37;
+            $estado_entrega = 'pendiente'; // 🆕 Establecer estado_entrega como pendiente cuando no se entrega vehículo
         }
     
-        // 💥 Modificado: Determinar el valor de aprobado según el rol
-        $aprobado = ($rol_usuario == 2) ? 0 : 1;
+        // 💥 MEJORADO: Determinar el valor de aprobado según el rol
+        // Los asesores (rol 2) SIEMPRE requieren aprobación del director
+        $aprobado = ($rol_usuario === 2) ? 0 : 1;
     
         /*
         // Instanciar modelo Conductor y obtener el id_conductor
@@ -444,8 +494,9 @@ foreach ($camposRequeridos as $campo) {
             // 💥 Modificado: Agregar aprobado al array de datos
             'aprobado' => $aprobado,
             'cobrar_mora' => $cobrar_mora,
-             'nombre_personalizado' => isset($_POST['nombre_personalizado']) && !empty($_POST['nombre_personalizado']) 
-        ? trim($_POST['nombre_personalizado']) 
+            'estado_entrega' => $estado_entrega, // 🆕 Agregar estado_entrega al array de datos
+             'nombre_personalizado' => isset($_POST['nombre_personalizado']) && !empty($_POST['nombre_personalizado'])
+        ? trim($_POST['nombre_personalizado'])
         : null
         ];
     
@@ -457,12 +508,12 @@ foreach ($camposRequeridos as $campo) {
         
         $conexion = $this->conexion; // ⏩ Asegurar que la conexión esté disponible
         
-        // 🙂 Modificar la consulta SQL para incluir id_variante
-        $query = "INSERT INTO financiamiento 
-        (id_conductor, id_cliente, idproductosv2, id_coti, codigo_asociado, grupo_financiamiento, id_variante, cantidad_producto, 
-        monto_total, cuota_inicial, cuotas, estado, fecha_inicio, fecha_fin, fecha_creacion, 
-        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // 🙂 Modificar la consulta SQL para incluir id_variante y estado_entrega
+        $query = "INSERT INTO financiamiento
+        (id_conductor, id_cliente, idproductosv2, id_coti, codigo_asociado, grupo_financiamiento, id_variante, cantidad_producto,
+        monto_total, cuota_inicial, cuotas, estado, fecha_inicio, fecha_fin, fecha_creacion,
+        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora, estado_entrega)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conexion->prepare($query);
     
@@ -610,6 +661,22 @@ foreach ($camposRequeridos as $campo) {
         $tipos .= 'i';
         $params[] = $datos['cobrar_mora'];
 
+        // estado_entrega (puede ser null) - 🆕 NUEVO
+        // Validar que solo sean valores del ENUM o NULL
+        $estadoEntregaValue = $datos['estado_entrega'];
+        if ($estadoEntregaValue === '' || $estadoEntregaValue === null) {
+            $tipos .= 's';
+            $params[] = NULL;
+        } else if (in_array($estadoEntregaValue, ['pendiente', 'entregado'])) {
+            $tipos .= 's';
+            $params[] = $estadoEntregaValue;
+        } else {
+            // Valor inválido, usar NULL
+            error_log("⚠️ WARNING: estado_entrega inválido: '" . $estadoEntregaValue . "'. Usando NULL");
+            $tipos .= 's';
+            $params[] = NULL;
+        }
+
         // ⭐ Modificado: Vinculación dinámica de parámetros
         $stmt->bind_param($tipos, ...$params);
     
@@ -658,11 +725,16 @@ foreach ($camposRequeridos as $campo) {
         }
     
         // Registrar movimiento en el almacén solo si hay un id_producto válido
-        if ($idProducto !== 37 && $rol_usuario != 2) {
-    
+        // 🆕 MODIFICADO: Agregar verificación para CrediYango (no descontar stock)
+        $esCrediYango = isset($datos['grupo_financiamiento']) &&
+            ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45);
+
+        if ($idProducto !== 37 && $rol_usuario !== 2 && !$esCrediYango) {
+
             // Instanciar el modelo ProductoV2 para actualizar el stock
             $productoModel = new ProductoV2(); // 🔹 Agregué esta línea para instanciar el modelo ProductoV2
             $productoModel->actualizarStock($datos['id_producto'], $datos['cantidad_producto']); // 🔹 Llamo al método para actualizar el stock del producto
+            error_log("✅ Stock actualizado para producto ID: " . $datos['id_producto']);
     
             // Obtener los datos del producto para registrar el movimiento 🔹 Agregado
             $producto = $productoModel->obtenerProductoPorId($datos['id_producto']); 
@@ -693,8 +765,11 @@ foreach ($camposRequeridos as $campo) {
                 $cantidad_producto,
                 $razon_social // Suponiendo que este valor también está definido
             );
+        } else if ($esCrediYango || $idProducto === 37) {
+            // 🆕 NUEVO: Log cuando NO se descuenta stock
+            error_log("⏸️ Stock NO descontado - CrediYango (grupo 45) o producto no entregado (ID 37)");
         }
-        
+
         echo json_encode(['status' => 'success', 'idFinanciamiento' => $idFinanciamiento]); // ← MODIFICADO: Agregado 'status' para consistencia
         exit; // ← AGREGADO: Asegurar que no haya más output después de enviar la respuesta JSON
     }

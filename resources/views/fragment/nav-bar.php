@@ -82,79 +82,84 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 <nav class="navbar navbar-expand-lg" style="background-color: #8B8C64;">
     <div class="container" style="max-width: 1440px;">
         <a class="navbar-brand" href="#"></a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="color: #4e58aa;">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="color: #4e58aa;">
             <i class="fa fa-align-justify" style="color: #4e58aa;"></i>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
 
-            
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100">
-                  
-                        <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/">
-                                <i class="ti-home"></i>
-                                DASHBOARD
-                            </a>
-                        </li>
-                    
-                        <li class="nav-item">
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti-package"></i>
-                                    FACTURACIÓN
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
-                                    <li><a class="dropdown-item" href="/arequipago/ventas">Ventas</a></li>
-                                    <li><a class="dropdown-item" href="/arequipago/guias/remision">Guías Remisión</a></li>
-                                    <li><a class="dropdown-item" href="/arequipago/nota/electronica/lista">Notas Electrónicas</a></li>
-                                </ul>
-                            </li>
-                        </li>
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id="navbarDropdownPagos" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti-wallet"></i> <!-- Icono relacionado con pagos -->
-                                  PAGOS   
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPagos">
-                                <li><a class="dropdown-item" href="/arequipago/nuevo-pago">Pagos Inscripción</a></li>
-                                <li><a class="dropdown-item" href="/arequipago/pago-financiamiento">Pagos Financiamiento</a></li>
-                            </ul>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/">
+                        <i class="ti-home"></i>
+                        DASHBOARD
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti-package"></i>
+                        FACTURACIÓN
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                        <li><a class="dropdown-item" href="/arequipago/ventas">Ventas</a></li>
+                        <li><a class="dropdown-item" href="/arequipago/guias/remision">Guías Remisión</a></li>
+                        <li><a class="dropdown-item" href="/arequipago/nota/electronica/lista">Notas Electrónicas</a>
                         </li>
-                    
-                        <!----<li class="nav-item">
+                    </ul>
+                </li>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownPagos" role="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                        <i class="ti-wallet"></i> <!-- Icono relacionado con pagos -->
+                        PAGOS
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPagos">
+                        <li><a class="dropdown-item" href="/arequipago/nuevo-pago">Pagos Inscripción</a></li>
+                        <li><a class="dropdown-item" href="/arequipago/pago-financiamiento">Pagos Financiamiento</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!----<li class="nav-item">
                             <a class="nav-link" href="/arequipago/registrar-inventario">
                                 <i class="ti-package"></i>
                                 INVENTARIO    
                             </a>
                         </li>---->
 
-                        <!-- <li class="nav-item">
+                <!-- <li class="nav-item">
                             <a class="nav-link" href="/lencika/cotizaciones">
                                 <i class="fa fa-align-justify"></i>
                                 COTIZACIONES
                             </a>
                         </li> -->
-                   
-                        <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/regisconductor">
-                                <i class="ti-home"></i>
-                                REGISTRO DE CONDUCTOR
-                            </a>
-                        </li>
-            
-                        <!-- <li class="nav-item">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/regisconductor">
+                        <i class="ti-home"></i>
+                        REGISTRO DE CONDUCTOR
+                    </a>
+                </li>
+
+                <!-- <li class="nav-item">
                             <a class="nav-link" href="/cobranzas">
                                 <i class="fa fa-money-bill"></i>
                                 CUENTAS POR COBRAR
                             </a>
                         </li> -->
-                        <!-- <li class="nav-item">
+                <!-- <li class="nav-item">
                             <a class="nav-link" href="/pagos">
                                 <i class="fa fa-money-bill"></i>
                                 CUENTAS POR PAGAR</a>
                         </li> -->
-                        <!-- <li class="nav-item dropdown">
+                <!-- <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="ti-package"></i>
                                 CAJAS
@@ -164,138 +169,154 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                                 <li><a class="dropdown-item" href="/lencika/caja/flujo">Caja Chica</a></li>
                             </ul>
                         </li> -->
-                        <!-- <li class="nav-item">
+                <!-- <li class="nav-item">
                             <a class="nav-link" href="/lencika/compras">
                                 <i class="ti-calendar"></i>
                                 COMPRAS
                             </a>
                         </li> -->
-                        <!-- </li> -->
-                        <?php if ($id_rol == 1 || $id_rol == 3): ?>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" id="almacenDropdownMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="ti-view-grid"></i>
-                                    ALMACÉN
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="almacenDropdownMenu">
-                                    <li><a class="dropdown-item" href="/arequipago/almacen/productos">KARDEX</a></li> <!-- 🔹 Nueva opción KARDEX -->
-                                    <li><a class="dropdown-item" href="/arequipago/reporte-almacen">Reportes</a></li> <!-- 🔹 Nueva opción REPORTES -->
-                                </ul>
-                            </li>
-                        <?php endif; ?>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/conductores">
-                                <i class="ti-user"></i>
-                                CONDUCTORES
-                            </a>
-                        </li>
+                <!-- </li> -->
+                <?php if ($id_rol == 1 || $id_rol == 3): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" id="almacenDropdownMenu" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="ti-view-grid"></i>
+                            ALMACÉN
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="almacenDropdownMenu">
+                            <li><a class="dropdown-item" href="/arequipago/almacen/productos">KARDEX</a></li>
+                            <!-- 🔹 Nueva opción KARDEX -->
+                            <li><a class="dropdown-item" href="/arequipago/reporte-almacen">Reportes</a></li>
+                            <!-- 🔹 Nueva opción REPORTES -->
+                        </ul>
+                    </li>
+                <?php endif; ?>
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/ver-clientes">
-                                <i class="ti-user"></i>
-                                CLIENTES
-                            </a>
-                        </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/conductores">
+                        <i class="ti-user"></i>
+                        CONDUCTORES
+                    </a>
+                </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/ver-clientes">
+                        <i class="ti-user"></i>
+                        CLIENTES
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/creditScore">
+                        <i class="ti-stats-up"></i>
+                        CREDIT SCORE
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdownPromociones" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti-gift"></i>
+                        PROMOCIONES
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPromociones">
+                        <li><a class="dropdown-item" href="/arequipago/cupones">
+                                <i class="ti-ticket me-2"></i>Cupones
+                            </a></li>
+                        <li><a class="dropdown-item" href="/arequipago/beneficios">
+                                <i class="ti-star me-2"></i>Beneficios
+                            </a></li>
+                    </ul>
+                </li>
+
+                <?php if ($id_rol == 3): ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="usuarios" style="cursor: pointer;">
+                            <i class="ti-user"></i>
+                            USUARIOS
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/module-financiamiento">
+                        <i class="ti-money"></i>
+                        CREDI GO
+                    </a>
+                </li>
+
+                <?php if ($id_rol == 1 || $id_rol == 3): ?>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="" href="/arequipago/grupo-financiamiento">
+                            <i class="fas fa-piggy-bank"></i>
+                            GRUPOS FINANCIAMIENTO
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="" href="/arequipago/cotizaciones">
+                            <i class="fas fa-piggy-bank"></i>
+                            COTIZACIONES
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="" href="/arequipago/vehiculos">
+                            <i class="fas fa-piggy-bank"></i>
+                            CARROS Y MOTOS
+                        </a>
+                    </li>
+
+                    <?php if ($id_rol == 3): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/creditScore">
+                            <a class="nav-link" href="/arequipago/comisiones">
                                 <i class="ti-stats-up"></i>
-                                CREDIT SCORE
+                                COMISIONES
                             </a>
                         </li>
+                    <?php endif; ?>
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id="navbarDropdownPromociones" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="ti-gift"></i>
-                                PROMOCIONES
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPromociones">
-                                <li><a class="dropdown-item" href="/arequipago/cupones">
-                                    <i class="ti-ticket me-2"></i>Cupones
-                                </a></li>
-                                <li><a class="dropdown-item" href="/arequipago/beneficios">
-                                    <i class="ti-star me-2"></i>Beneficios
-                                </a></li>
-                            </ul>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/arequipago/mostrarReportes">
+                            <i class="ti-bar-chart"></i>
+                            REPORTES
+                        </a>
+                    </li>
+                <?php endif; ?>
 
-                        <?php if ($id_rol == 3): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="usuarios" style="cursor: pointer;">
-                                    <i class="ti-user"></i>
-                                    USUARIOS
-                                </a>
-                            </li>
-                        <?php endif; ?>   
-
+                  <?php if ($id_rol == 3): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/module-financiamiento">
-                                <i class="ti-money"></i>
-                                CREDI GO
+                            <a class="nav-link" href="/arequipago/adjudicaciones">
+                                <i class="ti-stats-up"></i>
+                                ADJUDICACIONES
                             </a>
                         </li>
+                    <?php endif; ?>
 
-                        <?php if ($id_rol == 1 || $id_rol == 3): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" onclick=""href="/arequipago/grupo-financiamiento">
-                                    <i class="fas fa-piggy-bank"></i>
-                                    GRUPOS FINANCIAMIENTO
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" onclick=""href="/arequipago/cotizaciones">
-                                    <i class="fas fa-piggy-bank"></i>
-                                    COTIZACIONES
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" onclick=""href="/arequipago/vehiculos">
-                                    <i class="fas fa-piggy-bank"></i>
-                                    CARROS Y MOTOS
-                                </a>
-                            </li>
 
-                            <?php if ($id_rol == 3): ?>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="/arequipago/comisiones">
-                                        <i class="ti-stats-up"></i>
-                                        COMISIONES
-                                    </a>
-                                </li>
-                            <?php endif; ?>
 
-                            <li class="nav-item">
-                                <a class="nav-link" href="/arequipago/mostrarReportes">
-                                    <i class="ti-bar-chart"></i>
-                                    REPORTES
-                                </a>
-                            </li>
-                        <?php endif; ?> 
-                </ul>
-                        <!--- <li class="nav-item panel-palpitante">
+            </ul>
+            <!--- <li class="nav-item panel-palpitante">
                             <a class="nav-link texto-palpitante" href="/almacen/intercambio/productos">
                                 <i class="ti-calendar"></i>
                                 Intercambio Productos
                             </a>
                         </li> -->
-                      
 
-                    
-                   
-                    
-                    <!-- <li class="nav-item panel-palpitante" >
+
+
+
+
+            <!-- <li class="nav-item panel-palpitante" >
                     <a class="nav-link texto-palpitante" href="#">
                     <i class="ti-calendar"></i>
                         Intercambio Productos
                     </a>
                     </li> -->
-                
-            
+
+
             <!-- fin del nav de administrador -->
 
             <!-- inicio de nav del vendedor    -->
-                                    
+
             <!-- fin del nav del vendedor -->
 
             <!--
@@ -408,15 +429,15 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
 
 
-                <!-- fin de nav de almacen -->
-            </div>
-
-
+            <!-- fin de nav de almacen -->
         </div>
+
+
+    </div>
     <div>
 </nav>
 
-    <script>
+<script>
     function mostrarAlerta() {
         Swal.fire({
             icon: 'info',
@@ -425,4 +446,4 @@ $id_rol = $_SESSION['id_rol'] ?? null;
             confirmButtonText: 'Entendido'
         });
     }
-    </script>
+</script>

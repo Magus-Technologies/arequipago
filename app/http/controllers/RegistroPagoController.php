@@ -86,10 +86,13 @@ class RegistroPagoController extends Controller
             if ($tipo_pago == 'financiado' && isset($data['cuotas']) && isset($data['fechas_vencimiento'])) {
                 $cuotas_array = [];
                 foreach ($data['cuotas'] as $index => $monto_cuota) {
+                    // Convertir fecha a formato MySQL antes de guardar en JSON
+                    $fecha_vencimiento_cuota = $this->convertirFechaAMySQL($data['fechas_vencimiento'][$index]);
+
                     $cuotas_array[] = [
                         'numero_cuota' => $index + 1,
                         'monto' => $monto_cuota,
-                        'fecha_vencimiento' => $data['fechas_vencimiento'][$index],
+                        'fecha_vencimiento' => $fecha_vencimiento_cuota,
                         'monto_inicial' => $monto_inicial
                     ];
                 }
@@ -98,10 +101,14 @@ class RegistroPagoController extends Controller
             
             // Crear observaciones con los datos del pago
             $fecha_fin = null;
+            $fecha_inicio = null;
+
             if (isset($data['fechas_vencimiento']) && is_array($data['fechas_vencimiento']) && count($data['fechas_vencimiento']) > 0) {
-                $fecha_fin = end($data['fechas_vencimiento']);
+                // Convertir fechas a formato MySQL
+                $fecha_inicio = $this->convertirFechaAMySQL($data['fechas_vencimiento'][0]);
+                $fecha_fin = $this->convertirFechaAMySQL(end($data['fechas_vencimiento']));
             }
-            
+
             $observaciones = json_encode([
                 'id_conductor' => $id_conductor,
                 'tipo_pago' => $tipo_pago,
@@ -110,7 +117,7 @@ class RegistroPagoController extends Controller
                 'metodo_pago' => $metodo_pago,
                 'numero_cuotas' => $data['numero_cuotas'] ?? null,
                 'frecuencia_pago' => $data['frecuencia_pago'] ?? null,
-                'fecha_inicio' => isset($data['fechas_vencimiento'][0]) ? $data['fechas_vencimiento'][0] : null,
+                'fecha_inicio' => $fecha_inicio,
                 'fecha_fin' => $fecha_fin,
                 'monto_cuota' => $data['monto_cuota'] ?? null,
                 'tasa_interes' => $data['tasa_interes'] ?? null
@@ -173,13 +180,17 @@ class RegistroPagoController extends Controller
         }
 
         if ($tipo_pago == 'financiado') {
+            // Convertir fechas a formato MySQL antes de registrar
+            $fecha_inicio_financiamiento = $this->convertirFechaAMySQL($data['fechas_vencimiento'][0]);
+            $fecha_fin_financiamiento = $this->convertirFechaAMySQL(end($data['fechas_vencimiento']));
+
             $conductorRegFinanciamientoModel = new ConductorRegFinanciamientoModel();
             $id_financiamiento = $conductorRegFinanciamientoModel->registrarFinanciamiento(
                 $id_conductor,
                 $data['numero_cuotas'],
                 $data['frecuencia_pago'],
-                $data['fechas_vencimiento'][0],
-                end($data['fechas_vencimiento']),
+                $fecha_inicio_financiamiento,
+                $fecha_fin_financiamiento,
                 $data['monto_cuota'],
                 $data['tasa_interes'],
                 $monto_inicial // Modificado:
@@ -192,12 +203,15 @@ class RegistroPagoController extends Controller
 
             $conductorCuotaModel = new ConductorCuotaModel();
             foreach ($data['cuotas'] as $index => $monto_cuota) {
-                $fecha_vencimiento = $data['fechas_vencimiento'][$index];
-                // Validar y formatear la fecha
-                if (!$this->validarFormatoFecha($fecha_vencimiento)) {
-                    echo json_encode(['success' => false, 'message' => 'Formato de fecha inválido']);
+                // Convertir fecha a formato MySQL
+                $fecha_vencimiento = $this->convertirFechaAMySQL($data['fechas_vencimiento'][$index]);
+
+                // Validar que la conversión fue exitosa
+                if (empty($fecha_vencimiento)) {
+                    echo json_encode(['success' => false, 'message' => 'Formato de fecha inválido en cuota ' . ($index + 1)]);
                     return;
                 }
+
                 $result = $conductorCuotaModel->registrarCuota(
                     $id_financiamiento,
                     $index + 1,
@@ -430,6 +444,62 @@ class RegistroPagoController extends Controller
         return $fecha_obj && $fecha_obj->format($formato) === $fecha;
     }
 
+    /**
+     * Convertir fecha a formato MySQL (YYYY-MM-DD)
+     * Acepta múltiples formatos: DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, etc.
+     */
+    private function convertirFechaAMySQL($fecha)
+    {
+        if (empty($fecha)) {
+            return null;
+        }
+
+        // Detectar y corregir formato incorrecto YYYY-DD-MM (día y mes invertidos)
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $fecha, $matches)) {
+            $year = (int)$matches[1];
+            $valor1 = (int)$matches[2];
+            $valor2 = (int)$matches[3];
+
+            // Si el segundo valor es > 12, probablemente es el día (formato incorrecto YYYY-DD-MM)
+            if ($valor1 > 12 && $valor2 <= 12) {
+                // Está en formato YYYY-DD-MM, corregir a YYYY-MM-DD
+                $fechaCorregida = sprintf('%04d-%02d-%02d', $year, $valor2, $valor1);
+                error_log("🔧 Fecha corregida de '$fecha' a '$fechaCorregida'");
+                return $fechaCorregida;
+            }
+
+            // Si ambos valores son <= 12, asumir que ya está correcto
+            if ($valor1 <= 12 && $valor2 <= 12) {
+                return $fecha;
+            }
+
+            // Si el primer valor es > 12, está mal formateado
+            if ($valor1 > 12) {
+                error_log("❌ ERROR: Fecha '$fecha' tiene mes inválido ($valor1)");
+                return null;
+            }
+        }
+
+        // Intentar parsear diferentes formatos
+        $formatos = [
+            'd/m/Y',    // 24/11/2025
+            'd-m-Y',    // 24-11-2025
+            'Y/m/d',    // 2025/11/24
+            'd/m/y',    // 24/11/25
+            'd-m-y',    // 24-11-25
+        ];
+
+        foreach ($formatos as $formato) {
+            $fechaObj = DateTime::createFromFormat($formato, $fecha);
+            if ($fechaObj !== false) {
+                return $fechaObj->format('Y-m-d');
+            }
+        }
+
+        // Si no se pudo convertir, registrar error y retornar null
+        error_log("⚠️ ADVERTENCIA: No se pudo convertir la fecha '$fecha' a formato MySQL");
+        return null;
+    }
 
 }
 

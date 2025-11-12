@@ -54,7 +54,7 @@ function saveFinanciamiento(event) {
   let nombrePersonalizado = null;
   if (grupoFinanciamiento === "42" || grupoFinanciamiento === 42) {
     nombrePersonalizado = $("#nombrePersonalizado").val().trim();
-    
+
     // Validar que no esté vacío para plan editable
     if (!nombrePersonalizado) {
       Swal.fire("Error", "Debe ingresar un nombre para el plan personalizado.", "error");
@@ -62,6 +62,15 @@ function saveFinanciamiento(event) {
     }
   }
 
+  // ✅ NUEVO: Capturar estado del checkbox de entrega especial (solo para plan 42)
+  let esEntregaEspecial = 0;
+  if (grupoFinanciamiento === "42" || grupoFinanciamiento === 42) {
+    const checkboxEntrega = document.getElementById('checkEntregaVehiculoEspecial');
+    if (checkboxEntrega && checkboxEntrega.checked) {
+      esEntregaEspecial = 1;
+      console.log("✅ Financiamiento marcado como entrega especial de vehículo");
+    }
+  }
 
   let montoTotal = $("#monto").val(); // Obtenemos el valor del monto total
   const Frecuencia = $("#frecuenciaPago").val();
@@ -340,7 +349,7 @@ function saveFinanciamiento(event) {
     // Modificado: Función expresada para acceder a las variables del ámbito
     // Enviar los datos al controlador para guardar el financiamiento
     $.ajax({
-      url: "/arequipago/guardarFinanciamiento",
+      url: _URL + "/guardarFinanciamiento",
       type: "POST",
       data: {
         id_conductor: idConductor,
@@ -351,6 +360,7 @@ function saveFinanciamiento(event) {
         codigo_asociado: codigoAsociado,
         grupo_financiamiento: grupoFinanciamiento,
         nombre_personalizado: nombrePersonalizado,
+        es_entrega_especial: esEntregaEspecial, // ✅ NUEVO: Flag de entrega especial
         cantidad_producto: cantidadProducto,
         monto_total: montoTotal,
         monto_inscrip: montoInscrip,
@@ -430,7 +440,7 @@ function saveFinanciamiento(event) {
 
   // Buscar el id_conductor usando el número de documento
   $.ajax({
-    url: "/arequipago/buscarConductor",
+    url: _URL + "/buscarConductor",
     type: "GET",
     data: { nro_documento: numeroDocumento },
     dataType: "json",
@@ -440,7 +450,7 @@ function saveFinanciamiento(event) {
 
         // Enviar los datos al controlador para guardar el financiamiento
         $.ajax({
-          url: "/arequipago/guardarFinanciamiento",
+          url: _URL + "/guardarFinanciamiento",
           type: "POST",
           data: {
             id_conductor: idConductor,
@@ -450,6 +460,7 @@ function saveFinanciamiento(event) {
             codigo_asociado: codigoAsociado,
             grupo_financiamiento: grupoFinanciamiento,
             nombre_personalizado: nombrePersonalizado,
+            es_entrega_especial: esEntregaEspecial, // ✅ NUEVO: Flag de entrega especial
             cantidad_producto: cantidadProducto,
             monto_total: montoTotal,
             monto_inscrip: montoInscrip,
@@ -521,7 +532,7 @@ function saveFinanciamiento(event) {
       } else {
         // Si no se encontró conductor, buscar o crear cliente
         $.ajax({
-          url: "/arequipago/buscarOCrearCliente",
+          url: _URL + "/buscarOCrearCliente",
           type: "POST",
           data: {
             documento: numeroDocumento,
@@ -556,7 +567,7 @@ function saveFinanciamiento(event) {
     error: function () {
       // En caso de error en la búsqueda de conductor, buscar o crear cliente
       $.ajax({
-        url: "/arequipago/buscarOCrearCliente",
+        url: _URL +"/buscarOCrearCliente",
         type: "POST",
         data: {
           documento: numeroDocumento,
@@ -839,7 +850,7 @@ function saveFinanciamientoVehicular() {
     };
 
     $.ajax({
-      url: "/arequipago/financiamientoVehicular",
+      url: _URL + "/financiamientoVehicular",
       type: "POST",
       data: data,
       dataType: "json",
@@ -931,7 +942,7 @@ function saveFinanciamientoVehicular() {
   // Buscar el id_conductor usando el número de documento
   $.ajax({
     // Añadido: Bloque completo para buscar conductor
-    url: "/arequipago/buscarConductor",
+    url: _URL + "/buscarConductor",
     type: "GET",
     data: { nro_documento: numeroDocumento },
     dataType: "json",
@@ -943,7 +954,7 @@ function saveFinanciamientoVehicular() {
       } else {
         // Si no se encontró conductor, buscar o crear cliente
         $.ajax({
-          url: "/arequipago/buscarOCrearCliente",
+          url: _URL + "/buscarOCrearCliente",
           type: "POST",
           data: {
             documento: numeroDocumento,
@@ -978,7 +989,7 @@ function saveFinanciamientoVehicular() {
       // 🔄 Añadido parámetros a la función de error
       // 🔄 En caso de error en la búsqueda de conductor, buscar o crear cliente
       $.ajax({
-        url: "/arequipago/buscarOCrearCliente",
+        url: _URL + "/buscarOCrearCliente",
         type: "POST",
         data: {
           documento: numeroDocumento,
@@ -1090,93 +1101,25 @@ function fechaHoraActual() {
   let formattedDate = now.toISOString().slice(0, 16); // Mantener el formato para datetime-local
   dateTimeLocal.value = formattedDate; // Asignar el valor formateado al input
   console.log("Fecha y hora seteadas:", dateTimeLocal.value);
-  // 🆕 Setear SOLO la parte de fecha (YYYY-MM-DD) en el input fechaInicio
-  const soloFecha = formattedDate.slice(0, 10); // Extrae solo "YYYY-MM-DD"
-  const fechaInicioInput = document.getElementById("fechaInicio");
 
-  if (fechaInicioInput) {
-    fechaInicioInput.value = soloFecha;
-    console.log("📆 Fecha seteada en #fechaInicio:", soloFecha);
-  }
+  // ✅ REMOVIDO: No establecer fecha de hoy en #fechaInicio
+  // La fecha de inicio debe ser establecida por el plan seleccionado, no por la fecha actual
+  // Los planes con fecha_inicio definida usarán su propia fecha desde planes_financiamiento
 }
 
-function buscarFinanciamientos() {
-  const query = document.getElementById("buscar-financiamientos").value;
-  const errorBusqueda = document.getElementById("error-busqueda");
+// ⚠️ MOVIDO A generar-contratos.js
+/* function buscarFinanciamientos() { ... } */
 
-  // Reset error message
-  errorBusqueda.style.display = "none";
+// ⚠️ MOVIDO A generar-contratos.js
+/* function eliminarDeTabla(button) { ... } */
 
-  if (!query.trim()) {
-    errorBusqueda.textContent = "Por favor, ingrese un criterio de búsqueda.";
-    errorBusqueda.style.display = "block";
-    return;
-  }
+// ⚠️ MOVIDO A generar-contratos.js
+/* function cargarDetallesFinanciamiento(idFinanciamiento) { ... } */
 
-  fetch("/arequipago/busquedaFinanciamientos", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      // Seleccionar específicamente la tabla dentro del tab "Generar Contratos"
-      const tbody = document.querySelector("#generarContratosFrm .table tbody");
-
-      if (!tbody) {
-        console.error(
-          "No se pudo encontrar el tbody de la tabla en Generar Contratos"
-        );
-        return;
-      }
-
-      // Limpiar la tabla antes de agregar nuevos datos
-      tbody.innerHTML = "";
-
-      if (data.length > 0) {
-        data.forEach((item) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-                    <td>${item.id}</td>
-                    <td>${item.cliente}</td>
-                    <td>${item.fecha}</td>
-                    <td>${item.monto}</td>
-                    <td>${item.estado}</td>
-                    <td>
-                        <button onclick="cargarDetallesFinanciamiento(${item.id})" data-bs-toggle="modal" data-bs-target="#modalFinanciamiento" class="btn btn-info btn-sm">
-                            <i class="fas fa-eye"></i>
-                        </button> 
-                        <button onclick="eliminarDeTabla(this)" class="btn btn-danger btn-sm">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </td>
-                `;
-          tbody.appendChild(row);
-        });
-      } else {
-        tbody.innerHTML =
-          '<tr  style=" color: #2E217A;"><td colspan="6" class="text-center ">No se encontraron financiamientos para el rango de fechas seleccionado.</td></tr>';
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      errorBusqueda.textContent =
-        "Error al buscar financiamientos. Intente nuevamente.";
-      errorBusqueda.style.display = "block";
-    });
-}
-
-// Función para eliminar un registro de la tabla
-function eliminarDeTabla(button) {
-  const row = button.closest("tr"); // Encontrar la fila del botón
-  row.remove(); // Eliminar la fila de la tabla
-}
-
+/* OLD CODE - MOVIDO
 function cargarDetallesFinanciamiento(idFinanciamiento) {
   fetch(
-    `/arequipago/obtenerFinanciamientoDetalle?id_financiamiento=${idFinanciamiento}`
+    `{{_URL}}/obtenerFinanciamientoDetalle?id_financiamiento=${idFinanciamiento}`
   ) // Usar el ID proporcionado
     .then((response) => response.json())
     .then((data) => {
@@ -1284,7 +1227,7 @@ function cargarDetallesFinanciamiento(idFinanciamiento) {
             `;
     })
     .catch((error) => console.error("Error:", error));
-}
+} */
 
 function cargarFinanciamientos() {
   const fechaInicio = document.querySelector("#fecha-inicio").value;
@@ -1312,7 +1255,7 @@ function cargarFinanciamientos() {
     };
 
     // Enviar la solicitud AJAX
-    fetch("/arequipago/obtenerFinanciamientosPorFecha", {
+    fetch(_URL + "/obtenerFinanciamientosPorFecha", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1404,7 +1347,7 @@ function deleteFinance() {
   }).then((result) => {
     if (result.isConfirmed) {
       $.ajax({
-        url: "/arequipago/deleteFinance", // URL de la API
+        url: _URL + "/deleteFinance", // URL de la API
         type: "POST", // Método de la solicitud
         data: { id_financiamiento: idFinanciamientoSeleccionado }, // Enviar el ID como datos
         dataType: "json", // Tipo de respuesta esperada
@@ -1457,7 +1400,7 @@ function editarFinanciamiento() {
 
   // Cargar los datos del financiamiento seleccionado
   $.ajax({
-    url: "/arequipago/ajs/obtenerFinanciamientoParaEditar",
+    url: _URL + "/ajs/obtenerFinanciamientoParaEditar",
     type: "GET",
     data: { id_financiamiento: idFinanciamientoSeleccionado },
     dataType: "json",
@@ -1665,7 +1608,7 @@ function generateCronograma() {
   };
 
   $.ajax({
-    url: "/arequipago/generarCronogramaPDF",
+    url: _URL + "/generarCronogramaPDF",
     method: "POST",
     dataType: "json",
     data: JSON.stringify(datosFormulario),
@@ -1703,112 +1646,6 @@ function generateCronograma() {
     },
   });
 }
-function GenerarContratos() {
-  const rows = document.querySelectorAll(
-    "#generarContratosFrm .table-striped tbody tr"
-  );
-  const ids = [];
 
-  rows.forEach((row) => {
-    const idCell = row.querySelector("td");
-    if (idCell) {
-      const idFinanciamiento = idCell.textContent.trim();
-      if (idFinanciamiento) {
-        ids.push(idFinanciamiento);
-      }
-    }
-  });
-
-  if (ids.length === 0) {
-    Swal.fire("Error", "No hay financiamientos seleccionados.", "error");
-    return;
-  }
-
-  // 水 Mostrar mensaje de carga
-  Swal.fire({
-    title: "Generando contratos",
-    text: "Por favor espere...",
-    allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    },
-  });
-
-  fetch("/arequipago/generarContratos", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ ids }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      Swal.close();
-
-      // 水 Verificar si hay errores críticos en la respuesta
-      if (
-        data.mensaje &&
-        data.mensaje.includes("El financiamiento fue rechazado")
-      ) {
-        Swal.fire("Atención", data.mensaje, "warning");
-        return;
-      }
-
-      // 水 Verificar si hay algún archivo para descargar
-      const hayArchivos =
-        (data.pdfs && data.pdfs.length > 0) ||
-        (data.excels && data.excels.length > 0);
-
-      if (hayArchivos) {
-        // 水 Descargar PDFs
-        if (data.pdfs && data.pdfs.length > 0) {
-          data.pdfs.forEach((pdf) => {
-            const linkSource = `data:application/pdf;base64,${pdf.content}`;
-            const downloadLink = document.createElement("a");
-            downloadLink.href = linkSource;
-            downloadLink.download = pdf.nombre;
-            downloadLink.click();
-          });
-        }
-
-        // 水 Descargar Excel
-        if (data.excels && data.excels.length > 0) {
-          data.excels.forEach((excel) => {
-            const linkSource = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${excel.content}`;
-            const downloadLink = document.createElement("a");
-            downloadLink.href = linkSource;
-            downloadLink.download = excel.nombre;
-            downloadLink.click();
-          });
-        }
-
-        // 水 Mostrar mensaje de éxito con advertencia si hay errores parciales
-        if (data.errores && data.errores.length > 0) {
-          Swal.fire({
-            icon: "info",
-            title: "Archivos generados parcialmente",
-            html: `Se han descargado los archivos disponibles.<br>No se pudieron generar los contratos para los IDs: ${data.errores.join(
-              ", "
-            )}`,
-            confirmButtonText: "Entendido",
-          });
-        } else {
-          Swal.fire(
-            "Éxito",
-            "Los contratos se generaron y descargaron correctamente.",
-            "success"
-          );
-        }
-      } else {
-        Swal.fire(
-          "Atención",
-          `Estos contratos no se generaron: ${data.errores.join(", ")}`,
-          "warning"
-        );
-      }
-    })
-    .catch((error) => {
-      Swal.fire("Error", "Ocurrió un error al generar los contratos.", "error");
-      console.error(error);
-    });
-}
+// ⚠️ MOVIDO A generar-contratos.js
+/* function GenerarContratos() { ... } */

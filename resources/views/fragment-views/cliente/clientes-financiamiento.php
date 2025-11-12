@@ -612,127 +612,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // 🛠
     </div>
 </div>
 
-<!-- Modal para ver detalles del cliente -->
-<div class="modal fade" id="modalVerCliente" tabindex="-1" aria-labelledby="modalVerClienteLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalVerClienteLabel">Detalles del Cliente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Datos Personales</h5>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong>Tipo Documento:</strong> <span id="verTipoDoc"></span></p>
-                        <p><strong>N° Documento:</strong> <span id="verNumDoc"></span></p>
-                        <p><strong>Nombres:</strong> <span id="verNombres"></span></p>
-                        <p><strong>Apellidos:</strong> <span id="verApellidos"></span></p>
-                        <p><strong>Nacionalidad:</strong> <span id="verNacionalidad"></span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Fecha Nacimiento:</strong> <span id="verFechaNac"></span></p>
-                        <p><strong>Teléfono:</strong> <span id="verTelefono"></span></p>
-                        <p><strong>Correo:</strong> <span id="verCorreo"></span></p>
-                        <p><strong>Código Financiero:</strong> <span id="verCodFinan"></span></p>
-                        <p><strong>Dirección:</strong> <span id="verDireccion"></span></p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Contacto de Emergencia</h5>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong>Nombre:</strong> <span id="verEmergenciaNombre"></span></p>
-                        <p><strong>Parentesco:</strong> <span id="verEmergenciaParentesco"></span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Teléfono:</strong> <span id="verEmergenciaTelefono"></span></p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Información Laboral</h5>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong>Nombre:</strong> <span id="verLaboralNombre"></span></p>
-                        <p><strong>Puesto:</strong> <span id="verLaboralPuesto"></span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Teléfono:</strong> <span id="verLaboralTelefono"></span></p>
-                        <p><strong>Empresa:</strong> <span id="verLaboralEmpresa"></span></p>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Documentos</h5>
-                        <hr>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Recibo Agua/Luz:</strong>
-                        <div id="btnReciboServicios" class="mb-2"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Selfie:</strong>
-                        <div id="btnSelfie" class="mb-2"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Doc. Identidad:</strong>
-                        <div id="btnDocIdentidad" class="mb-2"></div>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Documento 1:</strong>
-                        <div id="btnOtroDoc1" class="mb-2"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Documento 2:</strong>
-                        <div id="btnOtroDoc2" class="mb-2"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <strong>Documento 3:</strong>
-                        <div id="btnOtroDoc3" class="mb-2"></div>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <h5>Comentarios</h5>
-                        <hr>
-                        <p id="verComentarios"></p>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-12">
-                        <p><small><strong>Fecha de Registro:</strong> <span id="verFechaRegistro"></span></small></p>
-                        <p><small><strong>Última Actualización:</strong> <span id="verFechaActualizacion"></span></small></p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Incluir componente modal de detalles del cliente -->
+<?php include __DIR__ . '/../../components/modal-detalle-cliente.php'; ?>
 
 <!-- Modal para editar cliente -->
 <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-labelledby="modalEditarClienteLabel" aria-hidden="true">
@@ -1404,11 +1285,7 @@ $(document).ready(function() {
 
 
 $(document).on('click', '.ver-btn', function() {
-
     const id = $(this).data('id');
-    
-    // Limpiar modal
-    $('#modalVerCliente .modal-body').html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
     
     // Abrir modal
     $('#modalVerCliente').modal('show');
@@ -1423,45 +1300,49 @@ $(document).on('click', '.ver-btn', function() {
             if (response.success) {
                 const cliente = response.cliente;
                 
-                // NUEVO: Preparar badges de verificación
-                let badgesVerificacion = `
-                    <div class="client-verification-badges">
-                        <h6><i class="fas fa-shield-alt me-2"></i>Estado de Verificación</h6>
-                        <div class="client-verification-item">
-                            <span class="icon">📋</span>
-                            <span class="label">Verificación Documentaria</span>
-                            <span>Estado: <span class="client-verification-status ${cliente.documentacion_completa ? 'verified' : 'not-verified'}">${cliente.documentacion_completa ? 'Verificado' : 'No verificado'}</span></span>
-                        </div>`;
+                // Llenar Tab 1: Datos Personales
+                $('#verTipoDoc').text(cliente.tipo_doc || '-');
+                $('#verNumDoc').text(cliente.n_documento || '-');
+                $('#verNombres').text(cliente.nombres || '-');
+                $('#verApellidos').text(`${cliente.apellido_paterno || ''} ${cliente.apellido_materno || ''}`);
+                $('#verNacionalidad').text(cliente.nacionalidad || '-');
+                $('#verFechaNac').text(cliente.fecha_nacimiento || '-');
+                $('#verCodFinan').text(cliente.codigo_financiero || '-');
+                $('#verDireccion').text(cliente.direccion_completa || '-');
+                $('#verComentarios').text(cliente.comentarios || 'Sin comentarios');
+                $('#verFechaRegistro').text(cliente.fecha_registro || '-');
+                $('#verFechaActualizacion').text(cliente.fecha_actualizacion || '-');
                 
-                if (cliente.verificacion_domiciliaria !== null && cliente.verificacion_domiciliaria !== undefined) {
-                    badgesVerificacion += `
-                        <div class="client-verification-item">
-                            <span class="icon">🏠</span>
-                            <span class="label">Verificación Domiciliaria</span>
-                            <span>Estado: <span class="client-verification-status ${cliente.verificacion_domiciliaria ? 'verified' : 'not-verified'}">${cliente.verificacion_domiciliaria ? 'Verificado' : 'No verificado'}</span></span>
-                        </div>`;
+                // Llenar Tab 2: Contacto
+                $('#verTelefono').text(cliente.telefono || '-');
+                $('#verCorreo').text(cliente.correo || '-');
+                $('#verEmergenciaNombre').text(cliente.emergencia_nombre || '-');
+                $('#verEmergenciaParentesco').text(cliente.emergencia_parentesco || '-');
+                $('#verEmergenciaTelefono').text(cliente.emergencia_telefono || '-');
+                
+                // Llenar Tab 3: Información Laboral
+                $('#verLaboralNombre').text(cliente.laboral_nombre || '-');
+                $('#verLaboralPuesto').text(cliente.laboral_puesto || '-');
+                $('#verLaboralTelefono').text(cliente.laboral_telefono || '-');
+                $('#verLaboralEmpresa').text(cliente.laboral_empresa || '-');
+                
+                // Llenar Tab 4: Documentos
+                function generarBotonDoc(ruta, nombre) {
+                    if (!ruta) return '<span class="text-muted">Sin archivo</span>';
+                    const ext = ruta.split('.').pop().toLowerCase();
+                    const esImagen = ['jpg', 'jpeg', 'png', 'gif'].includes(ext);
+                    const icono = esImagen ? 'fa-image' : (ext === 'pdf' ? 'fa-file-pdf' : 'fa-file');
+                    const color = esImagen ? 'primary' : (ext === 'pdf' ? 'danger' : 'secondary');
+                    return `<a href="${ruta}" target="_blank" class="btn btn-${color} btn-sm">
+                                <i class="fas ${icono}"></i> Ver ${nombre}
+                            </a>`;
                 }
                 
-                badgesVerificacion += `</div>`;
-
-                // Información de pago (se mostrará al final)
-                let infoPago = '';
-                if (cliente.ha_pagado == 1) {
-                    const fechaPago = new Date(cliente.fecha_pago).toLocaleString('es-PE');
-                    const asesorNombre = (cliente.usuario_nombres || '') + ' ' + (cliente.usuario_apellidos || '');
-                    
-                    infoPago = `
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <h5><i class="fas fa-credit-card me-2 text-success"></i>Información de Pago</h5>
-                                <div class="card border-success">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-check-circle me-2 text-success"></i>
-                                            <span class="badge bg-success">PAGO REGISTRADO</span>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-6">
+                $('#btnReciboServicios').html(generarBotonDoc(cliente.recibo_servicios, 'Recibo'));
+                $('#btnSelfie').html(generarBotonDoc(cliente.selfie, 'Selfie'));
+                $('#btnDocIdentidad').html(generarBotonDoc(cliente.doc_identidad, 'Documento'));
+                $('#btnOtroDoc1').html(generarBotonDoc(cliente.otro_doc_1, 'Doc 1'));
+                $('#btnOtroDoc2').html(gen  <div class="col-md-6">
                                                 <p class="mb-1"><i class="fas fa-money-bill-wave me-2 text-primary"></i><strong>Monto Pagado:</strong> S/ ${parseFloat(cliente.monto_pagado).toFixed(2)}</p>
                                                 <p class="mb-1"><i class="fas fa-exchange-alt me-2 text-info"></i><strong>Vuelto:</strong> S/ ${parseFloat(cliente.vuelto || 0).toFixed(2)}</p>
                                                 <p class="mb-1"><i class="fas fa-wallet me-2 text-warning"></i><strong>Método:</strong> ${cliente.metodo_pago_nombre || 'No especificado'}</p>

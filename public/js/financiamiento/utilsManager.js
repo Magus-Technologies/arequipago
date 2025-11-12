@@ -184,7 +184,7 @@ async function handleGeneratePDFs(
         // Crear estructura del modal con Bootstrap
         modal = document.createElement("div");
         modal.id = "pdfModal";
-        modal.classList.add("modal", "fade");
+        modal.classList.add("modal");
         modal.setAttribute("tabindex", "-1");
         modal.setAttribute("aria-labelledby", "pdfModalLabel");
         modal.setAttribute("aria-hidden", "true");
@@ -197,17 +197,30 @@ async function handleGeneratePDFs(
                                     </div>
                                     <div class="modal-body">
                                         <!-- Campo para ingresar número de WhatsApp -->
-                                        <div class="mb-3">
-                                            <label for="whatsappNumber" class="form-label">Número de WhatsApp</label>
+                                        <div class="mb-4">
+                                            <label for="whatsappNumber" class="form-label">
+                                                <i class="fab fa-whatsapp text-success me-2"></i>Número de WhatsApp
+                                            </label>
                                             <div class="input-group">
-                                                <input type="text" class="form-control" id="whatsappNumber" placeholder="Ingresar número" value="+51">
-                                                <button class="btn btn-outline-secondary" type="button" id="btnValidateNumber">Validar</button>
+                                                <span class="input-group-text">
+                                                    <i class="fab fa-whatsapp text-success"></i>
+                                                </span>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="whatsappNumber" 
+                                                       placeholder="+51987654321" 
+                                                       value="+51">
+                                                <button class="btn btn-success" type="button" id="btnValidateNumber">
+                                                    <i class="fas fa-check me-1"></i>Validar
+                                                </button>
                                             </div>
-                                            <div class="form-text">Incluye el código de país (Ej: +51 para Perú)</div>
+                                            <small class="form-text text-muted">Incluye el código de país (Ej: +51 para Perú)</small>
                                         </div>
                                         
+                                        <hr>
+                                        
                                         <!-- Contenedor donde se mostrarán los botones de los PDFs -->
-                                        <div id="pdfButtons" class="d-flex flex-column gap-3"></div>
+                                        <div id="pdfButtons"></div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -224,12 +237,32 @@ async function handleGeneratePDFs(
             const phoneNumber = document
               .getElementById("whatsappNumber")
               .value.trim();
+            const btnValidate = document.getElementById("btnValidateNumber");
+            
             if (phoneNumber.length < 8) {
-              alert(
-                "Por favor ingresa un número válido incluyendo el código de país"
-              );
+              // Mostrar error
+              Swal.fire({
+                icon: 'error',
+                title: 'Número inválido',
+                text: 'Por favor ingresa un número válido incluyendo el código de país (Ej: +51987654321)',
+                confirmButtonColor: '#d33'
+              });
+              btnValidate.classList.remove('btn-success');
+              btnValidate.classList.add('btn-danger');
+              btnValidate.innerHTML = '<i class="fas fa-times-circle me-1"></i>Inválido';
             } else {
-              alert("Número validado correctamente");
+              // Mostrar éxito
+              Swal.fire({
+                icon: 'success',
+                title: '¡Número validado!',
+                text: 'El número de WhatsApp es válido',
+                timer: 2000,
+                showConfirmButton: false
+              });
+              btnValidate.classList.remove('btn-danger');
+              btnValidate.classList.add('btn-success');
+              btnValidate.innerHTML = '<i class="fas fa-check-circle me-1"></i>Validado';
+              btnValidate.disabled = true;
             }
           });
       }
@@ -252,35 +285,28 @@ async function handleGeneratePDFs(
           const pdfBlob = new Blob([byteArray], { type: "application/pdf" });
           const pdfUrl = URL.createObjectURL(pdfBlob);
 
-          // Crear card para cada PDF con sus opciones
-          const pdfCard = document.createElement("div");
-          pdfCard.classList.add("card");
-          pdfCard.innerHTML = `
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0">Boleta: ${pdfData.tipo}</h6>
+          // Crear sección simple para cada PDF
+          const pdfSection = document.createElement("div");
+          pdfSection.classList.add("mb-3", "pb-3", "border-bottom");
+          pdfSection.innerHTML = `
+                                <h6 class="mb-3">
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>Boleta: ${pdfData.tipo}
+                                </h6>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary btn-download-${index}">
+                                        <i class="fas fa-download me-2"></i>Descargar PDF
+                                    </button>
+                                    <button class="btn btn-outline-success btn-share-${index}">
+                                        <i class="fab fa-whatsapp me-2"></i>Compartir por WhatsApp
+                                    </button>
                                 </div>
-                                <div class="card-body">
-                                    <div class="d-grid gap-2">
-                                        <!-- Botón de descarga -->
-                                        <button class="btn btn-primary btn-download-${index}">
-                                            <i class="bi bi-file-pdf me-1"></i> Descargar PDF
-                                        </button>
-                                        
-                                        <!-- Botón de compartir por WhatsApp -->
-                                        <button class="btn btn-success btn-share-${index}">
-                                            <i class="bi bi-whatsapp me-1"></i> Compartir por WhatsApp
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-light">
-                                    <div class="share-status-${index} small"></div>
-                                </div>
+                                <div class="share-status-${index} small text-muted mt-2"></div>
                             `;
 
-          pdfButtonsContainer.appendChild(pdfCard);
+          pdfButtonsContainer.appendChild(pdfSection);
 
           // Configurar funcionalidad del botón de descarga
-          pdfCard
+          pdfSection
             .querySelector(`.btn-download-${index}`)
             .addEventListener("click", function () {
               // Crear enlace de descarga y activarlo
@@ -295,16 +321,16 @@ async function handleGeneratePDFs(
               URL.revokeObjectURL(pdfUrl);
 
               // Actualizar estado
-              pdfCard.querySelector(
+              pdfSection.querySelector(
                 `.share-status-${index}`
-              ).innerHTML = `<span class="text-success">PDF descargado exitosamente</span>`;
+              ).innerHTML = `<span class="text-success">✓ PDF descargado exitosamente</span>`;
             });
 
           // Configurar funcionalidad del botón de compartir
-          pdfCard
+          pdfSection
             .querySelector(`.btn-share-${index}`)
             .addEventListener("click", async function () {
-              const shareStatus = pdfCard.querySelector(
+              const shareStatus = pdfSection.querySelector(
                 `.share-status-${index}`
               );
               shareStatus.innerHTML = `<span class="text-primary">Procesando solicitud...</span>`;
@@ -441,14 +467,15 @@ function clearTable() {
   cargarProductos(); // Volver a cargar los productos normalmente sin selección
 }
 
-function limpiarFechas() {
+// ⚠️ MOVIDO A generar-contratos.js
+/* function limpiarFechas() {
   document.getElementById("fecha-inicio").value = ""; // Limpiar el campo de fecha de inicio
   document.getElementById("fecha-fin").value = ""; // Limpiar el campo de fecha de fin
 
   // Limpiar mensajes de error
   document.getElementById("error-fecha-inicio").style.display = "none";
   document.getElementById("error-fecha-fin").style.display = "none";
-}
+} */
 
 // ✅ Nueva función para generar y descargar contrato instantáneamente
 function generarContratoInstant(idFinanciamiento) {
