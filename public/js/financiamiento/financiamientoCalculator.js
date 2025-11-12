@@ -2,6 +2,12 @@ function calcularFinanciamiento() {
   console.log("🚀 EJECUTANDO: calcularFinanciamiento() - Función principal");
   console.log("Entrando a calcularFinanciamiento...");
 
+  // ✅ NUEVO: Si se está procesando un cambio de frecuencia, no sobrescribir
+  if (typeof estaProcesandoCambioFrecuencia !== 'undefined' && estaProcesandoCambioFrecuencia) {
+    console.log("⏸️ Saltando calcularFinanciamiento - cambio de frecuencia en progreso");
+    return;
+  }
+
   // NUEVO: CrediYango - No calcular cronograma, se generará al entregar vehículo
   // IMPORTANTE: Solo mostrar mensaje si hay un GRUPO seleccionado Y es CrediYango
   const grupoSeleccionado = document.getElementById("grupo")?.value;
@@ -984,10 +990,10 @@ function calcularCronogramaDinamico() {
 }
 
 function mostrarFechasVencimientoPlan(fechasVencimiento, valorcuota) {
-  console.log(
-    "🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:",
-    fechasVencimiento
-  );
+  // console.log(
+  //   "🔍 EJECUTANDO: mostrarFechasVencimientoPlan() con fechas:",
+  //   fechasVencimiento
+  // );
 
   // NUEVO: No mostrar cronograma para CrediYango (ID 45)
   // IMPORTANTE: Solo aplicar si hay un GRUPO CrediYango seleccionado
@@ -1258,14 +1264,14 @@ function calcularFinanciamientoConFechaIngreso(plan) {
         );
         console.log("📅 Días movidos por ajuste al lunes:", diasMovidos);
 
-        // Si se movió al menos 1 día, significa que pasó al siguiente lunes
-        if (diasMovidos > 0) {
-          numeroInicial += 1; // Incrementar una cuota porque pasó a la siguiente semana
-          console.log(
-            "📊 Número de cuota incrementado por ajuste al siguiente lunes:",
-            numeroInicial
-          );
-        }
+        // ❌ DESHABILITADO: El cronograma siempre debe empezar desde Cuota 1
+        // if (diasMovidos > 0) {
+        //   numeroInicial += 1; // Incrementar una cuota porque pasó a la siguiente semana
+        //   console.log(
+        //     "📊 Número de cuota incrementado por ajuste al siguiente lunes:",
+        //     numeroInicial
+        //   );
+        // }
       }
     }
 
@@ -1521,18 +1527,23 @@ function recalcularMonto() {
           }
         }
 
-        // Corregir el formato de fecha sin afectar la zona horaria
-        let year = ultimaFechaVencimiento.getFullYear(); // Agregado: Obtener el año correctamente
-        let month = (ultimaFechaVencimiento.getMonth() + 1)
-          .toString()
-          .padStart(2, "0"); // Agregado: Mes en formato 2 dígitos
-        let day = ultimaFechaVencimiento.getDate().toString().padStart(2, "0"); // Agregado: Día en formato 2 dígitos
-        document.getElementById("fechaFin").value = `${year}-${month}-${day}`; // Modificación: Usar este formato en lugar de toISOString()
+        // ✅ CORREGIDO: Solo calcular fecha fin si el plan NO tiene fecha_fin definida
+        if (plan.fecha_fin) {
+          // Usar la fecha fin del plan directamente
+          document.getElementById("fechaFin").value = plan.fecha_fin;
+          console.log("📅 Usando fecha_fin del plan:", plan.fecha_fin);
+        } else {
+          // Calcular fecha fin basándose en la última cuota
+          let year = ultimaFechaVencimiento.getFullYear();
+          let month = (ultimaFechaVencimiento.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          let day = ultimaFechaVencimiento.getDate().toString().padStart(2, "0");
+          document.getElementById("fechaFin").value = `${year}-${month}-${day}`;
+          console.log("📅 Fecha fin calculada:", `${year}-${month}-${day}`);
+        }
 
-        console.log(
-          "Última fecha de vencimiento establecida en fechaFin:",
-          `${year}-${month}-${day}`
-        ); // Modificación: Mostrar el nuevo formato
+        // Log ya se mostró arriba según el caso
 
         // Obtener la moneda seleccionada
         let tipoMoneda = document.querySelector(

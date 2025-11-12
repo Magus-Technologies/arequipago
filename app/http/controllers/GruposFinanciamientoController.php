@@ -1,50 +1,46 @@
 <?php
-require_once "app/models/GrupoFinanciamientoModel.php";
+require_once 'app/models/GrupoFinanciamientoModel.php';
 
 class GruposFinanciamientoController extends Controller
-
 {
-
     private $conexion;
-    //private $conductor;
+    // private $conductor;
 
     public function __construct()
     {
         $this->conexion = (new Conexion())->getConexion();
-       // $this->conductor = new Conductor();
+        // $this->conductor = new Conductor();
     }
-
 
     public function guardarPlanFinanciamiento()
     {
         // Asegurar que la respuesta sea JSON
         header('Content-Type: application/json');
-        
+
         // Limpiar cualquier output previo que pueda interferir
         ob_clean();
 
-        if ($_SERVER["REQUEST_METHOD"] === "POST") {
-            
-            $nombrePlan = $_POST["nombre_plan"] ?? "";
-            $cuotaInicial = $_POST["cuota_inicial"] !== "" ? $_POST["cuota_inicial"] : null; 
-            $montoCuota = $_POST["monto_cuota"] ?? "";
-            $cantidadCuotas = $_POST["cantidad_cuotas"] ?? "";
-            $frecuenciaPago = $_POST["frecuencia_pago"] ?? "";
-            $moneda = $_POST["moneda"] ?? ""; 
-            $tasaInteres = $_POST["tasa_interes"] ?? "";
-            $monto = $_POST["monto"] ?? "";  // 🔹 Nuevo: Recibir el monto desde el formulario
-            $montoSinInteres = $_POST["monto_sin_interes"] ?? ""; 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $nombrePlan = $_POST['nombre_plan'] ?? '';
+            $cuotaInicial = $_POST['cuota_inicial'] !== '' ? $_POST['cuota_inicial'] : null;
+            $montoCuota = $_POST['monto_cuota'] ?? '';
+            $cantidadCuotas = $_POST['cantidad_cuotas'] ?? '';
+            $frecuenciaPago = $_POST['frecuencia_pago'] ?? '';
+            $moneda = $_POST['moneda'] ?? '';
+            $tasaInteres = $_POST['tasa_interes'] ?? '';
+            $monto = $_POST['monto'] ?? '';  // 🔹 Nuevo: Recibir el monto desde el formulario
+            $montoSinInteres = $_POST['monto_sin_interes'] ?? '';
 
-            $fechaInicio = $_POST["fecha_inicio"] ?? null; // 🔹 Recibir fecha de inicio
-            $fechaFin = $_POST["fecha_fin"] ?? null;
-            $tipoVehicular = $_POST["tipo_vehicular"] ?? null;
-            $estado = $_POST["estado"] ?? "activo";
- 
-            $cobrarMora = isset($_POST["cobrar_mora"]) ? (int)$_POST["cobrar_mora"] : 1;
-            
+            $fechaInicio = $_POST['fecha_inicio'] ?? null;  // 🔹 Recibir fecha de inicio
+            $fechaFin = $_POST['fecha_fin'] ?? null;
+            $tipoVehicular = $_POST['tipo_vehicular'] ?? null;
+            $estado = $_POST['estado'] ?? 'activo';
+
+            $cobrarMora = isset($_POST['cobrar_mora']) ? (int) $_POST['cobrar_mora'] : 1;
+
             // 🔹 NUEVO: Capturar campo es_yango
-            $esYango = isset($_POST["es_yango"]) ? (int)$_POST["es_yango"] : 0;
-            
+            $esYango = isset($_POST['es_yango']) ? (int) $_POST['es_yango'] : 0;
+
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
                 // Para Yango, las fechas deben ser NULL (inicio dinámico)
@@ -53,26 +49,26 @@ class GruposFinanciamientoController extends Controller
                 $tipoVehicular = null;
             }
 
-            if (empty($nombrePlan) || empty($frecuenciaPago) || empty($moneda)) { 
-                echo json_encode(["success" => false, "message" => "Todos los campos son obligatorios excepto la cuota inicial, monto de cuota y cantidad de cuotas."]);
+            if (empty($nombrePlan) || empty($frecuenciaPago) || empty($moneda)) {
+                echo json_encode(['success' => false, 'message' => 'Todos los campos son obligatorios excepto la cuota inicial, monto de cuota y cantidad de cuotas.']);
                 exit;
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
             $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango);
 
-           if ($idPlan) {
+            if ($idPlan) {
                 // Verificar si hay variantes para guardar
                 if (isset($_POST['variantes'])) {
                     $variantes = json_decode($_POST['variantes'], true);
-                    
+
                     if (!empty($variantes)) {
                         $resultadoVariantes = $grupoFinanciamiento->insertVariante($idPlan, $variantes);
-                        
+
                         if (!$resultadoVariantes) {
                             echo json_encode([
-                                "success" => false,
-                                "message" => "Error al guardar las variantes del plan."
+                                'success' => false,
+                                'message' => 'Error al guardar las variantes del plan.'
                             ]);
                             exit;
                         }
@@ -80,13 +76,13 @@ class GruposFinanciamientoController extends Controller
                 }
 
                 echo json_encode([
-                    "success" => true,
-                    "message" => "Plan de financiamiento y variantes guardados correctamente."
+                    'success' => true,
+                    'message' => 'Plan de financiamiento y variantes guardados correctamente.'
                 ]);
             } else {
                 echo json_encode([
-                    "success" => false,
-                    "message" => "Error al guardar el plan de financiamiento."
+                    'success' => false,
+                    'message' => 'Error al guardar el plan de financiamiento.'
                 ]);
             }
         }
@@ -94,16 +90,18 @@ class GruposFinanciamientoController extends Controller
         exit;
     }
 
-    public function getAllPlanes() {
+    public function getAllPlanes()
+    {
         $modelo = new GrupoFinanciamientoModel();
         $planes = $modelo->getAllPlanes();
 
-        header("Content-Type: application/json");
-        echo json_encode(["success" => true, "planes" => $planes]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'planes' => $planes]);
     }
 
     // Después de la modificación:
-    public function editarGrupo() {
+    public function editarGrupo()
+    {
         // Comprobar que la solicitud sea POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];  // ID del plan
@@ -129,15 +127,15 @@ class GruposFinanciamientoController extends Controller
             $fechaInicio = $_POST['fecha_inicio'] !== null ? $_POST['fecha_inicio'] : null;
             $fechaFin = $_POST['fecha_fin'] !== null ? $_POST['fecha_fin'] : null;
             // Capturar tipo vehicular del formulario
-            $tipoVehicular = $_POST['tipo_vehicular'] ?? null; // Cambiado de 'tipo_vehiculo' a 'tipo_vehicular'
+            $tipoVehicular = $_POST['tipo_vehicular'] ?? null;  // Cambiado de 'tipo_vehiculo' a 'tipo_vehicular'
             $estado = $_POST['estado'] ?? 'activo';
 
             // NUEVO: Capturar cobrar mora
-            $cobrarMora = isset($_POST['cobrar_mora']) ? (int)$_POST['cobrar_mora'] : 1;
-            
+            $cobrarMora = isset($_POST['cobrar_mora']) ? (int) $_POST['cobrar_mora'] : 1;
+
             // 🔹 NUEVO: Capturar es_yango
-            $esYango = isset($_POST['es_yango']) ? (int)$_POST['es_yango'] : 0;
-            
+            $esYango = isset($_POST['es_yango']) ? (int) $_POST['es_yango'] : 0;
+
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
                 // Para Yango, las fechas deben ser NULL (inicio dinámico)
@@ -149,14 +147,14 @@ class GruposFinanciamientoController extends Controller
             try {
                 $modelo = new GrupoFinanciamientoModel();  // Instanciar correctamente el modelo antes de usarlo (EDITADO)
 
-                $modelo->editarGrupo(  
+                $modelo->editarGrupo(
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
                     $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango  // Agregado $esYango como 16º parámetro
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes
                 if (isset($_POST['variantes']) && is_array($_POST['variantes'])) {
-                    foreach ($_POST['variantes'] as $variante) { 
+                    foreach ($_POST['variantes'] as $variante) {
                         if (isset($variante['idgrupos_variantes'])) {
                             // Actualizar variante existente
                             $modelo->actualizarVariante(
@@ -173,10 +171,10 @@ class GruposFinanciamientoController extends Controller
                 // Manejar nuevas variantes
                 if (isset($_POST['nuevas_variantes'])) {
                     $nuevasVariantes = $_POST['nuevas_variantes'];
-                    
+
                     if (!empty($nuevasVariantes)) {
                         $resultadoVariantes = $modelo->insertVariante($id, $nuevasVariantes);
-                        
+
                         if (!$resultadoVariantes) {
                             echo json_encode([
                                 'status' => 'error',
@@ -186,9 +184,8 @@ class GruposFinanciamientoController extends Controller
                         }
                     }
                 }
-    
-                echo json_encode(['status' => 'success', 'message' => 'El plan ha sido actualizado correctamente.']);
 
+                echo json_encode(['status' => 'success', 'message' => 'El plan ha sido actualizado correctamente.']);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             }
@@ -197,39 +194,41 @@ class GruposFinanciamientoController extends Controller
         }
     }
 
-    public function obtenerEstadoPlan() {
+    public function obtenerEstadoPlan()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idPlan = $_POST['idplan_financiamiento'] ?? null;
-            
+
             if (!$idPlan) {
                 echo json_encode(['status' => 'error', 'message' => 'ID de plan requerido']);
                 return;
             }
-            
+
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $estado = $modelo->obtenerEstadoPlan($idPlan);
-                
+
                 echo json_encode(['status' => 'success', 'estado' => $estado]);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             }
         }
     }
-    
-    public function obtenerVariantesGrupo() {
+
+    public function obtenerVariantesGrupo()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idPlan = isset($_POST['idplan_financiamiento']) ? $_POST['idplan_financiamiento'] : null;
-            
+
             if (!$idPlan) {
                 echo json_encode(['status' => 'error', 'message' => 'ID del plan no especificado']);
                 return;
             }
-            
+
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $variantes = $modelo->getVariantesGrupo($idPlan);
-                
+
                 echo json_encode(['status' => 'success', 'variantes' => $variantes]);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -238,22 +237,23 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
         }
     }
-    
+
     // Modificación para variantes: Método para actualizar una variante
-    public function actualizarVariante() {
+    public function actualizarVariante()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = isset($_POST['id']) ? $_POST['id'] : null;
             $idPlanFinanciamiento = isset($_POST['idplan_financiamiento']) ? $_POST['idplan_financiamiento'] : null;
-            
+
             // Validar datos obligatorios
             $nombreVariante = !empty($_POST['nombre_variante']) ? $_POST['nombre_variante'] : null;
             $moneda = !empty($_POST['moneda']) ? $_POST['moneda'] : null;
-            
+
             if (empty($nombreVariante) || empty($moneda) || empty($id) || empty($idPlanFinanciamiento)) {
                 echo json_encode(['status' => 'error', 'message' => 'Datos obligatorios incompletos']);
                 return;
             }
-            
+
             // Obtener resto de campos
             $cuotaInicial = isset($_POST['cuota_inicial']) ? $_POST['cuota_inicial'] : null;
             $montoCuota = isset($_POST['monto_cuota']) ? $_POST['monto_cuota'] : null;
@@ -264,7 +264,7 @@ class GruposFinanciamientoController extends Controller
             $tasaInteres = isset($_POST['tasa_interes']) ? $_POST['tasa_interes'] : null;
             $fechaInicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : null;
             $fechaFin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
-            
+
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $modelo->actualizarVariante(
@@ -272,7 +272,7 @@ class GruposFinanciamientoController extends Controller
                     $cantidadCuotas, $frecuenciaPago, $moneda, $monto, $montoSinInteres,
                     $tasaInteres, $fechaInicio, $fechaFin
                 );
-                
+
                 echo json_encode(['status' => 'success', 'message' => 'Variante actualizada correctamente']);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -282,32 +282,34 @@ class GruposFinanciamientoController extends Controller
         }
     }
 
-    public function deleteGroup() {
-        if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["id"])) {
-            $id = $_POST["id"];
+    public function deleteGroup()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+            $id = $_POST['id'];
             $model = new GrupoFinanciamientoModel();
             $resultado = $model->deleteGroup($id);
 
-            echo json_encode(["success" => $resultado]);
+            echo json_encode(['success' => $resultado]);
         } else {
-            echo json_encode(["success" => false]);
+            echo json_encode(['success' => false]);
         }
     }
 
     // Agregar al final del archivo del controlador, antes del cierre de la clase
-    public function obtenerTipoVehicular() {
+    public function obtenerTipoVehicular()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $idPlan = isset($_POST['idplan_financiamiento']) ? $_POST['idplan_financiamiento'] : null;
-            
+
             if (!$idPlan) {
                 echo json_encode(['status' => 'error', 'message' => 'ID del plan no especificado']);
                 return;
             }
-            
+
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $tipoVehicular = $modelo->getTipoVehicular($idPlan);
-                
+
                 echo json_encode(['status' => 'success', 'tipo_vehicular' => $tipoVehicular]);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
@@ -317,22 +319,23 @@ class GruposFinanciamientoController extends Controller
         }
     }
 
-    public function obtenerDetallesPlan() {
+    public function obtenerDetallesPlan()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = isset($_POST['id']) ? $_POST['id'] : null;
-            
+
             if (!$id) {
                 echo json_encode(['status' => 'error', 'message' => 'ID del plan no especificado']);
                 return;
             }
-            
+
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $plan = $modelo->getGroupById($id);
                 $variantes = $modelo->getVariantesGrupo($id);
-                
+
                 echo json_encode([
-                    'status' => 'success', 
+                    'status' => 'success',
                     'plan' => $plan,
                     'variantes' => $variantes
                 ]);
@@ -343,7 +346,5 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
         }
     }
-    
-
 }
 ?>

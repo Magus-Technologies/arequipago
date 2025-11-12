@@ -3,21 +3,21 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 300)) { // 300 segundos = 5 minutos
-    // La última solicitud fue hace más de 5 minutos
-    session_unset();     // Desasigna todas las variables de sesión
-    session_destroy();   // Destruye toda la data registrada en la sesión
-    header('Location: ' . URL::to('/login?status=inactive')); // Redirige a la página de login
-    exit();
-}
-$_SESSION['last_activity'] = time(); // Actualiza el tiempo de la última actividad
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 300)) {  // 300 segundos = 5 minutos
+        // La última solicitud fue hace más de 5 minutos
+        session_unset();  // Desasigna todas las variables de sesión
+        session_destroy();  // Destruye toda la data registrada en la sesión
+        header('Location: ' . URL::to('/login?status=inactive'));  // Redirige a la página de login
+        exit();
+    }
+    $_SESSION['last_activity'] = time();  // Actualiza el tiempo de la última actividad
 
-$consultas = new ConsultasController();
+    $consultas = new ConsultasController();
 }
 
 // Verificar si el usuario está logueado
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: " . URL::to("/login"));
+    header('Location: ' . URL::to('/login'));
     exit();
 }
 
@@ -29,24 +29,24 @@ $rol_usuario = 'Usuario';
 
 try {
     $conectar = (new Conexion())->getConexion();
-    
+
     // Consulta para obtener datos del usuario
-    $sql = "SELECT u.nombres, u.apellidos, u.id_rol, r.nombre as rol_nombre 
+    $sql = 'SELECT u.nombres, u.apellidos, u.id_rol, r.nombre as rol_nombre 
             FROM usuarios u 
             LEFT JOIN roles r ON u.id_rol = r.rol_id 
-            WHERE u.usuario_id = ?";
-    
+            WHERE u.usuario_id = ?';
+
     $stmt = $conectar->prepare($sql);
-    $stmt->bind_param("i", $usuario_id);
+    $stmt->bind_param('i', $usuario_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($row = $result->fetch_assoc()) {
         // Actualizar la sesión con los datos más recientes
         $_SESSION['nombres'] = $row['nombres'];
         $_SESSION['apellidos'] = $row['apellidos'];
         $_SESSION['id_rol'] = $row['id_rol'];
-        
+
         // Establecer variables para mostrar
         $nombre_completo = $row['nombres'];
         if (!empty($row['apellidos'])) {
@@ -57,7 +57,7 @@ try {
     $stmt->close();
 } catch (Exception $e) {
     // Si hay un error, mantener los valores predeterminados
-    error_log("Error al obtener datos de usuario: " . $e->getMessage());
+    error_log('Error al obtener datos de usuario: ' . $e->getMessage());
 }
 ?>
 <style>
@@ -86,17 +86,29 @@ try {
         border-color: transparent !important;
     }
 
-    .logo-lg img {
-        display: block;
-        margin-left: -50px;
-        margin-top: -11px
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 10px;
+        margin-top: -11px;
+    }
+
+    .logo-container img:first-child {
+        height: 50px;
+        width: auto;
+    }
+
+    .logo-container img:last-child {
+        height: 55px;
+        width: auto;
     }
 
     /* Estilos mejorados para el menú desplegable */
     .dropdown-menu {
         min-width: 220px;
         padding: 0;
-        margin-top: 10px !important;
+        /* margin-top: 10px !important; */
         border: none;
         box-shadow: 0 5px 15px rgba(0,0,0,0.15);
     }
@@ -220,10 +232,13 @@ try {
             <div class="navbar-brand-box" style="background-color: #FCF34B;">
                 <a href="/arequipago/" class="logo logo-white">
                     <span class="logo-sm">
-                        <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar.png') ?>" alt="" height="60">
+                        <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar.webp') ?>" alt="" height=80">
                     </span>
                     <span class="logo-lg">
-                        <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar.png') ?>" alt="" width="200" class="center">
+                        <div class="logo-container">
+                            <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar.webp') ?>" alt="">
+                            <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar1.png') ?>" alt="">
+                        </div>
                     </span>
                 </a>
             </div>

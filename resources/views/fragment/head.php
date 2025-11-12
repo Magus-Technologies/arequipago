@@ -1,6 +1,6 @@
 <?php
 $id_role = 0;
-if (isset($_SESSION['rol'])){
+if (isset($_SESSION['rol'])) {
     $id_role = $_SESSION['rol'];
 }
 $device_app = Tools::getInfoDeviceConect();
@@ -14,22 +14,23 @@ $device_app = Tools::getInfoDeviceConect();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="Premium Multipurpose Admin & Dashboard Template" name="description">
     <meta content="Themesbrand" name="author">
-    <link rel="shortcut icon" href="<?=URL::to('public/login/images/icons/are.png')?>">
-    <link href="<?=URL::to('public/assets/css/bootstrap.min.css')?>" id="bootstrap-style" rel="stylesheet" type="text/css">
-    <link href="<?=URL::to('public/assets/css/icons.min.css')?>" rel="stylesheet" type="text/css">
-    <link href="<?=URL::to('public/assets/css/app.min.css?v=2')?>" id="app-style" rel="stylesheet" type="text/css">
-    <link href="<?=URL::to('public/assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css')?>" rel="stylesheet" type="text/css">
-    <link href="<?=URL::to('public/assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css')?>" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="<?=URL::to('public/plugin/sweetalert2/sweetalert2.min.css')?>">
+    <link rel="shortcut icon" href="<?= URL::to('public/login/images/icons/Logofondo.webp') ?>">
+    <link href="<?= URL::to('public/assets/css/bootstrap.min.css') ?>" id="bootstrap-style" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/assets/css/icons.min.css') ?>" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/assets/css/app.min.css?v=2') ?>" id="app-style" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css') ?>" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css') ?>" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="<?= URL::to('public/plugin/sweetalert2/sweetalert2.min.css') ?>">
 
-    <link href="<?=URL::to('public/plugin/jquery-ui/jquery-ui.css')?>" rel="stylesheet" type="text/css">
-    <link href="<?=URL::to('public/assets/libs/%40fullcalendar/core/main.min.css')?>" rel="stylesheet" type="text/css" />
-    <link href="<?=URL::to('public/assets/libs/%40fullcalendar/daygrid/main.min.css')?>" rel="stylesheet" type="text/css" />
-    <link href="<?=URL::to('public/assets/libs/%40fullcalendar/bootstrap/main.min.css')?>" rel="stylesheet" type="text/css" />
-    <link href="<?=URL::to('public/assets/libs/%40fullcalendar/timegrid/main.min.css')?>" rel="stylesheet" type="text/css" />
-    <link href="<?=URL::to('public/plugin/font-wesome/css/all.css')?>" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/plugin/jquery-ui/jquery-ui.css') ?>" rel="stylesheet" type="text/css">
+    <link href="<?= URL::to('public/assets/libs/%40fullcalendar/core/main.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= URL::to('public/assets/libs/%40fullcalendar/daygrid/main.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= URL::to('public/assets/libs/%40fullcalendar/bootstrap/main.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= URL::to('public/assets/libs/%40fullcalendar/timegrid/main.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= URL::to('public/plugin/font-wesome/css/all.css') ?>" rel="stylesheet" type="text/css">
+    <!-- CSS Global para espaciado de contenido -->
     <script>
-        const _URL='<?=URL::base()?>';
+        const _URL='<?= URL::base() ?>';
     </script>
     <style>
         @keyframes ldio-407auvblvok {

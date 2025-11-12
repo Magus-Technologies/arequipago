@@ -409,20 +409,20 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     </h5>
                     <div class="table-responsive">
                         <table id="tablaGrupos" class="table table-striped table-bordered text-center">
-                            <thead style="background-color: #000; color: #fff;">
+                            <thead style="background-color: #F7EC97; color: #666665;">
                                 <tr>
-                                    <th><i class="fas fa-file-invoice-dollar me-1"></i>Grupo de Financiamiento</th>
-                                    <th><i class="fas fa-hand-holding-usd me-1"></i>Cuota Inicial</th>
-                                    <th><i class="fas fa-money-bill-wave me-1"></i>Monto de Cuota</th>
-                                    <th><i class="fas fa-list-ol me-1"></i>Cantidad de Cuotas</th>
-                                    <th><i class="fas fa-calendar-alt me-1"></i>Frecuencia de Pago</th>
-                                    <th><i class="fas fa-coins me-1"></i>Moneda</th>
-                                    <th><i class="fas fa-coins me-1"></i>Monto</th>
-                                    <th><i class="fas fa-coins me-1"></i>Monto S/Int.</th>
-                                    <th><i class="fas fa-percentage me-1"></i>Tasa de Interés</th>
-                                    <th><i class="fas fa-calendar-day me-1"></i>Fecha de Inicio</th>
-                                    <th><i class="fas fa-calendar-check me-1"></i>Fecha de Fin</th>
-                                    <th><i class="fas fa-cogs me-1"></i>Acciones</th>
+                                    <th class="text-start">Grupo de Financiamiento</th>
+                                    <th class="text-center">Cuota <br> Inicial</th>
+                                    <th class="text-center">Monto de <br> Cuota</th>
+                                    <th class="text-center">Cantidad de <br> Cuotas</th>
+                                    <th class="text-center">Frecuencia de <br> Pago</th>
+                                    <th class="text-center">Moneda</th>
+                                    <th class="text-center">Monto</th>
+                                    <th class="text-center">Monto <br> S/Int.</th>
+                                    <th class="text-center">Tasa de <br> Interés</th>
+                                    <th class="text-center">Fecha de <br> Inicio</th>
+                                    <th class="text-center">Fecha de <br> Fin</th>
+                                    <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -533,12 +533,16 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
             <i class="fas fa-file-pdf text-danger"></i> Ver Contrato
         </a>
         <!-- Opciones para contratos del sistema nuevo (otros grupos) -->
+        <!-- COMENTADO: Botón Ver Plantilla - No visible en el front
         <a class="dropdown-item btn-view-template-action" href="javascript:void(0);">
             <i class="fas fa-file-contract text-info"></i> Ver Plantilla
         </a>
+        -->
+        <!-- COMENTADO: Botón Editar Plantilla - No visible en el front
         <a class="dropdown-item btn-edit-template-action" href="javascript:void(0);">
             <i class="fas fa-file-signature" style="color: #6f42c1;"></i> Editar Plantilla
         </a>
+        -->
         <?php endif; ?>
     </div>
 
@@ -703,86 +707,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
             return getTipoVehicular() !== null;
         }
 
-        function cargarTabla() {
 
-            $.ajax({
-                url: "/arequipago/getAllPlanes",
-                type: "GET",
-                dataType: "json",
-                success: function (response) {
-                    if (response.success) {
-                        console.log(response);
-
-                        // Limpiamos la tabla antes de agregar los nuevos datos
-                        let tbody = $("#tablaGrupos tbody");
-                        tbody.empty();  // Vaciamos el contenido actual de la tabla
-
-                        // Iteramos sobre los datos obtenidos
-                        response.planes.forEach(plan => {
-                            // Creamos una nueva fila <tr>
-                            let row = $("<tr>").attr("data-plan-id", plan.idplan_financiamiento); // MODIFICADO: Usar "data-plan-id" en lugar de "data-id" para ser más específico y evitar posibles conflictos.
-
-                            // 🔹 NUEVO: Agregar badge YANGO si es producto Yango
-                            let nombrePlanHtml = plan.nombre_plan;
-                            if (plan.es_yango == 1) {
-                                nombrePlanHtml = `<span class="badge bg-warning text-dark me-2">YANGO</span>${plan.nombre_plan}`;
-                            }
-
-                            // Agregamos las celdas <td> dentro de la fila
-                            row.append(`<td>${nombrePlanHtml}</td>`); // Primera columna: nombre del plan con badge si es Yango
-                            row.append(`<td>${plan.moneda} ${plan.cuota_inicial}</td>`); // Columna cuota inicial
-                            row.append(`<td>${plan.moneda} ${plan.monto_cuota}</td>`); // Columna monto cuota
-                            row.append(`<td>${plan.cantidad_cuotas}</td>`); // Columna cantidad cuotas
-                            row.append(`<td>${plan.frecuencia_pago}</td>`); // Columna frecuencia pago
-                            row.append(`<td>${plan.moneda}</td>`); // Columna moneda
-                            row.append(`<td>${plan.monto !== null ? `${plan.moneda} ${plan.monto}` : "N/A"}</td>`); // Columna monto
-                            row.append(`<td>${plan.monto_sin_interes !== null ? `${plan.moneda} ${plan.monto_sin_interes}` : "N/A"}</td>`); // Columna monto sin interés
-                            row.append(`<td>${plan.tasa_interes !== null ? plan.tasa_interes : "N/A"}</td>`); // Columna tasa de interés
-                            
-                            // 🔹 NUEVO: Mostrar texto especial para fechas de productos Yango
-                            if (plan.es_yango == 1) {
-                                row.append(`<td><span class="text-muted fst-italic">Inicio dinámico</span></td>`); // Columna fecha de inicio
-                                row.append(`<td><span class="text-muted fst-italic">Calculado automáticamente</span></td>`); // Columna fecha de fin
-                            } else {
-                                row.append(`<td>${plan.fecha_inicio !== null ? plan.fecha_inicio : "No especificado"}</td>`); // Columna fecha de inicio
-                                row.append(`<td>${plan.fecha_fin !== null ? plan.fecha_fin : "No especificado"}</td>`); // Columna fecha de fin
-                            }
-
-                            // Columna de acciones con botón simple
-                            let botonesAccion = `
-                                <button class="btn btn-sm btn-secondary btn-acciones-global" type="button" data-plan-id="${plan.idplan_financiamiento}">
-                                    <i class="fas fa-cog"></i> Acciones
-                                </button>`;
-
-                            row.append(`<td class="text-center">${botonesAccion}</td>`);
-
-
-                            // Agregamos la fila completa al tbody
-                            tbody.append(row);
-                        });
-                        
-                        // Inicializar dropdowns de Bootstrap después de agregar las filas
-                        console.log('Inicializando dropdowns...');
-                        console.log('Bootstrap disponible:', typeof $.fn.dropdown);
-                        
-                        // Intentar inicializar dropdowns
-                        try {
-                            if (typeof $.fn.dropdown !== 'undefined') {
-                                $('.dropdown-toggle').dropdown();
-                                console.log('Dropdowns inicializados correctamente');
-                            } else {
-                                console.error('Bootstrap dropdown no está disponible');
-                            }
-                        } catch (error) {
-                            console.error('Error al inicializar dropdowns:', error);
-                        }
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Error al obtener los planes:", error); // Manejo de errores
-                }
-            });
-        }
         // Manejar el botón de ver detalle - MOVIDO AQUÍ PARA QUE FUNCIONE
         $(document).on('click', '.btn-view', function () {
             console.log('Click en botón ver detalle detectado'); // Para debug
@@ -1316,7 +1241,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                         title: "¡Éxito!",
                                         text: "Grupo de financiamiento registrado correctamente.",
                                     });
-                                    cargarTabla();
+                                    tabla.ajax.reload(null, false);
                                     document.querySelector("#formFinanciamiento").reset();
                                     // Resetear el nuevo checkbox vehicular y sus radios
                                     document.getElementById("esVehicularCheckbox").checked = false;
@@ -1353,7 +1278,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     title: "¡Éxito!",
                                     text: "Grupo de financiamiento registrado correctamente.",
                                 });
-                                cargarTabla();
+                                tabla.ajax.reload(null, false);
                                 document.querySelector("#formFinanciamiento").reset();
                                 // Resetear el nuevo checkbox vehicular y sus radios
                                 document.getElementById("esVehicularCheckbox").checked = false;
@@ -1383,13 +1308,110 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     });
             });
 
-            // Inicializar DataTable
+            // Inicializar DataTable con AJAX
             tabla = $("#tablaGrupos").DataTable({
                 paging: true,
                 searching: true,
                 ordering: true,
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
+                ajax: {
+                    url: "/arequipago/getAllPlanes",
+                    type: "GET",
+                    data: {
+                        order_by: 'id_desc' // Parámetro para ordenar por ID descendente
+                    },
+                    dataSrc: function(json) {
+                        console.log('Datos recibidos de getAllPlanes:', json);
+                        if (json.success) {
+                            console.log('Planes:', json.planes);
+                            return json.planes;
+                        }
+                        return [];
+                    }
+                },
+                columns: [
+                    {
+                        data: "nombre_plan",
+                        className: "text-start",
+                        render: function(data, type, row) {
+                            if (row.es_yango == 1) {
+                                // Badge especial para Credit Yango (ID 45)
+                                if (row.idplan_financiamiento == '45') {
+                                    return `<span class="badge bg-gradient-warning text-dark me-2 yango-special-badge">
+                                                <i class="fas fa-crown me-1"></i>YANGO VIP
+                                            </span>${data}`;
+                                } else {
+                                    return `<span class="badge bg-warning text-dark me-2">
+                                                <i class="fas fa-star me-1"></i>YANGO
+                                            </span>${data}`;
+                                }
+                            }
+                            return data;
+                        },
+                        type: "string"
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `${row.moneda} ${row.cuota_inicial}`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `${row.moneda} ${row.monto_cuota}`;
+                        }
+                    },
+                    { data: "cantidad_cuotas" },
+                    { data: "frecuencia_pago" },
+                    { data: "moneda" },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return row.monto !== null ? `${row.moneda} ${row.monto}` : "N/A";
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return row.monto_sin_interes !== null ? `${row.moneda} ${row.monto_sin_interes}` : "N/A";
+                        }
+                    },
+                    {
+                        data: "tasa_interes",
+                        render: function(data, type, row) {
+                            return data !== null ? data : "N/A";
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (row.es_yango == 1) {
+                                return '<span class="text-muted fst-italic">Inicio dinámico</span>';
+                            }
+                            return row.fecha_inicio !== null ? row.fecha_inicio : "No especificado";
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            if (row.es_yango == 1) {
+                                return '<span class="text-muted fst-italic">Calculado automáticamente</span>';
+                            }
+                            return row.fecha_fin !== null ? row.fecha_fin : "No especificado";
+                        }
+                    },
+                    {
+                        data: null,
+                        className: "text-center",
+                        render: function(data, type, row) {
+                            return `<button class="btn btn-sm btn-secondary btn-acciones-global" type="button" data-plan-id="${row.idplan_financiamiento}">
+                                        <i class="fas fa-cog"></i> Acciones
+                                    </button>`;
+                        }
+                    }
+                ],
                 language: {
                     lengthMenu: "Mostrar _MENU_ registros por página",
                     zeroRecords: "No se encontraron registros",
@@ -1404,10 +1426,27 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                         previous: "Anterior",
                     },
                 },
-                destroy: true
+                order: [], // Mantener el orden de la base de datos
+                destroy: true,
+                createdRow: function(row, data, dataIndex) {
+                    // Agregar data-plan-id a la fila para compatibilidad con el código existente
+                    $(row).attr('data-plan-id', data.idplan_financiamiento);
+                    
+                    // Resaltar especialmente el grupo Credit Yango (ID 45)
+                    if (data.idplan_financiamiento == '45') {
+                        $(row).addClass('credit-yango-row');
+                        $(row).css({
+                            'background': 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)',
+                            'border-left': '5px solid #f39c12',
+                            'box-shadow': '0 2px 8px rgba(243, 156, 18, 0.3)',
+                            'position': 'relative'
+                        });
+                        
+                        // Agregar un pequeño icono especial
+                        $(row).find('td:first').prepend('<i class="fas fa-star text-warning me-2" title="Grupo Especial"></i>');
+                    }
+                }
             });
-
-            cargarTabla();
 
             let currentVariantes = [];
             let selectedVarianteId = null;
@@ -1464,20 +1503,28 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 $('#fecha_fin').val(fechaFin !== "No especificado" ? fechaFin : '');
 
                 // Obtener y establecer el estado del plan
+                console.log('Solicitando estado para plan ID:', selectedPlanId);
                 $.ajax({
                     url: '/arequipago/getEstadoPlan',
                     type: 'POST',
                     data: { idplan_financiamiento: selectedPlanId },
                     dataType: 'json',
                     success: function (result) {
+                        console.log('Respuesta completa getEstadoPlan:', result);
                         const estadoCheckbox = $('#estadoActivo');
+                        console.log('Estado obtenido del servidor:', result.estado);
+                        console.log('¿Es activo?:', result.estado === 'activo');
                         if (result.status === 'success') {
                             estadoCheckbox.prop('checked', result.estado === 'activo');
+                            console.log('Checkbox establecido a:', estadoCheckbox.is(':checked'));
                             toggleEstadoGrupo();
+                        } else {
+                            console.error('Error en respuesta:', result.message);
                         }
                     },
-                    error: function () {
-                        console.error("Error al obtener estado del plan.");
+                    error: function (xhr, status, error) {
+                        console.error("Error al obtener estado del plan:", error);
+                        console.error("Respuesta del servidor:", xhr.responseText);
                     }
                 });
 
@@ -1496,6 +1543,49 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     },
                     error: function() {
                         console.error("Error al obtener datos del plan.");
+                    }
+                });
+                
+                // NUEVO: Cargar variantes usando la función que ya funciona
+                console.log('🔍 Intentando cargar variantes para plan ID:', selectedPlanId);
+                $.ajax({
+                    url: '/arequipago/getVariantesGrupo',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        console.log('📤 Enviando petición de variantes...');
+                    },
+                    success: function(response) {
+                        console.log('✅ Respuesta de variantes recibida:', response);
+                        if (response.status === 'success' && response.variantes && response.variantes.length > 0) {
+                            console.log('Variantes encontradas:', response.variantes);
+                            // Usar setTimeout para asegurar que renderVariantes esté definida
+                            setTimeout(function() {
+                                currentVariantes = response.variantes.map(v => ({
+                                    ...v,
+                                    es_nueva: false // Marcar como variantes existentes
+                                }));
+                                
+                                // Verificar si la función existe antes de llamarla
+                                if (typeof renderVariantes === 'function') {
+                                    renderVariantes(currentVariantes);
+                                } else {
+                                    console.error('renderVariantes no está definida aún');
+                                }
+                            }, 100);
+                        } else {
+                            console.log('No hay variantes para este plan');
+                            currentVariantes = [];
+                            setTimeout(function() {
+                                $('#variantesContainer').html('<p class="text-muted">No hay variantes asociadas a este grupo.</p>');
+                            }, 100);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("❌ Error al obtener variantes:", error);
+                        console.error("Status:", status);
+                        console.error("Response:", xhr.responseText);
                     }
                 });
 
@@ -1930,6 +2020,13 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     nuevas_variantes: currentVariantes.filter(v => v.es_nueva === true)
                 };
 
+                // Debug: Verificar qué estado se está enviando
+                console.log('=== DEBUG ANTES DE ENVIAR ===');
+                console.log('Estado enviado:', formData.estado);
+                console.log('Checkbox marcado:', $('#estadoActivo').is(':checked'));
+                console.log('Valor del checkbox:', $('#estadoActivo').prop('checked'));
+                console.log('================================');
+
                 // Enviar datos al backend mediante AJAX
                 $.ajax({
                     url: '/arequipago/editGroup',
@@ -1937,7 +2034,9 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     data: formData,
                     success: function (response) {
                         try {
+                            console.log('Respuesta del servidor (editGroup):', response);
                             const result = JSON.parse(response);
+                            console.log('Resultado parseado (editGroup):', result);
                             if (result.status === 'success') {
                                 Swal.fire({
                                     icon: "success",
@@ -1946,7 +2045,11 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     showConfirmButton: false,
                                     timer: 1500
                                 }).then(() => {
-                                    cargarTabla();
+                                    console.log('Recargando tabla después de editar...');
+                                    // Forzar recarga completa de la tabla
+                                    tabla.ajax.reload(function() {
+                                        console.log('Tabla recargada exitosamente');
+                                    }, false);
                                     $("#formFinanciamiento")[0].reset();
                                     $("#fechasVehicular").hide();
                                     $("#checkboxContainer").removeClass("active");
@@ -2030,7 +2133,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                         showConfirmButton: false,
                                         timer: 1500
                                     });
-                                    cargarTabla();
+                                    tabla.ajax.reload(null, false);
                                 } else {
                                     Swal.fire({
                                         icon: "error",
@@ -2148,11 +2251,12 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     $('.btn-edit-template-action').hide();
                     $('#contrato-header-text').text('Contrato (Sistema Anterior)');
                 } else {
-                    // Mostrar "Ver Plantilla" y "Editar Plantilla" para nuevos
-                    $('.btn-view-hardcoded-contract').hide();
-                    $('.btn-view-template-action').show();
-                    $('.btn-edit-template-action').show();
-                    $('#contrato-header-text').text('Plantillas de Contrato');
+                    // COMENTADO: Mostrar "Ver Plantilla" y "Editar Plantilla" para nuevos
+                    // Ahora solo se muestra "Ver Contrato" para todos los grupos
+                    $('.btn-view-hardcoded-contract').show(); // Mostrar Ver Contrato para todos
+                    // $('.btn-view-template-action').show(); // COMENTADO
+                    // $('.btn-edit-template-action').show(); // COMENTADO
+                    $('#contrato-header-text').text('Contrato');
                 }
                 
                 if (isVisible) {
@@ -2209,51 +2313,214 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
             $(document).on('click', '.btn-edit-action', function(e) {
                 e.preventDefault();
                 $('#globalDropdownMenu').hide();
-                // Buscar la fila con este plan ID y simular click en btn-edit
-                const $row = $(`tr[data-plan-id="${currentPlanId}"]`);
-                $row.find('.btn-edit').length ? $row.find('.btn-edit').trigger('click') : 
-                    $('.btn-edit').first().closest('tr').is(`[data-plan-id="${currentPlanId}"]`) ? 
-                    $('.btn-edit').first().trigger('click') : null;
-                // Trigger directo del handler
-                const row = $(`tr[data-plan-id="${currentPlanId}"]`);
-                if (row.length) {
-                    selectedPlanId = currentPlanId;
-                    const cells = row.find('td');
-                    $('#nombre_plan').val(cells.eq(0).text());
-                    $('#moneda').val(cells.eq(5).text());
-                    const cuotaInicial = cells.eq(1).text().split(' ')[1];
-                    $('#cuota_inicial').val(cuotaInicial);
-                    const montoCuota = cells.eq(2).text().split(' ')[1];
-                    $('#monto_cuota').val(montoCuota);
-                    $('#cantidad_cuotas').val(cells.eq(3).text());
-                    $('#frecuencia_pago').val(cells.eq(4).text());
-                    const montoText = cells.eq(6).text();
-                    $('#monto').val(montoText !== "N/A" ? montoText.split(' ')[1] : '');
-                    const montoSinInteresText = cells.eq(7).text();
-                    $('#monto_sin_interes').val(montoSinInteresText !== "N/A" ? montoSinInteresText.split(' ')[1] : '');
-                    const tasaInteres = cells.eq(8).text();
-                    $('#tasa_interes').val(tasaInteres !== "N/A" ? tasaInteres : '');
-                    const fechaInicio = cells.eq(9).text();
-                    const fechaFin = cells.eq(10).text();
-                    $('#fecha_inicio').val(fechaInicio !== "No especificado" ? fechaInicio : '');
-                    $('#fecha_fin').val(fechaFin !== "No especificado" ? fechaFin : '');
-                    $("#financiamientoTabs a[href='#planFinanciamiento']").tab("show");
-                    $("#btnRegistrar").hide();
-                    $("#tituloRegistro").hide();
-                    if (!$("#tituloEdicion").length) {
-                        $("#tituloRegistro").after('<h5 id="tituloEdicion" class="mb-4"><i class="fas fa-edit me-2"></i>Editar Grupo de Financiamiento</h5>');
-                    }
-                    if (!$("#guardarCambios").length) {
-                        $("#btnRegistrar").after(`
-                            <button id="guardarCambios" class="btn btn-success me-2">
-                                <i class="fas fa-check me-2"></i>Guardar Cambios
-                            </button>
-                            <button id="cancelarEdicion" class="btn btn-secondary">
-                                <i class="fas fa-times me-2"></i>Cancelar
-                            </button>
-                        `);
-                    }
+                
+                // Ejecutar directamente la lógica de edición
+                selectedPlanId = currentPlanId;
+                
+                if (!selectedPlanId) {
+                    alert('No se puede editar el plan porque falta el ID del plan');
+                    return;
                 }
+
+                // Obtener los datos de la fila usando el currentPlanId
+                const row = $(`tr[data-plan-id="${currentPlanId}"]`);
+                const cells = row.find('td');
+
+                // Poblar el formulario
+                $('#nombre_plan').val(cells.eq(0).text().replace(/YANGO\s*/, '').trim());
+                $('#moneda').val(cells.eq(5).text());
+
+                // Procesar cuota inicial (remover símbolo de moneda)
+                const cuotaInicial = cells.eq(1).text().split(' ')[1];
+                $('#cuota_inicial').val(cuotaInicial);
+
+                // Procesar monto cuota
+                const montoCuota = cells.eq(2).text().split(' ')[1];
+                $('#monto_cuota').val(montoCuota);
+
+                $('#cantidad_cuotas').val(cells.eq(3).text());
+                $('#frecuencia_pago').val(cells.eq(4).text());
+
+                // Procesar monto
+                const montoText = cells.eq(6).text();
+                $('#monto').val(montoText !== "N/A" ? montoText.split(' ')[1] : '');
+
+                // Procesar monto sin interés
+                const montoSinInteresText = cells.eq(7).text();
+                $('#monto_sin_interes').val(montoSinInteresText !== "N/A" ? montoSinInteresText.split(' ')[1] : '');
+
+                // Procesar tasa interés
+                const tasaInteres = cells.eq(8).text();
+                $('#tasa_interes').val(tasaInteres !== "N/A" ? tasaInteres : '');
+
+                // Procesar fechas
+                const fechaInicio = cells.eq(9).text();
+                const fechaFin = cells.eq(10).text();
+
+                $('#fecha_inicio').val(fechaInicio !== "No especificado" ? fechaInicio : '');
+                $('#fecha_fin').val(fechaFin !== "No especificado" ? fechaFin : '');
+
+                // Obtener y establecer el estado del plan
+                console.log('Solicitando estado para plan ID:', selectedPlanId);
+                $.ajax({
+                    url: '/arequipago/getEstadoPlan',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    success: function (result) {
+                        console.log('Respuesta completa getEstadoPlan:', result);
+                        const estadoCheckbox = $('#estadoActivo');
+                        console.log('Estado obtenido del servidor:', result.estado);
+                        console.log('¿Es activo?:', result.estado === 'activo');
+                        if (result.status === 'success') {
+                            estadoCheckbox.prop('checked', result.estado === 'activo');
+                            console.log('Checkbox establecido a:', estadoCheckbox.is(':checked'));
+                            toggleEstadoGrupo();
+                        } else {
+                            console.error('Error en respuesta:', result.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error al obtener estado del plan:", error);
+                        console.error("Respuesta del servidor:", xhr.responseText);
+                    }
+                });
+
+                // Obtener y establecer cobrar_mora
+                $.ajax({
+                    url: '/arequipago/obtenerPlanFinanciamiento',
+                    type: 'POST',
+                    data: { id_plan: selectedPlanId },
+                    dataType: 'json',
+                    success: function(result) {
+                        if (result.success && result.plan) {
+                            const cobrarMoraCheckbox = $('#cobrarMoraCheckbox');
+                            cobrarMoraCheckbox.prop('checked', result.plan.cobrar_mora == 1);
+                        }
+                    },
+                    error: function() {
+                        console.error("Error al obtener datos del plan.");
+                    }
+                });
+                
+                // NUEVO: Cargar variantes para el dropdown edit-action
+                console.log('🔍 [DROPDOWN] Intentando cargar variantes para plan ID:', selectedPlanId);
+                $.ajax({
+                    url: '/arequipago/getVariantesGrupo',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    beforeSend: function() {
+                        console.log('📤 [DROPDOWN] Enviando petición de variantes...');
+                    },
+                    success: function(response) {
+                        console.log('✅ [DROPDOWN] Respuesta de variantes recibida:', response);
+                        if (response.status === 'success' && response.variantes && response.variantes.length > 0) {
+                            console.log('✅ [DROPDOWN] Variantes encontradas:', response.variantes);
+                            // Usar setTimeout para asegurar que renderVariantes esté definida
+                            setTimeout(function() {
+                                currentVariantes = response.variantes.map(v => ({
+                                    ...v,
+                                    es_nueva: false // Marcar como variantes existentes
+                                }));
+                                
+                                // Verificar si la función existe antes de llamarla
+                                if (typeof renderVariantes === 'function') {
+                                    console.log('✅ [DROPDOWN] Llamando a renderVariantes con', currentVariantes.length, 'variantes');
+                                    renderVariantes(currentVariantes);
+                                } else {
+                                    console.error('❌ [DROPDOWN] renderVariantes no está definida aún');
+                                }
+                            }, 200);
+                        } else {
+                            console.log('ℹ️ [DROPDOWN] No hay variantes para este plan');
+                            currentVariantes = [];
+                            setTimeout(function() {
+                                $('#variantesContainer').html('<p class="text-muted">No hay variantes asociadas a este grupo.</p>');
+                            }, 200);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("❌ [DROPDOWN] Error al obtener variantes:", error);
+                        console.error("Status:", status);
+                        console.error("Response:", xhr.responseText);
+                    }
+                });
+
+                // Lógica para manejar el estado del plan vehicular al editar
+                $.ajax({
+                    url: '/arequipago/getTipoVehicular',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    success: function (result) {
+                        const esVehicularCheckbox = $('#esVehicularCheckbox');
+                        const radioAuto = $('#radioAuto');
+                        const radioMoto = $('#radioMoto');
+                        const fechasDiv = $('#fechasVehicular');
+
+                        if (result.status === 'success') {
+                            if (result.tipo_vehicular === 'vehiculo') {
+                                esVehicularCheckbox.prop('checked', true);
+                                radioAuto.prop('disabled', false).prop('checked', true);
+                                radioMoto.prop('disabled', false);
+                                fechasDiv.show();
+                            } else if (result.tipo_vehicular === 'moto') {
+                                esVehicularCheckbox.prop('checked', true);
+                                radioAuto.prop('disabled', false);
+                                radioMoto.prop('disabled', false).prop('checked', true);
+                                fechasDiv.show();
+                            } else {
+                                esVehicularCheckbox.prop('checked', false);
+                                radioAuto.prop('disabled', true).prop('checked', false);
+                                radioMoto.prop('disabled', true).prop('checked', false);
+                                fechasDiv.hide();
+                            }
+                        }
+                    },
+                    error: function () {
+                        console.error("Error al obtener tipo vehicular del plan.");
+                    }
+                });
+
+                // Obtener variantes del plan
+                $.ajax({
+                    url: '/arequipago/getVariantesGrupo',
+                    type: 'POST',
+                    data: { idplan_financiamiento: selectedPlanId },
+                    dataType: 'json',
+                    success: function (result) {
+                        if (result.status === 'success') {
+                            currentVariantes = result.variantes || [];
+                            mostrarVariantes();
+                        }
+                    },
+                    error: function () {
+                        console.error("Error al obtener variantes del plan.");
+                    }
+                });
+
+                // Cambiar interfaz a modo edición
+                $("#tituloRegistro").hide();
+                $("#btnRegistrar").hide();
+                
+                const tituloEdicion = $('<h5 id="tituloEdicion" class="mb-4"><i class="fas fa-edit me-2"></i>Editar Grupo de Financiamiento</h5>');
+                $("#tituloRegistro").after(tituloEdicion);
+                
+                const botonesEdicion = $(`
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-success me-2" id="guardarCambios">
+                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="cancelarEdicion">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </button>
+                    </div>
+                `);
+                $("#btnRegistrar").parent().append(botonesEdicion);
+                
+                // Cambiar a la pestaña de edición
+                $("#financiamientoTabs a[href='#planFinanciamiento']").tab("show");
             });
             
             $(document).on('click', '.btn-delete-action', function(e) {
@@ -2285,7 +2552,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                         showConfirmButton: false,
                                         timer: 1500
                                     });
-                                    cargarTabla();
+                                    tabla.ajax.reload(null, false);
                                 } else {
                                     Swal.fire({
                                         icon: "error",
@@ -2394,26 +2661,74 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     }
                 });
                 
-                // Crear formulario para generar PDF
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/arequipago/api/contratos/hardcoded-preview';
-                form.target = '_blank';
-                
-                const inputGrupo = document.createElement('input');
-                inputGrupo.type = 'hidden';
-                inputGrupo.name = 'grupo_id';
-                inputGrupo.value = currentPlanId;
-                form.appendChild(inputGrupo);
-                
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-                
-                // Cerrar el loading después de un momento
-                setTimeout(() => {
-                    Swal.close();
-                }, 1000);
+                // Primero verificar si existe el contrato mediante AJAX
+                $.ajax({
+                    url: '/arequipago/api/contratos/hardcoded-preview',
+                    type: 'POST',
+                    data: { grupo_id: currentPlanId },
+                    dataType: 'json',
+                    success: function(response) {
+                        Swal.close();
+                        
+                        if (response.success === false) {
+                            // No hay contrato para este grupo
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Contrato no disponible',
+                                text: 'No hay contrato configurado para este grupo de financiamiento.',
+                                confirmButtonColor: '#02a499',
+                                confirmButtonText: 'Entendido'
+                            });
+                        } else {
+                            // Si hay contrato, abrir en nueva pestaña
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '/arequipago/api/contratos/hardcoded-preview';
+                            form.target = '_blank';
+                            
+                            const inputGrupo = document.createElement('input');
+                            inputGrupo.type = 'hidden';
+                            inputGrupo.name = 'grupo_id';
+                            inputGrupo.value = currentPlanId;
+                            form.appendChild(inputGrupo);
+                            
+                            document.body.appendChild(form);
+                            form.submit();
+                            document.body.removeChild(form);
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.close();
+                        
+                        // Intentar parsear la respuesta de error
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            if (errorResponse.success === false) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Contrato no disponible',
+                                    text: 'No hay contrato configurado para este grupo de financiamiento.',
+                                    confirmButtonColor: '#02a499',
+                                    confirmButtonText: 'Entendido'
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'Ocurrió un error al generar el contrato',
+                                    confirmButtonColor: '#ec4561'
+                                });
+                            }
+                        } catch (e) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Ocurrió un error al generar el contrato',
+                                confirmButtonColor: '#ec4561'
+                            });
+                        }
+                    }
+                });
             });
             
             // Event handler para ver plantilla

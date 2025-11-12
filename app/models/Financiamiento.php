@@ -67,10 +67,51 @@ class Financiamiento
         // Obtener valor de cobrar mora
         $cobrarMora = isset($datos['cobrar_mora']) ? $datos['cobrar_mora'] : 1;
 
+        // ✅ CORREGIDO: Obtener estado_entrega para CrediYango
+        // Convertir cadena vacía, "null", "undefined" a NULL para evitar error "Data truncated"
+        $estadoEntrega = null;
+        if (isset($datos['estado_entrega'])) {
+            $estadoEntregaRaw = $datos['estado_entrega'];
+            
+            // 🔍 DEBUG: Log del valor recibido
+            error_log("🔍 Modelo Financiamiento - estado_entrega recibido: '" . var_export($estadoEntregaRaw, true) . "' (tipo: " . gettype($estadoEntregaRaw) . ")");
+            
+            // Si es NULL, mantenerlo como NULL
+            if ($estadoEntregaRaw === null) {
+                $estadoEntrega = null;
+            } else {
+                // Convertir a string y limpiar
+                $estadoEntregaRaw = trim(strval($estadoEntregaRaw));
+                
+                // Solo aceptar valores válidos del ENUM
+                if (in_array($estadoEntregaRaw, ['pendiente', 'entregado'], true)) {
+                    $estadoEntrega = $estadoEntregaRaw;
+                    error_log("✅ Modelo - estado_entrega válido: '" . $estadoEntrega . "'");
+                } else if ($estadoEntregaRaw !== '' && $estadoEntregaRaw !== 'null' && $estadoEntregaRaw !== 'undefined') {
+                    // Valor inválido detectado
+                    error_log("⚠️ WARNING en Modelo: estado_entrega tiene valor inválido: '" . $estadoEntregaRaw . "'. Se establecerá como NULL");
+                    $estadoEntrega = null;
+                } else {
+                    // Cadena vacía o "null" string
+                    error_log("ℹ️ Modelo - estado_entrega es cadena vacía o 'null', estableciendo como NULL");
+                    $estadoEntrega = null;
+                }
+            }
+        } else {
+            error_log("ℹ️ Modelo - estado_entrega NO está presente en datos, usando NULL");
+        }
+        
+        error_log("🎯 Modelo - Valor FINAL de estado_entrega: " . var_export($estadoEntrega, true));
+
         // NUEVO: Obtener nombre personalizado
         $nombrePersonalizado = isset($datos['nombre_personalizado']) && $datos['nombre_personalizado'] !== ''
             ? $datos['nombre_personalizado']
             : null;
+
+        // ✅ NUEVO: Obtener flag de entrega especial (para plan 42)
+        $esEntregaEspecial = isset($datos['es_entrega_especial']) && intval($datos['es_entrega_especial']) === 1
+            ? 1
+            : 0;
 
         // NUEVO: Campos para CrediYango - fecha de entrega y fecha de inicio de pagos calculada
         $fechaEntrega = isset($datos['fecha_entrega']) && $datos['fecha_entrega'] !== ''
@@ -87,22 +128,22 @@ class Financiamiento
 
         // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado y campos CrediYango
         $query = 'INSERT INTO financiamiento (
-                id_conductor, 
+                id_conductor,
                 id_cliente,
-                idproductosv2, 
-                id_coti,       
-                codigo_asociado, 
-                grupo_financiamiento, 
+                idproductosv2,
+                id_coti,
+                codigo_asociado,
+                grupo_financiamiento,
                 nombre_personalizado,
-                cantidad_producto, 
-                monto_total, 
-                cuota_inicial, 
-                cuotas, 
-                estado, 
-                fecha_inicio, 
-                fecha_fin, 
-                fecha_creacion, 
-                frecuencia, 
+                cantidad_producto,
+                monto_total,
+                cuota_inicial,
+                cuotas,
+                estado,
+                fecha_inicio,
+                fecha_fin,
+                fecha_creacion,
+                frecuencia,
                 second_product,
                 monto_inscrip,
                 moneda,
@@ -112,9 +153,11 @@ class Financiamiento
                 usuario_id,           -- 💥 Modificado: Campo añadido
                 aprobado,             -- 💥 Modificado: Campo añadido
                 cobrar_mora,          -- NUEVO: Campo para cobrar mora
+                estado_entrega,       -- ✅ NUEVO: Campo para trackear entrega CrediYango
+                es_entrega_especial,  -- ✅ NUEVO: Flag de entrega especial (plan 42)
                 fecha_entrega,        -- NUEVO: Campo para CrediYango
                 fecha_inicio_pagos_calculada  -- NUEVO: Campo para CrediYango
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -122,10 +165,47 @@ class Financiamiento
             die('Error al preparar la consulta: ' . $this->conectar->error);
         }
 
-        // 💥 Modificado: Actualizado bind_param para incluir usuario_id, aprobado y campos CrediYango
-        // CORREGIDO: 27 tipos para 27 variables - agregando fecha_entrega y fecha_inicio_pagos_calculada
+        // 💥 Modificado: Actualizado bind_param para incluir usuario_id, aprobado, estado_entrega, es_entrega_especial y campos CrediYango
+        // CORREGIDO: 29 tipos para 29 variables
+        // i=integer, d=double, s=string
+        // Posición 8: cantidad_producto = 's' (aunque numérico, se guarda como string)
+        // Posición 25: cobrar_mora = 'i' (integer)
+        // Posición 26: estado_entrega = 's' (ENUM se trata como string)
+        // Posición 27: es_entrega_especial = 'i' (integer TINYINT)
+        // Posición 28: fecha_entrega = 's' (string/date)
+        // Posición 29: fecha_inicio_pagos_calculada = 's' (string/date)
+        // 🔍 DEBUG: Log de valores antes del bind_param
+        error_log("🔍 ANTES DE BIND_PARAM:");
+        error_log("  - estado_entrega: " . var_export($estadoEntrega, true));
+        error_log("  - grupo_financiamiento: " . $datos['grupo_financiamiento']);
+        
+        // ✅ SOLUCIÓN: Para ENUM que acepta NULL, cuando el valor es NULL
+        // debemos usar el método send_long_data o cambiar el tipo a 'i' (integer)
+        // La forma más simple es asegurarnos de que NUNCA sea NULL cuando se pasa a bind_param
+        // Si es NULL, lo dejamos como NULL pero cambiamos el tipo de 's' a 'i' temporalmente
+        
+        // PERO la solución MÁS SIMPLE es: si es NULL, usar una cadena especial y luego UPDATE
+        // O mejor aún: asegurarnos de que SIEMPRE tenga un valor válido
+        
+        // Para CrediYango, DEBE ser 'pendiente', nunca NULL
+        if ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45) {
+            if ($estadoEntrega === null || $estadoEntrega === '') {
+                $estadoEntrega = 'pendiente';
+                error_log("⚠️ FORZANDO estado_entrega='pendiente' para CrediYango");
+            }
+        }
+        
+        // ✅ CORREGIDO: Tipos de bind_param
+        // i=integer, d=double, s=string
+        // Posición 17: second_product = 's' (string)
+        // Posición 18: monto_inscrip = 'd' (double)
+        // Posición 19: moneda = 's' (string)
+        // Posición 22: tasa = 'd' (double)
+        // Posición 25: cobrar_mora = 'i' (integer) ✅
+        // Posición 26: estado_entrega = 's' (string/ENUM) ✅
+        // Posición 27: es_entrega_especial = 'i' (integer) ✅
         $stmt->bind_param(
-            'iiiiisidddisssssidsdddiiiss',
+            'iiiiissddiissssssdsdddiiisiss',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
@@ -151,15 +231,23 @@ class Financiamiento
             $usuario_id,
             $aprobado,
             $cobrarMora,
+            $estadoEntrega,
+            $esEntregaEspecial,
             $fechaEntrega,
             $fechaInicioPagosCalculada
         );
 
+        error_log("🔍 DESPUÉS DE BIND_PARAM - Ejecutando query...");
         $resultado = $stmt->execute();
 
         if (!$resultado) {
+            error_log("❌ ERROR AL EJECUTAR: " . $stmt->error);
+            error_log("❌ Query completa: " . $query);
+            error_log("❌ estado_entrega en el momento del error: " . var_export($estadoEntrega, true));
             die('Error al ejecutar la consulta: ' . $stmt->error);
         }
+        
+        error_log("✅ Query ejecutada exitosamente");
 
         return $this->conectar->insert_id;  // Devuelve el ID del nuevo financiamiento
     }
@@ -248,7 +336,7 @@ class Financiamiento
     {
         try {
             // $sql = "SELECT * FROM financiamiento WHERE id_cliente = ?";
-            $sql = 'SELECT * FROM financiamiento WHERE id_cliente = ? AND estado_eliminado = 0';
+            $sql = 'SELECT * FROM financiamiento WHERE id_cliente = ? AND estado_eliminado = 0 AND (aprobado = 1 OR aprobado IS NULL)';
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param('i', $id_cliente);
             $stmt->execute();
@@ -263,7 +351,7 @@ class Financiamiento
     {
         try {
             // $sql = "SELECT * FROM financiamiento WHERE id_conductor = ?";
-            $sql = 'SELECT * FROM financiamiento WHERE id_conductor = ? AND estado_eliminado = 0';
+            $sql = 'SELECT * FROM financiamiento WHERE id_conductor = ? AND estado_eliminado = 0 AND (aprobado = 1 OR aprobado IS NULL)';
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param('i', $id_conductor);
             $stmt->execute();
@@ -328,7 +416,7 @@ class Financiamiento
                        CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro
                 FROM financiamiento f
                 LEFT JOIN usuarios u ON f.usuario_id = u.usuario_id
-                WHERE f.idfinanciamiento = ? AND f.estado_eliminado = 0";
+                WHERE f.idfinanciamiento = ? AND f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -343,6 +431,32 @@ class Financiamiento
         // Verificamos si el resultado es null
         if ($result === null) {
             return [];  // Retornamos un array vacío si no se encuentra el financiamiento
+        }
+
+        return $result;
+    }
+
+    // Método para obtener financiamiento por ID sin filtrar por estado de aprobación (para aprobaciones)
+    public function getFinanciamientoByIdParaAprobacion($id)
+    {
+        $sql = "SELECT f.*,
+                       CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro
+                FROM financiamiento f
+                LEFT JOIN usuarios u ON f.usuario_id = u.usuario_id
+                WHERE f.idfinanciamiento = ? AND f.estado_eliminado = 0";
+
+        $stmt = $this->conectar->prepare($sql);
+
+        if (!$stmt) {
+            die('Error al preparar la consulta financiamiento: ' . $this->conectar->error);
+        }
+
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $result = $stmt->get_result()->fetch_assoc();
+
+        if ($result === null) {
+            return [];
         }
 
         return $result;
@@ -520,10 +634,10 @@ class Financiamiento
 
     public function getFinanciamientoList($id_conductor)
     {
-        $sql = 'SELECT f.*, pf.nombre_plan 
-                FROM financiamiento f 
-                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_conductor = ? AND f.estado_eliminado = 0';
+        $sql = 'SELECT f.*, pf.nombre_plan
+                FROM financiamiento f
+                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
+                WHERE f.id_conductor = ? AND f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_conductor);
 
@@ -1271,10 +1385,10 @@ class Financiamiento
 
     public function getFinanciamientoByCliente($id_cliente)
     {
-        $sql = 'SELECT f.*, pf.nombre_plan 
-                FROM financiamiento f 
-                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_cliente = ? AND f.estado_eliminado = 0';
+        $sql = 'SELECT f.*, pf.nombre_plan
+                FROM financiamiento f
+                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
+                WHERE f.id_cliente = ? AND f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_cliente);
 
@@ -1315,10 +1429,10 @@ class Financiamiento
 
     public function getFinanciamientoListCliente($id_cliente)
     {
-        $sql = 'SELECT f.*, pf.nombre_plan 
-                FROM financiamiento f 
-                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento 
-                WHERE f.id_cliente = ? AND f.estado_eliminado = 0';
+        $sql = 'SELECT f.*, pf.nombre_plan
+                FROM financiamiento f
+                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
+                WHERE f.id_cliente = ? AND f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)';
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param('i', $id_cliente);
 
@@ -1332,7 +1446,23 @@ class Financiamiento
     public function getAllFinanciamientos()
     {
         // $sql = "SELECT * FROM financiamiento";
-        $sql = 'SELECT * FROM financiamiento WHERE estado_eliminado = 0';
+        $sql = 'SELECT * FROM financiamiento WHERE estado_eliminado = 0 AND (aprobado = 1 OR aprobado IS NULL)';
+        $result = $this->conectar->query($sql);
+        $financiamientos = [];
+
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $financiamientos[] = $row;
+            }
+        }
+
+        return $financiamientos;
+    }
+
+    public function getFinanciamientosPendientesYRechazados()
+    {
+        // Obtener solo financiamientos pendientes (aprobado = 0) y rechazados (aprobado = 2)
+        $sql = 'SELECT * FROM financiamiento WHERE estado_eliminado = 0 AND aprobado IN (0, 2) ORDER BY fecha_creacion DESC';
         $result = $this->conectar->query($sql);
         $financiamientos = [];
 

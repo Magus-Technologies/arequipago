@@ -103,3 +103,19 @@ Route::post('/ajs/pagarMoraPendiente', 'FinanciamientoController@pagarMoraPendie
 
 // RUTA PARA ENTREGAR VEHÍCULO CREDIYANGO Y GENERAR CRONOGRAMA
 Route::post('/ajs/entregarVehiculoCrediYango', 'FinanciamientoController@entregarVehiculoCrediYango');
+
+// RUTAS PARA RESUMEN DE FINANCIAMIENTOS
+Route::get('/ajs/obtenerResumenFinanciamientos', 'FinanciamientoController@obtenerResumenFinanciamientos');
+Route::get('/ajs/obtenerDetalleFinanciamientoPlan', 'FinanciamientoController@obtenerDetalleFinanciamientoPlan');
+Route::get('/ajs/exportarResumenFinanciamientoPlan', 'ReportesResumenFinanciamientoController@exportarResumenFinanciamientoPlan');
+
+
+Route::post('/ajs/newPagofinance', 'FinanciamientoController@newPagofinance');
+
+// RUTAS PARA APROBACIÓN DE FINANCIAMIENTOS
+Route::post('/ajs/aprobacion/obtenerPendientes', 'AprobacionFinanciamientoController@obtenerFinanciamientosPendientes');
+Route::post('/ajs/aprobacion/obtenerDetalle', 'AprobacionFinanciamientoController@obtenerDetalleFinanciamiento');
+Route::post('/ajs/aprobacion/aprobar', 'AprobacionFinanciamientoController@aprobarFinanciamiento');
+Route::post('/ajs/aprobacion/rechazar', 'AprobacionFinanciamientoController@rechazarFinanciamiento');
+Route::post('/ajs/aprobacion/eliminar', 'AprobacionFinanciamientoController@eliminarFinanciamiento');
+Route::post('/ajs/aprobacion/reactivar', 'AprobacionFinanciamientoController@reactivarFinanciamiento');

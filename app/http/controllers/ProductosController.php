@@ -7,7 +7,7 @@ require_once 'utils/lib/code/vendor/autoload.php'; // 🔄 Ajustado para la ubic
 
 require_once 'app/models/TipoProductoModel.php';
 
-require_once "app/models/Producto.php";
+// require_once "app/models/Producto.php";
 
 require_once "app/models/Productov2.php";
 
@@ -2099,26 +2099,31 @@ private function esCategoríaCelular($categoriaNormalizada) {
             $categoria = $categoriaData ? $categoriaData['nombre'] : $categoria;
         }
 
+        // Función auxiliar para convertir cadenas vacías a NULL
+        $convertirVacioANull = function($valor) {
+            return (empty($valor) || $valor === '' || $valor === 'null') ? null : $valor;
+        };
+
         return [
             'idproductosv2' => $productoExistente['ID_PRODUCTO'],
             'nombre' => $post['NOMBRE'] ?? '',
-            'marca' => $post['MARCA'] ?? null,
-            'modelo' => $post['MODELO'] ?? null,
-            'codigo' => $post['CODIGO'] ?? null,
+            'marca' => $convertirVacioANull($post['MARCA'] ?? null),
+            'modelo' => $convertirVacioANull($post['MODELO'] ?? null),
+            'codigo' => $convertirVacioANull($post['CODIGO'] ?? null),
             'cantidad' => floatval($post['CANTIDAD'] ?? 0),
-            'cantidad_unidad' => isset($post['CANTIDAD_UNIDAD']) ? floatval($post['CANTIDAD_UNIDAD']) : null,
-            'unidad_medida' => $post['UNIDAD_MEDIDA'] ?? null,
+            'cantidad_unidad' => isset($post['CANTIDAD_UNIDAD']) && $post['CANTIDAD_UNIDAD'] !== '' ? floatval($post['CANTIDAD_UNIDAD']) : null,
+            'unidad_medida' => $convertirVacioANull($post['UNIDAD_MEDIDA'] ?? null),
             'tipo_producto' => $tipoProducto,
             'categoria' => $categoria,
-            'fecha_vencimiento' => $post['FECHA_VENCIMIENTO'] ?? null,
+            'fecha_vencimiento' => $convertirVacioANull($post['FECHA_VENCIMIENTO'] ?? null),
             'ruc' => $post['RUC'] ?? '',
             'razon_social' => $post['RAZON_SOCIAL'] ?? '',
             'precio' => floatval($post['PRECIO'] ?? 0),
             'precio_venta' => floatval($post['PRECIO_VENTA'] ?? 0),
-            'fecha_registro' => $post['FECHA_REGISTRO'] ?? null,
-            'guia_remision' => $post['GUIA_REMISION'] ?? '',
-            'codigo_barra' => $post['CODIGO_BARRA'] ?? null,
-            'descuento_cuota' => isset($post['DESCUENTO_CUOTA']) ? floatval($post['DESCUENTO_CUOTA']) : null,
+            'fecha_registro' => $convertirVacioANull($post['FECHA_REGISTRO'] ?? null),
+            'guia_remision' => $convertirVacioANull($post['GUIA_REMISION'] ?? null),
+            'codigo_barra' => $convertirVacioANull($post['CODIGO_BARRA'] ?? null),
+            'descuento_cuota' => isset($post['DESCUENTO_CUOTA']) && $post['DESCUENTO_CUOTA'] !== '' ? floatval($post['DESCUENTO_CUOTA']) : null,
             'moneda' => $post['MONEDA'] ?? 'S/.'
         ];
     }

@@ -101,8 +101,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Gestión de Financiamientos</h4>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Gestión de Financiamientos</h4>
+                    <a href="/arequipago/module-financiamiento" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Volver a Lista de Clientes
+                    </a>
                 </div>
                 <div class="card-body">
                     <!-- Tabs para cambiar entre pendientes y rechazados -->
@@ -178,13 +181,23 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     // Función para cargar los financiamientos pendientes y rechazados
     function cargarFinanciamientosPendientes() {
         $.ajax({
-            url: "/arequipago/getFinanciamientos-aprobar",
+            url: _URL + "/ajs/aprobacion/obtenerPendientes",
             type: "POST",
             dataType: "json",
-            success: function(data) {
-                actualizarTablaFinanciamientos(data);
-                // Actualizar el badge con la cantidad de pendientes
-                $("#badgePendientes").text(data.pendientes.length);
+            success: function(response) {
+                if (response.success) {
+                    actualizarTablaFinanciamientos({
+                        pendientes: response.pendientes,
+                        rechazados: response.rechazados
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'No se pudieron cargar los financiamientos',
+                        confirmButtonColor: '#02a499'
+                    });
+                }
             },
             error: function(xhr, status, error) {
                 Swal.fire({
@@ -288,12 +301,21 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     // Función para ver detalles de un financiamiento
     function verDetalles(id) {
         $.ajax({
-            url: "/arequipago/getDetalleFinanciamiento",
+            url: _URL + "/ajs/aprobacion/obtenerDetalle",
             type: "POST",
             data: { id: id },
             dataType: "json",
-            success: function(data) {
-                mostrarModalDetalles(data);
+            success: function(response) {
+                if (response.success) {
+                    mostrarModalDetalles(response.data);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'No se pudieron cargar los detalles',
+                        confirmButtonColor: '#02a499'
+                    });
+                }
             },
             error: function(xhr, status, error) {
                 Swal.fire({
@@ -309,93 +331,146 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     // Función para mostrar modal con detalles
     function mostrarModalDetalles(data) {
         let clienteInfo = '';
-        
+
         if (data.cliente) {
             clienteInfo = `
-                <p><strong>Tipo Documento:</strong> ${data.cliente.tipo_doc}</p>
-                <p><strong>Nº Documento:</strong> ${data.cliente.n_documento}</p>
-                <p><strong>Nombre Completo:</strong> ${data.cliente.nombres} ${data.cliente.apellido_paterno} ${data.cliente.apellido_materno}</p>
-                <p><strong>Teléfono:</strong> ${data.cliente.telefono}</p>
-                <p><strong>Correo:</strong> ${data.cliente.correo}</p>
+                <div class="mb-2"><i class="fas fa-id-card text-primary me-2"></i><strong>Tipo Documento:</strong> <span class="text-muted">${data.cliente.tipo_doc}</span></div>
+                <div class="mb-2"><i class="fas fa-hashtag text-primary me-2"></i><strong>Nº Documento:</strong> <span class="text-muted">${data.cliente.n_documento}</span></div>
+                <div class="mb-2"><i class="fas fa-user text-primary me-2"></i><strong>Nombre Completo:</strong> <span class="text-muted">${data.cliente.nombres} ${data.cliente.apellido_paterno} ${data.cliente.apellido_materno}</span></div>
+                <div class="mb-2"><i class="fas fa-phone text-primary me-2"></i><strong>Teléfono:</strong> <span class="text-muted">${data.cliente.telefono || 'N/A'}</span></div>
+                <div class="mb-2"><i class="fas fa-envelope text-primary me-2"></i><strong>Correo:</strong> <span class="text-muted">${data.cliente.correo || 'N/A'}</span></div>
             `;
         } else if (data.conductor) {
             clienteInfo = `
-                <p><strong>Tipo Documento:</strong> ${data.conductor.tipo_doc}</p>
-                <p><strong>Nº Documento:</strong> ${data.conductor.nro_documento}</p>
-                <p><strong>Nombre Completo:</strong> ${data.conductor.nombre_completo}</p>
-                <p><strong>Teléfono:</strong> ${data.conductor.telefono}</p>
+                <div class="mb-2"><i class="fas fa-id-card text-primary me-2"></i><strong>Tipo Documento:</strong> <span class="text-muted">${data.conductor.tipo_doc || 'N/A'}</span></div>
+                <div class="mb-2"><i class="fas fa-hashtag text-primary me-2"></i><strong>Nº Documento:</strong> <span class="text-muted">${data.conductor.nro_documento}</span></div>
+                <div class="mb-2"><i class="fas fa-user text-primary me-2"></i><strong>Nombre Completo:</strong> <span class="text-muted">${data.conductor.nombre_completo}</span></div>
+                <div class="mb-2"><i class="fas fa-phone text-primary me-2"></i><strong>Teléfono:</strong> <span class="text-muted">${data.conductor.telefono || 'N/A'}</span></div>
+                <div class="mb-2"><i class="fas fa-car text-primary me-2"></i><strong>Nº Unidad:</strong> <span class="text-muted">${data.conductor.numero_unidad || 'N/A'}</span></div>
             `;
         } else {
-            clienteInfo = '<p>No hay información del cliente disponible</p>';
+            clienteInfo = '<p class="text-muted">No hay información del cliente disponible</p>';
         }
-        
+
         let productoInfo = '';
         if (data.producto) {
-            // Usar codigo_barra si codigo es null o vacío
             let codigoProducto = data.producto.CODIGO ? data.producto.CODIGO : (data.producto.CODIGO_BARRA ? data.producto.CODIGO_BARRA : 'N/A');
-            
+
             productoInfo = `
-                <p><strong>Nombre:</strong> ${data.producto.NOMBRE}</p>
-                <p><strong>Categoría:</strong> ${data.producto.CATEGORIA}</p>
-                <p><strong>Código:</strong> ${codigoProducto}</p>
-                <p><strong>Precio Venta:</strong> ${parseFloat(data.producto.PRECIO_VENTA).toFixed(2)}</p>
-                <p><strong>Stock Disponible:</strong> ${data.producto.CANTIDAD}</p>
+                <div class="mb-2"><i class="fas fa-box text-success me-2"></i><strong>Nombre:</strong> <span class="text-muted">${data.producto.NOMBRE}</span></div>
+                <div class="mb-2"><i class="fas fa-tags text-success me-2"></i><strong>Categoría:</strong> <span class="text-muted">${data.producto.CATEGORIA}</span></div>
+                <div class="mb-2"><i class="fas fa-barcode text-success me-2"></i><strong>Código:</strong> <span class="text-muted">${codigoProducto}</span></div>
+                <div class="mb-2"><i class="fas fa-dollar-sign text-success me-2"></i><strong>Precio Venta:</strong> <span class="text-muted">S/ ${parseFloat(data.producto.PRECIO_VENTA).toFixed(2)}</span></div>
+                <div class="mb-2"><i class="fas fa-cubes text-success me-2"></i><strong>Stock Disponible:</strong> <span class="text-muted">${data.producto.CANTIDAD}</span></div>
+                ${data.producto.MARCA ? `<div class="mb-2"><i class="fas fa-copyright text-success me-2"></i><strong>Marca:</strong> <span class="text-muted">${data.producto.MARCA}</span></div>` : ''}
+                ${data.producto.MODELO ? `<div class="mb-2"><i class="fas fa-info-circle text-success me-2"></i><strong>Modelo:</strong> <span class="text-muted">${data.producto.MODELO}</span></div>` : ''}
             `;
         } else {
-            productoInfo = '<p>No hay información del producto disponible</p>';
+            productoInfo = '<p class="text-muted">No hay información del producto disponible</p>';
         }
-        
+
+        let estadoBadge = '';
+        if (data.aprobado == 0) {
+            estadoBadge = '<span class="badge bg-warning">Pendiente de Aprobación</span>';
+        } else if (data.aprobado == 2) {
+            estadoBadge = '<span class="badge bg-danger">Rechazado</span>';
+        } else if (data.aprobado == 1) {
+            estadoBadge = '<span class="badge bg-success">Aprobado</span>';
+        }
+
         let detalleFinanciamiento = `
-            <p><strong>ID Financiamiento:</strong> ${data.idfinanciamiento}</p>
-            <p><strong>Monto Total:</strong> ${parseFloat(data.monto_total).toFixed(2)}</p>
-            <p><strong>Cuota Inicial:</strong> ${parseFloat(data.cuota_inicial).toFixed(2)}</p>
-            <p><strong>Número de Cuotas:</strong> ${data.cuotas}</p>
-            <p><strong>Frecuencia:</strong> ${data.frecuencia}</p>
-            <p><strong>Fecha Inicio:</strong> ${data.fecha_inicio}</p>
-            <p><strong>Fecha Fin:</strong> ${data.fecha_fin}</p>
-            <p><strong>Fecha Creación:</strong> ${formatearFecha(data.fecha_creacion)}</p>
-            <p><strong>Estado:</strong> ${data.aprobado == 0 ? 'Pendiente' : (data.aprobado == 2 ? 'Rechazado' : 'Otro')}</p>
-            ${data.usuario_creador ? `<p><strong>Creado por:</strong> ${data.usuario_creador}</p>` : ''}
+            <div class="mb-2"><i class="fas fa-fingerprint text-warning me-2"></i><strong>ID Financiamiento:</strong> <span class="text-muted">${data.idfinanciamiento}</span></div>
+            <div class="mb-2"><i class="fas fa-money-bill-wave text-warning me-2"></i><strong>Monto Total:</strong> <span class="text-muted">S/ ${parseFloat(data.monto_total).toFixed(2)}</span></div>
+            <div class="mb-2"><i class="fas fa-hand-holding-usd text-warning me-2"></i><strong>Cuota Inicial:</strong> <span class="text-muted">S/ ${parseFloat(data.cuota_inicial).toFixed(2)}</span></div>
+            <div class="mb-2"><i class="fas fa-list-ol text-warning me-2"></i><strong>Número de Cuotas:</strong> <span class="text-muted">${data.cuotas}</span></div>
+            <div class="mb-2"><i class="fas fa-calendar-check text-warning me-2"></i><strong>Frecuencia:</strong> <span class="text-muted">${data.frecuencia}</span></div>
+            <div class="mb-2"><i class="fas fa-calendar-alt text-warning me-2"></i><strong>Fecha Inicio:</strong> <span class="text-muted">${data.fecha_inicio}</span></div>
+            <div class="mb-2"><i class="fas fa-calendar-times text-warning me-2"></i><strong>Fecha Fin:</strong> <span class="text-muted">${data.fecha_fin}</span></div>
+            <div class="mb-2"><i class="fas fa-clock text-warning me-2"></i><strong>Fecha Creación:</strong> <span class="text-muted">${formatearFecha(data.fecha_creacion)}</span></div>
+            <div class="mb-2"><i class="fas fa-info-circle text-warning me-2"></i><strong>Estado:</strong> ${estadoBadge}</div>
+            ${data.usuario_creador ? `<div class="mb-2"><i class="fas fa-user-tie text-warning me-2"></i><strong>Creado por:</strong> <span class="text-muted">${data.usuario_creador}</span></div>` : ''}
         `;
-        
-        Swal.fire({
-            title: 'Detalles del Financiamiento',
-            html: `
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <h5 class="text-primary">Información del Cliente</h5>
-                            ${clienteInfo}
+
+        // Llenar el body del modal
+        $('#bodyDetallePendiente').html(`
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="fas fa-user-circle me-2"></i>Información del Cliente</h6>
+                            </div>
+                            <div class="card-body">
+                                ${clienteInfo}
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <h5 class="text-primary">Información del Producto</h5>
-                            ${productoInfo}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="fas fa-box-open me-2"></i>Información del Producto</h6>
+                            </div>
+                            <div class="card-body">
+                                ${productoInfo}
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <h5 class="text-primary">Detalles del Financiamiento</h5>
-                            ${detalleFinanciamiento}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header bg-warning text-white">
+                                <h6 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Detalles del Financiamiento</h6>
+                            </div>
+                            <div class="card-body">
+                                ${detalleFinanciamiento}
+                            </div>
                         </div>
                     </div>
                 </div>
-            `,
-            width: '80%',
-            backdrop: `rgba(0,0,123,0.4)
-                    url("/images/nyan-cat.gif")
-                    left top
-                    no-repeat`,
-            showClass: {
-                popup: 'animate__animated animate__fadeInDown'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__fadeOutUp'
-            },
-            background: 'rgba(255, 255, 255, 0.9)',
-            customClass: {
-                container: 'my-swal-container',
-                popup: 'my-swal-popup'
-            },
-            confirmButtonColor: '#02a499'
-        });
+            </div>
+        `);
+
+        // Configurar botones según el estado y el rol
+        const btnAprobar = $('#btnAprobarModal');
+        const btnRechazar = $('#btnRechazarModal');
+
+        // Remover event listeners previos
+        btnAprobar.off('click');
+        btnRechazar.off('click');
+
+        // Mostrar/ocultar botones según el estado
+        if (data.aprobado == 0) { // Pendiente
+            if (rolUsuario == 1 || rolUsuario == 3) {
+                btnAprobar.show().on('click', function() {
+                    $('#modalDetallePendiente').modal('hide');
+                    aprobarFinanciamiento(data.idfinanciamiento);
+                });
+
+                btnRechazar.show().html('<i class="fas fa-times me-2"></i>Rechazar').on('click', function() {
+                    $('#modalDetallePendiente').modal('hide');
+                    rechazarFinanciamientoConMotivo(data.idfinanciamiento);
+                });
+            } else {
+                btnAprobar.hide();
+                btnRechazar.hide();
+            }
+        } else if (data.aprobado == 2) { // Rechazado
+            btnAprobar.hide();
+
+            if (rolUsuario == 3) {
+                btnRechazar.show().html('<i class="fas fa-trash me-2"></i>Eliminar Permanentemente').on('click', function() {
+                    $('#modalDetallePendiente').modal('hide');
+                    eliminarFinanciamientoPermanente(data.idfinanciamiento);
+                });
+            } else {
+                btnRechazar.hide();
+            }
+        } else {
+            btnAprobar.hide();
+            btnRechazar.hide();
+        }
+
+        // Mostrar el modal
+        $('#modalDetallePendiente').modal('show');
     }
 
     // Función para aprobar un financiamiento
@@ -412,16 +487,16 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "/arequipago/financiamiento-aprobado",
+                    url: _URL + "/ajs/aprobacion/aprobar",
                     type: "POST",
                     data: { id: id },
                     dataType: "json",
                     success: function(response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Éxito',
-                                text: 'Financiamiento aprobado correctamente',
+                                text: response.message || 'Financiamiento aprobado correctamente',
                                 confirmButtonColor: '#02a499'
                             }).then(() => {
                                 cargarFinanciamientosPendientes();
@@ -450,30 +525,49 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         });
     }
 
-    // Función para rechazar un financiamiento
-    function rechazarFinanciamiento(id) {
+    // Función para rechazar un financiamiento CON MOTIVO
+    function rechazarFinanciamientoConMotivo(id) {
         Swal.fire({
-            title: '¿Estás seguro?',
-            text: "¿Deseas rechazar este financiamiento?",
+            title: 'Rechazar Financiamiento',
+            html: `
+                <div class="text-start">
+                    <label for="motivoRechazo" class="form-label"><strong>Motivo del rechazo:</strong></label>
+                    <textarea id="motivoRechazo" class="form-control" rows="4"
+                              placeholder="Ingrese el motivo del rechazo..."></textarea>
+                </div>
+            `,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#02a499',
-            cancelButtonColor: '#ec4561',
-            confirmButtonText: 'Sí, rechazar',
-            cancelButtonText: 'Cancelar'
+            confirmButtonColor: '#ec4561',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-times me-2"></i>Rechazar',
+            cancelButtonText: '<i class="fas fa-arrow-left me-2"></i>Cancelar',
+            preConfirm: () => {
+                const motivo = document.getElementById('motivoRechazo').value.trim();
+                if (!motivo) {
+                    Swal.showValidationMessage('Debe ingresar un motivo de rechazo');
+                    return false;
+                }
+                return motivo;
+            }
         }).then((result) => {
             if (result.isConfirmed) {
+                const motivo = result.value;
+
                 $.ajax({
-                    url: "/arequipago/rechazarFinanciamiento",
+                    url: _URL + "/ajs/aprobacion/rechazar",
                     type: "POST",
-                    data: { id: id },
+                    data: {
+                        id: id,
+                        motivo: motivo
+                    },
                     dataType: "json",
                     success: function(response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             Swal.fire({
                                 icon: 'success',
-                                title: 'Éxito',
-                                text: 'Financiamiento rechazado correctamente',
+                                title: 'Rechazado',
+                                text: response.message || 'El financiamiento ha sido rechazado correctamente',
                                 confirmButtonColor: '#02a499'
                             }).then(() => {
                                 cargarFinanciamientosPendientes();
@@ -502,6 +596,87 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         });
     }
 
+    // Función para rechazar un financiamiento (sin motivo - usada desde la tabla)
+    function rechazarFinanciamiento(id) {
+        rechazarFinanciamientoConMotivo(id);
+    }
+
+    // Función para eliminar permanentemente un financiamiento
+    function eliminarFinanciamientoPermanente(id) {
+        Swal.fire({
+            title: 'Eliminar Permanentemente',
+            html: `
+                <div class="alert alert-danger mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>¡ATENCIÓN!</strong> Esta acción no se puede deshacer.
+                    El financiamiento será eliminado permanentemente del sistema.
+                </div>
+                <div class="text-start">
+                    <label for="motivoEliminacion" class="form-label"><strong>Motivo de la eliminación:</strong></label>
+                    <textarea id="motivoEliminacion" class="form-control" rows="4"
+                              placeholder="Ingrese el motivo de la eliminación permanente..."></textarea>
+                </div>
+            `,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="fas fa-trash me-2"></i>Eliminar Permanentemente',
+            cancelButtonText: '<i class="fas fa-arrow-left me-2"></i>Cancelar',
+            preConfirm: () => {
+                const motivo = document.getElementById('motivoEliminacion').value.trim();
+                if (!motivo) {
+                    Swal.showValidationMessage('Debe ingresar un motivo de eliminación');
+                    return false;
+                }
+                return motivo;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const motivo = result.value;
+
+                $.ajax({
+                    url: _URL + "/ajs/aprobacion/eliminar",
+                    type: "POST",
+                    data: {
+                        id: id,
+                        motivo: motivo
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Eliminado',
+                                text: response.message || 'El financiamiento ha sido eliminado permanentemente',
+                                confirmButtonColor: '#02a499'
+                            }).then(() => {
+                                cargarFinanciamientosPendientes();
+                                obtenerFinanciamientosPendientes();
+                                totalFinanciamientosRechazados();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'No se pudo eliminar el financiamiento',
+                                confirmButtonColor: '#02a499'
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo eliminar el financiamiento',
+                            confirmButtonColor: '#02a499'
+                        });
+                    }
+                });
+            }
+        });
+    }
+
     // Función para reactivar un financiamiento
     function reactivarFinanciamiento(id) {
         Swal.fire({
@@ -516,16 +691,16 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "/arequipago/reactivaFinanciamiento",
+                    url: _URL + "/ajs/aprobacion/reactivar",
                     type: "POST",
                     data: { id: id },
                     dataType: "json",
                     success: function(response) {
-                        if (response.status === 'success') {
+                        if (response.success) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Éxito',
-                                text: 'Financiamiento reactivado correctamente',
+                                text: response.message || 'Financiamiento reactivado correctamente',
                                 confirmButtonColor: '#02a499'
                             }).then(() => {
                                 cargarFinanciamientosPendientes();
@@ -568,7 +743,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "/arequipago/deleteFinanceRechazado",
+                    url: _URL + "/deleteFinanceRechazado",
                     type: "POST",
                     data: { id: id },
                     dataType: "json",
@@ -608,7 +783,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
     function obtenerFinanciamientosPendientes() {
         $.ajax({
-            url: '/arequipago/getFinanciamientos-pendientes',
+                url: _URL + '/getFinanciamientos-pendientes',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -626,7 +801,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
     function totalFinanciamientosRechazados() {
         $.ajax({
-            url: '/arequipago/contarFinanciamientosRechazados', // 👉 ruta al backend
+            url: _URL + '/contarFinanciamientosRechazados', // 👉 ruta al backend
             method: 'GET', // 👉 GET porque solo recupera datos
             dataType: 'json',
             success: function(response) {
@@ -652,5 +827,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     });
 
 </script>
+
+<!-- Incluir modal de detalles -->
+<?php include 'resources/views/components/modal-detalle-financiamiento-aprobar.php'; ?>
 
 </body>

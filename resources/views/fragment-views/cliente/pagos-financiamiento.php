@@ -248,9 +248,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                                 <i class="fa fa-undo"></i> Limpiar
                             </button>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end justify-content-end">
-                            <button id="btnDescargar" class="btn btn-success" onclick="downloadData()">
-                                <i class="fas fa-download"></i> Descargar
+                        <div class="col-md-3 d-flex align-items-end justify-content-end" style="gap: 8px;">
+                            <button id="btnMorasPendientes" class="btn btn-warning d-inline-flex align-items-center" onclick="abrirModalMorasPendientes()" style="white-space: nowrap;">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Moras Pendientes
+                                <span id="badgeMorasPendientes" class="badge bg-danger ms-1" style="display: none;">0</span>
+                            </button>
+                            <button id="btnDescargar" class="btn btn-success d-inline-flex align-items-center" onclick="downloadData()" style="white-space: nowrap;">
+                                <i class="fas fa-download me-1"></i> Descargar
                             </button>
                         </div>
                     </div>
@@ -281,6 +285,109 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         </div>
     </div>
 
+</div>
+
+<!-- Modales de Moras Pendientes (Deben estar fuera de contenedores para evitar problemas con backdrop) -->
+
+<!-- Modal de Moras Pendientes -->
+<div class="modal fade" id="modalMorasPendientes" tabindex="-1" aria-labelledby="modalMorasPendientesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalMorasPendientesLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Gestión de Moras Pendientes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loader -->
+                <div id="loaderMoras" class="text-center" style="display: none;">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando moras pendientes...</p>
+                </div>
+
+                <!-- Tabla de Moras Pendientes -->
+                <div id="contenedorTablaMoras">
+                    <div class="table-responsive">
+                        <table id="tablaMorasPendientes" class="table table-striped table-hover table-bordered">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Producto</th>
+                                    <th>Nº Cuota</th>
+                                    <th>Monto Mora</th>
+                                    <th>Fecha Venc.</th>
+                                    <th>Días Mora</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Pagar Mora Individual -->
+<div class="modal fade" id="modalPagarMora" tabindex="-1" aria-labelledby="modalPagarMoraLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalPagarMoraLabel">
+                    <i class="fas fa-money-bill-wave"></i> Pagar Mora Pendiente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPagarMora">
+                    <input type="hidden" id="idMoraPendiente" name="id_mora_pendiente">
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Cliente:</strong></label>
+                        <p id="moraCliente" class="form-control-plaintext"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Producto:</strong></label>
+                        <p id="moraProducto" class="form-control-plaintext"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Cuota Nº:</strong></label>
+                        <p id="moraNumeroCuota" class="form-control-plaintext"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="moraMontoTotal" class="form-label"><strong>Monto de Mora:</strong></label>
+                        <input type="number" class="form-control" id="moraMontoTotal" name="monto_mora" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="moraMetodoPago" class="form-label"><strong>Método de Pago:</strong></label>
+                        <select class="form-select" id="moraMetodoPago" name="metodo_pago" required>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="yape">Yape</option>
+                            <option value="plin">Plin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="procesarPagoMora()">
+                    <i class="fas fa-check"></i> Confirmar Pago
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="registrarPago" class="content hidden-right">
@@ -464,7 +571,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
         // Hacer la solicitud AJAX al controlador para obtener el id_conductor
         $.ajax({
-            url: '/arequipago/getIdConductorforDni',
+            url: _URL + '/getIdConductorforDni',
             type: 'POST',
             data: { dni: dni },
             success: function(response) {
@@ -485,7 +592,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
                 // --- NUEVA SOLICITUD AJAX PARA /busquedaPorDni ---
                 $.ajax({
-                    url: '/arequipago/busquedaPorDni', // Nueva ruta para obtener nombres y apellidos
+                    url: _URL + '/busquedaPorDni', // Nueva ruta para obtener nombres y apellidos
                     type: 'POST',
                     data: { dni: dni }, // Se envía el mismo DNI
                     success: function(data) {
@@ -525,7 +632,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
     function buscarComoCliente(dni) {
         $.ajax({
-            url: '/arequipago/obtenerDatosFinanciamientoCliente',
+            url: _URL + '/obtenerDatosFinanciamientoCliente',
             type: 'POST',
             data: { dni: dni },
             success: function(response) {
@@ -622,7 +729,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
     function obtenerClienteDetalle(idConductor) {
         $.ajax({
-            url: '/arequipago/obtenerClienteDetalle?id_conductor=' + idConductor,
+            url: _URL + '/obtenerClienteDetalle?id_conductor=' + idConductor,
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -687,6 +794,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
     // Función para seleccionar una fila y colocar su contenido en el selectBoxDetalle
     let cuotasSeleccionadas = [];
     let financiamientoActual = null; // ✅ NUEVO: Variable global para guardar el financiamiento actual
+    let tablaReportes; // ✅ Variable global para DataTable de reportes
 
     function seleccionarFinanciamiento(fila) {
         let financiamientoData = $(fila).data('financiamiento');
@@ -1184,7 +1292,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
     function cargarTypeCambio() {
         // URL de tu controlador PHP
         $.ajax({
-            url: "/arequipago/TipoCambio", // Ruta de tu controlador
+            url: _URL + "/TipoCambio", // Ruta de tu controlador
             method: "GET",
             dataType: "json",
             success: function (response) {
@@ -1407,7 +1515,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         
         // Enviamos los datos por AJAX
         $.ajax({
-            url: '/arequipago/newPagofinance',
+            url: _URL + '/ajs/newPagofinance',
             type: 'POST',
             data: formData,
             processData: false,
@@ -1829,6 +1937,17 @@ function anularPago(id) {
 function whatsappReport(idPago) {
   console.log("Función whatsappReport llamada con ID:", idPago) // Depuración
 
+  // Mostrar loader mientras se carga el PDF
+  Swal.fire({
+    title: 'Cargando...',
+    html: 'Generando vista previa del PDF',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
+
   $.ajax({
     url: "/arequipago/downloadReportFinance",
     type: "POST",
@@ -1858,6 +1977,9 @@ function whatsappReport(idPago) {
         $("#pdfContainer").html(
           `<iframe src="data:application/pdf;base64,${pdfBase64}" width="100%" height="400px"></iframe>`,
         )
+
+        // Cerrar el loader
+        Swal.close()
 
         // Mostrar el modal (que ya existe en el HTML)
         const modalElement = document.getElementById("modalWhatsappReportes")
@@ -2871,7 +2993,7 @@ function eliminarPago(idPago) {
         });
 
         // Inicializar DataTable para reportes
-        let tablaReportes = $("#tabla-reportes").DataTable({
+        tablaReportes = $("#tabla-reportes").DataTable({
             serverSide: true,
             processing: true,
             paging: true,
@@ -3057,4 +3179,256 @@ function eliminarPago(idPago) {
         })
 
     });
+
+    // ========== FUNCIONES PARA GESTIÓN DE MORAS PENDIENTES ==========
+
+    // Variable global para la tabla de moras
+    let tablaMorasPendientes;
+
+    /**
+     * Función para abrir el modal y cargar las moras pendientes
+     */
+    function abrirModalMorasPendientes() {
+        $('#modalMorasPendientes').modal('show');
+        cargarMorasPendientes();
+    }
+
+    /**
+     * Cargar las moras pendientes desde el backend
+     */
+    function cargarMorasPendientes() {
+        $('#loaderMoras').show();
+        $('#contenedorTablaMoras').hide();
+
+        $.ajax({
+            url: '/arequipago/ajs/getMorasPendientes',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('Moras pendientes:', response);
+
+                if (response.success) {
+                    // Destruir DataTable si ya existe
+                    if ($.fn.DataTable.isDataTable('#tablaMorasPendientes')) {
+                        tablaMorasPendientes.destroy();
+                    }
+
+                    // Limpiar tabla
+                    $('#tablaMorasPendientes tbody').empty();
+
+                    if (response.moras.length === 0) {
+                        $('#tablaMorasPendientes tbody').html(
+                            '<tr><td colspan="7" class="text-center">No hay moras pendientes</td></tr>'
+                        );
+                    } else {
+                        // Llenar tabla con datos
+                        response.moras.forEach(function(mora) {
+                            const diasMora = calcularDiasMora(mora.fecha_vencimiento);
+                            const fila = `
+                                <tr>
+                                    <td>${mora.cliente_nombre}</td>
+                                    <td>${mora.producto_nombre}</td>
+                                    <td class="text-center">${mora.numero_cuota}</td>
+                                    <td class="text-end">${mora.moneda} ${parseFloat(mora.monto_mora).toFixed(2)}</td>
+                                    <td class="text-center">${formatearFecha(mora.fecha_vencimiento)}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">${diasMora} días</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-primary" onclick='abrirModalPagarMora(${JSON.stringify(mora)})'>
+                                            <i class="fas fa-dollar-sign"></i> Pagar
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#tablaMorasPendientes tbody').append(fila);
+                        });
+
+                        // Inicializar DataTable
+                        tablaMorasPendientes = $('#tablaMorasPendientes').DataTable({
+                            language: {
+                                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                            },
+                            pageLength: 10,
+                            order: [[4, 'asc']], // Ordenar por fecha de vencimiento
+                            responsive: true
+                        });
+                    }
+
+                    $('#loaderMoras').hide();
+                    $('#contenedorTablaMoras').show();
+                } else {
+                    Swal.fire('Error', response.message || 'No se pudieron cargar las moras pendientes', 'error');
+                    $('#loaderMoras').hide();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al cargar moras:', error);
+                Swal.fire('Error', 'Error al conectar con el servidor', 'error');
+                $('#loaderMoras').hide();
+            }
+        });
+    }
+
+    /**
+     * Abrir modal para pagar mora individual
+     */
+    function abrirModalPagarMora(mora) {
+        console.log('Datos de mora:', mora);
+
+        // Llenar el formulario con los datos de la mora
+        $('#idMoraPendiente').val(mora.id_mora_pendiente);
+        $('#moraCliente').text(mora.cliente_nombre);
+        $('#moraProducto').text(mora.producto_nombre);
+        $('#moraNumeroCuota').text(mora.numero_cuota);
+        $('#moraMontoTotal').val(parseFloat(mora.monto_mora).toFixed(2));
+        $('#moraMetodoPago').val('efectivo');
+
+        // Abrir modal
+        $('#modalPagarMora').modal('show');
+    }
+
+    /**
+     * Procesar el pago de la mora pendiente
+     */
+    function procesarPagoMora() {
+        const idMoraPendiente = $('#idMoraPendiente').val();
+        const montoMora = $('#moraMontoTotal').val();
+        const metodoPago = $('#moraMetodoPago').val();
+
+        if (!metodoPago) {
+            Swal.fire('Atención', 'Por favor, seleccione un método de pago', 'warning');
+            return;
+        }
+
+        // Confirmación
+        Swal.fire({
+            title: '¿Confirmar pago de mora?',
+            html: `
+                <p><strong>Monto:</strong> S/ ${parseFloat(montoMora).toFixed(2)}</p>
+                <p><strong>Método:</strong> ${metodoPago}</p>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, pagar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loader
+                Swal.fire({
+                    title: 'Procesando pago...',
+                    text: 'Por favor espere',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar datos al backend
+                $.ajax({
+                    url: '/arequipago/ajs/pagarMoraPendiente',
+                    type: 'POST',
+                    data: {
+                        id_mora_pendiente: idMoraPendiente,
+                        monto_mora: montoMora,
+                        metodo_pago: metodoPago
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Respuesta pago mora:', response);
+
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Pago exitoso',
+                                text: response.message || 'La mora ha sido pagada correctamente',
+                                confirmButtonText: 'Aceptar'
+                            }).then(() => {
+                                // Cerrar modal de pago
+                                $('#modalPagarMora').modal('hide');
+
+                                // Recargar tabla de moras
+                                cargarMorasPendientes();
+
+                                // Actualizar contador
+                                cargarContadorMoras();
+
+                                // Recargar tabla de reportes si existe
+                                if (typeof tablaReportes !== 'undefined') {
+                                    tablaReportes.ajax.reload();
+                                }
+                            });
+                        } else {
+                            Swal.fire('Error', response.message || 'No se pudo procesar el pago', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error al pagar mora:', error);
+                        Swal.fire('Error', 'Error al procesar el pago. Intente nuevamente.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Cargar y actualizar el contador de moras pendientes
+     */
+    function cargarContadorMoras() {
+        $.ajax({
+            url: '/arequipago/ajs/getContadorMorasPendientes',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('Contador moras:', response);
+
+                if (response.success) {
+                    const cantidad = parseInt(response.cantidad) || 0;
+
+                    if (cantidad > 0) {
+                        $('#badgeMorasPendientes').text(cantidad).show();
+                    } else {
+                        $('#badgeMorasPendientes').hide();
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al cargar contador de moras:', error);
+            }
+        });
+    }
+
+    /**
+     * Calcular días de mora desde la fecha de vencimiento
+     */
+    function calcularDiasMora(fechaVencimiento) {
+        const hoy = new Date();
+        const vencimiento = new Date(fechaVencimiento);
+        const diferencia = hoy - vencimiento;
+        const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+        return dias > 0 ? dias : 0;
+    }
+
+    /**
+     * Formatear fecha DD/MM/YYYY
+     */
+    function formatearFecha(fecha) {
+        if (!fecha) return 'N/A';
+        const date = new Date(fecha);
+        const dia = String(date.getDate()).padStart(2, '0');
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const anio = date.getFullYear();
+        return `${dia}/${mes}/${anio}`;
+    }
+
+    // Cargar contador de moras al cargar la página
+    $(document).ready(function() {
+        cargarContadorMoras();
+
+        // Actualizar contador cada 5 minutos
+        setInterval(cargarContadorMoras, 300000);
+    });
+
+    // ========== FIN FUNCIONES MORAS PENDIENTES ==========
+
 </script>

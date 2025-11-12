@@ -798,20 +798,20 @@
                           <p><strong>Total Financiamientos:</strong> ${data.puntaje ? data.puntaje.total_financiamientos : 0}</p>
                           <p><strong>Total Retrasos:</strong> ${data.puntaje ? data.puntaje.total_retrasos : 0}</p>
                           ${(() => {
-                              if (!data.puntaje) return '<p><strong>Última Actualización:</strong> N/A</p>';
+                              if (!data.puntaje) return '<p><strong>Fecha de Restablecimiento:</strong> N/A</p>';
 
                               // Verificar si el último evento fue un restablecimiento
                               if (data.ultimo_evento && data.ultimo_evento.motivo && data.ultimo_evento.motivo.includes('Restablecimiento manual')) {
                                   const fechaEvento = new Date(data.ultimo_evento.fecha_evento);
                                   const fecha = fechaEvento.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
                                   const hora = fechaEvento.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                                  return `<p class="text-success"><strong><i class="fas fa-undo me-1"></i>Restablecido el:</strong> ${fecha} a las ${hora}</p>`;
+                                  return `<p class="text-success"><strong><i class="fas fa-undo me-1"></i>Fecha de Restablecimiento:</strong> ${fecha} a las ${hora}</p>`;
                               } else {
-                                  // Mostrar última actualización normal con fecha y hora
+                                  // Mostrar la fecha de actualización normal pero con el nuevo título
                                   const fechaActualizacion = new Date(data.puntaje.fecha_actualizacion);
                                   const fecha = fechaActualizacion.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
                                   const hora = fechaActualizacion.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                                  return `<p><strong>Última Actualización:</strong> ${fecha} a las ${hora}</p>`;
+                                  return `<p><strong>Fecha de Restablecimiento:</strong> ${fecha} a las ${hora}</p>`;
                               }
                           })()}
                           <div class="mt-3 d-flex gap-2">

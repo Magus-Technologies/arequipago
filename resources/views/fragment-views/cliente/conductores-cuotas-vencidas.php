@@ -42,8 +42,8 @@ $query = "
 
     UNION 
 
-    SELECT 
-        c.id_conductor, 
+    SELECT
+        c.id_conductor,
         CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
         COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
         SUM(cf.monto) AS deuda_total,
@@ -53,49 +53,49 @@ $query = "
         c.telefono,
         f.moneda,
         'conductor' AS tipo_persona
-    FROM 
+    FROM
         cuotas_financiamiento cf
-    INNER JOIN 
+    INNER JOIN
         financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
-    INNER JOIN 
+    INNER JOIN
         conductores c ON f.id_conductor = c.id_conductor
-    INNER JOIN 
+    INNER JOIN
         productosv2 p ON f.idproductosv2 = p.idproductosv2
-    WHERE 
-        cf.fecha_vencimiento < '$fecha_actual' 
+    WHERE
+        cf.fecha_vencimiento < '$fecha_actual'
         AND cf.estado = 'En Progreso'
         AND f.incobrable = 0
-    GROUP BY 
-        c.id_conductor, p.nombre
+    GROUP BY
+        c.id_conductor, p.nombre, f.moneda, c.numUnidad, c.desvinculado, c.telefono, c.nombres, c.apellido_paterno, c.apellido_materno
 
         UNION
     
-    SELECT 
-        cl.id AS id_conductor, 
-        CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo, 
-        COUNT(cf.idcuotas_financiamiento) AS num_cuotas, 
-        SUM(cf.monto) AS deuda_total, 
-        p.nombre AS tipo_financiamiento, 
-        NULL AS numUnidad, 
-        0 AS desvinculado, 
-        cl.telefono, 
+    SELECT
+        cl.id AS id_conductor,
+        CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo,
+        COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
+        SUM(cf.monto) AS deuda_total,
+        p.nombre AS tipo_financiamiento,
+        NULL AS numUnidad,
+        0 AS desvinculado,
+        cl.telefono,
         f.moneda,
-        'cliente' AS tipo_persona 
-    FROM 
-        cuotas_financiamiento cf 
-    INNER JOIN 
-        financiamiento f ON cf.id_financiamiento = f.idfinanciamiento 
-    INNER JOIN 
-        clientes_financiar cl ON f.id_cliente = cl.id 
-    INNER JOIN 
-        productosv2 p ON f.idproductosv2 = p.idproductosv2 
-    WHERE 
-        cf.fecha_vencimiento < '$fecha_actual' 
-        AND cf.estado = 'En Progreso' 
+        'cliente' AS tipo_persona
+    FROM
+        cuotas_financiamiento cf
+    INNER JOIN
+        financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+    INNER JOIN
+        clientes_financiar cl ON f.id_cliente = cl.id
+    INNER JOIN
+        productosv2 p ON f.idproductosv2 = p.idproductosv2
+    WHERE
+        cf.fecha_vencimiento < '$fecha_actual'
+        AND cf.estado = 'En Progreso'
         AND f.id_cliente IS NOT NULL
         AND f.incobrable = 0
-    GROUP BY 
-        cl.id, p.nombre 
+    GROUP BY
+        cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno 
 ";
 
 $result = $conexion->query($query);
@@ -688,6 +688,17 @@ $(document).ready(function() {
                             </button>`;
                     }
                     
+                    if (filtroActual === 'incobrables' && rolUsuario == 3) {
+                        botones += `
+                            <button class="btn btn-sm btn-success marcar-cobrable-btn" 
+                                    data-id="${row.id_conductor}"
+                                    data-tipo="${row.tipo_persona}"
+                                    data-nombre="${row.nombre_completo}"
+                                    title="Marcar como Cobrable">
+                                <i class="fas fa-check-circle"></i>
+                            </button>`;
+                    }
+                    
                     botones += '</div>';
                     return botones;
                 }
@@ -723,6 +734,10 @@ $(document).ready(function() {
     // EVENTOS DELEGADOS PARA BOTONES DINÁMICOS
     $(document).on('click', '.marcar-incobrable-btn', function() {
         marcarComoIncobrable(this);
+    });
+
+    $(document).on('click', '.marcar-cobrable-btn', function() {
+        marcarComoCobrable(this);
     });
 
     $(document).on('click', '.ver-detalle-btn', function() {
@@ -816,6 +831,61 @@ $(document).ready(function() {
                             text: 'Error de conexión'
                         });
                         $btn.prop('disabled', false).text('Marcar Incobrable');
+                    }
+                });
+            }
+        });
+    }
+
+    function marcarComoCobrable(button) {
+        const $btn = $(button);
+        const id = $btn.data('id');
+        const tipo = $btn.data('tipo');
+        const nombre = $btn.data('nombre');
+        
+        Swal.fire({
+            title: '¿Está seguro?',
+            text: `¿Desea marcar como cobrable (pendiente) las deudas de ${nombre}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#02a499',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, marcar como cobrable',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                
+                $.ajax({
+                    url: "/arequipago/marcarComoCobrable",
+                    method: 'POST',
+                    data: { id_persona: id, tipo_persona: tipo },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                text: 'Marcado como cobrable exitosamente. Ahora aparecerá en la pestaña "Pendientes".',
+                                timer: 3000
+                            });
+                            tabla_cuotas_vencidas.ajax.reload();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message
+                            });
+                            $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error de conexión'
+                        });
+                        $btn.prop('disabled', false).html('<i class="fas fa-check-circle"></i>');
                     }
                 });
             }

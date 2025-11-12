@@ -1,777 +1,795 @@
+.tab-button-active {
+  background-color: #f4f750 !important;
+  color: #2e217a !important;
+}
 
-        .tab-button-active {
-            background-color: #f4f750 !important;
-            color: #2E217A !important;
-        }
+.producto-seleccionado {
+  background-color: #e8f4ff !important;
+}
 
-        .producto-seleccionado {
-            background-color: #e8f4ff !important;
-        }
+#notificacion {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  height: 94px;
+  width: 90%; /* Ajusta el ancho según prefieras */
+  max-width: 600px;
+  background-color: #e8f4ff; /* Color suave que combina con tu interfaz */
+  border-left: 5px solid #626ed4; /* Un detalle llamativo */
+  color: #2d2d2d; /* Color de texto para contraste */
+  padding: 15px 20px;
+  margin-top: 60px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra elegante */
+  font-family: "Arial", sans-serif;
+  font-size: 16px;
+  display: none;
+  z-index: 1000;
+  transition: opacity 0.5s ease, transform 0.5s ease; /* Transición suave */
+}
 
-        #notificacion {
-            position: fixed;
-            top: 0;
-            left: 50%;
-            height: 94px;
-            width: 90%; /* Ajusta el ancho según prefieras */
-            max-width: 600px;
-            background-color: #e8f4ff;  /* Color suave que combina con tu interfaz */
-            border-left: 5px solid #626ed4; /* Un detalle llamativo */
-            color: #2d2d2d; /* Color de texto para contraste */
-            padding: 15px 20px;
-            margin-top: 60px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Sombra elegante */
-            font-family: 'Arial', sans-serif;
-            font-size: 16px;
-            display: none;
-            z-index: 1000;
-            transition: opacity 0.5s ease, transform 0.5s ease; /* Transición suave */
-        }
+#notificacion.show {
+  display: block;
+  animation: fadeInDown 0.5s ease forwards; /* Animación suave */
+}
 
-        #notificacion.show {
-            display: block;
-            animation: fadeInDown 0.5s ease forwards; /* Animación suave */
-        }
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px); /* Empieza desplazada hacia arriba */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(10px); /* Se desplaza hacia abajo ligeramente */
+  }
+}
 
-        @keyframes fadeInDown {
-            0% {
-                opacity: 0;
-                transform: translateY(-20px); /* Empieza desplazada hacia arriba */
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(10px); /* Se desplaza hacia abajo ligeramente */
-            }
-        }
+.tabla-brillo {
+  border: 3px solid white; /* Brillo blanco */
+  box-shadow: 0 0 10px white;
+  animation: flash 0.15s ease-in-out; /* Parpadeo rápido */
+}
 
+@keyframes flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6; /* Efecto de "diluir" momentáneo */
+  }
+}
+/* Estilos personalizados del tooltip activados por el ID */
+.tooltip-custom {
+  background-color: #626ed4 !important; /* Fondo personalizado */
+  color: white !important; /* Texto blanco */
+  font-size: 14px !important; /* Tamaño del texto */
+  border-radius: 8px !important; /* Bordes redondeados */
+  padding: 10px !important; /* Espaciado interno */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important; /* Sombra elegante */
+}
 
-        .tabla-brillo {
-            border: 3px solid white; /* Brillo blanco */
-            box-shadow: 0 0 10px white;
-            animation: flash 0.15s ease-in-out; /* Parpadeo rápido */
-        }
+/* Estilo del piquito activado por el ID */
+.tooltip-custom .tooltip-arrow {
+  border-top-color: #626ed4 !important; /* Color del piquito */
+}
 
-        @keyframes flash {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6; /* Efecto de "diluir" momentáneo */
-            }
-        }
-        /* Estilos personalizados del tooltip activados por el ID */
-        .tooltip-custom {
-                background-color: #626ed4 !important;  /* Fondo personalizado */
-                color: white !important;  /* Texto blanco */
-                font-size: 14px !important;  /* Tamaño del texto */
-                border-radius: 8px !important;  /* Bordes redondeados */
-                padding: 10px !important;  /* Espaciado interno */
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;  /* Sombra elegante */
-            }
+/* Ajuste del ícono */
+.tooltip-icon i {
+  font-size: 18px; /* Tamaño del ícono */
+  color: #626ed4; /* Color del ícono */
+  cursor: pointer; /* Cambia a manita */
+}
 
-            /* Estilo del piquito activado por el ID */
-            .tooltip-custom .tooltip-arrow {
-                border-top-color: #626ed4 !important;  /* Color del piquito */
-            }
+/* Estilos aplicados solo a inputs por ID */
+#monto,
+#cuotaInicial,
+#montoRecalculado,
+#montoInscripcion,
+#tasaInteres,
+#valorCuota,
+#montoSinIntereses,
+#fechaInicio,
+#fechaFin,
+#cuotas,
+#frecuenciaPago,
+#fechaHoraActual {
+  background-color: #e9ecef; /* Color de fondo deshabilitado */
+  color: #6c757d; /* Color de texto deshabilitado */
+  border: 1px solid #ced4da; /* Borde ligero */
+  pointer-events: none; /* Evita que el usuario interactúe con el input */
+  cursor: not-allowed; /* Cursor de prohibido */
+}
 
-            /* Ajuste del ícono */
-            .tooltip-icon i {
-                font-size: 18px;  /* Tamaño del ícono */
-                color: #626ed4;  /* Color del ícono */
-                cursor: pointer;  /* Cambia a manita */
-            }
+/* Efecto de luz en el borde inferior del div que envuelve el select */
+.glow-effect-wrapper {
+  position: relative; /* Cambiado: Se aplica al div envolvente */
+  border: 1px solid #ced4da;
+  overflow: hidden; /* Corrección: Evita que la animación se recorte */
+}
 
-            /* Estilos aplicados solo a inputs por ID */
-            #monto,
-            #cuotaInicial,
-            #montoRecalculado,
-            #montoInscripcion,
-            #tasaInteres,
-            #valorCuota,
-            #montoSinIntereses,
-            #fechaInicio,
-            #fechaFin,
-            #cuotas,
-            #frecuenciaPago,
-            #fechaHoraActual {
-                background-color: #e9ecef; /* Color de fondo deshabilitado */
-                color: #6c757d;            /* Color de texto deshabilitado */
-                border: 1px solid #ced4da; /* Borde ligero */
-                pointer-events: none;      /* Evita que el usuario interactúe con el input */
-                cursor: not-allowed;       /* Cursor de prohibido */
-            }
+.glow-effect-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: -100%; /* Empieza fuera de vista */
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #f4f750,
+    transparent
+  ); /* Cambiado: color del efecto de luz */
+  animation: glow-animation 1.5s infinite linear;
+  opacity: 0; /* Cambiado: Comienza invisible */
+}
 
-            /* Efecto de luz en el borde inferior del div que envuelve el select */
-            .glow-effect-wrapper {
-                position: relative; /* Cambiado: Se aplica al div envolvente */
-                border: 1px solid #ced4da;
-                overflow: hidden; /* Corrección: Evita que la animación se recorte */
-            }
+@keyframes glow-animation {
+  0% {
+    left: -100%; /* Empieza la animación desde fuera de la vista */
+  }
+  50% {
+    left: 50%; /* La luz pasa por el centro */
+  }
+  100% {
+    left: 100%; /* Sale completamente del área visible */
+  }
+}
 
-            .glow-effect-wrapper::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: -100%; /* Empieza fuera de vista */
-                width: 100%;
-                height: 3px;
-                background: linear-gradient(90deg, transparent, #f4f750, transparent); /* Cambiado: color del efecto de luz */
-                animation: glow-animation 1.5s infinite linear;
-                opacity: 0; /* Cambiado: Comienza invisible */
-            }
+/* Clase visible que activa la animación */
+.glow-active-wrapper::after {
+  opacity: 1; /* Cambiado: Se muestra cuando está activa */
+}
 
-            @keyframes glow-animation {
-                0% {
-                    left: -100%;  /* Empieza la animación desde fuera de la vista */
-                }
-                50% {
-                    left: 50%;  /* La luz pasa por el centro */
-                }
-                100% {
-                    left: 100%;  /* Sale completamente del área visible */
-                }
-            }
+/* Estilos para el contenedor de la imagen flotante */
+#imagen-flotante {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none; /* Permite interactuar con elementos debajo */
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
 
-            /* Clase visible que activa la animación */
-            .glow-active-wrapper::after {
-                opacity: 1; /* Cambiado: Se muestra cuando está activa */
-            }
+/* Estilos para la imagen */
+#imagen-flotante img {
+  max-width: 150px;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+  animation: pulso 2s infinite ease-in-out;
+}
 
-            /* Estilos para el contenedor de la imagen flotante */
-            #imagen-flotante {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-                pointer-events: none; /* Permite interactuar con elementos debajo */
-                opacity: 0;
-                transition: opacity 0.3s ease-in-out;
-            }
+/* Animación de pulso */
+@keyframes pulso {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
-            /* Estilos para la imagen */
-            #imagen-flotante img {
-                max-width: 150px;
-                filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
-                animation: pulso 2s infinite ease-in-out;
-            }
-
-            /* Animación de pulso */
-            @keyframes pulso {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-            }
-
-       #btnDescargar { /* Estilos aplicados exclusivamente a este botón */
-    background-color: #38a4f8 !important; /* Color solicitado */
-    color: white; /* Texto blanco para contraste */
-    margin-top: 4px;
-    display: block;
-    margin: 10px auto;
+#btnDescargar {
+  /* Estilos aplicados exclusivamente a este botón */
+  background-color: #38a4f8 !important; /* Color solicitado */
+  color: white; /* Texto blanco para contraste */
+  margin-top: 4px;
+  display: block;
+  margin: 10px auto;
 }
 
 /* Contenedor del botón de cronograma */
 #contenedorBotonCronograma {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
 }
 
 #contenedorBotonCronograma button {
-    width: 100%;
-    max-width: 250px;
-    transition: all 0.3s ease;
+  width: 100%;
+  max-width: 250px;
+  transition: all 0.3s ease;
 }
 
 #contenedorBotonCronograma button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
 }
 
+#btnDescargar:hover {
+  background-color: #1c86d1 !important; /* Efecto hover más oscuro */
+}
 
-        #btnDescargar:hover {
-            background-color: #1c86d1 !important; /* Efecto hover más oscuro */
-        }
+.border-danger {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
 
-        .border-danger {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
-        }
+#spinnerCodigoAsociado {
+  color: #6c757d;
+}
 
-        #spinnerCodigoAsociado {
-            color: #6c757d;
-        }
+#mensajeCodigoAsociado {
+  font-size: 0.875rem;
+}
 
-        #mensajeCodigoAsociado {
-            font-size: 0.875rem;
-        }
+#contenedorCobroMora {
+  background-color: #fcf3cf;
+  border: 1px solid #f4f750;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+}
 
-        #contenedorCobroMora {
-            background-color: #fcf3cf;
-            border: 1px solid #f4f750;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-        }
+#contenedorCobroMora .form-text {
+  font-size: 13px; /* O el tamaño que prefieras */
+}
 
-        #contenedorCobroMora .form-text {
-            font-size: 13px; /* O el tamaño que prefieras */
-        }
+#opcionesCobroMora .form-check-input:checked + .form-check-label {
+  font-weight: 600;
+  color: #2e217a;
+}
 
+#opcionesCobroMora .form-check-input {
+  border-color: #007bff;
+}
 
-        #opcionesCobroMora .form-check-input:checked + .form-check-label {
-            font-weight: 600;
-            color: #2E217A;
-        }
+#opcionesCobroMora .form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
 
-        #opcionesCobroMora .form-check-input {
-            border-color: #007bff;
-        }
+#opcionesCobroMora .form-check-label {
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
 
-        #opcionesCobroMora .form-check-input:checked {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
+#opcionesCobroMora .form-check-label:hover {
+  color: #2e217a;
+}
 
-        #opcionesCobroMora .form-check-label {
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
+/* Estilo para el ícono de verificación domiciliaria "Sí verificado" */
+#verificacionSi + label i {
+  color: #02a499 !important;
+}
 
-        #opcionesCobroMora .form-check-label:hover {
-            color: #2E217A;
-        }
+/* También aplicar el color cuando esté seleccionado */
+#verificacionSi:checked + label i {
+  color: #02a499 !important;
+}
 
-        /* Estilo para el ícono de verificación domiciliaria "Sí verificado" */
-        #verificacionSi + label i {
-            color: #02a499 !important;
-        }
+/* Opcional: cambiar también el color del texto cuando esté seleccionado */
+#verificacionSi:checked + label {
+  color: #02a499 !important;
+  font-weight: 600;
+}
 
-        /* También aplicar el color cuando esté seleccionado */
-        #verificacionSi:checked + label i {
-            color: #02a499 !important;
-        }
+/* Hacer más grande el texto de ayuda de verificación domiciliaria */
+#contenedorVerificacionDomiciliaria .form-text {
+  font-size: 12px !important; /* Aumenta de 13px (tamaño por defecto) a 14px */
+}
 
-        /* Opcional: cambiar también el color del texto cuando esté seleccionado */
-        #verificacionSi:checked + label {
-            color: #02a499 !important;
-            font-weight: 600;
-        }
+/* O si quieres que sea aún más grande */
+#contenedorVerificacionDomiciliaria .form-text {
+  font-size: 13px !important; /* Tamaño más grande */
+}
 
-        /* Hacer más grande el texto de ayuda de verificación domiciliaria */
-        #contenedorVerificacionDomiciliaria .form-text {
-            font-size: 12px !important; /* Aumenta de 13px (tamaño por defecto) a 14px */
-        }
-
-        /* O si quieres que sea aún más grande */
-        #contenedorVerificacionDomiciliaria .form-text {
-            font-size: 13px !important; /* Tamaño más grande */
-        }
-
-      /* Modal holográfico transparente para entregar vehículo */
+/* Modal holográfico transparente para entregar vehículo */
 .modal-entregar-vehiculo {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1060; /* Por encima del modal de detalles (1055) pero debajo de SweetAlert (10000) */
-    opacity: 0;
-    transition: opacity 0.4s ease-out;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1060; /* Por encima del modal de detalles (1055) pero debajo de SweetAlert (10000) */
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
 }
 
 .modal-entregar-vehiculo.show {
-    opacity: 1;
+  opacity: 1;
 }
 
 .modal-content-vehiculo {
-    background: linear-gradient(145deg,
-        rgba(248, 250, 252, 0.85) 0%,
-        rgba(241, 245, 249, 0.8) 50%,
-        rgba(248, 250, 252, 0.82) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(203, 213, 225, 0.5);
-    border-radius: 20px;
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
-    transform: scale(0.7) translateY(50px);
-    opacity: 0;
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(248, 250, 252, 0.85) 0%,
+    rgba(241, 245, 249, 0.8) 50%,
+    rgba(248, 250, 252, 0.82) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transform: scale(0.7) translateY(50px);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
 }
 
 .modal-content-vehiculo::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, 
-        rgba(255, 255, 255, 0.03) 0%,
-        transparent 50%,
-        rgba(98, 110, 212, 0.02) 100%);
-    pointer-events: none;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 50%,
+    rgba(98, 110, 212, 0.02) 100%
+  );
+  pointer-events: none;
 }
 
 .modal-entregar-vehiculo.show .modal-content-vehiculo {
-    transform: scale(1) translateY(0);
-    opacity: 1;
+  transform: scale(1) translateY(0);
+  opacity: 1;
 }
 
 .modal-header-vehiculo {
-    background: linear-gradient(135deg, 
-        rgba(59, 130, 246, 0.15) 0%,
-        rgba(37, 99, 235, 0.1) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #1f2937;
-    padding: 20px 25px;
-    border-bottom: 1px solid rgba(203, 213, 225, 0.3);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 600;
-    position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(37, 99, 235, 0.1) 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #1f2937;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  position: relative;
 }
 
 .modal-header-vehiculo::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.3), 
-        transparent);
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
 }
 
 .modal-header-vehiculo h5 {
-    margin: 0;
-    font-size: 1.3rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  font-size: 1.3rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .modal-body-vehiculo {
-    padding: 25px;
-    flex: 1;
-    overflow-y: auto;
-    background: rgba(248, 250, 252, 0.6);
+  padding: 25px;
+  flex: 1;
+  overflow-y: auto;
+  background: rgba(248, 250, 252, 0.6);
 }
 
 .modal-body-vehiculo::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
 
 .modal-body-vehiculo::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 .modal-body-vehiculo::-webkit-scrollbar-thumb {
-    background: rgba(98, 110, 212, 0.4);
-    border-radius: 3px;
-    transition: background 0.3s ease;
+  background: rgba(98, 110, 212, 0.4);
+  border-radius: 3px;
+  transition: background 0.3s ease;
 }
 
 .modal-body-vehiculo::-webkit-scrollbar-thumb:hover {
-    background: rgba(98, 110, 212, 0.6);
+  background: rgba(98, 110, 212, 0.6);
 }
 
 .modal-footer-vehiculo {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 20px 25px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 20px 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .btn-close-vehiculo {
-    background: rgba(248, 250, 252, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(203, 213, 225, 0.4);
-    color: #374151;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 8px 10px;
-    border-radius: 10px;
-    transition: all 0.3s ease;
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  color: #374151;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
 }
 
 .btn-close-vehiculo:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .vehiculo-seleccionado {
-    background: rgba(98, 110, 212, 0.1) !important;
-    border: 1px solid rgba(98, 110, 212, 0.3) !important;
-    box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
-    animation: glow 2s ease-in-out infinite alternate;
+  background: rgba(98, 110, 212, 0.1) !important;
+  border: 1px solid rgba(98, 110, 212, 0.3) !important;
+  box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
-    from {
-        box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
-    }
-    to {
-        box-shadow: 0 0 25px rgba(98, 110, 212, 0.4);
-    }
+  from {
+    box-shadow: 0 0 15px rgba(98, 110, 212, 0.2);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(98, 110, 212, 0.4);
+  }
 }
 
 .modal-entregar-vehiculo .form-label {
-    color: #374151;
-    font-weight: 600;
-    margin-bottom: 8px;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  color: #374151;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .modal-entregar-vehiculo .form-control {
-    background: rgba(248, 250, 252, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(203, 213, 225, 0.6);
-    border-radius: 12px;
-    color: #374151;
-    transition: all 0.3s ease;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-radius: 12px;
+  color: #374151;
+  transition: all 0.3s ease;
 }
 
 .modal-entregar-vehiculo .form-control:focus {
-    background: rgba(255, 255, 255, 1);
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    outline: none;
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
 }
 
 .modal-entregar-vehiculo .form-control::placeholder {
-    color: rgba(55, 65, 81, 0.6);
+  color: rgba(55, 65, 81, 0.6);
 }
 
 .modal-entregar-vehiculo .table {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .modal-entregar-vehiculo .table thead {
-    background: rgba(59, 130, 246, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #1f2937;
-    font-weight: 700;
+  background: rgba(59, 130, 246, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #1f2937;
+  font-weight: 700;
 }
 
 .modal-entregar-vehiculo .table th {
-    border-bottom: 1px solid rgba(203, 213, 225, 0.4);
-    padding: 15px 10px;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.4);
+  padding: 15px 10px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
 .modal-entregar-vehiculo .table tbody tr {
-    background: rgba(255, 255, 255, 0.5);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.3s ease;
-    cursor: pointer;
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .modal-entregar-vehiculo .table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.7);
-    transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateX(3px);
 }
 
 .modal-entregar-vehiculo .table td {
-    padding: 12px 10px;
-    vertical-align: middle;
-    color: #374151;
-    font-weight: 500;
+  padding: 12px 10px;
+  vertical-align: middle;
+  color: #374151;
+  font-weight: 500;
 }
 
 .modal-entregar-vehiculo .btn {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 12px;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-entregar-vehiculo .btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.2), 
-        transparent);
-    transition: left 0.5s ease;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .modal-entregar-vehiculo .btn:hover::before {
-    left: 100%;
+  left: 100%;
 }
 
 .modal-entregar-vehiculo .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .modal-entregar-vehiculo .btn-success {
-    background: linear-gradient(135deg, 
-        #02a398 0%,
-        #028a82 100%);
-    color: white;
-    border-color: #02a398;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #02a398 0%, #028a82 100%);
+  color: white;
+  border-color: #02a398;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .modal-entregar-vehiculo .btn-success:hover {
-    background: linear-gradient(135deg, 
-        #029b8f 0%,
-        #027a73 100%);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(2, 163, 152, 0.3);
+  background: linear-gradient(135deg, #029b8f 0%, #027a73 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(2, 163, 152, 0.3);
 }
 
 .modal-entregar-vehiculo .btn-secondary {
-    background: rgba(108, 117, 125, 0.15);
-    color: #495057;
-    border-color: rgba(108, 117, 125, 0.3);
+  background: rgba(108, 117, 125, 0.15);
+  color: #495057;
+  border-color: rgba(108, 117, 125, 0.3);
 }
 
 .modal-entregar-vehiculo .btn-secondary:hover {
-    background: rgba(108, 117, 125, 0.25);
-    color: #343a40;
+  background: rgba(108, 117, 125, 0.25);
+  color: #343a40;
 }
 
 .modal-entregar-vehiculo input[type="radio"] {
-    accent-color: #626ed4;
-    transform: scale(1.3);
-    cursor: pointer;
-    filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5));
+  accent-color: #626ed4;
+  transform: scale(1.3);
+  cursor: pointer;
+  filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5));
 }
 
 .modal-entregar-vehiculo input[type="radio"]:checked {
-    animation: radioGlow 1s ease-in-out;
+  animation: radioGlow 1s ease-in-out;
 }
 
 @keyframes radioGlow {
-    0% { filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5)); }
-    50% { filter: drop-shadow(0 0 8px rgba(98, 110, 212, 0.8)); }
-    100% { filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5)); }
+  0% {
+    filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(98, 110, 212, 0.8));
+  }
+  100% {
+    filter: drop-shadow(0 0 3px rgba(98, 110, 212, 0.5));
+  }
 }
 
 /* Animaciones de entrada */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Responsivo */
 @media (max-width: 768px) {
-    .modal-content-vehiculo {
-        width: 95%;
-        max-height: 85%;
-        margin: 20px;
-        border-radius: 15px;
-    }
-    
-    .modal-header-vehiculo,
-    .modal-body-vehiculo,
-    .modal-footer-vehiculo {
-        padding: 15px 20px;
-    }
-    
-    .modal-body-vehiculo {
-        max-height: 400px;
-    }
-    
-    .modal-entregar-vehiculo .btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
+  .modal-content-vehiculo {
+    width: 95%;
+    max-height: 85%;
+    margin: 20px;
+    border-radius: 15px;
+  }
+
+  .modal-header-vehiculo,
+  .modal-body-vehiculo,
+  .modal-footer-vehiculo {
+    padding: 15px 20px;
+  }
+
+  .modal-body-vehiculo {
+    max-height: 400px;
+  }
+
+  .modal-entregar-vehiculo .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
 }
 
 .sin-stock {
-    background-color: #f8f9fa !important;
-    opacity: 0.6;
-    cursor: not-allowed !important;
+  background-color: #f8f9fa !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
 }
 
 .sin-stock:hover {
-    background-color: #e9ecef !important;
+  background-color: #e9ecef !important;
 }
 /* Estilos personalizados para el scroll del cronograma */
 #contenedorFechas {
-    scrollbar-width: thin;
-    scrollbar-color: #626ed4 #f1f1f1;
+  scrollbar-width: thin;
+  scrollbar-color: #626ed4 #f1f1f1;
 }
 
 #contenedorFechas::-webkit-scrollbar {
-    width: 10px;
+  width: 10px;
 }
 
 #contenedorFechas::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-    margin: 5px 0;
+  background: #f1f1f1;
+  border-radius: 10px;
+  margin: 5px 0;
 }
 
 #contenedorFechas::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #626ed4 0%, #4a5ab8 100%);
-    border-radius: 10px;
-    border: 2px solid #f1f1f1;
-    transition: all 0.3s ease;
+  background: linear-gradient(180deg, #626ed4 0%, #4a5ab8 100%);
+  border-radius: 10px;
+  border: 2px solid #f1f1f1;
+  transition: all 0.3s ease;
 }
 
 #contenedorFechas::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #4a5ab8 0%, #3a4a98 100%);
-    border-color: #e0e0e0;
-    box-shadow: 0 0 6px rgba(98, 110, 212, 0.4);
+  background: linear-gradient(180deg, #4a5ab8 0%, #3a4a98 100%);
+  border-color: #e0e0e0;
+  box-shadow: 0 0 6px rgba(98, 110, 212, 0.4);
 }
 
 /* Contenedor del botón de cronograma */
 #contenedorBotonCronograma {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px 0;
-    margin-top: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  margin-top: 5px;
 }
 
 #contenedorBotonCronograma button {
-    width: 100%;
-    max-width: 280px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.2);
+  width: 100%;
+  max-width: 280px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.2);
 }
 
 #contenedorBotonCronograma button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
 }
-
 
 /* Estilos para el modal de Boletas de Pago Inicial */
 #modalBoletasIniciales {
-    z-index: 9999 !important;
+  z-index: 9999 !important;
 }
 
 #modalBoletasIniciales .modal-dialog {
-    z-index: 10000 !important;
+  z-index: 10000 !important;
 }
 
 /* Backdrop oscuro SOLO cuando el modal de boletas está abierto */
 body.modal-boletas-open .modal-backdrop:last-of-type {
-    background-color: rgba(0, 0, 0, 0.85) !important;
-    z-index: 9998 !important;
-    opacity: 0.85 !important;
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  z-index: 9998 !important;
+  opacity: 0.85 !important;
 }
 
 /* SweetAlert con z-index alto para aparecer sobre modales */
 .swal-high-zindex {
-    z-index: 10500 !important;
+  z-index: 10500 !important;
 }
 
 /* Estilos para las cards de boletas */
 #modalBoletasIniciales .card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 #modalBoletasIniciales .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Estilos para los botones dentro del modal de boletas */
 #modalBoletasIniciales .btn-primary {
-    background: linear-gradient(135deg, #626ed4 0%, #4a5ab8 100%);
-    border: none;
-    transition: all 0.3s ease;
+  background: linear-gradient(135deg, #626ed4 0%, #4a5ab8 100%);
+  border: none;
+  transition: all 0.3s ease;
 }
 
 #modalBoletasIniciales .btn-primary:hover {
-    background: linear-gradient(135deg, #4a5ab8 0%, #3a4a98 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(98, 110, 212, 0.3);
+  background: linear-gradient(135deg, #4a5ab8 0%, #3a4a98 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(98, 110, 212, 0.3);
 }
 
 #modalBoletasIniciales .btn-success {
-    background: linear-gradient(135deg, #02a398 0%, #028a82 100%);
-    border: none;
-    transition: all 0.3s ease;
+  background: linear-gradient(135deg, #02a398 0%, #028a82 100%);
+  border: none;
+  transition: all 0.3s ease;
 }
 
 #modalBoletasIniciales .btn-success:hover {
-    background: linear-gradient(135deg, #029b8f 0%, #027a73 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(2, 163, 152, 0.3);
+  background: linear-gradient(135deg, #029b8f 0%, #027a73 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(2, 163, 152, 0.3);
 }
 
 /* Animación de entrada para el modal */
 #modalBoletasIniciales.show .modal-dialog {
-    animation: slideInDown 0.3s ease-out;
+  animation: slideInDown 0.3s ease-out;
 }
 
 @keyframes slideInDown {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* SweetAlert z-index sobre el modal de entrega */
 .swal2-container {
-    z-index: 10000 !important;
+  z-index: 10000 !important;
 }
 
 .swal2-backdrop-show {
-    z-index: 9999 !important;
+  z-index: 9999 !important;
 }

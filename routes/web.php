@@ -341,6 +341,7 @@ Route::postBase('/financiamiento-eliminados', 'FragmentController@pepeleraFinanc
 
 // rutas de FinanciamientoController
 Route::post('/marcarIncobrable', 'FinanciamientoController@marcarIncobrable');
+Route::post('/marcarComoCobrable', 'FinanciamientoController@marcarComoCobrable');
 Route::post('/obtenerDetalleCuotas', 'FinanciamientoController@obtenerDetalleCuotas');
 Route::post('/obtenerCuotasVencidasFiltradas', 'FinanciamientoController@obtenerCuotasVencidasFiltradas');
 Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
@@ -375,8 +376,8 @@ Route::post('/deleteMassiveReportFinance', 'FinanciamientoController@deleteMassi
 Route::post('/obtenerDatosFinanciamientoCliente', 'FinanciamientoController@obtenerDatosFinanciamientoCliente');
 Route::get('getFinanciamientos-pendientes', 'FinanciamientoController@getFinanciamientos_pendientes');
 
+// RUTAS ANTIGUAS - Mantener por compatibilidad
 Route::post('getFinanciamientos-aprobar', 'FinanciamientoController@getFinanciamientosAprobar');
-Route::post('getDetalleFinanciamiento', 'FinanciamientoController@getDetalleFinanciamiento');
 Route::post('financiamiento-aprobado', 'FinanciamientoController@financiamientoAprobado');
 Route::post('rechazarFinanciamiento', 'FinanciamientoController@rechazarFinanciamiento');
 Route::post('reactivaFinanciamiento', 'FinanciamientoController@reactivaFinanciamiento');
@@ -401,6 +402,7 @@ Route::postBase('/beneficios', 'FragmentController@beneficiosUsuarios');
 Route::get('/obtenerProductosVehiculos', 'FinanciamientoController@obtenerProductosVehiculos');
 Route::get('/buscarProductosVehiculos', 'FinanciamientoController@buscarProductosVehiculos');
 Route::post('/entregarVehiculo', 'FinanciamientoController@entregarVehiculo');
+Route::post('/entregarVehiculoSoloFecha', 'FinanciamientoController@entregarVehiculoSoloFecha'); // ✅ NUEVO
 Route::post('/generarContratoEntregaVehiculo', 'GenerarContratosController@generarContratoEntregaVehiculo');
 
 // =====================================================
@@ -423,6 +425,8 @@ Route::get('/config/departamentos/historial', 'DepartamentosConfigController@obt
 Route::post('/config/departamentos/habilitar-multiples', 'DepartamentosConfigController@habilitarMultiples');
 
 Route::PostBase('vehiculos', 'FragmentController@viewVehiculos');
+
+Route::postBase('/resumen-financiamientos', 'FragmentController@resumenFinanciamientos');
 
 // ============ RUTAS DEL EDITOR DE CONTRATOS ============
 // Gestión de plantillas de contratos
@@ -453,3 +457,5 @@ Route::get('/api/contratos/variables', 'EditorContratosController@listarVariable
 Route::get('/api/contratos/plantilla-por-grupo', 'EditorContratosController@obtenerPlantillaPorGrupo');
 
 Route::post('/api/contratos/hardcoded-preview', 'EditorContratosController@hardcodedPreview');
+
+Route::postBase('/adjudicaciones', 'FragmentController@adjudicaciones');

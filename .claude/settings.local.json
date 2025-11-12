@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/EMER/Documents/Nueva carpeta (2)/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

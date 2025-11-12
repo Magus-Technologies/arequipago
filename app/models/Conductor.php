@@ -241,19 +241,19 @@ class Conductor
         $offset = ($pagina - 1) * $cantidadPorPagina;
         
         // 🔴 Base de la consulta SQL
-        $query = "SELECT 
-                    c.id_conductor, 
-                    c.nombres, 
-                    c.apellido_paterno, 
-                    c.apellido_materno, 
+        $query = "SELECT
+                    c.id_conductor,
+                    c.nombres,
+                    c.apellido_paterno,
+                    c.apellido_materno,
                     c.numUnidad,
-                    COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado, 
+                    COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
                     COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
                     COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
                     MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
                 FROM conductores c
                 INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                WHERE f.estado_eliminado = 0
+                WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 GROUP BY c.id_conductor, c.nombres, c.apellido_paterno, c.apellido_materno";
         
         // 🔴 Aplicar ordenamiento si se proporciona
@@ -291,19 +291,19 @@ class Conductor
         }
 
         // 🔴 Construcción de la consulta para clientes no conductores
-        $queryClientes = "SELECT 
-            cl.id, 
-            cl.nombres, 
-            cl.apellido_paterno, 
-            cl.apellido_materno, 
+        $queryClientes = "SELECT
+            cl.id,
+            cl.nombres,
+            cl.apellido_paterno,
+            cl.apellido_materno,
             NULL AS numUnidad,
-            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado, 
-            COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento, 
+            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
+            COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
-            MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento  
+            MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
-        WHERE f.estado_eliminado = 0
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)
         GROUP BY cl.id, cl.nombres, cl.apellido_paterno, cl.apellido_materno";
         
         // 🔴 Aplicar ordenamiento a la consulta de clientes
@@ -392,19 +392,19 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
     }
 
     // 🔴 Consulta base para conductores con búsqueda
-    $queryConductores = "SELECT 
-            c.id_conductor, 
-            c.nombres, 
-            c.apellido_paterno, 
-            c.apellido_materno, 
+    $queryConductores = "SELECT
+            c.id_conductor,
+            c.nombres,
+            c.apellido_paterno,
+            c.apellido_materno,
             c.numUnidad,
-            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado, 
+            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
             COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM conductores c
         INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
-        WHERE f.estado_eliminado = 0 AND ";
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
 
         // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
     if ($grupo_id) {
@@ -478,19 +478,19 @@ public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPa
     }
     
     // 🔴 Consulta para clientes no conductores con búsqueda
-    $queryClientes = "SELECT 
-            cl.id, 
-            cl.nombres, 
-            cl.apellido_paterno, 
-            cl.apellido_materno, 
+    $queryClientes = "SELECT
+            cl.id,
+            cl.nombres,
+            cl.apellido_paterno,
+            cl.apellido_materno,
             NULL AS numUnidad,
-            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado, 
+            COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
             COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
-        WHERE f.estado_eliminado = 0 AND ";
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
     
     // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
     if ($grupo_id) {
@@ -672,7 +672,7 @@ private function normalizeString($string) {
                     SELECT c.id_conductor
                     FROM conductores c
                     LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                    WHERE f.estado_eliminado = 0 AND ";
+                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
     
             if ($grupo_id) {
                 $sqlConductores .= "f.grupo_financiamiento = ? ";
@@ -710,7 +710,7 @@ private function normalizeString($string) {
                     SELECT cl.id
                     FROM clientes_financiar cl
                     LEFT JOIN financiamiento f ON cl.id = f.id_cliente
-                    WHERE f.estado_eliminado = 0 AND ";
+                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
             
             if ($grupo_id) {
                 $sqlClientes .= "f.grupo_financiamiento = ? ";
@@ -853,19 +853,21 @@ public function eliminar() {
     public function obtenerDetalleConductor($id_conductor)
     {
         try {
-            // Consulta para obtener los detalles del conductor
-            $sql = "SELECT tipo_doc, nro_documento, CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo, telefono 
-                    FROM conductores 
+            // Consulta para obtener los detalles del conductor (numUnidad está en la tabla conductores)
+            $sql = "SELECT tipo_doc, nro_documento,
+                           CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) AS nombre_completo,
+                           telefono, numUnidad AS numero_unidad
+                    FROM conductores
                     WHERE id_conductor = ?";
-            
+
             // Preparar la consulta
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_conductor); // El id_conductor es un entero
+            $stmt->bind_param("i", $id_conductor);
             $stmt->execute();
-            
+
             // Obtener el resultado
             $result = $stmt->get_result();
-            
+
             // Devolver los datos del conductor
             return $result->fetch_assoc();
         } catch (Exception $e) {
@@ -873,7 +875,7 @@ public function eliminar() {
             return ['error' => 'Error al obtener el conductor: ' . $e->getMessage()];
         }
 
-        
+
     }
 
     public function buscarPorCriterioAvanzado($query) {

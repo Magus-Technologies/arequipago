@@ -1602,7 +1602,7 @@ $(document).ready(function () {
                 });
 
                 $.ajax({
-                    url: '/arequipago/aprobarPagoInscripcion',
+                    url: _URL + '/aprobarPagoInscripcion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ id: id }),

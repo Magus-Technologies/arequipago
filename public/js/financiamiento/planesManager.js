@@ -49,10 +49,12 @@ function selectPlan(idPlan) {
   // NUEVO: Limpiar valores originales al cambiar de plan
   valoresOriginalesPlan = null;
 
-  // NUEVO: Mostrar/ocultar campo de nombre personalizado
+  // NUEVO: Mostrar/ocultar campo de nombre personalizado Y checkbox de entrega especial
   const nombrePersonalizadoContainer = document.getElementById('nombrePersonalizadoContainer');
   const nombrePersonalizadoInput = document.getElementById('nombrePersonalizado');
-  
+  const checkboxEntregaContainer = document.getElementById('checkboxEntregaEspecialContainer'); // ✅ NUEVO
+  const checkboxEntrega = document.getElementById('checkEntregaVehiculoEspecial'); // ✅ NUEVO
+
    if (idPlan === "42" || idPlan === 42) {
     // Mostrar el campo para plan editable
     if (nombrePersonalizadoContainer) {
@@ -61,6 +63,28 @@ function selectPlan(idPlan) {
       nombrePersonalizadoInput.required = true;
       nombrePersonalizadoInput.value = ''; // Limpiar valor anterior
     }
+
+    // ✅ NUEVO: Mostrar checkbox de entrega especial SOLO para plan 42
+    if (checkboxEntregaContainer) {
+        checkboxEntregaContainer.style.display = '';
+    }
+
+    // ✅ NUEVO: Mostrar sección de productos para plan editable
+    const seccionProductosEditable = document.getElementById('seccionSeleccionProducto');
+    if (seccionProductosEditable) {
+        seccionProductosEditable.style.display = '';
+        console.log("✅ Sección de productos mostrada para plan editable");
+    }
+
+    // ✅ NUEVO: Cargar TODOS los productos inicialmente para plan editable
+    console.log("🎨 Plan FINANCIAMIENTO EDITABLE - Mostrando todos los productos");
+    currentPage = 1;
+    if (typeof cargarProductos === 'function') {
+        cargarProductos(); // Sin filtro, muestra todos los productos
+    }
+
+    // ✅ NUEVO: Actualizar resumen de financiamiento para plan 42
+    actualizarResumenFinanciamiento(idPlan);
 
     console.log("🎨 Plan FINANCIAMIENTO EDITABLE detectado - Habilitando modo Manual");
     habilitarModoPersonalizado();
@@ -73,7 +97,15 @@ function selectPlan(idPlan) {
       nombrePersonalizadoInput.required = false;
       nombrePersonalizadoInput.value = '';
     }
-    
+
+    // ✅ NUEVO: Ocultar checkbox y limpiar estado para otros planes
+    if (checkboxEntregaContainer) {
+        checkboxEntregaContainer.style.display = 'none';
+    }
+    if (checkboxEntrega) {
+        checkboxEntrega.checked = false; // Desmarcar checkbox
+    }
+
     // NUEVO: Limpiar mensaje de CrediYango si se selecciona otro grupo
     const contenedorFechas = document.getElementById("contenedorFechas");
     if (contenedorFechas && contenedorFechas.innerHTML.includes("CrediYango")) {
@@ -82,33 +114,113 @@ function selectPlan(idPlan) {
     }
   }
 
-  // NUEVO: Para CrediYango, mostrar mensaje inmediatamente
+  // ✅ NUEVO: Mostrar sección de productos cuando se selecciona un grupo
+  const seccionProductos = document.getElementById('seccionSeleccionProducto');
+  if (seccionProductos && idPlan) {
+    seccionProductos.style.display = '';
+    console.log("✅ Sección de productos mostrada");
+  }
+
+  // ✅ NUEVO: Aplicar filtro automático de categoría según el plan (solo si NO es plan 42)
+  if (idPlan !== "42" && idPlan !== 42) {
+    aplicarFiltroCategoriaPorPlan(idPlan);
+  }
+
+  // ✅ NUEVO: Actualizar resumen de financiamiento
+  actualizarResumenFinanciamiento(idPlan);
+
+  // NUEVO: Para CrediYango, mostrar mensaje y cargar solo vehículos
   if (idPlan === "45" || idPlan === 45) {
-    console.log("🚗 CREDIYANGO - Mostrando mensaje inmediatamente al seleccionar grupo");
-    
+    console.log("🚗 CREDIYANGO - Mostrando mensaje y cargando vehículos");
+
     const contenedorFechas = document.getElementById("contenedorFechas");
     if (contenedorFechas) {
       contenedorFechas.innerHTML = `
         <div class="alert alert-info border-0" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
           <div class="text-center">
             <i class="fas fa-truck fa-3x mb-3" style="color: #1976d2;"></i>
-            <h6 class="fw-bold mb-2" style="color: #0d47a1;">CrediYango - Entrega de Vehículo</h6>
-            <p class="mb-0" style="color: #1565c0;">
-              El cronograma de pagos se generará automáticamente cuando marque el vehículo como <strong>entregado</strong>.
+            <h6 class="fw-bold mb-2" style="color: #0d47a1;">CrediYango - Financiamiento de Vehículo</h6>
+            <p class="mb-2" style="color: #1565c0;">
+              ✅ Seleccione el vehículo que se financiará<br>
+              ✅ El cronograma se generará cuando marque el vehículo como <strong>entregado</strong>
             </p>
-            <hr style="border-color: #90caf9; opacity: 0.3;">
+            <hr style="border-color: #90caf9; opacity: 0.3; margin: 0.5rem 0;">
             <small class="text-muted">
               <i class="fas fa-info-circle me-1"></i>
-              Podrá entregar el vehículo desde la vista de detalles del financiamiento.
+              Solo se muestran productos de la categoría "Vehículos"
             </small>
           </div>
         </div>
       `;
     }
+
+    // 🆕 NUEVO: Bloquear campo Cantidad y mostrar mensaje informativo SOLO PARA CREDIYANGO
+    const campoCantidad = document.getElementById("cantidad");
+    if (campoCantidad) {
+      campoCantidad.value = "0";
+      campoCantidad.disabled = true;
+      campoCantidad.style.backgroundColor = "#f5f5f5";
+      campoCantidad.style.cursor = "not-allowed";
+      console.log("🔒 Campo Cantidad bloqueado para CrediYango en 0");
+
+      // Buscar el div contenedor del campo cantidad y agregar mensaje
+      const contenedorCantidad = campoCantidad.closest('.col-md-4');
+      if (contenedorCantidad) {
+        // Eliminar mensaje anterior si existe
+        const mensajeAnterior = contenedorCantidad.querySelector('#mensajeCantidadCrediYango');
+        if (mensajeAnterior) {
+          mensajeAnterior.remove();
+        }
+
+        // Agregar nuevo mensaje
+        const mensaje = document.createElement('div');
+        mensaje.id = 'mensajeCantidadCrediYango';
+        mensaje.className = 'alert alert-info mt-2';
+        mensaje.style.fontSize = '0.85em';
+        mensaje.style.padding = '8px 12px';
+        mensaje.style.borderLeft = '3px solid #0d6efd';
+        mensaje.innerHTML = `
+          <i class="fas fa-info-circle me-1"></i>
+          <strong>Cantidad bloqueada:</strong> El stock se descontará cuando se entregue el vehículo al cliente.
+        `;
+        contenedorCantidad.appendChild(mensaje);
+        console.log("✅ Mensaje informativo agregado debajo del campo Cantidad");
+      }
+    }
+
     // Limpiar el botón de cronograma si existe
     const contenedorBoton = document.getElementById("contenedorBotonCronograma");
     if (contenedorBoton) {
       contenedorBoton.innerHTML = '';
+    }
+
+    // ✅ NUEVO: Cargar automáticamente solo productos de categoría "vehiculos"
+    if (typeof cargarProductosPorCategoria === 'function') {
+      console.log("🚗 Cargando solo vehículos para CrediYango");
+      cargarProductosPorCategoria('vehiculos');
+    } else if (typeof cargarProductos === 'function') {
+      console.log("🚗 Cargando productos (función legacy)");
+      cargarProductos('vehiculos'); // Pasar categoría como parámetro
+    }
+  } else {
+    // 🆕 NUEVO: Desbloquear campo Cantidad para TODOS LOS DEMÁS PLANES (que no sean CrediYango)
+    const campoCantidad = document.getElementById("cantidad");
+    if (campoCantidad && campoCantidad.disabled) {
+      campoCantidad.disabled = false;
+      campoCantidad.style.backgroundColor = "";
+      campoCantidad.style.cursor = "";
+      campoCantidad.value = "1"; // Restaurar valor por defecto
+      console.log("🔓 Campo Cantidad desbloqueado para plan que NO es CrediYango");
+
+      // Eliminar mensaje de CrediYango si existe
+      const contenedorCantidad = campoCantidad.closest('.col-md-4');
+      if (contenedorCantidad) {
+        const mensajeCrediYango = contenedorCantidad.querySelector('#mensajeCantidadCrediYango');
+        if (mensajeCrediYango) {
+          mensajeCrediYango.remove();
+          console.log("🧹 Mensaje de Cantidad CrediYango eliminado");
+        }
+      }
     }
   }
 
@@ -489,11 +601,13 @@ function selectPlan(idPlan) {
         } else {
           const fechaInicioInput = document.getElementById("fechaInicio");
 
-          // Si no hay fecha en el plan, setea la actual (de Perú)
-          const hoyPeru = new Date().toLocaleDateString("sv-SE", {
-            timeZone: "America/Lima",
-          }); // Formato: "YYYY-MM-DD"
-          fechaInicioInput.value = hoyPeru;
+          // ✅ CORREGIDO: Solo establecer fecha de hoy si el plan NO tiene fecha_inicio definida
+          if (!plan.fecha_inicio) {
+            const hoyPeru = new Date().toLocaleDateString("sv-SE", {
+              timeZone: "America/Lima",
+            }); // Formato: "YYYY-MM-DD"
+            fechaInicioInput.value = hoyPeru;
+          }
 
           // Suavemente "bloquear" inputs: fondo gris y quitar clase de resaltado
           const idsFinanciamiento = [
@@ -648,6 +762,10 @@ function selectPlan(idPlan) {
         setTimeout(() => {
           if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
             recalcularSoloFechasCelular();
+          } else if (plan.fecha_inicio && plan.fecha_fin) {
+            // ✅ Para planes con fecha_inicio y fecha_fin definidas, NO recalcular
+            // Las fechas ya están establecidas correctamente desde el plan
+            console.log("✅ Plan con fechas definidas - NO recalculando cronograma");
           } else {
             calcularCronogramaDinamico();
           }
@@ -812,14 +930,43 @@ function ocultarCarruselVariantes() {
 function seleccionarVariante(index) {
   event.preventDefault();
 
-  // Limpiar el fondo de todas las cards
-  document.querySelectorAll('.card[id^="cardVariante"]').forEach((card) => {
+  // Limpiar el fondo de todas las cards y remover badges anteriores
+  document.querySelectorAll('.card[id^="cardVariante"]').forEach((card, i) => {
     card.style.backgroundColor = "white";
+    // Remover badge de "Seleccionada" si existe
+    const badgeExistente = card.querySelector('.badge-variante-seleccionada');
+    if (badgeExistente) {
+      badgeExistente.remove();
+    }
+    // Restaurar texto del botón
+    const boton = card.querySelector('button');
+    if (boton) {
+      boton.innerHTML = 'Seleccionar Variante';
+      boton.style.backgroundColor = '#626ed4';
+    }
   });
 
   // Pintar la card seleccionada
-  document.getElementById(`cardVariante${index}`).style.backgroundColor =
-    "#f5fffa";
+  const cardSeleccionada = document.getElementById(`cardVariante${index}`);
+  cardSeleccionada.style.backgroundColor = "#f5fffa";
+  
+  // ✅ NUEVO: Agregar badge "Variante Seleccionada" en la card
+  const headerCard = cardSeleccionada.querySelector('div[style*="background-color: #fcf3cf"]');
+  if (headerCard && !headerCard.querySelector('.badge-variante-seleccionada')) {
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-success badge-variante-seleccionada ms-2';
+    badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Seleccionada';
+    badge.style.fontSize = '0.75rem';
+    badge.style.verticalAlign = 'middle';
+    headerCard.querySelector('h5').appendChild(badge);
+  }
+  
+  // ✅ NUEVO: Cambiar el botón a "Variante Activa"
+  const botonSeleccionado = cardSeleccionada.querySelector('button');
+  if (botonSeleccionado) {
+    botonSeleccionado.innerHTML = '<i class="fas fa-check me-1"></i>Variante Activa';
+    botonSeleccionado.style.backgroundColor = '#28a745';
+  }
 
   const variante = variantesGlobales[index];
   const varianteSeleccionada = variantesGlobales[index];
@@ -828,6 +975,8 @@ function seleccionarVariante(index) {
   // 🔴 Almacenar el ID del grupo de variantes seleccionado en una variable global
   window.varianteSeleccionadaId = variante.idgrupos_variantes;
   console.log("ID de variante seleccionada:", window.varianteSeleccionadaId);
+  
+
 
   // NUEVO: Remover el event listener existente de fechaIngreso
   $("#fechaIngreso").off("change");
@@ -1102,6 +1251,9 @@ function seleccionarVariante(index) {
         "🚗 Recalculando cronograma vehicular para variante seleccionada"
       );
       calcularFinanciamientoConFechaIngreso(planGlobal);
+
+      // 🛡️ COMENTADO: Mensaje informativo de variante (activar si se necesita)
+      // mostrarMensajeInformativoVariante(variante);
     }, 500);
   } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     // NUEVO: Para variantes de MotosYa, usar calcularCronogramaDinamico (no tienen fechaIngreso)
@@ -1135,6 +1287,10 @@ function seleccionarVariante(index) {
       if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
         console.log("📱 VARIANTE CELULAR - Solo recalculando fechas");
         recalcularSoloFechasCelular();
+      } else if (variante.fecha_inicio && variante.fecha_fin) {
+        // ✅ Para variantes con fecha_inicio y fecha_fin definidas, NO recalcular
+        // Las fechas ya están establecidas correctamente desde la variante
+        console.log("✅ Variante con fechas definidas - NO recalculando cronograma");
       } else {
         calcularCronogramaDinamico();
       }
@@ -2101,8 +2257,13 @@ function configurarFrecuenciaPago(planOVariante) {
 // NUEVA VARIABLE GLOBAL: Almacenar valores originales completos
 let valoresOriginalesPlan = null;
 
+// ✅ NUEVA VARIABLE: Bandera para evitar sobrescritura por calcularFinanciamiento()
+let estaProcesandoCambioFrecuencia = false;
+
 // FUNCIÓN CORREGIDA: Preservar la cantidad de cuotas restantes exacta
 function manejarCambioFrecuencia() {
+  // ✅ Activar bandera para evitar sobrescritura
+  estaProcesandoCambioFrecuencia = true;
   const frecuenciaSeleccionada = this.value;
   const cuotasInput = document.getElementById("cuotas");
   const valorCuotaInput = document.getElementById("valorCuota");
@@ -2324,6 +2485,11 @@ function manejarCambioFrecuencia() {
       numeroCuotaOriginal
     );
   }
+
+  // ✅ Desactivar bandera después de un pequeño delay para que calcularFinanciamiento() la detecte
+  setTimeout(() => {
+    estaProcesandoCambioFrecuencia = false;
+  }, 100);
 }
 
 // NUEVA FUNCIÓN: Limpiar valores originales cuando se cambia de plan
@@ -2681,6 +2847,24 @@ function recalcularPorCambioCuotaInicial() {
     return;
   }
 
+  // 🛡️ PROTECCIÓN: Si hay variante seleccionada, NO recalcular automáticamente
+  if (window.varianteSeleccionadaId) {
+    console.log("🛡️ VARIANTE ACTIVA - NO se recalcula automáticamente al cambiar cuota inicial");
+    console.log("🛡️ Los valores de cuotas y fechas se mantienen según la variante seleccionada");
+    
+    // Solo actualizar el valor en planGlobal pero NO recalcular
+    const cuotaInicialInput = document.getElementById("cuotaInicial");
+    const nuevaCuotaInicial = parseFloat(
+      cuotaInicialInput.value.replace(/[^\d.-]/g, "")
+    );
+    
+    if (!isNaN(nuevaCuotaInicial) && nuevaCuotaInicial >= 0) {
+      planGlobal.cuota_inicial = nuevaCuotaInicial;
+      console.log("✅ Cuota inicial actualizada a:", nuevaCuotaInicial, "sin recalcular");
+    }
+    return;
+  }
+
   const cuotaInicialInput = document.getElementById("cuotaInicial");
   const nuevaCuotaInicial = parseFloat(
     cuotaInicialInput.value.replace(/[^\d.-]/g, "")
@@ -2752,6 +2936,144 @@ function recalcularCelularesConNuevaCuotaInicial() {
 
   // Recalcular solo las fechas
   recalcularSoloFechasCelular();
+}
+
+/**
+ * 🛡️ NUEVA FUNCIÓN: Mostrar mensaje informativo cuando se selecciona una variante
+ * Explica al cliente cómo funciona el financiamiento con variante (versión compacta)
+ */
+function mostrarMensajeInformativoVariante(variante) {
+  if (!variante || !window.varianteSeleccionadaId) {
+    return;
+  }
+
+  // Limpiar mensaje anterior si existe
+  const mensajeAnterior = document.getElementById("mensajeInformativoVariante");
+  if (mensajeAnterior) {
+    mensajeAnterior.remove();
+  }
+
+  const montoSinIntereses = parseFloat(variante.monto_sin_interes) || 0;
+  const cantidadCuotas = parseInt(variante.cantidad_cuotas) || 0;
+  const valorCuota = parseFloat(variante.monto_cuota) || 0;
+  const cuotaInicial = parseFloat(variante.cuota_inicial) || 0;
+  const fechaFin = variante.fecha_fin || "";
+  const moneda = variante.moneda || "$";
+
+  // Versión COMPACTA del mensaje
+  const mensajeHTML = `
+    <div class="col-md-12 mb-3">
+      <div id="mensajeInformativoVariante" class="alert alert-success border-0 shadow-sm" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left: 4px solid #28a745 !important; padding: 12px 15px; margin-bottom: 0;">
+        <div class="d-flex align-items-start">
+          <div style="flex: 1;">
+            <div class="d-flex align-items-center mb-2">
+              <i class="fas fa-shield-alt me-2" style="color: #28a745; font-size: 1.1em;"></i>
+              <strong style="color: #155724; font-size: 0.95em;">Variante Seleccionada: ${variante.nombre_variante}</strong>
+            </div>
+            <div style="font-size: 0.85em; color: #155724; line-height: 1.4;">
+              <div class="row">
+                <div class="col-md-6">
+                  <strong><i class="fas fa-lock me-1"></i>Valores FIJOS:</strong>
+                  ${cantidadCuotas} cuotas × ${moneda} ${valorCuota.toFixed(2)} hasta ${formatearFecha(fechaFin)}
+                </div>
+                <div class="col-md-6">
+                  <strong><i class="fas fa-edit me-1"></i>Editable:</strong>
+                  Solo Cuota Inicial
+                  <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="mostrarDetalleVariante()" style="padding: 2px 8px; font-size: 0.75em;">
+                    <i class="fas fa-info-circle"></i> Ver más
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Insertar mensaje AL INICIO de la sección "Detalles del Financiamiento", antes de la fila de campos
+  const detallesCard = document.querySelector('.card.mb-4.border.rounded.shadow-sm .card-body');
+  if (detallesCard) {
+    // Buscar la primera fila de campos (row mb-4)
+    const primeraFila = detallesCard.querySelector('.row.mb-4');
+    if (primeraFila) {
+      primeraFila.insertAdjacentHTML('beforebegin', mensajeHTML);
+    } else {
+      // Si no encuentra la fila, insertar al inicio del card-body
+      detallesCard.insertAdjacentHTML('afterbegin', mensajeHTML);
+    }
+  }
+
+  console.log("✅ Mensaje informativo de variante mostrado (versión compacta)");
+}
+
+/**
+ * 🛡️ NUEVA FUNCIÓN: Mostrar modal con detalles completos de la variante
+ */
+function mostrarDetalleVariante() {
+  if (!window.varianteSeleccionadaId || !planGlobal) {
+    return;
+  }
+
+  const cantidadCuotas = parseInt(planGlobal.cantidad_cuotas) || 0;
+  const valorCuota = parseFloat(planGlobal.monto_cuota) || 0;
+  const fechaFin = planGlobal.fecha_fin || "";
+  const moneda = planGlobal.moneda || "$";
+  const montoSinIntereses = parseFloat(planGlobal.monto_sin_interes) || 0;
+
+  const ejemploCuotaInicial = 5000;
+  const totalEjemplo = ejemploCuotaInicial + (cantidadCuotas * valorCuota);
+
+  Swal.fire({
+    title: '<i class="fas fa-shield-alt me-2" style="color: #28a745;"></i>Detalles de la Variante',
+    html: `
+      <div style="text-align: left; font-size: 0.95em;">
+        <div class="alert alert-info mb-3" style="background-color: #e7f3ff; border-left: 3px solid #0d6efd;">
+          <strong><i class="fas fa-info-circle me-2"></i>¿Qué es una variante?</strong><br>
+          <small>Es un plan de pago predefinido con términos fijos que NO cambian automáticamente.</small>
+        </div>
+
+        <h6 class="mb-3"><i class="fas fa-lock me-2" style="color: #dc3545;"></i>Valores FIJOS (no modificables):</h6>
+        <ul style="padding-left: 25px;">
+          <li><strong>Cantidad de cuotas:</strong> ${cantidadCuotas} cuotas</li>
+          <li><strong>Valor de cada cuota:</strong> ${moneda} ${valorCuota.toFixed(2)}</li>
+          <li><strong>Fecha de finalización:</strong> ${formatearFecha(fechaFin)}</li>
+        </ul>
+
+        <h6 class="mb-3 mt-3"><i class="fas fa-edit me-2" style="color: #28a745;"></i>Valor EDITABLE:</h6>
+        <ul style="padding-left: 25px;">
+          <li><strong>Cuota Inicial:</strong> Puede modificarse según el acuerdo con el cliente</li>
+        </ul>
+
+        <div class="alert alert-warning mt-3" style="background-color: #fff3cd; border-left: 3px solid #ffc107;">
+          <strong><i class="fas fa-calculator me-2"></i>Ejemplo de Cálculo:</strong><br>
+          Si cambia la cuota inicial a <strong>${moneda} ${ejemploCuotaInicial.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>:<br>
+          <div class="mt-2" style="background-color: white; padding: 10px; border-radius: 5px;">
+            • Cuota inicial: ${moneda} ${ejemploCuotaInicial.toLocaleString('es-PE', { minimumFractionDigits: 2 })}<br>
+            • Cuotas: ${cantidadCuotas} × ${moneda} ${valorCuota.toFixed(2)} = ${moneda} ${(cantidadCuotas * valorCuota).toLocaleString('es-PE', { minimumFractionDigits: 2 })}<br>
+            <hr style="margin: 8px 0;">
+            <strong>• TOTAL A PAGAR: ${moneda} ${totalEjemplo.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>
+          </div>
+        </div>
+      </div>
+    `,
+    icon: null,
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#28a745',
+    width: '600px'
+  });
+}
+
+/**
+ * Función auxiliar para formatear fechas
+ */
+function formatearFecha(fechaString) {
+  if (!fechaString) return "No definida";
+  const fecha = new Date(fechaString + "T00:00:00");
+  const dia = fecha.getDate().toString().padStart(2, "0");
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
+  const anio = fecha.getFullYear();
+  return `${dia}/${mes}/${anio}`;
 }
 
 /**
@@ -3331,3 +3653,191 @@ function validarCamposCrediYango() {
     
     return true;
 }
+
+// ========================================
+// ✅ NUEVAS FUNCIONES PARA FILTRO AUTOMÁTICO DE CATEGORÍAS
+// ========================================
+
+/**
+ * ✅ NUEVA FUNCIÓN: Aplicar filtro de categoría automáticamente según el plan seleccionado
+ * @param {string|number} idPlan - ID del plan de financiamiento seleccionado
+ */
+function aplicarFiltroCategoriaPorPlan(idPlan) {
+    // Mapeo de planes a categorías de productos
+    const MAPEO_PLANES_CATEGORIAS = {
+        41: 'Celular',              // FINANCIAMIENTO CELULARES
+        22: 'MOTO LINEAL',          // CrediGo Motos (Grupo 1)
+        9:  'Vehículo',             // Financiamiento Vehicular Grupo 1
+        12: 'Vehículo',             // Financiamiento Vehicular Grupo 2
+        38: 'Vehículo',             // CrediGo Autos Grupo 4
+        45: 'Vehículo',             // CrediYango
+        14: 'Llantas',              // FINANCIAMIENTO LLANTAS
+        15: 'Aceites',              // FINANCIAMIENTO ACEITE
+        16: 'Baterías',             // FINANCIAMIENTO BATERIAS
+        33: 'MOTO LINEAL',          // MotosYa
+    };
+
+    const idPlanNum = parseInt(idPlan);
+    const categoriaFiltro = MAPEO_PLANES_CATEGORIAS[idPlanNum];
+
+    if (categoriaFiltro) {
+        console.log(`🔍 Plan ${idPlanNum} - Aplicando filtro de categoría: ${categoriaFiltro}`);
+        currentPage = 1;
+
+        // Verificar si la función existe antes de llamarla
+        if (typeof cargarProductosPorCategoria === 'function') {
+            cargarProductosPorCategoria(categoriaFiltro);
+        } else {
+            console.warn('⚠️ Función cargarProductosPorCategoria no encontrada');
+        }
+    } else {
+        // Si no hay mapeo, cargar todos los productos
+        console.log(`📦 Plan ${idPlanNum} - Cargando todos los productos (sin filtro)`);
+        currentPage = 1;
+
+        // Verificar si la función existe antes de llamarla
+        if (typeof cargarProductos === 'function') {
+            cargarProductos();
+        } else {
+            console.warn('⚠️ Función cargarProductos no encontrada');
+        }
+    }
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Alternar filtro de vehículos al marcar checkbox de entrega especial
+ * Esta función solo se ejecuta para el plan FINANCIAMIENTO EDITABLE (ID 42)
+ */
+function toggleFiltroVehiculosEspecial() {
+    const checkbox = document.getElementById('checkEntregaVehiculoEspecial');
+
+    if (!checkbox) {
+        console.error('❌ Checkbox de entrega especial no encontrado');
+        return;
+    }
+
+    if (checkbox.checked) {
+        console.log("✅ Checkbox marcado - Filtrando productos por categoría 'Vehículo' y 'MOTO LINEAL'");
+
+        // Filtrar solo vehículos y motos
+        currentPage = 1;
+
+        // Verificar si la función existe antes de llamarla
+        if (typeof cargarProductosPorCategoria === 'function') {
+            // Usar filtro múltiple: Vehículo y MOTO LINEAL
+            cargarProductosPorCategoria('Vehículo,MOTO LINEAL');
+        } else {
+            console.warn('⚠️ Función cargarProductosPorCategoria no encontrada');
+        }
+
+        // Mostrar mensaje informativo
+        console.log('🚗 Se mostrarán solo productos de tipo Vehículo y MOTO LINEAL');
+
+    } else {
+        console.log("❌ Checkbox desmarcado - Mostrando todos los productos");
+
+        // Mostrar todos los productos
+        currentPage = 1;
+
+        // Verificar si la función existe antes de llamarla
+        if (typeof cargarProductos === 'function') {
+            cargarProductos();
+        } else {
+            console.warn('⚠️ Función cargarProductos no encontrada');
+        }
+    }
+
+    // ✅ NUEVO: Actualizar resumen al cambiar checkbox
+    const grupoSelect = document.getElementById('grupo');
+    if (grupoSelect && grupoSelect.value) {
+        actualizarResumenFinanciamiento(grupoSelect.value);
+    }
+}
+
+// ========================================
+// ✅ NUEVAS FUNCIONES PARA RESUMEN VISUAL
+// ========================================
+
+/**
+ * ✅ NUEVA FUNCIÓN: Actualizar resumen visual del financiamiento
+ * @param {string|number} idPlan - ID del plan seleccionado
+ */
+function actualizarResumenFinanciamiento(idPlan) {
+    const resumenContainer = document.getElementById('resumenFinanciamientoContainer');
+    const resumenTipo = document.getElementById('resumenTipoFinanciamiento');
+
+    if (!resumenContainer || !resumenTipo) return;
+
+    // Mapeo de IDs de planes a nombres
+    const NOMBRES_PLANES = {
+        41: 'FINANCIAMIENTO CELULARES',
+        22: 'FINANCIAMIENTO MOTOS (CrediGo Motos)',
+        9: 'FINANCIAMIENTO VEHICULAR (Grupo 1)',
+        12: 'FINANCIAMIENTO VEHICULAR (Grupo 2)',
+        38: 'FINANCIAMIENTO VEHICULAR (CrediGo Autos Grupo 4)',
+        45: 'FINANCIAMIENTO VEHICULAR (CrediYango)',
+        14: 'FINANCIAMIENTO LLANTAS',
+        15: 'FINANCIAMIENTO ACEITE',
+        16: 'FINANCIAMIENTO BATERÍAS',
+        33: 'FINANCIAMIENTO MOTOS (MotosYa)',
+        42: 'FINANCIAMIENTO EDITABLE',
+    };
+
+    const idPlanNum = parseInt(idPlan);
+    let nombrePlan = NOMBRES_PLANES[idPlanNum] || `FINANCIAMIENTO (Plan ${idPlan})`;
+
+    // ✅ NUEVO: Si es plan 42 y tiene checkbox marcado, agregar sufijo
+    if (idPlanNum === 42) {
+        const checkbox = document.getElementById('checkEntregaVehiculoEspecial');
+        if (checkbox && checkbox.checked) {
+            // Por ahora agregamos " - VEHÍCULO", luego se puede personalizar según el producto
+            nombrePlan += ' - VEHÍCULO';
+        }
+    }
+
+    resumenTipo.textContent = nombrePlan;
+    resumenContainer.style.display = '';
+
+    console.log(`✅ Resumen actualizado: ${nombrePlan}`);
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Actualizar producto en el resumen
+ * Llamar esta función cuando se seleccione un producto
+ * @param {string} nombreProducto - Nombre del producto seleccionado
+ * @param {string} categoriaProducto - Categoría del producto
+ */
+function actualizarProductoEnResumen(nombreProducto, categoriaProducto = '') {
+    const resumenProducto = document.getElementById('resumenProducto');
+    const resumenContainer = document.getElementById('resumenFinanciamientoContainer');
+
+    if (!resumenProducto || !resumenContainer) return;
+
+    if (nombreProducto && nombreProducto !== 'N/A') {
+        resumenProducto.textContent = nombreProducto;
+        resumenContainer.style.display = '';
+
+        // ✅ Si es plan 42 con checkbox y el producto es vehículo/moto, actualizar tipo
+        const grupoSelect = document.getElementById('grupo');
+        if (grupoSelect && (grupoSelect.value === '42' || grupoSelect.value === 42)) {
+            const checkbox = document.getElementById('checkEntregaVehiculoEspecial');
+            if (checkbox && checkbox.checked) {
+                const resumenTipo = document.getElementById('resumenTipoFinanciamiento');
+
+                if (categoriaProducto.toLowerCase().includes('moto')) {
+                    resumenTipo.textContent = 'FINANCIAMIENTO EDITABLE - MOTO';
+                } else if (categoriaProducto.toLowerCase().includes('vehicul')) {
+                    resumenTipo.textContent = 'FINANCIAMIENTO EDITABLE - CARRO';
+                } else {
+                    resumenTipo.textContent = 'FINANCIAMIENTO EDITABLE - VEHÍCULO';
+                }
+            }
+        }
+
+        console.log(`✅ Producto actualizado en resumen: ${nombreProducto}`);
+    } else {
+        resumenProducto.textContent = '-';
+    }
+}
+
+
