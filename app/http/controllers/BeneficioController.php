@@ -19,13 +19,74 @@ class BeneficioController
 
     /**
      * Obtener todos los beneficios con filtros opcionales
+     * Si recibe parámetros idUsuario y tipo en la ruta, filtra por departamento del usuario
+     * Rutas:
+     * - GET /ajs/beneficios/listar (todos los beneficios)
+     * - GET /ajs/beneficios/listar/:idUsuario/:tipo (filtrados por departamento del usuario)
      */
-    public function listarBeneficios()
+    public function listarBeneficios($idUsuario = null, $tipo = null)
     {
         try {
             $filtros = [];
+
+            // Si vienen idUsuario y tipo, filtrar por departamento del usuario
+            if ($idUsuario && $tipo) {
+                // Validar tipo
+                $tipo = strtolower($tipo);
+                if (!in_array($tipo, ['conductor', 'cliente'])) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Tipo inválido. Debe ser "conductor" o "cliente"'
+                    ]);
+                    return;
+                }
+
+                // Obtener departamento del usuario
+                $departamentoId = null;
+
+                if ($tipo === 'conductor') {
+                    // Buscar departamento en direccion_conductor
+                    $sql = "SELECT departamento FROM direccion_conductor WHERE id_conductor = ?";
+                    $stmt = $this->beneficioModel->getConexion()->prepare($sql);
+                    $stmt->bind_param('i', $idUsuario);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $departamentoId = $row['departamento'];
+                    }
+                    $stmt->close();
+                } else if ($tipo === 'cliente') {
+                    // Buscar departamento en clientes_financiar
+                    $sql = "SELECT departamento FROM clientes_financiar WHERE id = ?";
+                    $stmt = $this->beneficioModel->getConexion()->prepare($sql);
+                    $stmt->bind_param('i', $idUsuario);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $departamentoId = $row['departamento'];
+                    }
+                    $stmt->close();
+                }
+
+                // Si no se encontró el usuario o no tiene departamento
+                if (!$departamentoId) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Usuario no encontrado o sin departamento asignado'
+                    ]);
+                    return;
+                }
+
+                // Aplicar filtro de departamento y disponibilidad
+                $filtros['disponible'] = 1;
+                $filtros['departamento_id'] = $departamentoId;
+            }
             
-            // Filtros desde GET o POST
+            // Filtros desde GET o POST (aplican siempre)
             if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
                 $filtros['categoria'] = $_GET['categoria'];
             }
@@ -55,13 +116,38 @@ class BeneficioController
 
             $beneficios = $this->beneficioModel->obtenerTodos($filtros);
 
-            header('Content-Type: application/json');
-            echo json_encode([
+            // Preparar respuesta
+            $response = [
                 'success' => true,
                 'data' => $beneficios,
                 'total' => count($beneficios)
-            ]);
+            ];
+
+            // Si se filtró por usuario, agregar información adicional
+            if ($idUsuario && $tipo && isset($departamentoId)) {
+                // Obtener nombre del departamento
+                $departamentoNombre = null;
+                $sqlDep = "SELECT nombre FROM depast WHERE iddepast = ?";
+                $stmtDep = $this->beneficioModel->getConexion()->prepare($sqlDep);
+                $stmtDep->bind_param('i', $departamentoId);
+                $stmtDep->execute();
+                $resultDep = $stmtDep->get_result();
+                
+                if ($rowDep = $resultDep->fetch_assoc()) {
+                    $departamentoNombre = $rowDep['nombre'];
+                }
+                $stmtDep->close();
+
+                $response['departamento_id'] = $departamentoId;
+                $response['departamento_nombre'] = $departamentoNombre;
+                $response['tipo_usuario'] = $tipo;
+                $response['id_usuario'] = $idUsuario;
+            }
+
+            header('Content-Type: application/json');
+            echo json_encode($response);
         } catch (Exception $e) {
+            error_log('Error en listarBeneficios: ' . $e->getMessage());
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,

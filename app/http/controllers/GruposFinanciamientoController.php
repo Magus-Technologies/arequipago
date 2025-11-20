@@ -41,6 +41,11 @@ class GruposFinanciamientoController extends Controller
             // 🔹 NUEVO: Capturar campo es_yango
             $esYango = isset($_POST['es_yango']) ? (int) $_POST['es_yango'] : 0;
 
+            // ✅ NUEVO: Capturar campos de comisión
+            $aplicaComision = isset($_POST['aplica_comision']) ? (int) $_POST['aplica_comision'] : 1;
+            $montoComision = isset($_POST['monto_comision']) && $_POST['monto_comision'] !== '' ? $_POST['monto_comision'] : null;
+            $monedaComision = $_POST['moneda_comision'] ?? 'S/.';
+
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
                 // Para Yango, las fechas deben ser NULL (inicio dinámico)
@@ -55,7 +60,7 @@ class GruposFinanciamientoController extends Controller
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
-            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango);
+            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision);
 
             if ($idPlan) {
                 // Verificar si hay variantes para guardar
@@ -136,6 +141,11 @@ class GruposFinanciamientoController extends Controller
             // 🔹 NUEVO: Capturar es_yango
             $esYango = isset($_POST['es_yango']) ? (int) $_POST['es_yango'] : 0;
 
+            // ✅ NUEVO: Capturar campos de comisión
+            $aplicaComision = isset($_POST['aplica_comision']) ? (int) $_POST['aplica_comision'] : 1;
+            $montoComision = isset($_POST['monto_comision']) && $_POST['monto_comision'] !== '' ? $_POST['monto_comision'] : null;
+            $monedaComision = $_POST['moneda_comision'] ?? 'S/.';
+
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
                 // Para Yango, las fechas deben ser NULL (inicio dinámico)
@@ -149,7 +159,7 @@ class GruposFinanciamientoController extends Controller
 
                 $modelo->editarGrupo(
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
-                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango  // Agregado $esYango como 16º parámetro
+                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision  // ✅ Agregado campos de comisión
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes

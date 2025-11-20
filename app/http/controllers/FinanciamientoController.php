@@ -689,6 +689,7 @@ class FinanciamientoController extends Controller
             $frecuenciaPago = $data['frecuenciaPago'];
             $cronograma = $data['cronograma'];
             $tipoMoneda = $data['tipoMoneda'];
+            $nombreGrupo = isset($data['nombreGrupo']) ? $data['nombreGrupo'] : ''; // ✅ NUEVO: Obtener nombre del grupo
 
             $conductorModel = new Conductor();     
             $tipoDoc = $conductorModel->obtenerTipoDocumento($numeroDocumento); // Cambié $datos['numeroDocumento'] a $numeroDocumento porque $datos no estaba definido
@@ -702,7 +703,8 @@ class FinanciamientoController extends Controller
                     'tasaInteres' => $tasaInteres,
                     'frecuenciaPago' => $frecuenciaPago,
                     'cronograma' => $cronograma,
-                    'tipoMoneda' => $tipoMoneda
+                    'tipoMoneda' => $tipoMoneda,
+                    'nombreGrupo' => $nombreGrupo // ✅ NUEVO: Pasar nombre del grupo
                 ], $tipoDoc);
             } else { // Si es semanal
                 $htmlCronograma = $this->generarHTMLCronograma([
@@ -713,7 +715,8 @@ class FinanciamientoController extends Controller
                     'tasaInteres' => $tasaInteres,
                     'frecuenciaPago' => $frecuenciaPago,
                     'cronograma' => $cronograma,
-                    'tipoMoneda' => $tipoMoneda // Pasar el tipo de moneda al HTML
+                    'tipoMoneda' => $tipoMoneda, // Pasar el tipo de moneda al HTML
+                    'nombreGrupo' => $nombreGrupo // ✅ NUEVO: Pasar nombre del grupo
                 ], $tipoDoc);
             }
 
@@ -754,10 +757,23 @@ class FinanciamientoController extends Controller
             $html = str_replace('[Fecha de inicio del financiamiento]', date('d/m/Y', strtotime($datos['fechaInicio'])), $html);
             $html = str_replace('[Monto del financiamiento]', $datos['tipoMoneda'] . ' ' . number_format($datos['monto'], 2), $html); // Modificado para usar el tipo de moneda dinámico
             $html = str_replace('[Tasa de interés]', $datos['tasaInteres'], $html);
+            // ✅ NUEVO: Reemplazar nombre del grupo/plan
+            $nombreGrupo = isset($datos['nombreGrupo']) ? $datos['nombreGrupo'] : '';
+            $html = str_replace('[Nombre del grupo]', $nombreGrupo, $html);
         
             $tablaSemanal = ''; // Inicializo la variable para la tabla
             foreach ($datos['cronograma'] as $cuota) { // Itero sobre el cronograma
-                $fechaVencimiento = DateTime::createFromFormat('d/m/Y', $cuota['vencimiento']); // Convertimos la fecha
+                // Validar que existan las claves necesarias
+                if (!isset($cuota['vencimiento']) || !isset($cuota['cuota']) || !isset($cuota['valor'])) {
+                    continue; // Saltar esta cuota si faltan datos
+                }
+                
+                // Intentar múltiples formatos de fecha
+                $fechaVencimiento = DateTime::createFromFormat('Y-m-d', $cuota['vencimiento']); // Formato de base de datos
+                if (!$fechaVencimiento) {
+                    $fechaVencimiento = DateTime::createFromFormat('d/m/Y', $cuota['vencimiento']); // Formato alternativo
+                }
+                
                 if ($fechaVencimiento) {
                     $fechaFormateada = $fechaVencimiento->format('d/m/Y'); // Formateamos la fecha
                 } else {
@@ -772,7 +788,7 @@ class FinanciamientoController extends Controller
             }
 
            
-            $html = str_replace('<tbody id="tabla_semanal">', '<tbody id="tabla-cronograma">' .$tablaSemanal, $html); 
+            $html = str_replace('<tbody id="tabla_semanal">', '<tbody id="tabla_semanal">' .$tablaSemanal, $html); 
                         
             // Ocultar tabla mensual si es semanal
             $html = str_replace('<div class="section" id="mensual">', '<div class="section" id="mensual" style="display:none;">', $html); // Ocultar tabla mensual
@@ -806,6 +822,9 @@ class FinanciamientoController extends Controller
             $html = str_replace('[Fecha de inicio del financiamiento]', date('d/m/Y', strtotime($datos['fechaInicio'])), $html);
             $html = str_replace('[Monto del financiamiento]', $datos['tipoMoneda'] . ' ' . number_format($datos['monto'], 2), $html); // Modificado para usar el tipo de moneda dinámico
             $html = str_replace('[Tasa de interés]', $datos['tasaInteres'], $html);
+            // ✅ NUEVO: Reemplazar nombre del grupo/plan
+            $nombreGrupo = isset($datos['nombreGrupo']) ? $datos['nombreGrupo'] : '';
+            $html = str_replace('[Nombre del grupo]', $nombreGrupo, $html);
             
             
             
@@ -831,7 +850,16 @@ class FinanciamientoController extends Controller
 
                 // Agrupar las cuotas por mes y año
                 foreach ($datos['cronograma'] as $cuota) {
-                    $fechaVencimiento = DateTime::createFromFormat('d/m/Y', $cuota['vencimiento']);
+                    // Validar que exista la clave vencimiento
+                    if (!isset($cuota['vencimiento'])) {
+                        continue; // Saltar esta cuota si falta la fecha
+                    }
+                    
+                    // Intentar múltiples formatos de fecha
+                    $fechaVencimiento = DateTime::createFromFormat('Y-m-d', $cuota['vencimiento']); // Formato de base de datos
+                    if (!$fechaVencimiento) {
+                        $fechaVencimiento = DateTime::createFromFormat('d/m/Y', $cuota['vencimiento']); // Formato alternativo
+                    }
                     
                     if (!$fechaVencimiento) {
                         continue; // Si la fecha no es válida, continuar con el siguiente ciclo
@@ -1245,8 +1273,26 @@ class FinanciamientoController extends Controller
             $fechaInicio = isset($_POST['fechaInicio']) ? trim($_POST['fechaInicio']) : '';
             $fechaFin = isset($_POST['fechaFin']) ? trim($_POST['fechaFin']) : '';
 
-            // Obtener datos paginados
-            $resultados = $financiamiento->obtenerReportesPagos($start, $length, $searchValue, $fechaInicio, $fechaFin);
+            // Parámetros de ordenamiento
+            $orderColumnIndex = isset($_POST['order'][0]['column']) ? (int)$_POST['order'][0]['column'] : 5;
+            $orderDir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : 'desc';
+            
+            // Mapeo de índices de columnas a nombres de campos en la BD
+            $columns = [
+                0 => null,  // # (no ordenable)
+                1 => 'conductor',
+                2 => 'numUnidad',
+                3 => 'asesor',
+                4 => 'monto',
+                5 => 'fecha_pago',
+                6 => 'estado',
+                7 => null  // Acciones (no ordenable)
+            ];
+            
+            $orderColumn = isset($columns[$orderColumnIndex]) ? $columns[$orderColumnIndex] : 'fecha_pago';
+
+            // Obtener datos paginados con ordenamiento
+            $resultados = $financiamiento->obtenerReportesPagos($start, $length, $searchValue, $fechaInicio, $fechaFin, $orderColumn, $orderDir);
 
             // Contar total de registros sin filtrar
             $totalRegistros = $financiamiento->contarReportes('', '', '');
@@ -1433,14 +1479,15 @@ class FinanciamientoController extends Controller
         }
         public function cargarGruposFinanciamiento1() {
             // Modificar para usar la tabla planes_financiamiento en lugar de grupovehicular_financiamiento
-            $sql = "SELECT idplan_financiamiento, nombre_plan FROM planes_financiamiento";
+            // ✅ Cargar TODOS los campos necesarios del plan
+            $sql = "SELECT * FROM planes_financiamiento";
             $result = $this->conexion->query($sql);
-            
+
             $grupos = [];
             while ($row = $result->fetch_assoc()) {
                 $grupos[] = $row;
             }
-            
+
             echo json_encode($grupos);
         }
 
@@ -2873,13 +2920,24 @@ class FinanciamientoController extends Controller
                 CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) as cliente_financiar_nombre,
                 p.nombre as producto_nombre,
                 cuota.numero_cuota,
-                dp.monto_mora_original as monto_mora,
+                -- Calcular mora dinámicamente si monto_mora_original es 0
+                CASE
+                    WHEN dp.monto_mora_original > 0 THEN dp.monto_mora_original
+                    WHEN f.idproductosv2 = 37 THEN 0
+                    WHEN f.moneda = 'S/.' THEN
+                        CASE
+                            WHEN cuota.monto >= 100 THEN 10
+                            ELSE 5
+                        END
+                    WHEN f.moneda = '$' THEN 5
+                    ELSE 0
+                END as monto_mora,
                 cuota.fecha_vencimiento,
                 f.moneda,
                 f.idfinanciamiento
             FROM detalle_pago_financiamiento dp
             JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
-            JOIN financiamiento f ON dp.idfinanciamiento = f.idfinanciamiento
+            JOIN financiamiento f ON cuota.id_financiamiento = f.idfinanciamiento
             LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
             LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
             JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
@@ -2963,45 +3021,73 @@ class FinanciamientoController extends Controller
                 
                 $conexion = (new Conexion())->getConexion();
                 mysqli_begin_transaction($conexion);
-                
-                // Obtener información del detalle de pago
-                $queryDetalle = "SELECT * FROM detalle_pago_financiamiento WHERE iddetalle_pago_financiamiento = ? AND estado_mora = 'pendiente'";
+
+                // Obtener información del detalle de pago junto con la cuota y financiamiento
+                // IMPORTANTE: Usamos cuota.id_financiamiento porque dp.idfinanciamiento puede tener valores incorrectos
+                $queryDetalle = "SELECT
+                    dp.*,
+                    cuota.id_financiamiento,
+                    f.moneda,
+                    f.id_conductor,
+                    f.id_cliente
+                FROM detalle_pago_financiamiento dp
+                JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
+                JOIN financiamiento f ON cuota.id_financiamiento = f.idfinanciamiento
+                WHERE dp.iddetalle_pago_financiamiento = ? AND dp.estado_mora = 'pendiente'";
+
                 $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);
                 mysqli_stmt_bind_param($stmtDetalle, 'i', $idMoraPendiente);
                 mysqli_stmt_execute($stmtDetalle);
                 $resultDetalle = mysqli_stmt_get_result($stmtDetalle);
                 $detallePago = mysqli_fetch_assoc($resultDetalle);
-                
+
                 if (!$detallePago) {
                     throw new Exception('Mora pendiente no encontrada');
                 }
-                
+
+                $idFinanciamiento = $detallePago['id_financiamiento']; // De la cuota, no del detalle
+                $moneda = $detallePago['moneda'];
+                $idConductor = $detallePago['id_conductor'];
+                $idCliente = $detallePago['id_cliente'];
+                $idAsesor = $_SESSION['usuario_id'] ?? 0;
+
                 // Crear nuevo pago solo para la mora
-                $queryPago = "INSERT INTO pagos_financiamiento (id_financiamiento, monto_total, metodo_pago, fecha_pago, observaciones, estado, created_at, updated_at) VALUES (?, ?, ?, NOW(), 'Pago de mora pendiente', 1, NOW(), NOW())";
+                $queryPago = "INSERT INTO pagos_financiamiento (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, fecha_pago, moneda, concepto, estado) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 'Pago de mora pendiente', 1)";
                 $stmtPago = mysqli_prepare($conexion, $queryPago);
-                mysqli_stmt_bind_param($stmtPago, 'ids', $detallePago['idfinanciamiento'], $montoMora, $metodoPago);
+                mysqli_stmt_bind_param($stmtPago, 'iiiidss', $idFinanciamiento, $idConductor, $idCliente, $idAsesor, $montoMora, $metodoPago, $moneda);
                 mysqli_stmt_execute($stmtPago);
                 $pagoMoraId = mysqli_insert_id($conexion);
-                
-                // Actualizar el detalle original
-                $queryUpdate = "UPDATE detalle_pago_financiamiento SET estado_mora = 'pagada', mora = ?, updated_at = NOW() WHERE iddetalle_pago_financiamiento = ?";
+
+                // Actualizar el detalle original: cambiar estado a 'pagada' y guardar el monto
+                $queryUpdate = "UPDATE detalle_pago_financiamiento SET estado_mora = 'pagada', mora = ? WHERE iddetalle_pago_financiamiento = ?";
                 $stmtUpdate = mysqli_prepare($conexion, $queryUpdate);
                 mysqli_stmt_bind_param($stmtUpdate, 'di', $montoMora, $idMoraPendiente);
                 mysqli_stmt_execute($stmtUpdate);
-                
-                // Crear nuevo detalle para el pago de la mora
-                $queryNuevoDetalle = "INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora, estado_mora, created_at, updated_at) VALUES (?, ?, ?, 'pagada', NOW(), NOW())";
-                $stmtNuevoDetalle = mysqli_prepare($conexion, $queryNuevoDetalle);
-                mysqli_stmt_bind_param($stmtNuevoDetalle, 'iid', $detallePago['idfinanciamiento'], $detallePago['id_cuota'], $montoMora);
-                mysqli_stmt_execute($stmtNuevoDetalle);
-                
+
                 mysqli_commit($conexion);
-                
+
+                // ✅ NUEVO: Generar PDF del comprobante de pago de mora
+                try {
+                    $reportController = new ReportFinanciamientoController();
+                    // No pasamos cuotas porque es pago de mora
+                    $pdfBase64 = $reportController->generateNotaVenta(
+                        $idConductor,
+                        $idAsesor,
+                        [], // No hay cuotas seleccionadas, es pago de mora
+                        $pagoMoraId,
+                        $moneda
+                    );
+                } catch (Exception $pdfError) {
+                    error_log("Error al generar PDF de mora: " . $pdfError->getMessage());
+                    $pdfBase64 = null;
+                }
+
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => true,
                     'message' => 'Mora pagada correctamente',
-                    'pago_id' => $pagoMoraId
+                    'pago_id' => $pagoMoraId,
+                    'pdf' => $pdfBase64 // ✅ NUEVO: Devolver PDF en base64
                 ]);
                 
             } catch (Exception $e) {

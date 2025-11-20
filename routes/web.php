@@ -402,7 +402,7 @@ Route::postBase('/beneficios', 'FragmentController@beneficiosUsuarios');
 Route::get('/obtenerProductosVehiculos', 'FinanciamientoController@obtenerProductosVehiculos');
 Route::get('/buscarProductosVehiculos', 'FinanciamientoController@buscarProductosVehiculos');
 Route::post('/entregarVehiculo', 'FinanciamientoController@entregarVehiculo');
-Route::post('/entregarVehiculoSoloFecha', 'FinanciamientoController@entregarVehiculoSoloFecha'); // ✅ NUEVO
+Route::post('/entregarVehiculoSoloFecha', 'FinanciamientoController@entregarVehiculoSoloFecha');  // ✅ NUEVO
 Route::post('/generarContratoEntregaVehiculo', 'GenerarContratosController@generarContratoEntregaVehiculo');
 
 // =====================================================
@@ -431,8 +431,8 @@ Route::postBase('/resumen-financiamientos', 'FragmentController@resumenFinanciam
 // ============ RUTAS DEL EDITOR DE CONTRATOS ============
 // Gestión de plantillas de contratos
 Route::get('/api/contratos/plantillas', 'EditorContratosController@listarPlantillas');
-Route::get('/api/contratos/plantilla', 'EditorContratosController@obtenerPlantilla'); // ?id=X
-Route::get('/api/contratos/plantilla-por-grupo', 'EditorContratosController@obtenerPlantillaPorGrupo'); // ?grupo_id=X
+Route::get('/api/contratos/plantilla', 'EditorContratosController@obtenerPlantilla');  // ?id=X
+Route::get('/api/contratos/plantilla-por-grupo', 'EditorContratosController@obtenerPlantillaPorGrupo');  // ?grupo_id=X
 Route::post('/api/contratos/plantilla/crear', 'EditorContratosController@crearPlantilla');
 Route::post('/api/contratos/plantilla/actualizar', 'EditorContratosController@actualizarPlantilla');
 Route::post('/api/contratos/plantilla/eliminar', 'EditorContratosController@eliminarPlantilla');
@@ -459,3 +459,5 @@ Route::get('/api/contratos/plantilla-por-grupo', 'EditorContratosController@obte
 Route::post('/api/contratos/hardcoded-preview', 'EditorContratosController@hardcodedPreview');
 
 Route::postBase('/adjudicaciones', 'FragmentController@adjudicaciones');
+
+Route::postBase('/gestion-descuentos', 'FragmentController@gestionDescuentos');

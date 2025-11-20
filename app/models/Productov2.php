@@ -20,13 +20,19 @@ class Productov2
         $this->conectar = (new Conexion())->getConexion();
     }
 
-    public function obtenerTodos()
+    public function obtenerTodos($oficina = 1)
     {
         try {
-            // Asegúrate de que se seleccionen todos los campos, incluyendo tipo_producto y fecha_vencimiento
-            $sql = 'SELECT idproductosv2, nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, estado 
-                FROM productosv2 ORDER BY nombre ASC';  // Agregado "estado" en la consulta
-            $result = $this->conectar->query($sql);
+            // Asegúrate de que se seleccionen todos los campos, incluyendo tipo_producto, fecha_vencimiento y oficina
+            $sql = 'SELECT idproductosv2, nombre, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, estado, oficina
+                FROM productosv2
+                WHERE oficina = ?
+                ORDER BY nombre ASC';
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $oficina);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
             if (!$result) {
                 throw new Exception('Error al obtener los productos');
@@ -64,7 +70,8 @@ class Productov2
         $codigo_barra = null,
         $precio_venta = null,
         $moneda = 'S/.',
-        $descuento_cuota = null
+        $descuento_cuota = null,
+        $oficina = 1
     ) {
         try {
             // Si ambos est�n vac�os, dejarlos en NULL
@@ -116,15 +123,15 @@ class Productov2
                 $moneda = 'S/.';  // Valor por defecto
             }
 
-            $sql = "INSERT INTO productosv2 (nombre, marca, modelo, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, moneda, descuento_cuota, estado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
+            $sql = "INSERT INTO productosv2 (nombre, marca, modelo, codigo, cantidad, categoria, ruc, razon_social, fecha_vencimiento, tipo_producto, cantidad_unidad, unidad_medida, precio, fecha_registro, guia_remision, codigo_barra, precio_venta, moneda, descuento_cuota, oficina, estado)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1')";
 
             // Preparar la consulta
             $stmt = $this->conectar->prepare($sql);
 
             // Enlazar parámetros en el orden correcto
             $stmt->bind_param(
-                'ssssissssssssssssss',
+                'ssssissssssssssssssi',
                 $nombre,
                 $marca,
                 $modelo,
@@ -143,7 +150,8 @@ class Productov2
                 $codigo_barra,
                 $precio_venta,
                 $moneda,
-                $descuento_cuota
+                $descuento_cuota,
+                $oficina
             );
 
             // Ejecutar la consulta
@@ -219,7 +227,8 @@ class Productov2
             }
 
             // Consulta SQL para obtener los productos y excluir los que tienen estado 0
-            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta
+            // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
+            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, categoria
                 FROM productosv2
                 WHERE categoria != 'Chip (Linea corporativa)'
                 AND estado != '0'  -- Modificado: Se excluyen productos con estado 0
@@ -280,7 +289,8 @@ class Productov2
         try {
             $productos = [];
 
-            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra
+            // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
+            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria
                     FROM productosv2
                     WHERE (nombre LIKE ? OR codigo LIKE ? OR codigo_barra LIKE ?)
                     AND estado != '0'";
@@ -310,7 +320,8 @@ class Productov2
                 $idProducto = $rowIMEI['idproductosv2'];
 
                 // Obtener el producto con el ID encontrado
-                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra 
+                // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
+                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria 
                                 FROM productosv2 WHERE idproductosv2 = ?';
 
                 $stmtProducto = $this->conectar->prepare($sqlProducto);
@@ -706,7 +717,8 @@ class Productov2
                     codigo_barra AS CODIGO_BARRA,
                     estado AS ESTADO,
                     descuento_cuota AS DESCUENTO_CUOTA,
-                    moneda AS MONEDA
+                    moneda AS MONEDA,
+                    oficina AS OFICINA
                 FROM productosv2
                 WHERE idproductosv2 = ?';
 
@@ -758,26 +770,27 @@ class Productov2
         try {
             $this->conectar->begin_transaction();
 
-            $sql = 'UPDATE productosv2 SET 
-                    nombre = ?, 
+            $sql = 'UPDATE productosv2 SET
+                    nombre = ?,
                     marca = ?,
                     modelo = ?,
-                    codigo = ?, 
-                    cantidad = ?, 
-                    cantidad_unidad = ?, 
-                    unidad_medida = ?, 
-                    tipo_producto = ?, 
-                    categoria = ?, 
-                    fecha_vencimiento = ?, 
-                    ruc = ?, 
-                    razon_social = ?, 
-                    precio = ?, 
+                    codigo = ?,
+                    cantidad = ?,
+                    cantidad_unidad = ?,
+                    unidad_medida = ?,
+                    tipo_producto = ?,
+                    categoria = ?,
+                    fecha_vencimiento = ?,
+                    ruc = ?,
+                    razon_social = ?,
+                    precio = ?,
                     precio_venta = ?,
-                    fecha_registro = ?, 
-                    guia_remision = ?, 
+                    fecha_registro = ?,
+                    guia_remision = ?,
                     codigo_barra = ?,
                     descuento_cuota = ?,
-                    moneda = ?
+                    moneda = ?,
+                    oficina = ?
                     WHERE idproductosv2 = ?';
 
             $stmt = $this->conectar->prepare($sql);
@@ -787,7 +800,7 @@ class Productov2
             }
 
             $stmt->bind_param(
-                'ssssisssssssddsssdsi',
+                'ssssisssssssddsssdsii',
                 $producto['nombre'],
                 $producto['marca'],
                 $producto['modelo'],
@@ -807,6 +820,7 @@ class Productov2
                 $producto['codigo_barra'],
                 $producto['descuento_cuota'],
                 $producto['moneda'],
+                $producto['oficina'],
                 $producto['idproductosv2']
             );
 
@@ -958,10 +972,10 @@ class Productov2
      * @param string $categoria Nombre de la categoría a filtrar
      * @return array Array de productos con sus características
      */
-    public function obtenerProductosPorCategoria($categoria)
+    public function obtenerProductosPorCategoria($categoria, $oficina = 1)
     {
         try {
-            // Consulta para obtener productos por categoría
+            // Consulta para obtener productos por categoría y oficina
             $sql = 'SELECT
                         p.idproductosv2,
                         p.nombre,
@@ -977,10 +991,14 @@ class Productov2
                         p.fecha_vencimiento,
                         p.fecha_registro,
                         p.tipo_producto,
-                        p.estado
+                        p.estado,
+                        p.oficina,
+                        p.descuento_cuota,
+                        p.moneda
                     FROM productosv2 p
                     WHERE LOWER(p.categoria) LIKE LOWER(?)
                     AND p.estado = 1
+                    AND p.oficina = ?
                     ORDER BY p.nombre ASC';
 
             $stmt = $this->conectar->prepare($sql);
@@ -989,7 +1007,7 @@ class Productov2
             }
 
             $categoriaParam = "%$categoria%";
-            $stmt->bind_param('s', $categoriaParam);
+            $stmt->bind_param('si', $categoriaParam, $oficina);
             $stmt->execute();
             $result = $stmt->get_result();
 

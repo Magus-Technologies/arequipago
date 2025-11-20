@@ -308,20 +308,35 @@ function saveFinanciamiento(event) {
       console.log('🎨 Plan personalizado - Cantidad de producto establecida en 1');
     }
   } else {
-    // Validaciones normales para otros planes
-    if (
-      !grupoFinanciamiento ||
-      !cantidadProducto ||
-      !montoTotal ||
-      !cuotaInicial ||
-      !cuotas ||
-      !estado ||
-      !fechaInicio ||
-      !fechaFin ||
-      !fechaHoraActual ||
-      !numeroDocumento
-    ) {
-      Swal.fire("Error", "Todos los campos son obligatorios.", "error");
+    // ✅ MEJORADO: Validaciones detalladas para otros planes
+    const camposObligatorios = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Cantidad de producto': cantidadProducto,
+      'Monto total': montoTotal,
+      'Cuota inicial': cuotaInicial,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+    
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposObligatorios)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+    
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      console.error("❌ Campos faltantes:", camposFaltantes);
       return;
     }
   }
@@ -383,6 +398,7 @@ function saveFinanciamiento(event) {
         verificacion_domiciliaria: verificacionDomiciliaria,
         fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
         fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
+        placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -480,6 +496,7 @@ function saveFinanciamiento(event) {
             verificacion_domiciliaria: verificacionDomiciliaria,
             fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
             fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
+            placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
           },
           success: function (response) {
             if (response.success) {
@@ -1595,6 +1612,18 @@ function generateCronograma() {
 
   console.log("🔍 DEBUGING generateCronograma() - cronogramaDatos:", cronogramaDatos);
   console.log("🔍 DEBUGING generateCronograma() - planGlobal:", planGlobal);
+  
+  // ✅ NUEVO: Obtener el nombre del grupo/plan
+  let nombreGrupo = '';
+  if (planGlobal) {
+    // Si es plan editable (ID 42), usar nombre_personalizado
+    if (parseInt(planGlobal.idplan_financiamiento) === 42) {
+      nombreGrupo = document.getElementById('nombrePersonalizado')?.value || planGlobal.nombre_plan || '';
+    } else {
+      nombreGrupo = planGlobal.nombre_plan || '';
+    }
+  }
+  
   // Aquí agregamos los datos del cronograma al objeto de datos
   const datosFormulario = {
     nombreCliente: nombreCliente,
@@ -1605,6 +1634,7 @@ function generateCronograma() {
     frecuenciaPago: frecuenciaPago, // Pasar la frecuencia de pago
     tipoMoneda: tipoMoneda,
     cronograma: cronogramaDatos, // Los datos del cronograma
+    nombreGrupo: nombreGrupo, // ✅ NUEVO: Agregar nombre del grupo
   };
 
   $.ajax({

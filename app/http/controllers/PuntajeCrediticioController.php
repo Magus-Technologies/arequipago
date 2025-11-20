@@ -137,7 +137,8 @@ class PuntajeCrediticioController extends Controller
 
             $filtros = [
                 'mes' => $_GET['mes'] ?? '',
-                'estado' => $_GET['estado'] ?? ''
+                'estado' => $_GET['estado'] ?? '',
+                'id_financiamiento' => $_GET['id_financiamiento'] ?? null  // ⭐ NUEVO: Filtro por financiamiento
             ];
 
             $historial = $this->puntajeModel->obtenerHistorialPuntaje($tipo, $id, $filtros);
@@ -271,8 +272,11 @@ class PuntajeCrediticioController extends Controller
             // Obtener puntaje anterior
             $puntajeAnterior = $this->obtenerPuntajeActual($tipo, $id);
 
-            // Restablecer puntaje a 100
-            $resultado = $this->puntajeModel->restablecerPuntajeIndividual($tipo, $id);
+            // NUEVO: Obtener usuario de sesión
+            $usuarioId = $_SESSION['usuario_id'] ?? null;
+
+            // MODIFICADO: Pasar usuarioId al modelo
+            $resultado = $this->puntajeModel->restablecerPuntajeIndividual($tipo, $id, $usuarioId);
 
             if (!$resultado['success']) {
                 throw new Exception($resultado['message']);
@@ -290,13 +294,16 @@ class PuntajeCrediticioController extends Controller
                 $motivo
             );
 
+            // MODIFICADO: Mensaje con cuotas perdonadas
+            $cuotasPerdonadas = $resultado['cuotas_perdonadas'] ?? 0;
             echo json_encode([
                 'success' => true,
-                'message' => 'Puntaje restablecido correctamente a 100 puntos',
+                'message' => "Puntaje restablecido a 100 exitosamente. Se perdonaron {$cuotasPerdonadas} cuotas.",
                 'data' => [
                     'puntaje_anterior' => $puntajeAnterior,
                     'puntaje_nuevo' => 100,
-                    'retrasos_eliminados' => $resultado['retrasos_eliminados']
+                    'retrasos_eliminados' => $resultado['retrasos_eliminados'],
+                    'cuotas_perdonadas' => $cuotasPerdonadas
                 ]
             ]);
 

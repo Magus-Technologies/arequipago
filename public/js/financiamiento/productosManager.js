@@ -52,9 +52,15 @@
                 }
             });
         }
+           // ✅ NUEVO: Variable global para almacenar productos actuales
+           let productosActuales = [];
+           
            function mostrarProductos(productos, searchTerm = '') {
             const tbody = $('#tablaProductos');
             tbody.empty();
+            
+            // ✅ NUEVO: Guardar productos en variable global
+            productosActuales = productos;
 
             // Si hay un producto seleccionado, agregarlo como primer registro
             if (productoSeleccionado) {
@@ -97,6 +103,10 @@
 
                 // Update the productoSeleccionado object with the current row data
                 const row = $(this).closest('tr');
+                
+                // ✅ CORREGIDO: Buscar la categoría en los datos del producto original
+                const productoData = productosActuales.find(p => p.idproductosv2 == selectedProductId);
+                
                 productoSeleccionado = {
                     id: selectedProductId,
                     nombre: row.find('td:nth-child(2)').text().trim(),
@@ -106,8 +116,10 @@
                     perfil: row.find('td:nth-child(6)').text().trim(),
                     aro: row.find('td:nth-child(7)').text().trim(),
                     precio_venta: row.find('td:nth-child(8)').text().trim(),
-                    categoria: row.data('categoria') || '' // ✅ NUEVO: Agregar categoría si está disponible
+                    categoria: productoData ? productoData.categoria : '' // ✅ CORREGIDO: Obtener categoría del objeto original
                 };
+                
+                console.log("📦 Producto seleccionado con categoría:", productoSeleccionado);
 
                 // ✅ NUEVO: Actualizar resumen visual con el producto seleccionado
                 if (typeof actualizarProductoEnResumen === 'function') {
@@ -141,6 +153,11 @@
                 tipoXCamposDinamicos();
                 clearTimeout(timeout);
                 timeout = setTimeout(calcularMonto, 4000);
+                
+                // ✅ NUEVO: Verificar si debe mostrarse el campo de placa (Plan 44 + Aceites)
+                if (typeof verificarMostrarCampoPlaca === 'function') {
+                    verificarMostrarCampoPlaca();
+                }
             });
         }
 
@@ -263,20 +280,23 @@
             let cantidad = parseFloat($('#cantidad').val()) || 0; // Si no es número, usa 0
             console.log("Cantidad ingresada:", cantidad);
 
-            // NUEVO: No calcular monto para planes de celular (ID 41)
+            // NUEVO: No calcular monto para planes especiales que usan variantes
             const idPlan = grupoSelect ? parseInt(grupoSelect.value) : null;
             const esPlanCelular = idPlan === 41;
+            const esPlanConVariantes = idPlan && [38, 44].includes(idPlan); // CrediGo Grupo 4 e IncaMotos
             const esPlanEspecial = idPlan && [14, 15, 16].includes(idPlan);
 
-            if (!esPlanCelular) {
-                // Solo calcular monto si NO es plan de celular
+            if (!esPlanCelular && !esPlanConVariantes) {
+                // Solo calcular monto si NO es plan de celular NI plan con variantes
                 const monto = precio * cantidad;
                 $('#montoSinIntereses').val(monto.toFixed(2));
                 $('#montoSinIntereses')[0].dispatchEvent(new Event('input'));
                 
                 console.log("Monto calculado para plan NO celular:", monto);
-            } else {
+            } else if (esPlanCelular) {
                 console.log("📱 CELULARES - NO recalculando monto sin intereses (se mantiene del grupo)");
+            } else if (esPlanConVariantes) {
+                console.log("✅ PLAN CON VARIANTES (ID", idPlan, ") - NO recalculando monto sin intereses (se mantiene de la variante seleccionada)");
             }
 
             if (!esPlanEspecial && !esPlanCelular) {

@@ -487,12 +487,13 @@ public function modificar($documento, $datos, $id_cliente)
 
     public function buscarClienteFinanciar($documento)
     {
-        $sql = "SELECT * FROM clientes_financiar WHERE n_documento = ?";   // MODIFICADO: Cambiado nombre de tabla y campo
+        // MODIFICADO: Agregar TRIM para eliminar espacios en blanco al inicio y final
+        $sql = "SELECT * FROM clientes_financiar WHERE TRIM(n_documento) = TRIM(?)";
         $stmt = $this->conectar->prepare($sql);
         $stmt->bind_param("s", $documento);
         $stmt->execute();
         $resultado = $stmt->get_result();
-        
+
         if ($resultado && $resultado->num_rows > 0) {
             return $resultado->fetch_assoc();
         } else {

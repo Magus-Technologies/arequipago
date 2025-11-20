@@ -1782,10 +1782,11 @@ function descargarCronogramaDesdeModal() {
   }
 
   // Preparar los datos del cronograma
+  // ✅ CORREGIDO: Usar las claves que el PHP espera
   const cronogramaDatos = cuotas.map((cuota, index) => ({
-    numero: index + 1,
-    fecha: cuota.fecha_vencimiento,
-    monto: parseFloat(cuota.monto || cuota.monto_cuota_base || 0),
+    cuota: index + 1,  // ✅ Cambiado de 'numero' a 'cuota'
+    vencimiento: cuota.fecha_vencimiento,  // ✅ Cambiado de 'fecha' a 'vencimiento'
+    valor: parseFloat(cuota.monto || cuota.monto_cuota_base || 0),  // ✅ Cambiado de 'monto' a 'valor'
     estado: cuota.estado || "Pendiente",
   }));
 
@@ -1855,6 +1856,23 @@ function descargarCronogramaDesdeModal() {
       );
     },
   });
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Descargar contrato Excel vehicular desde el modal
+ */
+function descargarContratoExcelDesdeModal() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se ha seleccionado un financiamiento",
+    });
+    return;
+  }
+
+  // Llamar a la función existente que genera y descarga el contrato
+  generarContratoInstant(idFinanciamientoSeleccionado);
 }
 
 function procesarEntregaCrediYango(fechaEntrega, idProducto) {

@@ -209,6 +209,9 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="btnVerPDFReporte" onclick="abrirPDFEnNuevaPestaña()">
+                        <i class="fas fa-external-link-alt"></i> Ver PDF
+                    </button>
                     <button type="button" class="btn btn-success" id="btnEnviarWhatsAppReporte" onclick="enviarPDFPorWhatsApp()">
                         <i class="fab fa-whatsapp"></i> Enviar por WhatsApp
                     </button>
@@ -2074,6 +2077,50 @@ function enviarPDFPorWhatsApp() {
   }
 }
 
+/**
+ * Abrir el PDF en una nueva pestaña (genera URL real en el servidor)
+ */
+function abrirPDFEnNuevaPestaña() {
+    const pdfBase64 = localStorage.getItem("pdfBase64");
+
+    if (pdfBase64) {
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: "Abriendo PDF...",
+            text: "Generando enlace del comprobante",
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Llamar al mismo endpoint que usa WhatsApp para generar URL real
+        $.ajax({
+            url: "/arequipago/generarEnlacePDF",
+            type: "POST",
+            data: { pdf_base64: pdfBase64 },
+            dataType: "json",
+            success: (response) => {
+                Swal.close(); // Cerrar indicador de carga
+
+                if (response.success) {
+                    // Abrir el PDF en nueva pestaña con la URL real del servidor
+                    window.open(response.pdf_url, '_blank');
+                } else {
+                    Swal.fire("Error", "No se pudo generar el enlace del PDF.", "error");
+                }
+            },
+            error: (xhr, status, error) => {
+                console.error("Error al generar enlace PDF:", status, error);
+                Swal.close();
+                Swal.fire("Error", "Error al procesar la solicitud.", "error");
+            }
+        });
+    } else {
+        Swal.fire("Error", "No se encontró un comprobante para mostrar.", "error");
+    }
+}
+
     function resetAll(){
 
         document.getElementById("resultadoBusqueda").innerHTML = ""; // Limpia el contenido del div
@@ -3001,6 +3048,7 @@ function eliminarPago(idPago) {
             ordering: true,
             searching: true,
             destroy: true,
+            order: [[5, 'desc']],
             ajax: {
                 url: '/arequipago/getReportFinance',
                 method: "POST",
@@ -3020,6 +3068,9 @@ function eliminarPago(idPago) {
             language: {
                 url: "ServerSide/Spanish.json",
             },
+            columnDefs: [
+                { orderable: false, targets: [0, 7] }
+            ],
             columns: [
                 {
                     data: null,
@@ -3201,7 +3252,7 @@ function eliminarPago(idPago) {
         $('#contenedorTablaMoras').hide();
 
         $.ajax({
-            url: '/arequipago/ajs/getMorasPendientes',
+            url: _URL + '/ajs/getMorasPendientes',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -3326,7 +3377,7 @@ function eliminarPago(idPago) {
 
                 // Enviar datos al backend
                 $.ajax({
-                    url: '/arequipago/ajs/pagarMoraPendiente',
+                    url: _URL + '/ajs/pagarMoraPendiente',
                     type: 'POST',
                     data: {
                         id_mora_pendiente: idMoraPendiente,
@@ -3338,6 +3389,11 @@ function eliminarPago(idPago) {
                         console.log('Respuesta pago mora:', response);
 
                         if (response.success) {
+                            // ✅ NUEVO: Si viene PDF, guardarlo en localStorage
+                            if (response.pdf) {
+                                localStorage.setItem('pdfBase64', response.pdf);
+                            }
+
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Pago exitoso',
@@ -3346,6 +3402,17 @@ function eliminarPago(idPago) {
                             }).then(() => {
                                 // Cerrar modal de pago
                                 $('#modalPagarMora').modal('hide');
+
+                                // ✅ NUEVO: Si hay PDF, cargar el iframe y abrir el modal de WhatsApp
+                                if (response.pdf) {
+                                    const pdfBase64 = localStorage.getItem('pdfBase64');
+                                    if (pdfBase64) {
+                                        const pdfDataUri = 'data:application/pdf;base64,' + pdfBase64;
+                                        $('#pdfContainer').html(`<iframe src="${pdfDataUri}" style="width:100%; height:400px; border:none;"></iframe>`);
+                                        // Abrir el modal de WhatsApp automáticamente
+                                        $('#modalWhatsappReportes').modal('show');
+                                    }
+                                }
 
                                 // Recargar tabla de moras
                                 cargarMorasPendientes();
@@ -3376,7 +3443,7 @@ function eliminarPago(idPago) {
      */
     function cargarContadorMoras() {
         $.ajax({
-            url: '/arequipago/ajs/getContadorMorasPendientes',
+            url: _URL +'/ajs/getContadorMorasPendientes',
             type: 'GET',
             dataType: 'json',
             success: function(response) {

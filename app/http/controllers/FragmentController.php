@@ -254,4 +254,13 @@ class FragmentController extends Controller
     public function adjudicaciones(){
         return $this->view("fragment-views/cliente/adjudicaciones");
     }
+
+    public function gestionDescuentos(){
+        // Verificar que solo el Director pueda acceder
+        if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+            header('Location: ' . URL::to('/'));
+            exit;
+        }
+        return $this->view("fragment-views/cliente/gestion-descuentos");
+    }
 }

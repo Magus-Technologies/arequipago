@@ -190,21 +190,19 @@ class Conductor
         try {
             $sql = "SELECT * FROM conductores ORDER BY nombres ASC";
             $result = $this->conectar->query($sql);
-            
+
             if (!$result) {
                 throw new Exception("Error al obtener los conductores");
             }
-            
+
             $conductores = [];
             $vehiculo = new Vehiculo();
             $inscripcion = new Inscripcion();
-            
+
             while ($row = $result->fetch_assoc()) {
-                // Procesar la foto
-                if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
-                }
-                
+                // Procesar la foto con prioridad desde datos_usuarios
+                $row['foto'] = $this->obtenerFotoPerfil($row['id_conductor'], 1);
+
                 // Obtener datos del vehículo
                 $datosVehiculo = $vehiculo->obtenerPlacaPorConductor($row['id_conductor']);
                 $row['placa'] = $datosVehiculo ? $datosVehiculo['placa'] : 'Sin asignar';
@@ -215,11 +213,11 @@ class Conductor
                 $direccionConductor = new DireccionConductor();
                 $datosDireccion = $direccionConductor->obtenerDireccionConductor($row['id_conductor']);
                 $row['departamento_id'] = $datosDireccion ? $datosDireccion['departamento'] : null;
-                
+
                 // Obtener datos de inscripción
                 $setare = $inscripcion->obtenerSetarePorConductor($row['id_conductor']);
                 $row['setare'] = $setare ?: 'Sin asignar';
-                
+
                 // Verificar tipo de pago
                 $tipoPagoSql = "SELECT id_tipopago FROM conductor_pago WHERE id_conductor = " . $row['id_conductor']; // NUEVO CAMBIO
                 $tipoPagoResult = $this->conectar->query($tipoPagoSql); // NUEVO CAMBIO
@@ -227,9 +225,9 @@ class Conductor
 
                 $conductores[] = $row;
             }
-            
+
             return $conductores;
-            
+
         } catch (Exception $e) {
             error_log("Error en Conductor::obtenerTodos(): " . $e->getMessage());
             return false;
@@ -882,63 +880,61 @@ public function eliminar() {
         try {
             // Normalizar el criterio de búsqueda eliminando espacios extra y manejando mayúsculas/minúsculas
             $query = trim(preg_replace('/\s+/', ' ', $query));
-    
+
             $sql = "
-                SELECT * 
-                FROM conductores 
-                WHERE 
-                    LOWER(TRIM(REPLACE(nombres, '  ', ' '))) LIKE ? OR 
-                    LOWER(TRIM(REPLACE(apellido_paterno, '  ', ' '))) LIKE ? OR 
-                    LOWER(TRIM(REPLACE(apellido_materno, '  ', ' '))) LIKE ? OR 
+                SELECT *
+                FROM conductores
+                WHERE
+                    LOWER(TRIM(REPLACE(nombres, '  ', ' '))) LIKE ? OR
+                    LOWER(TRIM(REPLACE(apellido_paterno, '  ', ' '))) LIKE ? OR
+                    LOWER(TRIM(REPLACE(apellido_materno, '  ', ' '))) LIKE ? OR
                     nro_documento LIKE ?
                 ORDER BY nombres ASC
             ";
-    
+
             // Preparar la consulta
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Error en la preparación de la consulta: " . $this->conectar->error);
             }
-    
+
             // Añadir comodines para la búsqueda parcial
             $likeQuery = '%' . strtolower($query) . '%';
             $stmt->bind_param("ssss", $likeQuery, $likeQuery, $likeQuery, $likeQuery);
-    
+
             if (!$stmt->execute()) {
                 throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
             }
-    
+
             $result = $stmt->get_result();
             if (!$result) {
                 throw new Exception("Error al obtener los resultados: " . $this->conectar->error);
             }
-    
+
             $conductores = [];
             $vehiculo = new Vehiculo();
             $inscripcion = new Inscripcion();
-    
+
             while ($row = $result->fetch_assoc()) {
-                // Procesar la foto
-                if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
-                }
-    
+                // Procesar la foto con prioridad desde datos_usuarios
+                $row['foto'] = $this->obtenerFotoPerfil($row['id_conductor'], 1);
+
                 // Obtener datos del vehículo
                 $datosVehiculo = $vehiculo->obtenerPlacaPorConductor($row['id_conductor']);
                 $row['placa'] = $datosVehiculo ? $datosVehiculo['placa'] : 'Sin asignar';
                 $row['numero_unidad'] = $datosVehiculo ? $datosVehiculo['numero_unidad'] : 'Sin asignar';
-    
+
                 // Obtener datos de inscripción
                 $setare = $inscripcion->obtenerSetarePorConductor($row['id_conductor']);
                 $row['setare'] = $setare ?: 'Sin asignar';
-    
+
                 $conductores[] = $row;
             }
-    
+
             return $conductores;
-    
+
         } catch (Exception $e) {
-            
+
             return [];
         }
     }
@@ -953,49 +949,47 @@ public function eliminar() {
                 WHERE i.fecha_inscripcion BETWEEN ? AND ?
                 ORDER BY i.fecha_inscripcion ASC
             ";
-    
+
             // Preparar la consulta
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
                 throw new Exception("Error en la preparación de la consulta: " . $this->conectar->error);
             }
-    
+
             // Vincular los parámetros
             $stmt->bind_param("ss", $fechaInicio, $fechaFin);
-    
+
             if (!$stmt->execute()) {
                 throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
             }
-    
+
             $result = $stmt->get_result();
             if (!$result) {
                 throw new Exception("Error al obtener los resultados: " . $this->conectar->error);
             }
-    
+
             $conductores = [];
             $vehiculo = new Vehiculo();
             $inscripcion = new Inscripcion();
-    
+
             while ($row = $result->fetch_assoc()) {
-                // Procesar la foto
-                if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
-                }
-    
+                // Procesar la foto con prioridad desde datos_usuarios
+                $row['foto'] = $this->obtenerFotoPerfil($row['id_conductor'], 1);
+
                 // Obtener datos del vehículo
                 $datosVehiculo = $vehiculo->obtenerPlacaPorConductor($row['id_conductor']);
                 $row['placa'] = $datosVehiculo ? $datosVehiculo['placa'] : 'Sin asignar';
                 $row['numero_unidad'] = $datosVehiculo ? $datosVehiculo['numero_unidad'] : 'Sin asignar';
-    
+
                 // Obtener datos de inscripción
                 $setare = $inscripcion->obtenerSetarePorConductor($row['id_conductor']);
                 $row['setare'] = $setare ?: 'Sin asignar';
-    
+
                 $conductores[] = $row;
             }
-    
+
             return $conductores;
-    
+
         } catch (Exception $e) {
             return [];
         }
@@ -1016,19 +1010,16 @@ public function eliminar() {
             $conductor->setNombres($data['nombres']); // Asignar nombres
             $conductor->setApellidoPaterno($data['apellido_paterno']); // Asignar apellido paterno
             $conductor->setApellidoMaterno($data['apellido_materno']); // Asignar apellido materno
-            
-            // Procesar la foto para agregar la ruta completa
-            if ($data['foto'] && !empty($data['foto'])) {
-                $conductor->setFoto('/arequipago/public/' . $data['foto']); // Modificado: Añadir ruta completa
-            } else {
-                $conductor->setFoto(null); // Modificado: Devolver null si no hay foto
-            }
-            
+
+            // Procesar la foto con prioridad desde datos_usuarios
+            $fotoPerfil = $this->obtenerFotoPerfil($id_conductor, 1);
+            $conductor->setFoto($fotoPerfil);
+
             return $conductor; // Retorna el objeto Conductor
             }
 
             return null;
-        
+
         }
 
     public function obtenerTipoDocumento($nroDocumento)
@@ -1162,29 +1153,81 @@ public function eliminar() {
         }
     }
 
+    /**
+     * Obtiene la foto de perfil con prioridad desde datos_usuarios
+     * Si no existe en datos_usuarios, obtiene desde conductores
+     *
+     * @param int $id_usuario ID del conductor
+     * @param int $tipo_usuario Tipo de usuario (1 = conductor, 2 = cliente)
+     * @return string|null Ruta de la foto o null si no existe
+     */
+    public function obtenerFotoPerfil($id_usuario, $tipo_usuario = 1)
+    {
+        try {
+            // Primero consultar en datos_usuarios
+            $sql = "SELECT foto FROM datos_usuarios WHERE id_usuario = ? AND tipo_usuario = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("ii", $id_usuario, $tipo_usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                if (!empty($row['foto'])) {
+                    // Si existe foto en datos_usuarios, retornarla con URL completa externa
+                    $stmt->close();
+                    return 'https://magusemail.com/arequipago-api/public/storage/' . $row['foto'];
+                }
+            }
+            $stmt->close();
+
+            // Si no existe en datos_usuarios, consultar en conductores
+            $sql = "SELECT foto FROM conductores WHERE id_conductor = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("i", $id_usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                if (!empty($row['foto'])) {
+                    $stmt->close();
+                    return '/arequipago/public/' . $row['foto'];
+                }
+            }
+            $stmt->close();
+
+            return null;
+
+        } catch (Exception $e) {
+            error_log("Error in Conductor::obtenerFotoPerfil(): " . $e->getMessage());
+            return null;
+        }
+    }
+
     public function buscarConductores($term)
     {
         try {
             $term = "%{$term}%";
-            $sql = "SELECT * FROM conductores 
-                    WHERE nombres LIKE ? OR apellido_paterno LIKE ? 
+            $sql = "SELECT * FROM conductores
+                    WHERE nombres LIKE ? OR apellido_paterno LIKE ?
                     ORDER BY nombres ASC";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception("Error preparing statement: " . $this->conectar->error);
             }
 
             $stmt->bind_param("ss", $term, $term);
-            
+
             if (!$stmt->execute()) {
                 throw new Exception("Error executing statement: " . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $conductores = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $conductores[] = $row;
             }
@@ -1654,7 +1697,8 @@ public function eliminar() {
                     c.nro_licencia,
                     c.telefono,
                     c.correo,
-                    c.numUnidad
+                    c.numUnidad,
+                    c.desvinculado
                 FROM conductores c";
         
         $result = $this->conectar->query($sql);
@@ -1670,9 +1714,10 @@ public function eliminar() {
             $direccionModel = new DireccionConductor();
             $direccion = $direccionModel->obtenerDatosDireccion($idConductor);
             $row['direccion'] = $direccion ? ($direccion['direccion_detalle'] . ', ' . $direccion['distrito'] . ', ' . $direccion['provincia'] . ', ' . $direccion['departamento']) : 'No especificado';
+            $row['departamento_id'] = $direccion ? $direccion['departamento_id'] : null;
             
             // Obtener Datos del Vehículo
-            $sqlVehiculo = "SELECT placa, marca, modelo, anio, color, condicion, vehiculo_flota, fech_soat, fech_seguro 
+            $sqlVehiculo = "SELECT placa, marca, modelo, anio, color, condicion, vehiculo_flota, fech_soat, fech_seguro, tipo_vehiculo 
                 FROM vehiculos 
                 WHERE id_conductor = $idConductor 
                 LIMIT 1";
@@ -1688,6 +1733,7 @@ public function eliminar() {
             $row['vehiculo_flota'] = $vehiculo['vehiculo_flota'] ?? 'No especificado';
             $row['fech_soat'] = $vehiculo['fech_soat'] ?? 'No registrado';
             $row['fech_seguro'] = $vehiculo['fech_seguro'] ?? 'No registrado';
+            $row['tipo_vehiculo'] = $vehiculo['tipo_vehiculo'] ?? null;
             
             // Obtener Tipo de Servicio
             $sqlServicio = "SELECT setare FROM inscripciones WHERE id_conductor = $idConductor LIMIT 1";
@@ -1860,31 +1906,30 @@ public function eliminar() {
             $sql = "SELECT c.id_conductor, c.foto, c.nro_documento, c.nombres, c.apellido_paterno, c.apellido_materno, v.placa
                     FROM conductores c
                     LEFT JOIN vehiculos v ON c.id_conductor = v.id_conductor
-                    WHERE c.nombres LIKE ? 
-                    OR c.apellido_paterno LIKE ? 
+                    WHERE c.nombres LIKE ?
+                    OR c.apellido_paterno LIKE ?
                     OR c.nro_documento LIKE ?
                     OR v.placa LIKE ?
                     ORDER BY c.nombres ASC";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            
+
             if (!$stmt) {
                 throw new Exception("Error preparing statement: " . $this->conectar->error);
             }
 
             $stmt->bind_param("ssss", $term, $term, $term, $term);
-            
+
             if (!$stmt->execute()) {
                 throw new Exception("Error executing statement: " . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $conductores = [];
-            
+
             while ($row = $result->fetch_assoc()) {
-                if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
-                }
+                // Procesar la foto con prioridad desde datos_usuarios
+                $row['foto'] = $this->obtenerFotoPerfil($row['id_conductor'], 1);
                 $conductores[] = $row;
             }
 

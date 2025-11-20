@@ -551,6 +551,26 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
 
 
+                                                    <!-- ✅ NUEVO: Campo Placa para Mantenimiento IncaMotors (Plan 44) con productos de categoría Aceites -->
+                                                    <div class="d-none" id="placaVehiculoContainer">
+                                                        <label for="placaVehiculo" class="form-label">
+                                                            <i class="fas fa-car me-2"></i>Placa del Vehículo
+                                                            <span class="text-danger">*</span>
+                                                        </label>
+                                                        <div class="input-group mb-3">
+                                                            <span class="input-group-text">
+                                                                <i class="fas fa-id-card"></i>
+                                                            </span>
+                                                            <input type="text" class="form-control" id="placaVehiculo"
+                                                                placeholder="Ej: ABC-123" maxlength="10"
+                                                                style="text-transform: uppercase;">
+                                                        </div>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Ingrese la placa del vehículo para el servicio de mantenimiento
+                                                        </small>
+                                                    </div>
+
                                                     <div class="d-none" id="FotoDinamica">
                                                         <img src="https://pics.clipartpng.com/Tires_PNG_ClipArt-1164.png"
                                                             alt="Foto dinámica" class="img-fluid rounded"
@@ -1768,6 +1788,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
     <script src="<?= URL::to('public/js/financiamiento/productosManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCalculator.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/planesManager.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/placaManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCRUD.js') ?>?v=<?= time() ?>"></script>
 
     <!-- Script para actualizar badge de pendientes (solo para directores) -->

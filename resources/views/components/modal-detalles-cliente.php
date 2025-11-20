@@ -58,25 +58,49 @@
                                     <p><i class="fas fa-phone me-2"></i><strong>Teléfono: </strong><span
                                             id="modalClienteTelefono"></span></p>
 
-                                    <!-- NUEVO: Botón para descargar contrato de entrega (solo si vehículo fue entregado) -->
-                                    <div id="btnDescargarContratoEntrega" style="display: none; margin-top: 15px;">
-                                        <button type="button" class="btn btn-success btn-sm w-100" onclick="descargarContratoEntregaDesdeModal()">
-                                            <i class="fas fa-file-download me-2"></i>Descargar Acta de Entrega
-                                        </button>
-                                    </div>
+                                    <!-- Botones de descarga organizados en 2 columnas y 2 filas -->
+                                    <div class="row mt-3 g-2">
+                                        <!-- Primera fila - Documentos PDF -->
+                                        <div class="col-6" id="btnDescargarContratoEntrega" style="display: none;">
+                                            <button type="button" class="btn btn-sm w-100" 
+                                                    style="background-color: white; color: #dc3545; border: 2px solid #dc3545; font-weight: 500;"
+                                                    onclick="descargarContratoEntregaDesdeModal()"
+                                                    onmouseover="this.style.backgroundColor='#fff5f5'; this.style.borderColor='#c82333'; this.style.color='#c82333'"
+                                                    onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#dc3545'; this.style.color='#dc3545'">
+                                                <i class="fas fa-file-pdf me-2"></i>Acta de Entrega
+                                            </button>
+                                        </div>
 
-                                    <!-- NUEVO: Botón para descargar boletas de pago inicial -->
-                                    <div id="btnDescargarBoletasIniciales" style="display: none; margin-top: 15px;">
-                                        <button type="button" class="btn btn-primary btn-sm w-100" onclick="mostrarBoletasPagoInicial()">
-                                            <i class="fas fa-receipt me-2"></i>Ver Boletas de Pago Inicial
-                                        </button>
-                                    </div>
+                                        <div class="col-6" id="btnDescargarBoletasIniciales" style="display: none;">
+                                            <button type="button" class="btn btn-sm w-100" 
+                                                    style="background-color: white; color: #dc3545; border: 2px solid #dc3545; font-weight: 500;"
+                                                    onclick="mostrarBoletasPagoInicial()"
+                                                    onmouseover="this.style.backgroundColor='#fff5f5'; this.style.borderColor='#c82333'; this.style.color='#c82333'"
+                                                    onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#dc3545'; this.style.color='#dc3545'">
+                                                <i class="fas fa-file-pdf me-2"></i>Boletas de Pago
+                                            </button>
+                                        </div>
 
-                                    <!-- NUEVO: Botón para descargar cronograma -->
-                                    <div id="btnDescargarCronograma" style="display: none; margin-top: 15px;">
-                                        <button type="button" class="btn btn-info btn-sm w-100" onclick="descargarCronogramaDesdeModal()">
-                                            <i class="fas fa-calendar-alt me-2"></i>Descargar Cronograma
-                                        </button>
+                                        <!-- Segunda fila -->
+                                        <div class="col-6" id="btnDescargarCronograma" style="display: none;">
+                                            <button type="button" class="btn btn-sm w-100" 
+                                                    style="background-color: white; color: #dc3545; border: 2px solid #dc3545; font-weight: 500;"
+                                                    onclick="descargarCronogramaDesdeModal()"
+                                                    onmouseover="this.style.backgroundColor='#fff5f5'; this.style.borderColor='#c82333'; this.style.color='#c82333'"
+                                                    onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#dc3545'; this.style.color='#dc3545'">
+                                                <i class="fas fa-file-pdf me-2"></i>Cronograma
+                                            </button>
+                                        </div>
+
+                                        <div class="col-6" id="btnDescargarContratoExcel" style="display: none;">
+                                            <button type="button" class="btn btn-sm w-100" 
+                                                    style="background-color: white; color: #217346; border: 2px solid #217346; font-weight: 500;"
+                                                    onclick="descargarContratoExcelDesdeModal()"
+                                                    onmouseover="this.style.backgroundColor='#f0f8f4'; this.style.borderColor='#1a5c37'; this.style.color='#1a5c37'"
+                                                    onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#217346'; this.style.color='#217346'">
+                                                <i class="fas fa-file-excel me-2"></i>Contrato vehiculo
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <!-- NUEVO: Estado de entrega del vehículo -->
@@ -131,6 +155,14 @@
                 <span id="modalFinanciamientoCodigo"></span></p>
             <p><i class="fas fa-layer-group me-2"></i><strong>Grupo de Financiamiento: </strong><span
                     id="modalFinanciamientoGrupo"></span></p>
+            
+            <!-- ✅ NUEVO: Campo Placa del Vehículo (solo si existe) -->
+            <p id="campoPlacaVehiculo" style="display: none;">
+                <i class="fas fa-car me-2" style="color: #28a745;"></i>
+                <strong>Placa del Vehículo: </strong>
+                <span id="modalPlacaVehiculo" class="badge bg-success" style="font-size: 0.95em; padding: 6px 12px;"></span>
+            </p>
+            
             <p><i class="fas fa-check-circle me-2"></i><strong>Estado:</strong><span
                     id="modalFinanciamientoEstado"></span></p>
 

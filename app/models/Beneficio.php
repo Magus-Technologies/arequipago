@@ -389,9 +389,11 @@ class Beneficio
         try {
             $sql = 'SELECT b.*,
                     COALESCE(b.moneda, p.moneda) as moneda,
-                    COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display
+                    COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display,
+                    d.nombre as departamento_nombre
                     FROM beneficios b
                     LEFT JOIN planes_financiamiento p ON b.plan_financiamiento_id = p.idplan_financiamiento
+                    LEFT JOIN depast d ON b.departamento_id = d.iddepast
                     WHERE 1=1';
             $params = [];
             $types = '';

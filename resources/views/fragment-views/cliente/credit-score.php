@@ -456,6 +456,8 @@
         // MODIFICA la función mostrarHistorialModal existente:
         function mostrarHistorialModal(data, tipo, id) {
             $('#historialModal').data('tipo', tipo).data('id', id);
+            // ⭐ NUEVO: Limpiar id-financiamiento cuando se ve historial completo
+            $('#historialModal').removeData('id-financiamiento');
             
             if (data.historial.length === 0) {
                 generarTimeline(data.historial);
@@ -541,18 +543,27 @@
       function filtrarHistorial() {
           const tipo = $('#historialModal').data('tipo');
           const id = $('#historialModal').data('id');
+          const idFinanciamiento = $('#historialModal').data('id-financiamiento'); // ⭐ NUEVO
           const mes = $('#filtroMesHistorial').val();
           const estado = $('#filtroEstadoHistorial').val();
+
+          // ⭐ NUEVO: Construir data dinámicamente
+          const requestData = { 
+              tipo: tipo, 
+              id: id,
+              mes: mes,
+              estado: estado
+          };
+          
+          // Solo agregar id_financiamiento si existe
+          if (idFinanciamiento) {
+              requestData.id_financiamiento = idFinanciamiento;
+          }
 
           $.ajax({
               url: "/arequipago/obtenerHistorialPuntaje",
               type: "GET",
-              data: { 
-                  tipo: tipo, 
-                  id: id,
-                  mes: mes,
-                  estado: estado
-              },
+              data: requestData,
               dataType: "json",
               success: function(response) {
                   if (response.success) {
@@ -842,7 +853,13 @@
                           </thead>
                           <tbody>
                               ${data.financiamientos.map(f => `
-                                  <tr>
+                                  <tr class="financiamiento-row" 
+                                      style="cursor: pointer;" 
+                                      data-tipo="${tipo}" 
+                                      data-id="${id}" 
+                                      data-id-financiamiento="${f.idfinanciamiento}" 
+                                      data-nombre-producto="${(f.nombre_producto || 'Producto no especificado').replace(/"/g, '&quot;')}" 
+                                      title="Click para ver historial de este financiamiento">
                                       <td>
                                           <i class="fas fa-box me-1"></i>
                                           ${f.nombre_producto || 'Producto no especificado'}
@@ -901,6 +918,22 @@
           const content = generarContenidoModal(data, tipo, id);
 
           $('#detalleContent').html(content);
+          
+          // ⭐ NUEVO: Agregar event listener a las filas de financiamientos
+          setTimeout(() => {
+              $('.financiamiento-row').off('click').on('click', function(e) {
+                  e.preventDefault();
+                  const tipoCliente = $(this).data('tipo');
+                  const idCliente = $(this).data('id');
+                  const idFinanciamiento = $(this).data('id-financiamiento');
+                  const nombreProducto = $(this).data('nombre-producto');
+                  
+                  console.log('Click en financiamiento:', {tipoCliente, idCliente, idFinanciamiento, nombreProducto});
+                  
+                  verHistorialFinanciamiento(tipoCliente, idCliente, idFinanciamiento, nombreProducto);
+              });
+          }, 100);
+          
           const modal = new bootstrap.Modal(document.getElementById('detalleModal'));
           modal.show();
       }
@@ -1405,6 +1438,114 @@
           
           // Mostrar modal
           const modal = new bootstrap.Modal(document.getElementById('alertas-modal'));
+          modal.show();
+      }
+
+      // ⭐ NUEVA FUNCIÓN: Ver historial de un financiamiento específico
+      function verHistorialFinanciamiento(tipo, idCliente, idFinanciamiento, nombreProducto) {
+          $.ajax({
+              url: "/arequipago/obtenerHistorialPuntaje",
+              type: "GET",
+              data: { 
+                  tipo: tipo, 
+                  id: idCliente,
+                  id_financiamiento: idFinanciamiento  // Filtrar por financiamiento
+              },
+              dataType: "json",
+              beforeSend: function() {
+                  Swal.fire({
+                      title: 'Cargando historial...',
+                      text: 'Obteniendo datos del financiamiento',
+                      allowOutsideClick: false,
+                      didOpen: () => {
+                          Swal.showLoading();
+                      }
+                  });
+              },
+              success: function(response) {
+                  Swal.close();
+                  if (response.success) {
+                      // ⭐ NUEVO: Pasar también tipo, id e idFinanciamiento
+                      mostrarHistorialFinanciamientoModal(response.data, nombreProducto, tipo, idCliente, idFinanciamiento);
+                  } else {
+                      mostrarError('Error al cargar el historial del financiamiento');
+                  }
+              },
+              error: function() {
+                  Swal.close();
+                  mostrarError('Error de conexión');
+              }
+          });
+      }
+
+      // Función para mostrar el modal con el historial del financiamiento específico
+      function mostrarHistorialFinanciamientoModal(data, nombreProducto, tipo, idCliente, idFinanciamiento) {
+          const timeline = $('#timelineContent');
+          timeline.empty();
+
+          // ⭐ NUEVO: Guardar datos en el modal para que filtrarHistorial() los use
+          $('#historialModal').data('tipo', tipo);
+          $('#historialModal').data('id', idCliente);
+          $('#historialModal').data('id-financiamiento', idFinanciamiento);
+
+          // Título personalizado
+          $('#historialModal .modal-title').html(`
+              <i class="fas fa-history me-2"></i>
+              Historial de Puntaje: ${nombreProducto}
+          `);
+
+          if (data.historial.length === 0) {
+              timeline.html(`
+                  <div class="text-center py-4">
+                      <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                      <h5>No hay historial disponible</h5>
+                      <p class="text-muted">Este financiamiento aún no tiene registros de historial crediticio</p>
+                  </div>
+              `);
+          } else {
+              data.historial.forEach(item => {
+                  const statusClass = obtenerStatusClass(item.estado_cuota);
+                  const statusText = obtenerStatusText(item.estado_cuota);
+                  const iconClass = obtenerIconClass(item.estado_cuota);
+
+                  const timelineItem = `
+                      <div class="timeline-item">
+                          <div class="timeline-date">
+                              <i class="fas fa-calendar me-2"></i>
+                              ${new Date(item.fecha_vencimiento).toLocaleDateString()}
+                          </div>
+                          <div class="flex-grow-1 mx-3">
+                              <div class="d-flex align-items-center mb-2">
+                                  <i class="fas ${iconClass} me-2"></i>
+                                  <strong>Cuota #${item.numero_cuota}</strong>
+                                  <span class="timeline-status ${statusClass} ms-2">${statusText}</span>
+                              </div>
+                              <div class="mb-1">
+                                  <small class="text-muted">
+                                      <strong>Monto:</strong> S/ ${parseFloat(item.monto_cuota).toFixed(2)} | 
+                                      ${item.puntos_perdidos > 0 ? `<span class="text-danger fw-bold">Puntos perdidos: ${item.puntos_perdidos}</span>` : '<span class="text-success">Sin penalización</span>'}
+                                  </small>
+                              </div>
+                          </div>
+                          <div class="puntaje-cambio">
+                              ${item.puntaje_anterior !== null && item.puntaje_nuevo !== null ? `
+                                  <span class="badge ${item.puntos_perdidos > 0 ? 'bg-danger' : 'bg-success'} fs-6">
+                                      ${item.puntaje_anterior} → ${item.puntaje_nuevo}
+                                  </span>
+                              ` : `
+                                  <span class="badge bg-warning text-dark fs-6">
+                                      Sin historial
+                                  </span>
+                              `}
+                          </div>
+                      </div>
+                  `;
+                  timeline.append(timelineItem);
+              });
+          }
+
+          // Mostrar el modal
+          const modal = new bootstrap.Modal(document.getElementById('historialModal'));
           modal.show();
       }
 

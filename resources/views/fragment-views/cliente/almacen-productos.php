@@ -100,7 +100,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
                     <!-- NUEVO: Filtros por Stock y Tipo de Producto -->
                     <div class="row mb-3 filtros-container">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <label class="form-label">Stock</label>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="stock-filter-buttons">
@@ -122,11 +122,18 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 </button>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="filtroTipoProducto" class="form-label">Filtrar por Tipo</label>
                             <select id="filtroTipoProducto" class="form-select form-select-sm" onchange="actualizarBotonLimpiar(); aplicarFiltros();">
                                 <option value="todos">Todos los tipos</option>
                                 <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filtroOficina" class="form-label">Filtrar por Oficina</label>
+                            <select id="filtroOficina" class="form-select form-select-sm" onchange="cambiarOficina();">
+                                <option value="1" selected>Oficina 1</option>
+                                <option value="2">Oficina 2</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -447,176 +454,222 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
     </div>
     <!-- Modal para mostrar detalles del producto -->
 <div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #dbdbb6">
-                <h5 class="modal-title" id="modalDetallesLabel">Detalles del Producto</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDetallesLabel"><i class="fas fa-box-open me-2"></i>Detalles del Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="fw-bold">Nombre:</label>
-                            <p id="detalle-nombre"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Marca:</label>
-                            <p id="detalle-marca"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Modelo:</label>
-                            <p id="detalle-modelo"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Código:</label>
-                            <p id="detalle-codigo"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Cantidad:</label>
-                            <p id="detalle-cantidad"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Categoría:</label>
-                            <p id="detalle-categoria"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Tipo de Producto:</label>
-                            <p id="detalle-tipo"></p>
+                <!-- Información Básica -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Nombre del Producto</label>
+                                <p class="fw-bold mb-0" id="detalle-nombre"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Código</label>
+                                <p class="fw-bold mb-0" id="detalle-codigo"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Cantidad</label>
+                                <p class="fw-bold mb-0" id="detalle-cantidad"></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Marca</label>
+                                <p class="mb-0" id="detalle-marca"></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Modelo</label>
+                                <p class="mb-0" id="detalle-modelo"></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Categoría</label>
+                                <p class="mb-0" id="detalle-categoria"></p>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="text-muted small">Tipo de Producto</label>
+                                <p class="mb-0" id="detalle-tipo"></p>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="fw-bold">RUC:</label>
-                            <p id="detalle-ruc"></p>
+                </div>
+
+                <!-- Información de Proveedor -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-building me-2"></i>Información del Proveedor</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="text-muted small">RUC</label>
+                                <p class="mb-0" id="detalle-ruc"></p>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="text-muted small">Razón Social</label>
+                                <p class="mb-0" id="detalle-razon-social"></p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Razón Social:</label>
-                            <p id="detalle-razon-social"></p>
+                    </div>
+                </div>
+
+                <!-- Información de Precios -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Información de Precios</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="text-muted small">Precio de Compra</label>
+                                <p class="fw-bold text-success mb-0" id="detalle-precio"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Precio de Venta</label>
+                                <p class="fw-bold text-primary mb-0" id="detalle-precio-venta"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Descuento por Cuota</label>
+                                <p class="fw-bold text-warning mb-0" id="detalle-descuento-cuota"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Moneda</label>
+                                <p class="mb-0" id="detalle-moneda"></p>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Precio:</label>
-                            <p id="detalle-precio"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Precio de Venta:</label>
-                            <p id="detalle-precio-venta"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Fecha de Registro:</label>
-                            <p id="detalle-fecha-registro"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Fecha de Vencimiento:</label>
-                            <p id="detalle-fecha-vencimiento"></p>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold">Guía de Remisión:</label>
-                            <p id="detalle-guia-remision"></p>
+                    </div>
+                </div>
+
+                <!-- Información de Fechas -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Fechas y Documentos</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="text-muted small">Fecha de Registro</label>
+                                <p class="mb-0" id="detalle-fecha-registro"></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Fecha de Vencimiento</label>
+                                <p class="mb-0" id="detalle-fecha-vencimiento"></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Guía de Remisión</label>
+                                <p class="mb-0" id="detalle-guia-remision"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Sección condicional para llantas -->
-                <div id="detalle-llantas-section" style="display: none;">
-                    <hr>
-                    <h6 class="fw-bold">Detalles de Llanta</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Aro:</label>
-                                <p id="detalle-aro"></p>
+                <div id="detalle-llantas-section" class="card mb-3" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-circle-notch me-2"></i>Especificaciones de Llanta</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Aro</label>
+                                <p class="mb-0" id="detalle-aro"></p>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Perfil:</label>
-                                <p id="detalle-perfil"></p>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Perfil</label>
+                                <p class="mb-0" id="detalle-perfil"></p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Sección condicional para celulares -->
-                <div id="detalle-celular-section" style="display: none;">
-                    <hr>
-                    <h6 class="fw-bold">Detalles del Celular</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Chip/Línea:</label>
-                                <p id="detalle-chip-linea"></p>
+                <div id="detalle-celular-section" class="card mb-3" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Especificaciones del Celular</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="text-muted small">Chip/Línea</label>
+                                <p class="mb-0" id="detalle-chip-linea"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Marca:</label>
-                                <p id="detalle-marca-equipo"></p>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Marca</label>
+                                <p class="mb-0" id="detalle-marca-equipo"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Modelo:</label>
-                                <p id="detalle-modelo"></p>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Color</label>
+                                <p class="mb-0" id="detalle-color"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">IMEI:</label>
-                                <p id="detalle-imei"></p>
+                            <div class="col-md-6">
+                                <label class="text-muted small">IMEI</label>
+                                <p class="mb-0" id="detalle-imei"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">IMEI 2:</label>
-                                <p id="detalle-serie"></p>
+                            <div class="col-md-6">
+                                <label class="text-muted small">IMEI 2</label>
+                                <p class="mb-0" id="detalle-serie"></p>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Color:</label>
-                                <p id="detalle-color"></p>
+                        <hr class="my-3">
+                        <h6 class="text-muted small mb-3">Accesorios Incluidos</h6>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="text-muted small">Cargador</label>
+                                <p class="mb-0" id="detalle-cargador"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Cargador:</label>
-                                <p id="detalle-cargador"></p>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Cable USB</label>
+                                <p class="mb-0" id="detalle-cable-usb"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Cable USB:</label>
-                                <p id="detalle-cable-usb"></p>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Manual</label>
+                                <p class="mb-0" id="detalle-manual"></p>
                             </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Manual:</label>
-                                <p id="detalle-manual"></p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="fw-bold">Estuche:</label>
-                                <p id="detalle-estuche"></p>
+                            <div class="col-md-3">
+                                <label class="text-muted small">Estuche</label>
+                                <p class="mb-0" id="detalle-estuche"></p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- MODIFICACIÓN: AGREGAR SECCIÓN PARA VEHÍCULOS EN EL MODAL -->
-                <div id="detalle-vehiculo-section" style="display: none;">
-                    <h5 class="mt-3">Características del Vehículo</h5>
-                    <div id="detalle-vehiculo-caracteristicas"></div>
+                <!-- Sección para vehículos -->
+                <div id="detalle-vehiculo-section" class="card mb-3" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-car me-2"></i>Características del Vehículo</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="detalle-vehiculo-caracteristicas"></div>
+                    </div>
                 </div>
 
                 <!-- Sección condicional para chip/plan móvil -->
-                <div id="detalle-chip-section" style="display: none;">
-                    <hr>
-                    <h6 class="fw-bold">Detalles del Plan</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Plan Mensual:</label>
-                                <p id="detalle-plan-mensual"></p>
+                <div id="detalle-chip-section" class="card mb-3" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-sim-card me-2"></i>Detalles del Plan</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Plan Mensual</label>
+                                <p class="mb-0" id="detalle-plan-mensual"></p>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="fw-bold">Operadora:</label>
-                                <p id="detalle-operadora"></p>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Operadora</label>
+                                <p class="mb-0" id="detalle-operadora"></p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="background-color: #dbdbb6;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cerrar</button>
             </div>
         </div>
     </div>
@@ -658,8 +711,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             </div>
                         </div> -->
 
-                        <div class="row mb-3">
-                          <div class="col-md-4">
+                        <div class="row mb-2">
+                          <div class="col-md-3">
                                 <label for="tipo_producto" class="form-label">Tipo de producto</label>
                                 <div class="d-flex gap-0">
                                     <select name="tipo_producto" id="tipo_producto" required class="form-select" onchange="verificarTipo()">
@@ -670,25 +723,31 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                     <button type="button" onclick="abrirModalTipoProducto()" class="btn btn-primary btn-sm btn-add-option"><i class="fa fa-plus"></i></button>
                                 </div>
                             </div>
-                            <div class="col-md-4" id="cantidad">
+                            <div class="col-md-2" id="cantidad">
                                 <label for="cantidad_producto" class="form-label">Cantidad</label>
                                 <input type="number" id="cantidad_producto" name="cantidad_producto" class="form-control">
                             </div>
-                  <div class="col-md-4">
-    <label for="categoria_producto" class="form-label">Categoría</label>
-    <div class="d-flex gap-0">
-       <select name="categoria_producto" id="categoria_producto" class="form-select" onchange="mostrarIntfecha()">
-            <option value="seleccionar_categoría">Seleccionar Categoría</option>
-        </select>
-        <button type="button" onclick="abrirModalCategoria()" class="btn btn-primary btn-sm btn-add-option">
-            <i class="fa fa-plus"></i>
-        </button>
-    </div>
-</div>
+                            <div class="col-md-4">
+                                <label for="categoria_producto" class="form-label">Categoría</label>
+                                <div class="d-flex gap-0">
+                                <select name="categoria_producto" id="categoria_producto" class="form-select" onchange="mostrarIntfecha()">
+                                <option value="seleccionar_categoría">Seleccionar Categoría</option>
+                                </select>
+                                <button type="button" onclick="abrirModalCategoria()" class="btn btn-primary btn-sm btn-add-option">
+                                <i class="fa fa-plus"></i>
+                                </button>
+                                </div>
+                                </div>
+                                 <div class="col-md-3">
+                                <label for="oficina_producto" class="form-label">Oficina</label>
+                                <select name="oficina" id="oficina_producto" class="form-select" required>
+                                    <option value="1" selected>Oficina 1</option>
+                                    <option value="2">Oficina 2</option>
+                                </select>
+                            </div>
                         </div>
 
-                     
-
+                   
                         <!-- Sección 2: Unidad de Medida (Condicional) -->
                         <div id="unidad_medida_wrapper" style="display: none;">
                             <div class="row mb-3">
@@ -955,6 +1014,27 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         if (charCode < 48 || charCode > 57) {
             event.preventDefault();
         }
+    }
+
+    // Función global para cambiar de oficina
+    window.cambiarOficina = function() {
+        // Obtener la oficina seleccionada del filtro
+        var oficinaSeleccionada = $('#filtroOficina').val() || 1;
+
+        $.ajax({
+            url: '/arequipago/obtenerTodosProductos',
+            type: 'GET',
+            data: { oficina: oficinaSeleccionada },
+            dataType: 'json',
+            success: function(productos) {
+                todosLosProductos = productos; // Guardar en variable global
+                mostrarProductos(productos); // Mostrar todos inicialmente
+            },
+            error: function(xhr, status, error) {
+                console.error("Error al cargar los productos:", error);
+                alert("Hubo un error al cargar los productos. Por favor, intenta de nuevo más tarde.");
+            }
+        });
     }
 
     function consultarRUC() {
@@ -1640,6 +1720,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         formData.append('precio', precio); // Agregar precio
         formData.append('fecha_registro', fecha_registro);
         formData.append('guia_remision',guia_remision);
+        formData.append('oficina', document.getElementById('oficina_producto').value); // Agregar oficina
         // Agregar valores de aro y perfil si llantas_wrapper está visible
         if (llantas_wrapper && llantas_wrapper.style.display !== 'none') {
             formData.append('aro', document.getElementById('aro').value); // Añadido aro al formData
@@ -1922,6 +2003,9 @@ function mostrarDetallesProducto(idProducto) {
                 
                 console.log(producto);
 
+                // Determinar símbolo de moneda
+                const simboloMoneda = producto.moneda === 'USD' ? '$' : 'S/';
+                
                 // Llenar los campos básicos
                 $('#detalle-nombre').text(producto.nombre || 'No disponible');
                 $('#detalle-marca').text(producto.marca || 'No especificada');
@@ -1932,8 +2016,19 @@ function mostrarDetallesProducto(idProducto) {
                 $('#detalle-tipo').text(producto.tipo_producto || 'No disponible');
                 $('#detalle-ruc').text(producto.ruc || 'No disponible');
                 $('#detalle-razon-social').text(producto.razon_social || 'No disponible');
-                $('#detalle-precio').text('S/ ' + (producto.precio || '0'));
-                $('#detalle-precio-venta').text('S/ ' + (producto.precio_venta || '0'));
+                $('#detalle-precio').text(simboloMoneda + ' ' + (producto.precio || '0.00'));
+                $('#detalle-precio-venta').text(simboloMoneda + ' ' + (producto.precio_venta || '0.00'));
+                
+                // Mostrar descuento por cuota
+                if (producto.descuento_cuota && producto.descuento_cuota > 0) {
+                    $('#detalle-descuento-cuota').text(simboloMoneda + ' ' + parseFloat(producto.descuento_cuota).toFixed(2));
+                } else {
+                    $('#detalle-descuento-cuota').text('Sin descuento');
+                }
+                
+                // Mostrar moneda
+                $('#detalle-moneda').text(producto.moneda === 'USD' ? 'Dólares (USD)' : 'Soles (PEN)');
+                
                 $('#detalle-fecha-registro').text(producto.fecha_registro || 'No disponible');
                 $('#detalle-fecha-vencimiento').text(producto.fecha_vencimiento || 'No disponible');
                 $('#detalle-guia-remision').text(producto.guia_remision || 'No disponible');
@@ -1983,19 +2078,14 @@ function mostrarDetallesProducto(idProducto) {
                     $('#detalle-chip-section').hide();
                 }
 
-                // MODIFICACIÓN: AGREGAR SECCIÓN PARA VEHÍCULOS
+                // Sección para vehículos
                 if (esVehiculo && producto.caracteristicas && producto.caracteristicas.length > 0) {
                     $('#detalle-vehiculo-section').show();
                     
                     // Limpiar contenido previo
                     $('#detalle-vehiculo-caracteristicas').empty();
                     
-                    // MODIFICACIÓN: CREAR TABLA DINÁMICA PARA CARACTERÍSTICAS INCLUYENDO COLOR Y AÑO
-                    const $table = $('<table class="table table-bordered table-sm"></table>');
-                    const $tbody = $('<tbody></tbody>');
-                    
-                    // MODIFICACIÓN: ORDENAR LAS CARACTERÍSTICAS PARA QUE FECHA_VENC_SOAT, FECHA_VENC_SEGURO, COLOR, ANIO, CHASIS, VIN
-                    // APAREZCAN EN UN ORDEN ESPECÍFICO Y LÓGICO
+                    // Ordenar características
                     const ordenCaracteristicas = {
                         'anio': 1,
                         'color': 2,
@@ -2005,36 +2095,41 @@ function mostrarDetallesProducto(idProducto) {
                         'vin': 6
                     };
                     
-                    // MODIFICACIÓN: ORDENAR CARACTERÍSTICAS SEGÚN LA PRIORIDAD DEFINIDA
                     producto.caracteristicas.sort(function(a, b) {
                         const ordenA = ordenCaracteristicas[a.nombre] || 999;
                         const ordenB = ordenCaracteristicas[b.nombre] || 999;
                         return ordenA - ordenB;
                     });
                     
+                    // Crear grid de características
+                    const $row = $('<div class="row g-3"></div>');
+                    
                     producto.caracteristicas.forEach(function(item) {
-                        const fila = $('<tr></tr>');
-                        // Formatear nombre de característica para mejor visualización
+                        // Formatear nombre de característica
                         let nombreFormateado = item.nombre.replace(/_/g, ' ').replace(/\b\w/g, function(l) { 
                             return l.toUpperCase(); 
                         });
                         
-                        // MODIFICACIÓN: NOMBRES MÁS AMIGABLES PARA CARACTERÍSTICAS ESPECÍFICAS
-                        if (item.nombre === 'fecha_venc_soat') {
-                            nombreFormateado = 'Vencimiento SOAT';
-                        } else if (item.nombre === 'fecha_venc_seguro') {
-                            nombreFormateado = 'Vencimiento Seguro';
-                        } else if (item.nombre === 'anio') {
-                            nombreFormateado = 'Año';
-                        }
+                        // Nombres más amigables
+                        const nombresAmigables = {
+                            'fecha_venc_soat': 'Vencimiento SOAT',
+                            'fecha_venc_seguro': 'Vencimiento Seguro',
+                            'anio': 'Año',
+                            'chasis': 'Chasis',
+                            'vin': 'VIN',
+                            'color': 'Color'
+                        };
                         
-                        fila.append($('<td class="fw-bold"></td>').text(nombreFormateado));
-                        fila.append($('<td></td>').text(item.valor || '-'));
-                        $tbody.append(fila);
+                        nombreFormateado = nombresAmigables[item.nombre] || nombreFormateado;
+                        
+                        // Crear columna
+                        const $col = $('<div class="col-md-6"></div>');
+                        $col.append($('<label class="text-muted small"></label>').text(nombreFormateado));
+                        $col.append($('<p class="mb-0"></p>').text(item.valor || '-'));
+                        $row.append($col);
                     });
                     
-                    $table.append($tbody);
-                    $('#detalle-vehiculo-caracteristicas').append($table);
+                    $('#detalle-vehiculo-caracteristicas').append($row);
                 }
 
                 // Mostrar el modal
@@ -2241,6 +2336,9 @@ function cargarCategoriaProductos() {
 
     function inicializarPlaceholderDescuento() {
         actualizarPlaceholderDescuento();
+        // Establecer la oficina del modal según el filtro seleccionado
+        var oficinaSeleccionada = $('#filtroOficina').val() || 1;
+        $('#oficina_producto').val(oficinaSeleccionada);
     }
 
     function saveProductsMassive(){
@@ -2957,9 +3055,13 @@ function cargarCategoriaProductos() {
 
         // Función mejorada para cargar productos y almacenarlos (usa variable global)
         function cargarProductos() {
+            // Obtener la oficina seleccionada del filtro
+            var oficinaSeleccionada = $('#filtroOficina').val() || 1;
+
             $.ajax({
                 url: '/arequipago/obtenerTodosProductos',
                 type: 'GET',
+                data: { oficina: oficinaSeleccionada },
                 dataType: 'json',
                 success: function(productos) {
                     todosLosProductos = productos; // Guardar en variable global
@@ -2971,6 +3073,7 @@ function cargarCategoriaProductos() {
                 }
             });
         }
+
 
         // Modificar el buscador para que use los filtros
         $('#buscadorProductos').on('keyup', function() {

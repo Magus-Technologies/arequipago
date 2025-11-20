@@ -151,6 +151,68 @@ class Cupon
         }
     }
 
+    /**
+     * Obtener cupones filtrados por departamento
+     * Incluye cupones del departamento específico + cupones nacionales (sin departamento)
+     */
+    public function obtenerPorDepartamento($departamentoId)
+    {
+        try {
+            $sql = "SELECT c.*, 
+                           d.nombre as departamento_nombre,
+                           COUNT(DISTINCT ca.id) as usuarios_asignados,
+                           COUNT(DISTINCT cut.id) as total_usos,
+                           COUNT(CASE WHEN ca.tipo_usuario = 'conductor' THEN 1 END) as conductores_asignados,
+                           COUNT(CASE WHEN ca.tipo_usuario = 'cliente' THEN 1 END) as clientes_asignados
+                    FROM cupones c 
+                    LEFT JOIN depast d ON c.departamento_id = d.iddepast
+                    LEFT JOIN cupones_asignados ca ON c.id = ca.id_cupon AND ca.activo = 1
+                    LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon
+                    WHERE c.activo = 1 
+                    AND (c.departamento_id = ? OR c.departamento_id IS NULL)
+                    AND c.fecha_inicio <= CURDATE() 
+                    AND c.fecha_fin >= CURDATE()
+                    GROUP BY c.id, d.nombre
+                    ORDER BY c.created_at DESC";
+
+            $stmt = $this->conectar->prepare($sql);
+            if (!$stmt) {
+                throw new Exception('Error al preparar la consulta: ' . $this->conectar->error);
+            }
+
+            $stmt->bind_param('i', $departamentoId);
+            if (!$stmt->execute()) {
+                throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            $result = $stmt->get_result();
+            $cupones = [];
+
+            while ($row = $result->fetch_assoc()) {
+                // Corregir para mostrar el total de usuarios correctamente
+                $row['conductores_asignados'] = $row['usuarios_asignados']; // Para mantener compatibilidad
+                
+                // Agregar objeto departamento para compatibilidad con frontend
+                if ($row['departamento_id']) {
+                    $row['departamento'] = [
+                        'iddepast' => $row['departamento_id'],
+                        'nombre' => $row['departamento_nombre']
+                    ];
+                } else {
+                    $row['departamento'] = null;
+                }
+                
+                $cupones[] = $row;
+            }
+
+            $stmt->close();
+            return $cupones;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::obtenerPorDepartamento(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
     public function obtenerUsuariosPorCupon($idCupon)
     {
         try {

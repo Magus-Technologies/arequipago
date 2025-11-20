@@ -125,6 +125,11 @@ class Financiamiento
             $fechaEntregaObj->add(new DateInterval('P7D')); // Agregar 7 días
             $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
         }
+        
+        // ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
+        $placaVehiculo = isset($datos['placa_vehiculo']) && $datos['placa_vehiculo'] !== ''
+            ? strtoupper(trim($datos['placa_vehiculo']))
+            : null;
 
         // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado y campos CrediYango
         $query = 'INSERT INTO financiamiento (
@@ -156,8 +161,9 @@ class Financiamiento
                 estado_entrega,       -- ✅ NUEVO: Campo para trackear entrega CrediYango
                 es_entrega_especial,  -- ✅ NUEVO: Flag de entrega especial (plan 42)
                 fecha_entrega,        -- NUEVO: Campo para CrediYango
-                fecha_inicio_pagos_calculada  -- NUEVO: Campo para CrediYango
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                fecha_inicio_pagos_calculada,  -- NUEVO: Campo para CrediYango
+                placa_vehiculo        -- ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -165,8 +171,8 @@ class Financiamiento
             die('Error al preparar la consulta: ' . $this->conectar->error);
         }
 
-        // 💥 Modificado: Actualizado bind_param para incluir usuario_id, aprobado, estado_entrega, es_entrega_especial y campos CrediYango
-        // CORREGIDO: 29 tipos para 29 variables
+        // 💥 Modificado: Actualizado bind_param para incluir usuario_id, aprobado, estado_entrega, es_entrega_especial, campos CrediYango y placa_vehiculo
+        // CORREGIDO: 30 tipos para 30 variables
         // i=integer, d=double, s=string
         // Posición 8: cantidad_producto = 's' (aunque numérico, se guarda como string)
         // Posición 25: cobrar_mora = 'i' (integer)
@@ -204,8 +210,11 @@ class Financiamiento
         // Posición 25: cobrar_mora = 'i' (integer) ✅
         // Posición 26: estado_entrega = 's' (string/ENUM) ✅
         // Posición 27: es_entrega_especial = 'i' (integer) ✅
+        // Posición 28: fecha_entrega = 's' (string/date) ✅
+        // Posición 29: fecha_inicio_pagos_calculada = 's' (string/date) ✅
+        // Posición 30: placa_vehiculo = 's' (string) ✅ NUEVO
         $stmt->bind_param(
-            'iiiiissddiissssssdsdddiiisiss',
+            'iiiiissddiissssssdsdddiiisisss',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
@@ -234,7 +243,8 @@ class Financiamiento
             $estadoEntrega,
             $esEntregaEspecial,
             $fechaEntrega,
-            $fechaInicioPagosCalculada
+            $fechaInicioPagosCalculada,
+            $placaVehiculo
         );
 
         error_log("🔍 DESPUÉS DE BIND_PARAM - Ejecutando query...");
@@ -1050,7 +1060,7 @@ class Financiamiento
         }
     }
 
-    public function obtenerReportesPagos($offset, $limit, $search, $fechaInicio = '', $fechaFin = '')
+    public function obtenerReportesPagos($offset, $limit, $search, $fechaInicio = '', $fechaFin = '', $orderColumn = 'fecha_pago', $orderDir = 'desc')
     {
         // MODIFICADO: Base de la consulta - Cambiado INNER JOIN a LEFT JOIN para conductores
         $query = "SELECT p.*, 
@@ -1068,25 +1078,53 @@ class Financiamiento
         LEFT JOIN conductores c ON p.id_conductor = c.id_conductor  
         LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
         LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
-        WHERE (c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR u.nombres LIKE ? OR p.monto LIKE ?
-        OR c.numUnidad LIKE ? OR
-            cf.nombres LIKE ? OR cf.apellido_paterno LIKE ? OR
+        WHERE (
+            CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ? OR
+            CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) LIKE ? OR
+            CONCAT(u.nombres, ' ', u.apellidos) LIKE ? OR
+            CONCAT(c.nombres, ' ', c.apellido_paterno) LIKE ? OR
+            CONCAT(cf.nombres, ' ', cf.apellido_paterno) LIKE ? OR
+            CONCAT(c.nombres, ' ', c.apellido_materno) LIKE ? OR
+            CONCAT(cf.nombres, ' ', cf.apellido_materno) LIKE ? OR
+            CONCAT(c.apellido_paterno, ' ', c.apellido_materno) LIKE ? OR
+            CONCAT(cf.apellido_paterno, ' ', cf.apellido_materno) LIKE ? OR
+            c.nombres LIKE ? OR c.apellido_paterno LIKE ? OR c.apellido_materno LIKE ? OR
+            cf.nombres LIKE ? OR cf.apellido_paterno LIKE ? OR cf.apellido_materno LIKE ? OR
+            u.nombres LIKE ? OR u.apellidos LIKE ? OR
+            p.monto LIKE ? OR
+            c.numUnidad LIKE ? OR
             c.nro_documento LIKE ? OR cf.n_documento LIKE ?
         )";
 
         // NUEVO: Añadir condición de fechas si están presentes
         $params = [];
-        $types = 'sssssssss';  // ✅ MODIFICADO: Agregados 2 's' más para los documentos
+        $types = 'sssssssssssssssssssss';  // 21 parámetros de búsqueda
         $searchTerm = "%$search%";
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;  /* AÑADIDO: para búsqueda en cf.nombres */
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en c.nro_documento
-        $params[] = $searchTerm;  // ✅ NUEVO: para búsqueda en cf.n_documento
+        // Búsqueda en nombre completo concatenado (3 parámetros)
+        $params[] = $searchTerm;  // CONCAT conductor completo (nombres + apellido_paterno + apellido_materno)
+        $params[] = $searchTerm;  // CONCAT cliente completo (nombres + apellido_paterno + apellido_materno)
+        $params[] = $searchTerm;  // CONCAT asesor (nombres + apellidos)
+        // Búsqueda en combinaciones de 2 campos (6 parámetros)
+        $params[] = $searchTerm;  // CONCAT conductor (nombres + apellido_paterno)
+        $params[] = $searchTerm;  // CONCAT cliente (nombres + apellido_paterno)
+        $params[] = $searchTerm;  // CONCAT conductor (nombres + apellido_materno)
+        $params[] = $searchTerm;  // CONCAT cliente (nombres + apellido_materno)
+        $params[] = $searchTerm;  // CONCAT conductor (apellido_paterno + apellido_materno)
+        $params[] = $searchTerm;  // CONCAT cliente (apellido_paterno + apellido_materno)
+        // Búsqueda en campos individuales (9 parámetros)
+        $params[] = $searchTerm;  // c.nombres
+        $params[] = $searchTerm;  // c.apellido_paterno
+        $params[] = $searchTerm;  // c.apellido_materno
+        $params[] = $searchTerm;  // cf.nombres
+        $params[] = $searchTerm;  // cf.apellido_paterno
+        $params[] = $searchTerm;  // cf.apellido_materno
+        $params[] = $searchTerm;  // u.nombres
+        $params[] = $searchTerm;  // u.apellidos
+        // Otros campos (3 parámetros)
+        $params[] = $searchTerm;  // p.monto
+        $params[] = $searchTerm;  // c.numUnidad
+        $params[] = $searchTerm;  // c.nro_documento
+        $params[] = $searchTerm;  // cf.n_documento
 
         // NUEVO: Si hay fechas, añadir al WHERE
         if (!empty($fechaInicio) && !empty($fechaFin)) {
@@ -1102,7 +1140,31 @@ class Financiamiento
         // Línea 916 - MODIFICAR
         $query .= ' AND (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)';
 
-        $query .= ' ORDER BY p.fecha_pago DESC LIMIT ?, ?';
+        // Validar columna de ordenamiento para prevenir SQL injection
+        $allowedColumns = ['conductor', 'numUnidad', 'asesor', 'monto', 'fecha_pago', 'estado'];
+        if (!in_array($orderColumn, $allowedColumns)) {
+            $orderColumn = 'fecha_pago';
+        }
+        
+        // Validar dirección de ordenamiento
+        $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
+        
+        // Agregar ORDER BY dinámico
+        if ($orderColumn === 'conductor') {
+            $query .= ' ORDER BY COALESCE(conductor, cliente) ' . $orderDir;
+        } else if ($orderColumn === 'monto') {
+            $query .= ' ORDER BY CAST(p.monto AS DECIMAL(10,2)) ' . $orderDir;
+        } else if ($orderColumn === 'numUnidad') {
+            $query .= ' ORDER BY c.numUnidad ' . $orderDir;
+        } else if ($orderColumn === 'asesor') {
+            $query .= ' ORDER BY asesor ' . $orderDir;
+        } else if ($orderColumn === 'estado') {
+            $query .= ' ORDER BY p.estado ' . $orderDir;
+        } else {
+            $query .= ' ORDER BY p.' . $orderColumn . ' ' . $orderDir;
+        }
+        
+        $query .= ' LIMIT ?, ?';
         $types .= 'ii';
         $params[] = $offset;
         $params[] = $limit;

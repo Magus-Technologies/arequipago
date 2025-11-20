@@ -2345,7 +2345,30 @@ window.descargarCronogramaPDF = function() {
         }
 
         function downloadData() {
-            fetch('/arequipago/dataBaseConductor', {
+            // Mostrar loader con SweetAlert
+            Swal.fire({
+                title: 'Generando reporte...',
+                html: 'Por favor espera mientras se genera el archivo Excel',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Obtener los valores de los filtros aplicados
+            const filtroEstado = document.getElementById('filtroEstado').value;
+            const filtroTipoVehiculo = document.getElementById('filtroTipoVehiculo').value;
+            const filtroLima = document.getElementById('filtroLima').checked ? '1' : '0';
+
+            // Construir la URL con los parámetros de filtro
+            const params = new URLSearchParams({
+                filtroEstado: filtroEstado,
+                filtroTipoVehiculo: filtroTipoVehiculo,
+                filtroLima: filtroLima
+            });
+
+            fetch(`/arequipago/dataBaseConductor?${params.toString()}`, {
                 method: 'GET',
             })
                 .then(response => response.json())
@@ -2363,6 +2386,8 @@ window.descargarCronogramaPDF = function() {
                             icon: 'success',
                             title: 'Descarga exitosa',
                             text: 'El reporte ha sido descargado correctamente.',
+                            timer: 2000,
+                            showConfirmButton: false
                         });
                     } else {
                         throw new Error("No se pudo obtener el archivo Excel.");

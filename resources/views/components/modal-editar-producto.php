@@ -109,6 +109,19 @@
                                         </div>
                                     </div>
 
+                                    <!-- Oficina -->
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="edit_oficina" class="form-label">
+                                                <i class="fas fa-building text-primary"></i> Oficina
+                                            </label>
+                                            <select class="form-select" id="edit_oficina" name="OFICINA" required>
+                                                <option value="1">Oficina 1</option>
+                                                <option value="2">Oficina 2</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Campos de volumen (ocultos por defecto) -->
                                     <div id="edit_campos_volumen" style="display: none;">
                                         <div class="row">
@@ -460,7 +473,8 @@ function cargarDatosProductoEdit(idProducto) {
                 $('#edit_fecha_registro').val(productDataEdit.FECHA_REGISTRO || '');
                 $('#edit_fecha_vencimiento').val(productDataEdit.FECHA_VENCIMIENTO || '');
                 $('#edit_guia_remision').val(productDataEdit.GUIA_REMISION || '');
-                
+                $('#edit_oficina').val(productDataEdit.OFICINA || '1');
+
                 // Renderizar características
                 if (response.caracteristicas) {
                     renderizarCaracteristicasEdit(response.caracteristicas);
