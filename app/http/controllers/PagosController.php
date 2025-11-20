@@ -502,8 +502,37 @@ class PagosController extends Controller
             // Iniciamos una transacción
             mysqli_begin_transaction($this->conectar);
 
+            // ⭐ NUEVO: Verificar que el pago NO esté ya aprobado (prevenir duplicados)
+            $queryVerificar = 'SELECT estado FROM pagos_financiamiento WHERE idpagos_financiamiento = ? FOR UPDATE';
+            $stmtVerificar = mysqli_prepare($this->conectar, $queryVerificar);
+            
+            if (!$stmtVerificar) {
+                throw new Exception('Error al verificar estado del pago: ' . mysqli_error($this->conectar));
+            }
+            
+            mysqli_stmt_bind_param($stmtVerificar, 'i', $idPago);
+            mysqli_stmt_execute($stmtVerificar);
+            $resultVerificar = mysqli_stmt_get_result($stmtVerificar);
+            $pagoActual = mysqli_fetch_assoc($resultVerificar);
+            mysqli_stmt_close($stmtVerificar);
+            
+            if (!$pagoActual) {
+                throw new Exception('Pago no encontrado');
+            }
+            
+            if ($pagoActual['estado'] == 1) {
+                // El pago ya fue aprobado, no hacer nada
+                mysqli_rollback($this->conectar);
+                error_log("⚠️ Intento de aprobar pago {$idPago} que ya está aprobado");
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Este pago ya fue aprobado anteriormente'
+                ]);
+                return;
+            }
+
             // 1. Actualizamos el estado del pago a aprobado (1)
-            $queryPago = 'UPDATE pagos_financiamiento SET estado = 1 WHERE idpagos_financiamiento = ?';
+            $queryPago = 'UPDATE pagos_financiamiento SET estado = 1 WHERE idpagos_financiamiento = ? AND estado = 0';
 
             $stmtPago = mysqli_prepare($this->conectar, $queryPago);
 
@@ -513,11 +542,12 @@ class PagosController extends Controller
 
             mysqli_stmt_bind_param($stmtPago, 'i', $idPago);
             $resultPago = mysqli_stmt_execute($stmtPago);
+            $filasAfectadas = mysqli_stmt_affected_rows($stmtPago);
 
             mysqli_stmt_close($stmtPago);
 
-            if (!$resultPago) {
-                throw new Exception('Error al actualizar el estado del pago');
+            if (!$resultPago || $filasAfectadas === 0) {
+                throw new Exception('No se pudo actualizar el estado del pago (posiblemente ya fue procesado)');
             }
 
             // 2. Obtenemos las cuotas seleccionadas de pagos_pendientes_financiamientos

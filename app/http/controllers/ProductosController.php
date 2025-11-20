@@ -141,15 +141,18 @@ class ProductosController extends Controller
     public function obtenerTodosProductos()
     {
         try {
-            $productov2 = new Productov2();
-            $productos = $productov2->obtenerTodos();
+            // Obtener el parámetro de oficina desde la petición GET, por defecto oficina 1
+            $oficina = isset($_GET['oficina']) ? intval($_GET['oficina']) : 1;
 
-            // Filtrar productos para excluir aquellos con estado 0  
+            $productov2 = new Productov2();
+            $productos = $productov2->obtenerTodos($oficina);
+
+            // Filtrar productos para excluir aquellos con estado 0
             $productos = array_filter($productos, function ($producto) {
-                return $producto['estado'] != '0'; // Si el estado es 0, no se incluirá en la respuesta  
+                return $producto['estado'] != '0'; // Si el estado es 0, no se incluirá en la respuesta
             });
 
-            echo json_encode(array_values($productos)); 
+            echo json_encode(array_values($productos));
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode(["error" => $e->getMessage()]);
@@ -176,6 +179,7 @@ class ProductosController extends Controller
         $precio_venta = $_POST['precio_venta']?? null;
         $moneda = $_POST['moneda'] ?? 'S/.';
         $descuento_cuota = $_POST['descuento_cuota'] ?? null;
+        $oficina = isset($_POST['oficina']) ? intval($_POST['oficina']) : 1; // Obtener oficina, por defecto 1
 
         $aro = $_POST['aro'] ?? null; // Nuevo campo: aro
         $perfil = $_POST['perfil'] ?? null; // Nuevo campo: perfil
@@ -231,7 +235,7 @@ class ProductosController extends Controller
             'descuento_cuota' => $descuento_cuota,
         ];
 
-        // Ajustar para pasar datos en el orden correcto
+        // Ajustar para pasar datos en el orden correcto según el modelo
         $idProducto = $productoModel->insertar( // Cambiado para capturar el ID del producto insertado
             $productoData['nombre'],
             $productoData['marca'],
@@ -252,12 +256,7 @@ class ProductosController extends Controller
             $productoData['precio_venta'],
             $productoData['moneda'],
             $productoData['descuento_cuota'],
-            $vin,
-            $chasis,
-            $color,
-            $anio,
-            $placa,
-            $transmision
+            $oficina
         );
 
         // MODIFICADO: Verificar si la categoría es "celular" o "celulares" (sin importar mayúsculas, tildes, espacios o plural)
@@ -2124,7 +2123,8 @@ private function esCategoríaCelular($categoriaNormalizada) {
             'guia_remision' => $convertirVacioANull($post['GUIA_REMISION'] ?? null),
             'codigo_barra' => $convertirVacioANull($post['CODIGO_BARRA'] ?? null),
             'descuento_cuota' => isset($post['DESCUENTO_CUOTA']) && $post['DESCUENTO_CUOTA'] !== '' ? floatval($post['DESCUENTO_CUOTA']) : null,
-            'moneda' => $post['MONEDA'] ?? 'S/.'
+            'moneda' => $post['MONEDA'] ?? 'S/.',
+            'oficina' => isset($post['OFICINA']) ? intval($post['OFICINA']) : 1
         ];
     }
 
@@ -2265,19 +2265,22 @@ private function esCategoríaCelular($categoriaNormalizada) {
     public function obtenerVehiculos()
     {
         try {
+            // Obtener el parámetro de oficina desde la petición GET, por defecto oficina 1
+            $oficina = isset($_GET['oficina']) ? intval($_GET['oficina']) : 1;
+
             $productoModel = new Productov2();
-            
+
             // Buscar tanto por nombre como por ID de categoría para compatibilidad con datos antiguos
-            $vehiculosPorNombre = $productoModel->obtenerProductosPorCategoria('Vehículo');
-            $vehiculosPorId = $productoModel->obtenerProductosPorCategoria('15');
-            
+            $vehiculosPorNombre = $productoModel->obtenerProductosPorCategoria('Vehículo', $oficina);
+            $vehiculosPorId = $productoModel->obtenerProductosPorCategoria('15', $oficina);
+
             // Combinar ambos resultados y eliminar duplicados
             $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId);
-            
+
             // Eliminar duplicados basándose en el ID del producto
             $vehiculosUnicos = [];
             $idsVistos = [];
-            
+
             foreach ($vehiculos as $vehiculo) {
                 if (!in_array($vehiculo['idproductosv2'], $idsVistos)) {
                     $vehiculosUnicos[] = $vehiculo;
@@ -2338,6 +2341,284 @@ private function esCategoríaCelular($categoriaNormalizada) {
         } catch (Exception $e) {
             error_log("Error en obtenerNombreCategoria: " . $e->getMessage());
             return $categoriaId; // Devolver el ID si hay error
+        }
+    }
+
+    /**
+     * Obtener resumen de descuentos por cuota para el dashboard
+     * Solo accesible por Director (rol 3)
+     */
+    public function obtenerResumenDescuentos()
+    {
+        try {
+            // Verificar rol de Director
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Acceso denegado'
+                ]);
+                return;
+            }
+
+            // Usar la conexión del constructor
+            $conexion = (new Conexion())->getConexion();
+
+            // Consulta para obtener resumen
+            $sql = "SELECT 
+                        COUNT(*) as total_productos,
+                        SUM(CASE WHEN moneda IN ('S/.', 'PEN') THEN descuento_cuota ELSE 0 END) as total_soles,
+                        SUM(CASE WHEN moneda IN ('$', 'USD') THEN descuento_cuota ELSE 0 END) as total_dolares
+                    FROM productosv2 
+                    WHERE estado = 1 
+                    AND descuento_cuota IS NOT NULL 
+                    AND descuento_cuota > 0";
+
+            $result = $conexion->query($sql);
+            $data = $result->fetch_assoc();
+
+            echo json_encode([
+                'success' => true,
+                'total_productos' => (int)$data['total_productos'],
+                'total_soles' => (float)$data['total_soles'],
+                'total_dolares' => (float)$data['total_dolares']
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerResumenDescuentos: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener resumen'
+            ]);
+        }
+    }
+
+    /**
+     * Obtener todos los productos con información de descuento
+     * Solo accesible por Director (rol 3)
+     */
+    public function obtenerProductosConDescuento()
+    {
+        try {
+            // Verificar rol de Director
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Acceso denegado'
+                ]);
+                return;
+            }
+
+            // Usar la conexión del constructor
+            $conexion = (new Conexion())->getConexion();
+
+            // Consulta para obtener todos los productos activos
+            $sql = "SELECT 
+                        idproductosv2,
+                        nombre,
+                        codigo,
+                        categoria,
+                        precio_venta,
+                        moneda,
+                        descuento_cuota
+                    FROM productosv2 
+                    WHERE estado = 1
+                    ORDER BY nombre ASC";
+
+            $result = $conexion->query($sql);
+            $productos = [];
+
+            while ($row = $result->fetch_assoc()) {
+                $productos[] = $row;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'productos' => $productos
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerProductosConDescuento: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener productos'
+            ]);
+        }
+    }
+
+    /**
+     * Aplicar descuento masivo a múltiples productos
+     * Solo accesible por Director (rol 3)
+     */
+    public function aplicarDescuentoMasivo()
+    {
+        try {
+            // Verificar rol de Director
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Acceso denegado'
+                ]);
+                return;
+            }
+
+            // Validar datos recibidos
+            if (!isset($_POST['ids']) || !isset($_POST['descuento'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Datos incompletos'
+                ]);
+                return;
+            }
+
+            $ids = $_POST['ids'];
+            $descuento = floatval($_POST['descuento']);
+
+            if (!is_array($ids) || empty($ids)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se seleccionaron productos'
+                ]);
+                return;
+            }
+
+            if ($descuento < 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'El descuento debe ser mayor o igual a 0'
+                ]);
+                return;
+            }
+
+            // Usar la conexión del constructor
+            $conexion = (new Conexion())->getConexion();
+
+            // Preparar consulta con placeholders
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $sql = "UPDATE productosv2 
+                    SET descuento_cuota = ? 
+                    WHERE idproductosv2 IN ($placeholders) 
+                    AND estado = 1";
+
+            $stmt = $conexion->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception('Error al preparar consulta: ' . $conexion->error);
+            }
+
+            // Crear array de parámetros: primero el descuento, luego los IDs
+            $params = array_merge([$descuento], $ids);
+            
+            // Crear string de tipos: 'd' para el descuento (double), 'i' para cada ID (integer)
+            $types = 'd' . str_repeat('i', count($ids));
+
+            // Bind parameters
+            $stmt->bind_param($types, ...$params);
+
+            if ($stmt->execute()) {
+                $affected = $stmt->affected_rows;
+                $stmt->close();
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => "Descuento aplicado a {$affected} producto(s) correctamente"
+                ]);
+            } else {
+                throw new Exception('Error al ejecutar actualización: ' . $stmt->error);
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en aplicarDescuentoMasivo: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al aplicar descuento: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Actualizar descuento de un producto individual
+     * Solo accesible por Director (rol 3)
+     */
+    public function actualizarDescuentoProducto()
+    {
+        try {
+            // Verificar rol de Director
+            if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Acceso denegado'
+                ]);
+                return;
+            }
+
+            // Validar datos recibidos
+            if (!isset($_POST['id']) || !isset($_POST['descuento'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Datos incompletos'
+                ]);
+                return;
+            }
+
+            $id = intval($_POST['id']);
+            $descuento = floatval($_POST['descuento']);
+
+            if ($id <= 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de producto inválido'
+                ]);
+                return;
+            }
+
+            if ($descuento < 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'El descuento debe ser mayor o igual a 0'
+                ]);
+                return;
+            }
+
+            // Usar la conexión del constructor
+            $conexion = (new Conexion())->getConexion();
+
+            $sql = "UPDATE productosv2 
+                    SET descuento_cuota = ? 
+                    WHERE idproductosv2 = ? 
+                    AND estado = 1";
+
+            $stmt = $conexion->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception('Error al preparar consulta: ' . $conexion->error);
+            }
+
+            $stmt->bind_param('di', $descuento, $id);
+
+            if ($stmt->execute()) {
+                if ($stmt->affected_rows > 0) {
+                    $stmt->close();
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Descuento actualizado correctamente'
+                    ]);
+                } else {
+                    $stmt->close();
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'No se encontró el producto o no se realizaron cambios'
+                    ]);
+                }
+            } else {
+                throw new Exception('Error al ejecutar actualización: ' . $stmt->error);
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en actualizarDescuentoProducto: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al actualizar descuento: ' . $e->getMessage()
+            ]);
         }
     }
 

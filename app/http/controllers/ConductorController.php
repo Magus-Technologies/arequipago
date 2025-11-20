@@ -218,9 +218,12 @@ class ConductorController extends Controller
                 $conductorArray[$key] = $value; // Asignar al array con las claves limpias
             }
 
+            // Procesar la foto con prioridad desde datos_usuarios
+            $conductorArray['foto'] = $conductor->obtenerFotoPerfil($id, 1);
+
             // NUEVO: Agregar estados de verificación al array del conductor (MOVIDO AQUÍ)
             $conductorArray['documentacion_completa'] = $documentacionCompleta;
-            $conductorArray['verificacion_domiciliaria'] = isset($conductorArray['verificacion_domiciliaria']) ? 
+            $conductorArray['verificacion_domiciliaria'] = isset($conductorArray['verificacion_domiciliaria']) ?
                 (bool)$conductorArray['verificacion_domiciliaria'] : false;
                 
 
@@ -699,10 +702,68 @@ class ConductorController extends Controller
     public function generarDataBaseConductors() {
         $conductorModel = new Conductor();
         $usuarioModel = new Usuario();
+        
+        // Obtener filtros desde los parámetros GET
+        $filtroEstado = isset($_GET['filtroEstado']) ? $_GET['filtroEstado'] : 'todos';
+        $filtroTipoVehiculo = isset($_GET['filtroTipoVehiculo']) ? $_GET['filtroTipoVehiculo'] : 'todos';
+        $filtroLima = isset($_GET['filtroLima']) ? $_GET['filtroLima'] : '0';
+        
         $conductores = $conductorModel->obtenerConductoresDataBase();
+        
+        // Aplicar filtros
+        $conductores = array_filter($conductores, function($conductor) use ($filtroEstado, $filtroTipoVehiculo, $filtroLima) {
+            // Filtro por estado (activo/desvinculado)
+            if ($filtroEstado === 'activos' && $conductor['desvinculado'] === '1') {
+                return false;
+            }
+            if ($filtroEstado === 'desvinculados' && $conductor['desvinculado'] !== '1') {
+                return false;
+            }
+            
+            // Filtro por tipo de vehículo
+            if ($filtroTipoVehiculo !== 'todos') {
+                $tipoVehiculo = isset($conductor['tipo_vehiculo']) ? strtolower($conductor['tipo_vehiculo']) : null;
+                if ($filtroTipoVehiculo === 'auto' && $tipoVehiculo !== 'auto') {
+                    return false;
+                }
+                if ($filtroTipoVehiculo === 'moto' && $tipoVehiculo !== 'moto') {
+                    return false;
+                }
+            }
+            
+            // Filtro por Lima
+            if ($filtroLima === '1') {
+                if (!isset($conductor['departamento_id']) || ($conductor['departamento_id'] !== '19' && $conductor['departamento_id'] !== 19)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
+        
+        // Agregar información de filtros aplicados en las primeras filas
+        $filtrosTexto = [];
+        if ($filtroEstado !== 'todos') {
+            $filtrosTexto[] = 'Estado: ' . ucfirst($filtroEstado);
+        }
+        if ($filtroTipoVehiculo !== 'todos') {
+            $filtrosTexto[] = 'Tipo de Vehículo: ' . ucfirst($filtroTipoVehiculo);
+        }
+        if ($filtroLima === '1') {
+            $filtrosTexto[] = 'Departamento: Solo Lima';
+        }
+        
+        $filaInicio = 1;
+        if (!empty($filtrosTexto)) {
+            $sheet->setCellValue('A1', 'FILTROS APLICADOS:');
+            $sheet->getStyle('A1')->getFont()->setBold(true);
+            $sheet->setCellValue('B1', implode(' | ', $filtrosTexto));
+            $sheet->mergeCells('B1:F1');
+            $filaInicio = 3;
+        }
 
         // Encabezados
         $headers = ['ID', 'Tipo Doc', 'Nro Documento', 'Nombre Completo', 'Fecha Nacimiento', 'Categoría Licencia', 'Nro Licencia', 'Teléfono', 'Correo', 'Unidad', 'Condición', 'Vehículo Flota', 'Fecha SOAT', 'Fecha Seguro', 'Dirección', 'Placa', 'Marca', 'Modelo', 'Año', 'Color', 'Tipo Servicio', 'Tipo Pago', 'Monto', 'Cronograma de Pagos', 'Observaciones', 'Fecha de Inscripción', // Nueva columna
@@ -713,10 +774,10 @@ class ConductorController extends Controller
             'Contacto de Emergencia - Parentesco', // Nueva columna
             'Resumen del Kit Entregado' // Nueva columna
         ];
-        $sheet->fromArray([$headers], null, 'A1');
+        $sheet->fromArray([$headers], null, 'A' . $filaInicio);
 
         // Aplicar estilo de centrado a los encabezados
-        $sheet->getStyle('A1:Y1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // Centra los encabezados
+        $sheet->getStyle('A' . $filaInicio . ':AF' . $filaInicio)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // Centra los encabezados
 
         // Ajustar el ancho de las columnas especificadas
        // Ajustar el ancho de las columnas específicas
@@ -729,7 +790,7 @@ class ConductorController extends Controller
         $sheet->getColumnDimension('AF')->setWidth(48); // Ancho para "Resumen del Kit Entregado" (triplicado)
 
         
-        $rowIndex = 2;
+        $rowIndex = $filaInicio + 1;
         foreach ($conductores as $conductor) {
             $id = $conductor['id_conductor'];
             $nombreCompleto = $conductor['nombre_completo'];
@@ -851,7 +912,8 @@ class ConductorController extends Controller
         }
 
         // Aplicar alineación centrada a todas las celdas de datos
-        $sheet->getStyle("A2:Y$rowIndex")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // Centra todas las columnas
+        $filaInicioData = $filaInicio + 1;
+        $sheet->getStyle("A{$filaInicioData}:AF{$rowIndex}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // Centra todas las columnas
 
         // Generar contenido del archivo Excel en memoria
         ob_start(); // Captura el contenido en el buffer

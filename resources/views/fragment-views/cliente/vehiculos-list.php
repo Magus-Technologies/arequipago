@@ -99,7 +99,7 @@
         <!-- Filter Section -->
         <div class="filter-section">
             <div class="row align-items-end">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">Buscar vehículo</label>
                     <div class="search-box">
                         <i class="fas fa-search"></i>
@@ -109,7 +109,14 @@
                                placeholder="Buscar por marca, modelo, placa, chasis, VIN...">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label">Oficina</label>
+                    <select class="form-select" id="filtroOficinaVehiculo" onchange="cambiarOficinaVehiculo()">
+                        <option value="1" selected>Oficina 1</option>
+                        <option value="2">Oficina 2</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Marca</label>
                     <select class="form-select" id="filtroMarca" onchange="filtrarVehiculos()">
                         <option value="">Todas las marcas</option>
@@ -175,66 +182,123 @@
 
     <!-- Modal Ver Detalles -->
     <div class="modal fade" id="modalDetallesVehiculo" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-car"></i> Detalles del Vehículo</h5>
+                    <h5 class="modal-title"><i class="fas fa-car me-2"></i>Detalles del Vehículo</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Código:</label>
-                            <p id="detalle-codigo"></p>
+                    <!-- Información Básica -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Nombre:</label>
-                            <p id="detalle-nombre"></p>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Nombre del Vehículo</label>
+                                    <p class="fw-bold mb-0" id="detalle-nombre"></p>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted small">Código</label>
+                                    <p class="fw-bold mb-0" id="detalle-codigo"></p>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="text-muted small">Stock Disponible</label>
+                                    <p class="fw-bold mb-0" id="detalle-stock"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Marca</label>
+                                    <p class="mb-0" id="detalle-marca"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Modelo</label>
+                                    <p class="mb-0" id="detalle-modelo"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Año</label>
+                                    <p class="mb-0" id="detalle-anio"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Marca:</label>
-                            <p id="detalle-marca"></p>
+                    </div>
+
+                    <!-- Especificaciones Técnicas -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Especificaciones Técnicas</h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Modelo:</label>
-                            <p id="detalle-modelo"></p>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">VIN</label>
+                                    <p class="mb-0" id="detalle-vin"></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Chasis</label>
+                                    <p class="mb-0" id="detalle-chasis"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Placa</label>
+                                    <p class="mb-0" id="detalle-placa"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Color</label>
+                                    <p class="mb-0" id="detalle-color"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Transmisión</label>
+                                    <p class="mb-0" id="detalle-transmision"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">VIN:</label>
-                            <p id="detalle-vin"></p>
+                    </div>
+
+                    <!-- Información de Precios -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Información de Precios</h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Chasis:</label>
-                            <p id="detalle-chasis"></p>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Precio de Venta</label>
+                                    <p class="fw-bold text-primary mb-0" id="detalle-precio"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Descuento por Cuota</label>
+                                    <p class="fw-bold text-warning mb-0" id="detalle-descuento-cuota"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Moneda</label>
+                                    <p class="mb-0" id="detalle-moneda"></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Placa:</label>
-                            <p id="detalle-placa"></p>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="card mb-3" id="detalle-info-adicional" style="display: none;">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Información Adicional</h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Color:</label>
-                            <p id="detalle-color"></p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Año:</label>
-                            <p id="detalle-anio"></p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Transmisión:</label>
-                            <p id="detalle-transmision"></p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Stock:</label>
-                            <p id="detalle-stock"></p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">Precio Venta:</label>
-                            <p id="detalle-precio"></p>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Vencimiento SOAT</label>
+                                    <p class="mb-0" id="detalle-soat"></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Vencimiento Seguro</label>
+                                    <p class="mb-0" id="detalle-seguro"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cerrar</button>
                 </div>
             </div>
         </div>
@@ -263,14 +327,21 @@
                         </div>
 
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="categoria_producto_vehiculo" class="form-label">Categoría <span class="text-danger">*</span></label>
                                 <select id="categoria_producto_vehiculo" class="form-select" onchange="mostrarIntfechaVehiculo()" required disabled>
                                     <option value="">Cargando...</option>
                                 </select>
                                 <small class="form-text text-muted">La categoría está fija como Vehículo</small>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="oficina_vehiculo" class="form-label">Oficina <span class="text-danger">*</span></label>
+                                <select id="oficina_vehiculo" class="form-select" required>
+                                    <option value="1" selected>Oficina 1</option>
+                                    <option value="2">Oficina 2</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
                                 <label for="cantidad_producto_vehiculo" class="form-label">Cantidad <span class="text-danger">*</span></label>
                                 <input type="number" id="cantidad_producto_vehiculo" class="form-control" required value="1" min="1">
                             </div>
@@ -439,9 +510,13 @@
 
         // Función para cargar vehículos
         function cargarVehiculos() {
+            // Obtener la oficina seleccionada del filtro
+            var oficinaSeleccionada = $('#filtroOficinaVehiculo').val() || 1;
+
             $.ajax({
                 url: '/arequipago/obtenerVehiculos',
                 type: 'GET',
+                data: { oficina: oficinaSeleccionada },
                 dataType: 'json',
                 success: function(response) {
                     if (response.success) {
@@ -458,6 +533,11 @@
                     mostrarError('Error al cargar los vehículos');
                 }
             });
+        }
+
+        // Función global para cambiar de oficina en vehículos
+        window.cambiarOficinaVehiculo = function() {
+            cargarVehiculos(); // Recargar los vehículos de la oficina seleccionada
         }
 
         // Función para llenar los filtros
@@ -530,6 +610,9 @@
 
             // Mostrar vehículos
             vehiculosPagina.forEach(vehiculo => {
+                // Determinar símbolo de moneda (el backend envía "$" o "S/.")
+                const simboloMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? '$' : 'S/';
+                
                 const fila = `
                     <tr>
                         <td>${vehiculo.idproductosv2}</td>
@@ -542,7 +625,7 @@
                         <td>${vehiculo.color || 'N/A'}</td>
                         <td>${vehiculo.transmision || 'N/A'}</td>
                         <td><span class="badge bg-primary">${vehiculo.cantidad || 0}</span></td>
-                        <td><strong>S/ ${parseFloat(vehiculo.precio_venta || 0).toFixed(2)}</strong></td>
+                        <td><strong>${simboloMoneda} ${parseFloat(vehiculo.precio_venta || 0).toFixed(2)}</strong></td>
                         <td>
                             <button class="btn btn-sm btn-info btn-action" onclick="verDetalles(${vehiculo.idproductosv2})" title="Ver detalles">
                                 <i class="fas fa-eye"></i>
@@ -615,18 +698,46 @@
             const vehiculo = vehiculos.find(v => v.idproductosv2 == id);
             if (!vehiculo) return;
 
+            // Determinar símbolo de moneda (el backend envía "$" o "S/.")
+            const simboloMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? '$' : 'S/';
+
+            // Información Básica
             $('#detalle-codigo').text(vehiculo.codigo || 'N/A');
             $('#detalle-nombre').text(vehiculo.nombre || 'N/A');
             $('#detalle-marca').text(vehiculo.marca || 'No especificada');
             $('#detalle-modelo').text(vehiculo.modelo || 'No especificado');
+            $('#detalle-anio').text(vehiculo.anio || 'No especificado');
+            $('#detalle-stock').text(vehiculo.cantidad || 0);
+
+            // Especificaciones Técnicas
             $('#detalle-vin').text(vehiculo.vin || 'No especificado');
             $('#detalle-chasis').text(vehiculo.chasis || 'No especificado');
             $('#detalle-placa').text(vehiculo.placa || 'En trámite');
             $('#detalle-color').text(vehiculo.color || 'No especificado');
-            $('#detalle-anio').text(vehiculo.anio || 'No especificado');
             $('#detalle-transmision').text(vehiculo.transmision || 'No especificado');
-            $('#detalle-stock').text(vehiculo.cantidad || 0);
-            $('#detalle-precio').text('S/ ' + parseFloat(vehiculo.precio_venta || 0).toFixed(2));
+
+            // Información de Precios
+            $('#detalle-precio').text(simboloMoneda + ' ' + parseFloat(vehiculo.precio_venta || 0).toFixed(2));
+            
+            // Mostrar descuento por cuota
+            if (vehiculo.descuento_cuota && vehiculo.descuento_cuota > 0) {
+                $('#detalle-descuento-cuota').text(simboloMoneda + ' ' + parseFloat(vehiculo.descuento_cuota).toFixed(2));
+            } else {
+                $('#detalle-descuento-cuota').text('Sin descuento');
+            }
+            
+            // Mostrar moneda
+            const textoMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? 'Dólares (USD)' : 'Soles (PEN)';
+            $('#detalle-moneda').text(textoMoneda);
+
+            // Información Adicional (SOAT y Seguro)
+            if (vehiculo.fecha_venc_soat || vehiculo.fecha_venc_seguro) {
+                $('#detalle-info-adicional').show();
+                $('#detalle-soat').text(vehiculo.fecha_venc_soat || 'No especificado');
+                $('#detalle-seguro').text(vehiculo.fecha_venc_seguro || 'No especificado');
+            } else {
+                $('#detalle-info-adicional').hide();
+            }
 
             $('#modalDetallesVehiculo').modal('show');
         }
@@ -639,6 +750,10 @@
 
             // Cargar la categoría vehículo (ya se selecciona automáticamente)
             cargarCategoriasVehiculo();
+
+            // Establecer la oficina del modal según el filtro seleccionado
+            var oficinaSeleccionada = $('#filtroOficinaVehiculo').val() || 1;
+            $('#oficina_vehiculo').val(oficinaSeleccionada);
 
             // Abrir el modal de agregar producto
             $('#modal-add-prod-vehiculo').modal('show');
@@ -663,12 +778,41 @@
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Aquí iría la llamada AJAX para eliminar
-                    Swal.fire(
-                        'Eliminado',
-                        'El vehículo ha sido eliminado',
-                        'success'
-                    );
+                    // Llamada AJAX para eliminar el vehículo
+                    $.ajax({
+                        url: '/arequipago/deleteProducts',
+                        type: 'POST',
+                        data: JSON.stringify({ ids: [id] }),
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Eliminado',
+                                    text: 'El vehículo ha sido eliminado correctamente',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                // Recargar la lista de vehículos
+                                cargarVehiculos();
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message || 'No se pudo eliminar el vehículo'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error al eliminar vehículo:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Error al eliminar el vehículo. Intenta nuevamente.'
+                            });
+                        }
+                    });
                 }
             });
         }
@@ -862,6 +1006,7 @@
             formData.append('tipo_producto', 'fisico');
             formData.append('cantidad_producto', $('#cantidad_producto_vehiculo').val());
             formData.append('categoria_producto', categoriaText);
+            formData.append('oficina', $('#oficina_vehiculo').val()); // Agregar oficina
 
             // Datos de vehículo
             formData.append('marca_vehiculo', $('#marca_vehiculo_modal').val());

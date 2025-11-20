@@ -28,7 +28,7 @@ class GrupoFinanciamientoModel
         }
     }
 
-    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1, $esYango = 0)
+    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1, $esYango = 0, $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.')
     {
         // 🔹 Convertir valores vacíos a null para evitar errores
         $cuotaInicial = $cuotaInicial !== '' ? $cuotaInicial : null;
@@ -39,6 +39,7 @@ class GrupoFinanciamientoModel
         $montoSinInteres = $montoSinInteres !== '' ? $montoSinInteres : null;
         $fechaInicio = $fechaInicio !== '' ? $fechaInicio : null;
         $fechaFin = $fechaFin !== '' ? $fechaFin : null;
+        $montoComision = $montoComision !== '' ? $montoComision : null;  // ✅ NUEVO
 
         if ($tipoVehicular === 'auto') {
             $tipoVehicular = 'vehiculo';
@@ -49,8 +50,8 @@ class GrupoFinanciamientoModel
         }
 
         $sql = 'INSERT INTO planes_financiamiento
-        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado, es_yango)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado, es_yango, aplica_comision, monto_comision, moneda_comision)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -58,7 +59,7 @@ class GrupoFinanciamientoModel
             die('Error en la preparación de la consulta: ' . $this->conectar->error);
         }
 
-        $stmt->bind_param('ssssssssssssisi',  // Agregado: es_yango como integer al final
+        $stmt->bind_param('ssssssssssssisiiss',  // ✅ Agregado: aplica_comision (i), monto_comision (s), moneda_comision (s)
             $nombrePlan,
             $cuotaInicial,
             $montoCuota,
@@ -73,7 +74,10 @@ class GrupoFinanciamientoModel
             $tipoVehicular,
             $cobrarMora,  // i - integer
             $estado,  // s - string
-            $esYango  // i - integer (NUEVO)
+            $esYango,  // i - integer
+            $aplicaComision,  // i - integer (✅ NUEVO)
+            $montoComision,  // s - string/decimal (✅ NUEVO)
+            $monedaComision  // s - string (✅ NUEVO)
         );
 
         // 🔹 Ejecutar la consulta y verificar si fue exitosa
@@ -180,7 +184,8 @@ class GrupoFinanciamientoModel
 
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas,
         $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres,
-        $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0)
+        $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0, 
+        $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.')
     {
         // CORREGIDO: Validar y limpiar tipoVehicular
         if ($tipoVehicular === '' || $tipoVehicular === 'null' || $tipoVehicular === null) {
@@ -208,7 +213,10 @@ class GrupoFinanciamientoModel
             tipo_vehicular = ?,
             cobrar_mora = ?,
             estado = ?,
-            es_yango = ?
+            es_yango = ?,
+            aplica_comision = ?,
+            monto_comision = ?,
+            moneda_comision = ?
         WHERE idplan_financiamiento = ?';
 
         $stmt = $this->conectar->prepare($sql);
@@ -227,8 +235,9 @@ class GrupoFinanciamientoModel
         $fechaInicio = ($fechaInicio !== null && $fechaInicio !== '') ? $fechaInicio : null;
         $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
         $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
+        $montoComision = ($montoComision !== null && $montoComision !== '') ? $montoComision : null;
 
-        $stmt->bind_param('ssssssssssssisii',  // Agregado: es_yango como integer
+        $stmt->bind_param('ssssssssssssisiissi',  // ✅ Agregado: aplica_comision (i), monto_comision (s), moneda_comision (s)
             $nombrePlan,
             $cuotaInicial,
             $montoCuota,
@@ -243,7 +252,10 @@ class GrupoFinanciamientoModel
             $tipoVehicular,
             $cobrarMora,  // i - integer
             $estado,  // s - string
-            $esYango,  // i - integer (NUEVO)
+            $esYango,  // i - integer
+            $aplicaComision,  // i - integer (✅ NUEVO)
+            $montoComision,  // s - string/decimal (✅ NUEVO)
+            $monedaComision,  // s - string (✅ NUEVO)
             $id  // i - integer
         );
 

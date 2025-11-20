@@ -18,7 +18,7 @@ if ($modo_filtro == 'dia') {
 }
 
 // Incluir funciones de filtro
-include_once('filtro-calendario.php');
+include_once ('filtro-calendario.php');
 
 $conexion = (new Conexion())->getConexion();
 
@@ -40,8 +40,8 @@ if ($modo_filtro == 'dia') {
     $titulo_periodo = 'Período: ' . $fecha_inicio_mostrar->format('d/m/Y') . ' - ' . $fecha_fin_mostrar->format('d/m/Y');
 }
 
-$anio1 = date("Y");
-$mes1 = date("m");
+$anio1 = date('Y');
+$mes1 = date('m');
 $anio2 = '';
 $mes2 = '';
 if ($mes1 == 1) {
@@ -106,23 +106,23 @@ foreach ($resultList as $dtTemp) {
 }
 
 // Consulta SQL para contar los registros de conductores
-$sql = "SELECT COUNT(*) AS total_conductores FROM conductores"; // Consulta para contar los conductores
-$result = $conexion->query($sql); // Ejecutar la consulta
-$row = $result->fetch_assoc(); // Obtener el resultado
+$sql = 'SELECT COUNT(*) AS total_conductores FROM conductores';  // Consulta para contar los conductores
+$result = $conexion->query($sql);  // Ejecutar la consulta
+$row = $result->fetch_assoc();  // Obtener el resultado
 
 // Obtener el número de conductores
 $cantidad_conductores = $row['total_conductores'];
 
 // Consulta SQL para contar los registros de conductores
-$sql = "SELECT COUNT(*) AS total_conductores FROM conductores"; 
-$result = $conexion->query($sql); 
-$row = $result->fetch_assoc(); 
+$sql = 'SELECT COUNT(*) AS total_conductores FROM conductores';
+$result = $conexion->query($sql);
+$row = $result->fetch_assoc();
 
 // Obtener el número de conductores
 $cantidad_conductores = $row['total_conductores'];
 
 // 🆕 NUEVA CONSULTA: Contar clientes de la tabla clientes_financiar
-$sql_clientes = "SELECT COUNT(*) AS total_clientes FROM clientes_financiar";
+$sql_clientes = 'SELECT COUNT(*) AS total_clientes FROM clientes_financiar';
 $result_clientes = $conexion->query($sql_clientes);
 $row_clientes = $result_clientes->fetch_assoc();
 
@@ -226,9 +226,9 @@ function obtenerCumpleanosSemanales($conexion)
     // Obtener fecha actual y calcular inicio y fin de semana
     $hoy = new DateTime();
     $inicioSemana = clone $hoy;
-    $inicioSemana->modify('this week monday'); // Lunes de esta semana
+    $inicioSemana->modify('this week monday');  // Lunes de esta semana
     $finSemana = clone $inicioSemana;
-    $finSemana->modify('+6 days'); // Domingo de esta semana
+    $finSemana->modify('+6 days');  // Domingo de esta semana
 
     // Formatear fechas para la consulta SQL
     $inicioSemanaStr = $inicioSemana->format('m-d');
@@ -254,7 +254,7 @@ function obtenerCumpleanosSemanales($conexion)
     $resultado = mysqli_query($conexion, $sql);
 
     if (!$resultado) {
-        return []; // Retornar array vacío si hay error
+        return [];  // Retornar array vacío si hay error
     }
 
     return mysqli_fetch_all($resultado, MYSQLI_ASSOC);
@@ -331,10 +331,10 @@ $cumpleanosOrdenados = array_merge(
 $colores = ['#7852a2', '#4a6bdf', '#df4a94', '#4adfb4', '#dfb44a'];
 
 // 1. Conductores registrados por semana y por mes
-$sql_conductores_semanal = "SELECT YEARWEEK(fecha_inscripcion, 1) AS semana, COUNT(*) AS total 
+$sql_conductores_semanal = 'SELECT YEARWEEK(fecha_inscripcion, 1) AS semana, COUNT(*) AS total 
                              FROM inscripciones 
                              GROUP BY semana 
-                             ORDER BY semana DESC";
+                             ORDER BY semana DESC';
 
 $sql_conductores_mensual = "SELECT DATE_FORMAT(fecha_inscripcion, '%Y-%m') AS mes, COUNT(*) AS total 
                             FROM inscripciones 
@@ -345,11 +345,11 @@ $result_conductores_semanal = $conexion->query($sql_conductores_semanal);
 $result_conductores_mensual = $conexion->query($sql_conductores_mensual);
 
 // 2. Pagos por inscripción (id_tipopago != 2) por semana y por mes
-$sql_pagos_semanal = "SELECT YEARWEEK(fecha_pago, 1) AS semana, COUNT(*) AS total 
+$sql_pagos_semanal = 'SELECT YEARWEEK(fecha_pago, 1) AS semana, COUNT(*) AS total 
                       FROM conductor_pago 
                       WHERE id_tipopago != 2
                       GROUP BY semana 
-                      ORDER BY semana DESC";
+                      ORDER BY semana DESC';
 
 $sql_pagos_mensual = "SELECT DATE_FORMAT(fecha_pago, '%Y-%m') AS mes, COUNT(*) AS total 
                       FROM conductor_pago 
@@ -361,11 +361,11 @@ $result_pagos_semanal = $conexion->query($sql_pagos_semanal);
 $result_pagos_mensual = $conexion->query($sql_pagos_mensual);
 
 // 3. Financiamientos de inscripciones (id_tipopago = 2) por semana y por mes
-$sql_financiamiento_ins_semanal = "SELECT YEARWEEK(fecha_pago, 1) AS semana, COUNT(*) AS total 
+$sql_financiamiento_ins_semanal = 'SELECT YEARWEEK(fecha_pago, 1) AS semana, COUNT(*) AS total 
                                    FROM conductor_pago 
                                    WHERE id_tipopago = 2
                                    GROUP BY semana 
-                                   ORDER BY semana DESC";
+                                   ORDER BY semana DESC';
 
 $sql_financiamiento_ins_mensual = "SELECT DATE_FORMAT(fecha_pago, '%Y-%m') AS mes, COUNT(*) AS total 
                                    FROM conductor_pago 
@@ -377,10 +377,10 @@ $result_financiamiento_ins_semanal = $conexion->query($sql_financiamiento_ins_se
 $result_financiamiento_ins_mensual = $conexion->query($sql_financiamiento_ins_mensual);
 
 // 4. Financiamientos de productos (fecha_creacion) por semana y por mes
-$sql_financiamiento_prod_semanal = "SELECT YEARWEEK(fecha_creacion, 1) AS semana, COUNT(*) AS total 
+$sql_financiamiento_prod_semanal = 'SELECT YEARWEEK(fecha_creacion, 1) AS semana, COUNT(*) AS total 
                                     FROM financiamiento 
                                     GROUP BY semana 
-                                    ORDER BY semana DESC";
+                                    ORDER BY semana DESC';
 
 $sql_financiamiento_prod_mensual = "SELECT DATE_FORMAT(fecha_creacion, '%Y-%m') AS mes, COUNT(*) AS total 
                                     FROM financiamiento 
@@ -434,11 +434,12 @@ $meses = [
     12 => 'Diciembre'
 ];
 
-function obtenerConductoresYClientesConCuotasVencidas() {
+function obtenerConductoresYClientesConCuotasVencidas()
+{
     $conexion = (new Conexion())->getConexion();  // Conexión a la base de datos
     $fecha_actual = date('Y-m-d');  // Fecha actual
     $conductores_vencidos = [];  // Arreglo para guardar los conductores con cuotas vencidas
-    
+
     // 1. Obtener cuotas de inscripción vencidas
     $query_inscripcion = "
         SELECT 
@@ -463,9 +464,9 @@ function obtenerConductoresYClientesConCuotasVencidas() {
     ";
 
     $result_inscripcion = $conexion->query($query_inscripcion);
-    
+
     if (!$result_inscripcion) {
-        die("Error al ejecutar la consulta de inscripción: " . $conexion->error);
+        die('Error al ejecutar la consulta de inscripción: ' . $conexion->error);
     }
 
     // Procesar los resultados de la consulta de inscripción
@@ -479,7 +480,7 @@ function obtenerConductoresYClientesConCuotasVencidas() {
             'moneda' => 'S/'
         ];
     }
-    
+
     // 2. Obtener cuotas de financiamiento de productos vencidas
     $query_productos_conductores = "
         SELECT 
@@ -507,12 +508,12 @@ function obtenerConductoresYClientesConCuotasVencidas() {
             c.id_conductor, p.nombre, f.moneda  /* MODIFICADO: Agrupamos también por moneda */
     ";
 
-   $result_productos_conductores = $conexion->query($query_productos_conductores);
+    $result_productos_conductores = $conexion->query($query_productos_conductores);
 
     if (!$result_productos_conductores) {
-        die("Error al ejecutar la consulta de productos para conductores: " . $conexion->error);
+        die('Error al ejecutar la consulta de productos para conductores: ' . $conexion->error);
     }
-    
+
     while ($row = $result_productos_conductores->fetch_assoc()) {
         $registros_vencidos[] = [
             'id_conductor' => $row['id_conductor'],
@@ -525,7 +526,7 @@ function obtenerConductoresYClientesConCuotasVencidas() {
     }
 
     // 3. Obtener cuotas de financiamiento de productos vencidas para clientes
-        $query_productos_clientes = "
+    $query_productos_clientes = "
             SELECT 
                 NULL as id_conductor, 
                  cf.id as id_cliente,
@@ -552,72 +553,74 @@ function obtenerConductoresYClientesConCuotasVencidas() {
         ";
 
     $result_productos_clientes = $conexion->query($query_productos_clientes);
-    
+
     if (!$result_productos_clientes) {
-            die("Error al ejecutar la consulta de productos para clientes: " . $conexion->error);
-        }
+        die('Error al ejecutar la consulta de productos para clientes: ' . $conexion->error);
+    }
 
     // Procesar los resultados de las cuotas de productos para clientes // código
-        while ($row = $result_productos_clientes->fetch_assoc()) {
-            $registros_vencidos[] = [
-                'id_conductor' => $row['id_conductor'],
-                'id_cliente' => $row['id_cliente'],
-                'nombre' => $row['nombre_completo'],
-                'num_cuotas' => $row['num_cuotas'],
-                'deuda_total' => $row['deuda_total'],
-                'tipo_financiamiento' => $row['tipo_financiamiento'],
-                'moneda' => $row['moneda']
-            ]; // código
-        }
+    while ($row = $result_productos_clientes->fetch_assoc()) {
+        $registros_vencidos[] = [
+            'id_conductor' => $row['id_conductor'],
+            'id_cliente' => $row['id_cliente'],
+            'nombre' => $row['nombre_completo'],
+            'num_cuotas' => $row['num_cuotas'],
+            'deuda_total' => $row['deuda_total'],
+            'tipo_financiamiento' => $row['tipo_financiamiento'],
+            'moneda' => $row['moneda']
+        ];  // código
+    }
 
-        // Ordenar por número de cuotas (mayor a menor)
-            usort($registros_vencidos, function($a, $b) {
-                return $b['num_cuotas'] - $a['num_cuotas'];
-            });
-    
+    // Ordenar por número de cuotas (mayor a menor)
+    usort($registros_vencidos, function ($a, $b) {
+        return $b['num_cuotas'] - $a['num_cuotas'];
+    });
+
     return $registros_vencidos;
 }
 
 // Esta función genera el HTML para la lista de conductores
-function generarListaRegistrosVencidos($registros_vencidos) {
+function generarListaRegistrosVencidos($registros_vencidos)
+{
     $html = '';
     $contador = 0;
-    
+
     // Limitar a mostrar solo 3 conductores
     foreach ($registros_vencidos as $index => $registro) {
-        if ($contador >= 3) break;
-        
+        if ($contador >= 3)
+            break;
+
         // Determinar el color según el número de cuotas
         $color_class = $registro['num_cuotas'] > 2 ? 'rgba(255, 86, 48, 0.1)' : 'rgba(255, 163, 48, 0.1)';
         $text_color = $registro['num_cuotas'] > 2 ? '#FF5630' : '#FF9F1A';
-        
+
         // Modificar HTML con los datos dinámicos
         $html .= '
-        <div id="vencidos-item-'.($index+1).'" class="mb-3 p-3" style="background-color: rgba(247, 213, 74, 0.08); border-radius: 12px; transition: all 0.3s ease;">
+        <div id="vencidos-item-' . ($index + 1) . '" class="mb-3 p-3" style="background-color: rgba(247, 213, 74, 0.08); border-radius: 12px; transition: all 0.3s ease;">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h6 id="vencidos-nombre-'.($index+1).'" style="font-weight: 600; margin-bottom: 5px; color: #333;">'.$registro['nombre'].'</h6>
-                    <span id="vencidos-financiamiento-'.($index+1).'" style="font-size: 0.85rem; color: #8b8c64; display: block; margin-bottom: 8px;">Financiamiento: '.$registro['tipo_financiamiento'].'</span>
+                    <h6 id="vencidos-nombre-' . ($index + 1) . '" style="font-weight: 600; margin-bottom: 5px; color: #333;">' . $registro['nombre'] . '</h6>
+                    <span id="vencidos-financiamiento-' . ($index + 1) . '" style="font-size: 0.85rem; color: #8b8c64; display: block; margin-bottom: 8px;">Financiamiento: ' . $registro['tipo_financiamiento'] . '</span>
                 </div>
                 <div class="text-end">
-                    <span id="vencidos-cuotas-'.($index+1).'" class="px-2 py-1" style="background-color: '.$color_class.'; color: '.$text_color.'; font-weight: 600; border-radius: 6px; font-size: 0.85rem;">'.$registro['num_cuotas'].' cuota'.($registro['num_cuotas'] > 1 ? 's' : '').'</span>
+                    <span id="vencidos-cuotas-' . ($index + 1) . '" class="px-2 py-1" style="background-color: ' . $color_class . '; color: ' . $text_color . '; font-weight: 600; border-radius: 6px; font-size: 0.85rem;">' . $registro['num_cuotas'] . ' cuota' . ($registro['num_cuotas'] > 1 ? 's' : '') . '</span>
                 </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2">
                 <span style="font-size: 0.85rem; color: #666;">Deuda total:</span>
-                <h5 id="vencidos-monto-'.($index+1).'" style="font-weight: 700; color: #333; margin-bottom: 0;">'.$registro['moneda'].' '.number_format($registro['deuda_total'], 2, '.', ',').'</h5>  
+                <h5 id="vencidos-monto-' . ($index + 1) . '" style="font-weight: 700; color: #333; margin-bottom: 0;">' . $registro['moneda'] . ' ' . number_format($registro['deuda_total'], 2, '.', ',') . '</h5>  
             </div>
         </div>';
-        
+
         $contador++;
     }
-    
+
     return $html;
 }
 
-$registros_vencidos = obtenerConductoresYClientesConCuotasVencidas(); 
-$total_registros = count($registros_vencidos); 
-$html_registros = generarListaRegistrosVencidos($registros_vencidos); 
+$registros_vencidos = obtenerConductoresYClientesConCuotasVencidas();
+$total_registros = count($registros_vencidos);
+$html_registros = generarListaRegistrosVencidos($registros_vencidos);
 ?>
 
 
@@ -625,7 +628,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <!-- llamamos al css de home -->
-<link rel="stylesheet" href="public/css/home.css">
+<link rel="stylesheet" href="public/css/home.css?v=2.1">
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -694,7 +697,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 </div>
 
 <!-- Notificación de ventas -->
-<?php if ($totales_ventas["cantidad_ventas"] == 0): ?>
+<?php if ($totales_ventas['cantidad_ventas'] == 0): ?>
     <div id="notificacion-ventas" class="alert alert-warning mb-4 notification-fade-in">
         <div class="d-flex align-items-center">
             <i class="mdi mdi-alert-circle-outline me-2" style="font-size: 24px;"></i>
@@ -721,7 +724,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
                     <h5 class="text-uppercase fw-light text-dark text-end">Monto Vendido</h5>
                     <h1 class="fw-bolder text-end">S/
-                        <?= number_format($totales_ventas["total_ventas"] ?? 0.00, 2, ".", ",") ?></h1>
+                        <?= number_format($totales_ventas['total_ventas'] ?? 0.0, 2, '.', ',') ?></h1>
                     <!-- <div class="mini-stat-label bg-success">
                         <p class="mb-0">Mes</p>
                     </div> -->
@@ -749,7 +752,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     <h6 class="fw-light text-uppercase text-black text-end"
                         style="margin-bottom: 20px; margin-right: -12px;">Producto mas Vendido</h6>
                     <p class="fw-bolder text-end" style="font-size: 17px;">
-                        <?= $producto_mas_vendido["nombre"] ?? "No hay datos" ?></p>
+                        <?= $producto_mas_vendido['nombre'] ?? 'No hay datos' ?></p>
                     <div hidden class="mini-stat-label bg-danger">
                         <p class="mb-0">Total</p>
                     </div>
@@ -760,7 +763,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
 
                     <p class="text-dark-50 mb-0 mt-1 text-end">Cantidad Vendidas
-                        (<?= $producto_mas_vendido["total_vendido"] ?? "0" ?>)</p>
+                        (<?= $producto_mas_vendido['total_vendido'] ?? '0' ?>)</p>
                 </div>
             </div>
         </div>
@@ -776,7 +779,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
                     <h5 class="fw-light text-uppercase text-black text-end">Total en Facturas</h5>
                     <h1 class="fw-bolder text-end">S/
-                        <?= number_format($totales_ventas["total_facturas"] ?? 0.00, 2, ".", ",") ?></h1>
+                        <?= number_format($totales_ventas['total_facturas'] ?? 0.0, 2, '.', ',') ?></h1>
                     <!-- <div class="mini-stat-label bg-info">
                         <p class="mb-0"> Mes</p>
                     </div> -->
@@ -802,7 +805,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
                     <h5 class="fw-light text-uppercase text-black text-end">Total en Boletas</h5>
                     <h1 class="fw-bolder text-end">S/
-                        <?= number_format($totales_ventas["total_boletas"] ?? 0.00, 2, ".", ",") ?></h1>
+                        <?= number_format($totales_ventas['total_boletas'] ?? 0.0, 2, '.', ',') ?></h1>
                     <!-- <div class="mini-stat-label bg-warning">
                         <p class="mb-0">Mes</p>
                     </div> -->
@@ -824,7 +827,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
     <!-- Componente de Cumpleaños de la Semana (versión mejorada) -->
     <div class="col-xl-6 col-md-12">
         <div class="card border-0"
-            style="border-radius:20px;box-shadow:0 10px 15px -3px rgba(120,82,162,0.2),0 4px 6px -2px rgba(120,82,162,0.1); background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);">
+            style="border-radius:20px;box-shadow:0 10px 15px -3px rgba(120,82,162,0.2),0 4px 6px -2px rgba(120,82,162,0.1); background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%); max-height: 400px;">
             <div class="card-body p-0">
                 <div class="row g-0">
                     <!-- Columna izquierda con título y decoración -->
@@ -949,30 +952,30 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                                         if ($esHoy) {
                                             $badgeText = 'Hoy';
                                             $badgeColor = 'white';
-                                            $badgeBgColor = '#00c389'; // Verde
+                                            $badgeBgColor = '#00c389';  // Verde
                                         } elseif ($cumpleYaPaso) {
                                             if ($diasDesde == 1) {
                                                 $badgeText = 'Ayer';
                                                 $badgeColor = 'white';
-                                                $badgeBgColor = '#ff9500'; // Naranja
+                                                $badgeBgColor = '#ff9500';  // Naranja
                                             } elseif ($diasDesde <= 7) {
                                                 $badgeText = 'Hace ' . $diasDesde . ' días';
                                                 $badgeColor = 'white';
-                                                $badgeBgColor = '#ff9500'; // Naranja
+                                                $badgeBgColor = '#ff9500';  // Naranja
                                             } else {
                                                 $badgeText = 'En ' . $diasHasta . ' días';
                                                 $badgeColor = '#6c757d';
-                                                $badgeBgColor = '#e9ecef'; // Gris claro
+                                                $badgeBgColor = '#e9ecef';  // Gris claro
                                             }
                                         } else {
                                             if ($diasHasta == 1) {
                                                 $badgeText = 'Mañana';
                                                 $badgeColor = 'white';
-                                                $badgeBgColor = '#007bff'; // Azul
+                                                $badgeBgColor = '#007bff';  // Azul
                                             } else {
                                                 $badgeText = 'En ' . $diasHasta . ' días';
                                                 $badgeColor = 'white';
-                                                $badgeBgColor = '#007bff'; // Azul
+                                                $badgeBgColor = '#007bff';  // Azul
                                             }
                                         }
                                         ?>
@@ -1005,7 +1008,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                                             <div class="ms-3 flex-grow-1">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <h6 class="mb-0 fw-semibold">
-                                                        <?= mb_strimwidth($nombreCompleto, 0, 20, "...") ?></h6>
+                                                        <?= mb_strimwidth($nombreCompleto, 0, 20, '...') ?></h6>
                                                     <span class="badge rounded-pill px-2 py-1"
                                                         style="background-color: <?= $badgeBgColor ?>; color: <?= $badgeColor ?>;">
                                                         <?= $badgeText ?>
@@ -1052,26 +1055,38 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
     </div>
 
-    <div class="col-xl-3 col-md-6 custom-conductor-box">
+    <div class="col-xl-6 col-md-6">
 
         <!-- Conductores con Cuotas Vencidas -->
-        <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); margin-top:-20px;">
-                <div class="card-body">
-                    <div class="mb-4">
-                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc; width: 65px; height:80.31px !important;">
-                            <img class="mt-3 mr-5" src="<?=URL::to('public/assets/images/services-icon/debt-icons-in-full-hd.png')?>" alt="">
+        <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); max-height: 400px; overflow: hidden;">
+                <div class="card-body d-flex flex-column" style="height: 100%; padding-bottom: 20px;">
+                    <!-- Header con icono izquierda, título centro, contador derecha -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <!-- Icono a la izquierda -->
+                        <div style="width: 50px; height: 50px; border-radius: 15px; background-color: #eed8fc; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <img src="<?= URL::to('public/assets/images/services-icon/debt-icons-in-full-hd.png') ?>" alt="" style="width: 35px; height: 35px;">
                         </div>
-                        <h5 id="vencidos-titulo" class="fw-light text-uppercase text-black text-end" style="margin-bottom: 12px;">
-                            CLIENTES CON <br> CUOTAS VENCIDAS <!-- コード -->
-                        </h5> <!-- コード -->
-                        <h2 id="vencidos-contador" class="fw-bolder text-end" style="font-size: 1.8rem; margin-bottom: 20px;"><?= $total_registros ?> registros</h2>
+                        
+                        <!-- Título centrado -->
+                        <div class="flex-grow-1 text-center px-2">
+                            <h5 class="fw-bold text-uppercase mb-0" style="color: #333; font-size: 0.9rem;">
+                                CLIENTES CON CUOTAS VENCIDAS
+                            </h5>
+                        </div>
+                        
+                        <!-- Contador a la derecha -->
+                        <div style="flex-shrink: 0;">
+                            <span class="badge rounded-pill px-3 py-2" style="background-color: #eed8fc; color: #5e3d82; font-weight: bold; font-size: 0.95rem;">
+                                <?= $total_registros ?> registros
+                            </span>
+                        </div>
                     </div>
                     
                     <!-- Lista de conductores con cuotas vencidas -->
-                    <div id="vencidos-lista" style="max-height: 250px; overflow-y: auto; margin-bottom: 12px;">
+                    <div id="vencidos-lista" class="flex-grow-1 cumpleanos-lista" style="max-height: 240px; overflow-y: auto; overflow-x: hidden; margin-bottom: 12px;">
                         <?= $html_registros ?>
 
-                        <?php if(empty($registros_vencidos)): ?>
+                        <?php if (empty($registros_vencidos)): ?>
                         <div class="text-center p-3">
                             <p style="color: #8b8c64;">No hay clientes con cuotas vencidas actualmente.</p>
                         </div>
@@ -1079,10 +1094,8 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
                     </div>
                     
-                    <!-- Si no hay conductores con cuotas vencidas, mostrar mensaje -->
-            
                     <!-- Botón Ver Todos -->
-                    <div class="text-center mt-3">
+                    <div class="text-center mt-2">
                         <button id="vencidos-ver-todos" class="btn" onclick="allConductoresCuotasVencidas()" style="background-color: #f7d54a; color: #333; font-weight: 500; padding: 8px 20px; border-radius: 8px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">Ver Todos</button>
                     </div>
                 </div>
@@ -1090,48 +1103,85 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
     </div>
 
-<!-- Añadir aquí Pagos Inscripción -->
-<!-- Columna para ambas tarjetas de pagos -->
-<div class="col-xl-3 col-md-12">
+</div>
 
-        <!-- Pagos Inscripción -->
-        <div class="card mini-stat bg-white text-dark mb-4" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); margin-top:19px;">
-            <div class="card-body">
-                <div class="mb-4">
-                    <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-15 h-30" style="border-radius: 20px; background-color: #eed8fc; height: 81.31px !important
-                    ">
+<!-- Nueva fila para los 3 cards de pagos -->
+<div class="row">
+<!-- Pagos Inscripción -->
+<div class="col-xl-3 col-md-6">
+    <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
                     <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/2488749.png') ?>" alt="">
-                    </div>
-                        <h5 class="fw-light text-uppercase text-black text-end">Pagos Inscripción</h5>
-                        <h1 class="fw-bolder text-end">S/ <?= number_format($total_pagos_inscripcion, 2, ".", ",") ?></h1>
-                     </div>
-                    <div class="pt-2">
-                        <p class="text-dark-50 mb-0 mt-1 text-end">
-                            <?= $modo_filtro == 'dia' ? 'Día: ' . date('d/m/Y', strtotime($fecha_inicio)) : 'Período: ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)) ?>
-                        </p>
-                    </div>
                 </div>
+                <h5 class="fw-light text-uppercase text-black text-end">Pagos Inscripción</h5>
+                <h1 class="fw-bolder text-end">S/ <?= number_format($total_pagos_inscripcion, 2, '.', ',') ?></h1>
             </div>
+            <div class="pt-2">
+                <p class="text-dark-50 mb-0 mt-1 text-end">
+                    <?= $modo_filtro == 'dia' ? 'Día: ' . date('d/m/Y', strtotime($fecha_inicio)) : 'Período: ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)) ?>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <!-- Pagos Financiamiento (inmediatamente debajo) -->
-    <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); margin-top: 48px;">
-            <div class="card-body">
-                <div class="mb-7">
-                    <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
-                        <img class="mt-3 mr-5" src="<?=URL::to('public/assets/images/services-icon/financiar.png')?>" alt="">
-                    </div>
-                    <h5 class="fw-light text-uppercase text-black text-end">Pagos Financiamiento</h5>
-                    <h1 class="fw-bolder text-end">S/ <?= number_format($total_pagos_financiamiento, 2, ".", ",") ?></h1>
+<!-- Pagos Financiamiento -->
+<div class="col-xl-3 col-md-6">
+    <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
+                    <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/financiar.png') ?>" alt="">
                 </div>
-                <div class="pt-2">
-                    <p class="text-dark-50 mb-0 mt-1 text-end">
-                        <?= $modo_filtro == 'dia' ? 'Día: ' . date('d/m/Y', strtotime($fecha_inicio)) : 'Período: ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)) ?>
-                    </p>
+                <h5 class="fw-light text-uppercase text-black text-end">Pagos Financiamiento</h5>
+                <h1 class="fw-bolder text-end">S/ <?= number_format($total_pagos_financiamiento, 2, '.', ',') ?></h1>
+            </div>
+            <div class="pt-2">
+                <p class="text-dark-50 mb-0 mt-1 text-end">
+                    <?= $modo_filtro == 'dia' ? 'Día: ' . date('d/m/Y', strtotime($fecha_inicio)) : 'Período: ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)) ?>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if ($_SESSION['id_rol'] == 3): // Solo para Director ?>
+<!-- Card Descuentos por Cuota -->
+<div class="col-xl-3 col-md-6">
+    <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
+                    <i class="fas fa-percentage" style="font-size: 2rem; margin: 20px 0 0 18px; color: #667eea;"></i>
+                </div>
+                <h5 class="fw-light text-uppercase text-black text-end">Descuentos por Cuota</h5>
+                <h1 class="fw-bolder text-end" id="total-productos-descuento">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                </h1>
+            </div>
+            <div class="pt-2">
+                <p class="text-dark-50 mb-2 mt-1 text-end">
+                    <span class="text-muted small d-block">
+                        <i class="fas fa-coins text-warning"></i> 
+                        <span id="total-subsidiado-soles">S/ 0.00</span>
+                    </span>
+                    <span class="text-muted small d-block">
+                        <i class="fas fa-dollar-sign text-success"></i> 
+                        <span id="total-subsidiado-dolares">$ 0.00</span>
+                    </span>
+                </p>
+                <div class="d-grid gap-2 mt-2">
+                    <button class="btn btn-primary btn-sm" onclick="abrirGestionDescuentos()">
+                        <i class="fas fa-cog me-1"></i> Gestionar Descuentos
+                    </button>
                 </div>
             </div>
         </div>
-
-    
+    </div>
+</div>
+<?php endif; ?>
 
 </div>
 
@@ -1157,7 +1207,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
                     <h5 class="fw-light text-uppercase text-black text-end">Ventas CrediGo</h5>
                     <h1 class="fw-bolder text-end" style="color: #1d8348;">
-                        S/ <?= number_format($total_ventas_credigo, 2, ".", ",") ?>
+                        S/ <?= number_format($total_ventas_credigo, 2, '.', ',') ?>
                     </h1>
                 </div>
                 <div class="pt-2">
@@ -1181,7 +1231,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                     </div>
                     <h5 class="fw-light text-uppercase text-black text-end">Ganancias CrediGo</h5>
                     <h1 class="fw-bolder text-end" style="color: #f39c12;">
-                        S/ <?= number_format($ganancias_credigo, 2, ".", ",") ?>
+                        S/ <?= number_format($ganancias_credigo, 2, '.', ',') ?>
                     </h1>
                 </div>
                 <div class="pt-2">
@@ -1210,7 +1260,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                 </div>
                 <div class="pt-2">
                     <p class="text-dark-50 mb-0 mt-1 text-end">
-                        Actual: S/ <?= number_format($ventas_mes_actual, 2, ".", ",") ?>
+                        Actual: S/ <?= number_format($ventas_mes_actual, 2, '.', ',') ?>
                     </p>
                 </div>
             </div>
@@ -1332,7 +1382,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="text-muted mb-4">Este Mes</p>
-                                    <h3>S/ <?= number_format($data["totalv"] ?? 0.00, 2, ".", ",") ?></h3>
+                                    <h3>S/ <?= number_format($data['totalv'] ?? 0.0, 2, '.', ',') ?></h3>
                                     <p class="text-muted mb-5">Ganancias Totales.</p>
                                     <span class="peity-donut"
                                         data-peity='{ "fill": ["#02a499", "#f2f2f2"], "innerRadius": 28, "radius": 32 }'
@@ -1342,7 +1392,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                             <div class="col-md-6">
                                 <div class="text-center">
                                     <p class="text-muted mb-4">Mes Anterior</p>
-                                    <h3>S/ <?= number_format($data["totalvMA"] ?? 0.00, 2, ".", ",") ?></h3>
+                                    <h3>S/ <?= number_format($data['totalvMA'] ?? 0.0, 2, '.', ',') ?></h3>
                                     <p class="text-muted mb-5">Comparativa Ganancias Totales.</p>
                                     <span class="peity-donut"
                                         data-peity='{ "fill": ["#02a499", "#f2f2f2"], "innerRadius": 28, "radius": 32 }'
@@ -1916,5 +1966,39 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
         $('#btn_restablecer').on('click', function () {
             window.location.href = '<?= URL::to('/') ?>'; // Redirige a la página principal
         });
+
+        // Cargar datos del card de Descuentos por Cuota
+        <?php if ($_SESSION['id_rol'] == 3): ?>
+        cargarResumenDescuentos();
+        <?php endif; ?>
     });
+
+    // Función para cargar resumen de descuentos
+    function cargarResumenDescuentos() {
+        $.ajax({
+            url: _URL +'/ajs/obtenerResumenDescuentos',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#total-productos-descuento').html(
+                        '<i class="fas fa-box text-primary"></i> ' + 
+                        response.total_productos + ' productos'
+                    );
+                    $('#total-subsidiado-soles').text('S/ ' + parseFloat(response.total_soles).toFixed(2));
+                    $('#total-subsidiado-dolares').text('$ ' + parseFloat(response.total_dolares).toFixed(2));
+                } else {
+                    $('#total-productos-descuento').html('<span class="text-muted">Sin datos</span>');
+                }
+            },
+            error: function() {
+                $('#total-productos-descuento').html('<span class="text-danger">Error al cargar</span>');
+            }
+        });
+    }
+
+    // Función para abrir la gestión de descuentos
+    function abrirGestionDescuentos() {
+        window.location.href = '<?= URL::to('/gestion-descuentos') ?>';
+    }
 </script>

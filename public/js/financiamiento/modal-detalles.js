@@ -114,6 +114,35 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
       }
     }
 
+    // ✅ NUEVO: Mostrar botón para descargar contrato Excel vehicular
+    const btnDescargarContratoExcel = document.getElementById(
+      "btnDescargarContratoExcel"
+    );
+    if (btnDescargarContratoExcel) {
+      // Determinar si es un financiamiento vehicular que genera Excel
+      let esVehicularConExcel = false;
+
+      // Verificar por categoría del producto
+      if (financiamiento.producto) {
+        const categoria = (financiamiento.producto.categoria || "").toLowerCase();
+        esVehicularConExcel = categoria.includes("vehiculo") || categoria.includes("vehículo");
+      }
+
+      // Verificar que NO sea de los grupos que NO generan Excel (33, 19, 38, 45)
+      const grupoFinanciamiento = financiamiento.financiamiento.grupo_financiamiento;
+      const gruposSinExcel = [33, 19, 38, 45];
+
+      if (gruposSinExcel.includes(parseInt(grupoFinanciamiento))) {
+        esVehicularConExcel = false;
+      }
+
+      if (esVehicularConExcel) {
+        btnDescargarContratoExcel.style.display = "block";
+      } else {
+        btnDescargarContratoExcel.style.display = "none";
+      }
+    }
+
     // ✅ MODIFICADO: Mostrar estado de entrega para CUALQUIER financiamiento que tenga estado_entrega
     const estadoEntregaVehiculo = document.getElementById(
       "estadoEntregaVehiculo"
@@ -236,10 +265,44 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
     }
 
     if (elementos.grupo) {
-      elementos.grupo.innerText =
-        financiamiento.financiamiento.nombre_plan ||
+      // ✅ MODIFICADO: Mostrar nombre del plan y nombre personalizado si es editable
+      const nombrePlan = financiamiento.financiamiento.nombre_plan ||
         financiamiento.financiamiento.grupo_financiamiento ||
         "N/A";
+      const nombrePersonalizado = financiamiento.financiamiento.nombre_personalizado;
+      const esEditable = parseInt(financiamiento.financiamiento.grupo_financiamiento) === 42;
+
+      if (esEditable && nombrePersonalizado) {
+        // Plan editable con nombre personalizado - mostrar ambos
+        elementos.grupo.innerHTML = `
+          ${nombrePlan}
+          <br>
+          <small class="text-primary fw-bold">
+            <i class="fas fa-tag me-1"></i>${nombrePersonalizado}
+          </small>
+        `;
+      } else {
+        // Plan normal - solo mostrar nombre del plan
+        elementos.grupo.innerText = nombrePlan;
+      }
+    }
+    
+    // ✅ NUEVO: Mostrar placa del vehículo si existe (Plan IncaMotors - ID 44)
+    const campoPlacaVehiculo = document.getElementById("campoPlacaVehiculo");
+    const modalPlacaVehiculo = document.getElementById("modalPlacaVehiculo");
+    
+    if (campoPlacaVehiculo && modalPlacaVehiculo) {
+      const placaVehiculo = financiamiento.financiamiento.placa_vehiculo;
+      
+      if (placaVehiculo && placaVehiculo.trim() !== '') {
+        // Mostrar el campo con la placa
+        modalPlacaVehiculo.innerText = placaVehiculo.toUpperCase();
+        campoPlacaVehiculo.style.display = 'block';
+        console.log("🚗 Placa del vehículo mostrada:", placaVehiculo);
+      } else {
+        // Ocultar el campo si no hay placa
+        campoPlacaVehiculo.style.display = 'none';
+      }
     }
 
     if (elementos.estado) {
@@ -733,3 +796,84 @@ function mostrarSeccionCrediYangoModal(financiamiento) {
     seccionCrediYango.style.display = "none";
   }
 }
+
+// ✅ NUEVA FUNCIÓN: Descargar cronograma desde el modal de detalles
+window.descargarCronogramaDesdeModal = function() {
+  if (!financiamientoSeleccionadoCompleto) {
+    Swal.fire('Error', 'No se ha seleccionado ningún financiamiento', 'error');
+    return;
+  }
+
+  const financiamiento = financiamientoSeleccionadoCompleto.financiamiento;
+  const conductor = financiamientoSeleccionadoCompleto.conductor;
+  const cuotas = financiamiento.cuotas || [];
+
+  if (cuotas.length === 0) {
+    Swal.fire('Error', 'Este financiamiento no tiene cuotas disponibles', 'error');
+    return;
+  }
+
+  // Preparar datos del cronograma
+  const cronogramaDatos = cuotas.map((cuota, index) => ({
+    cuota: index + 1,
+    valor: parseFloat(cuota.monto || cuota.monto_cuota_base || 0),
+    vencimiento: cuota.fecha_vencimiento
+  }));
+
+  // Obtener nombre del grupo/plan
+  let nombreGrupo = '';
+  if (parseInt(financiamiento.grupo_financiamiento) === 42) {
+    // Plan editable - usar nombre personalizado
+    nombreGrupo = financiamiento.nombre_personalizado || financiamiento.nombre_plan || '';
+  } else {
+    // Plan normal - usar nombre del plan
+    nombreGrupo = financiamiento.nombre_plan || '';
+  }
+
+  // Preparar datos para enviar
+  const datosFormulario = {
+    nombreCliente: `${conductor.nombres || ''} ${conductor.apellido_paterno || ''} ${conductor.apellido_materno || ''}`.trim(),
+    numeroDocumento: conductor.nro_documento || conductor.n_documento || '',
+    fechaInicio: financiamiento.fecha_inicio || '',
+    monto: financiamiento.monto_sin_interes || financiamiento.monto_total || 0,
+    tasaInteres: financiamiento.tasa_interes || 0,
+    frecuenciaPago: financiamiento.frecuencia || 'mensual',
+    tipoMoneda: financiamiento.moneda || 'S/.',
+    cronograma: cronogramaDatos,
+    nombreGrupo: nombreGrupo // ✅ Agregar nombre del grupo
+  };
+
+  console.log('📄 Descargando cronograma desde modal con datos:', datosFormulario);
+
+  // Enviar solicitud AJAX
+  $.ajax({
+    url: '/arequipago/generarCronogramaPDF',
+    method: 'POST',
+    dataType: 'json',
+    data: JSON.stringify(datosFormulario),
+    contentType: 'application/json',
+    success: function(response) {
+      if (response.success) {
+        Swal.fire({
+          title: 'Éxito',
+          text: 'El cronograma se generó correctamente. Descargando el archivo...',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000
+        });
+
+        // Crear enlace temporal para descargar
+        const link = document.createElement('a');
+        link.href = 'data:application/pdf;base64,' + response.pdf;
+        link.download = response.nombre;
+        link.click();
+      } else {
+        Swal.fire('Error', 'No se pudo generar el cronograma. Intenta nuevamente.', 'error');
+      }
+    },
+    error: function(error) {
+      Swal.fire('Error', 'Ocurrió un problema al generar el cronograma. Intenta nuevamente.', 'error');
+      console.error('Error al enviar los datos:', error);
+    }
+  });
+};

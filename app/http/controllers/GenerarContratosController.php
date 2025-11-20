@@ -309,7 +309,7 @@ class GenerarContratosController extends controller
                     if ($financiamiento['grupo_financiamiento'] == 45) {
                         continue;
                     }
-                    
+
                     if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 22, 19])) {
                         throw new Exception('No hay un modelo de contrato para este producto.');
                     }
@@ -407,6 +407,11 @@ class GenerarContratosController extends controller
         // Obtener datos del grupo de financiamiento
         $grupoInfo = $GrupoFinanciamientoModel->obtenerDatosGrupoFinanciamiento($financiamiento);
 
+        // 😊 CORREGIDO: La frecuencia debe venir del registro de financiamiento, no del plan
+        if (isset($financiamiento['frecuencia']) && !empty($financiamiento['frecuencia'])) {
+            $grupoInfo['frecuencia'] = $financiamiento['frecuencia'];
+        }
+
         // 😊 Obtener tipo vehicular para determinar la moneda correcta
         $idGrupoFinanciamiento = $financiamiento['grupo_financiamiento'];
         $tipoVehicular = $GrupoFinanciamientoModel->getTipoVehicular($idGrupoFinanciamiento);
@@ -453,10 +458,23 @@ class GenerarContratosController extends controller
         $worksheet->setCellValue('B20', $financiamiento['codigo_asociado'] ?? '');
 
         // 13. Grupo de financiamiento - Celda D20
-        $worksheet->setCellValue('D20', $grupoInfo['nombre'] ?? '');
+        // ✅ NUEVO: Si es plan editable (ID 42), usar nombre_personalizado, si no, usar nombre del grupo
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 42) {
+            // Plan editable - usar nombre personalizado
+            $nombreGrupo = $financiamiento['nombre_personalizado'] ?? $grupoInfo['nombre'] ?? '';
+        } else {
+            // Plan normal - usar nombre del grupo
+            $nombreGrupo = $grupoInfo['nombre'] ?? '';
+        }
+        $worksheet->setCellValue('D20', $nombreGrupo);
 
         // 14. Duración del grupo - Celda H20
-        $worksheet->setCellValue('H20', $grupoInfo['duracion'] ?? '');
+        // ✅ MODIFICADO: Calcular duración usando fecha_inicio y fecha_fin del financiamiento
+        $duracionGrupo = $this->calcularDuracion(
+            $financiamiento['fecha_inicio'] ?? null,
+            $financiamiento['fecha_fin'] ?? null
+        );
+        $worksheet->setCellValue('H20', $duracionGrupo);
 
         // 15. Duración del contrato - Celda B22
         $duracionContrato = $this->calcularDuracion(
@@ -465,10 +483,16 @@ class GenerarContratosController extends controller
         );
         $worksheet->setCellValue('B22', $duracionContrato);
 
-        // 16. Fecha de inicio - Celda E22
-        if (isset($grupoInfo['fecha_inicio'])) {
-            $fechaInicio = date('d/m/Y', strtotime($grupoInfo['fecha_inicio']));
+        // 16. Fecha de inicio - Celda E22 (INICIO DE VIGENCIA DEL GRUPO)
+        // ✅ MODIFICADO: Usar fecha_inicio del financiamiento, si no existe usar fecha actual
+        if (isset($financiamiento['fecha_inicio']) && !empty($financiamiento['fecha_inicio'])) {
+            $fechaInicio = date('d/m/Y', strtotime($financiamiento['fecha_inicio']));
             $worksheet->setCellValue('E22', $fechaInicio);
+            error_log('✅ Fecha de vigencia del grupo: ' . $fechaInicio . ' (desde financiamiento)');
+        } else {
+            $fechaActual = date('d/m/Y');
+            $worksheet->setCellValue('E22', $fechaActual);
+            error_log('✅ Fecha de vigencia del grupo: ' . $fechaActual . ' (fecha actual - fallback)');
         }
 
         // 17. Periodicidad - Celda H22
@@ -496,6 +520,43 @@ class GenerarContratosController extends controller
 
         // 21. Marcar documentos según estados
         $this->marcarDocumentosEnExcel($worksheet, $estadosRequisitos, $tipoPersona);
+
+        // ✅ NUEVO: 21.5. VENCIMIENTO DE CUOTAS - Mostrar total de cuotas y día de vencimiento
+        if (!empty($cuotas)) {
+            $totalCuotas = count($cuotas);
+            $primeraCuota = $cuotas[0];
+
+            // Obtener el día de vencimiento de la primera cuota
+            $fechaVencimiento = new DateTime($primeraCuota['fecha_vencimiento']);
+            $diaVencimiento = $fechaVencimiento->format('d');
+
+            // Determinar la frecuencia (semanal o mensual)
+            $frecuencia = $financiamiento['frecuencia'] ?? 'mensual';
+
+            // Construir el texto según la frecuencia
+            if (strtolower($frecuencia) === 'semanal') {
+                // Para semanal, obtener el día de la semana
+                $diasSemana = [
+                    'Monday' => 'lunes',
+                    'Tuesday' => 'martes',
+                    'Wednesday' => 'miércoles',
+                    'Thursday' => 'jueves',
+                    'Friday' => 'viernes',
+                    'Saturday' => 'sábado',
+                    'Sunday' => 'domingo'
+                ];
+                $diaSemanaIngles = $fechaVencimiento->format('l');
+                $diaSemana = $diasSemana[$diaSemanaIngles] ?? $diaSemanaIngles;
+                $textoVencimiento = "$totalCuotas cuotas semanales - Vencimiento: todos los $diaSemana";
+            } else {
+                // Para mensual
+                $textoVencimiento = "$totalCuotas cuotas mensuales - Vencimiento: día $diaVencimiento de cada mes";
+            }
+
+            // Escribir en la celda B29 (fila 29 es donde aparece el texto después de "IMPORTANTE : VENCIMIENTO DE CUOTAS")
+            $worksheet->setCellValue('B29', $textoVencimiento);
+            error_log('✅ Vencimiento de cuotas: ' . $textoVencimiento);
+        }
 
         // 22. Fecha actual con formato personalizado - Celda C44
         setlocale(LC_TIME, 'es_ES.UTF-8');  // Para sistemas que soportan UTF-8 (Linux/macOS)
@@ -924,7 +985,7 @@ class GenerarContratosController extends controller
             $plantilla = str_replace('{{NRO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
             $plantilla = str_replace('{{NUMERO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
             $plantilla = str_replace('{{TIPO_DOCUMENTO}}', strtoupper($persona['tipo_doc'] ?? 'DNI'), $plantilla);
-            
+
             // Obtener dirección si existe
             $direccion = '';
             if ($tipoPersona === 'conductor') {
@@ -936,7 +997,7 @@ class GenerarContratosController extends controller
                 $direccion = $datosDireccion['direccion_detalle'] ?? '';
             }
             $plantilla = str_replace('{{DIRECCION}}', $direccion, $plantilla);
-            
+
             // Fechas
             $plantilla = str_replace('{{DIA}}', $dia, $plantilla);
             $plantilla = str_replace('{{MES}}', $this->obtenerNombreMes($mes), $plantilla);

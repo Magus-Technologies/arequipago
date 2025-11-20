@@ -212,17 +212,106 @@ class CuponController
     }
 
     /**
-     * Listar todos los cupones
+     * Listar todos los cupones con filtros opcionales
+     * Si recibe parámetros idUsuario y tipo en la ruta, filtra por departamento del usuario
+     * Rutas:
+     * - GET /ajs/cupones/listar (todos los cupones)
+     * - GET /ajs/cupones/listar/:idUsuario/:tipo (filtrados por departamento del usuario)
      */
-    public function listarCupones()
+    public function listarCupones($idUsuario = null, $tipo = null)
     {
         try {
             $cuponModel = new Cupon();
-            $cupones = $cuponModel->obtenerTodos();
+            $conexion = (new Conexion())->getConexion();
+            
+            // Si vienen idUsuario y tipo, filtrar por departamento del usuario
+            if ($idUsuario && $tipo) {
+                // Validar tipo
+                $tipo = strtolower($tipo);
+                if (!in_array($tipo, ['conductor', 'cliente'])) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Tipo inválido. Debe ser "conductor" o "cliente"'
+                    ]);
+                    return;
+                }
 
-            header('Content-Type: application/json');
-            echo json_encode($cupones);
+                // Obtener departamento del usuario
+                $departamentoId = null;
+
+                if ($tipo === 'conductor') {
+                    // Buscar departamento en direccion_conductor
+                    $sql = "SELECT departamento FROM direccion_conductor WHERE id_conductor = ?";
+                    $stmt = $conexion->prepare($sql);
+                    $stmt->bind_param('i', $idUsuario);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $departamentoId = $row['departamento'];
+                    }
+                    $stmt->close();
+                } else if ($tipo === 'cliente') {
+                    // Buscar departamento en clientes_financiar
+                    $sql = "SELECT departamento FROM clientes_financiar WHERE id = ?";
+                    $stmt = $conexion->prepare($sql);
+                    $stmt->bind_param('i', $idUsuario);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $departamentoId = $row['departamento'];
+                    }
+                    $stmt->close();
+                }
+
+                // Si no se encontró el usuario o no tiene departamento
+                if (!$departamentoId) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Usuario no encontrado o sin departamento asignado'
+                    ]);
+                    return;
+                }
+
+                // Filtrar cupones por departamento
+                $cupones = $cuponModel->obtenerPorDepartamento($departamentoId);
+
+                // Obtener nombre del departamento
+                $departamentoNombre = null;
+                $sqlDep = "SELECT nombre FROM depast WHERE iddepast = ?";
+                $stmtDep = $conexion->prepare($sqlDep);
+                $stmtDep->bind_param('i', $departamentoId);
+                $stmtDep->execute();
+                $resultDep = $stmtDep->get_result();
+                
+                if ($rowDep = $resultDep->fetch_assoc()) {
+                    $departamentoNombre = $rowDep['nombre'];
+                }
+                $stmtDep->close();
+
+                // Respuesta con información adicional
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'data' => $cupones,
+                    'total' => count($cupones),
+                    'departamento_id' => $departamentoId,
+                    'departamento_nombre' => $departamentoNombre,
+                    'tipo_usuario' => $tipo,
+                    'id_usuario' => $idUsuario
+                ]);
+            } else {
+                // Sin filtros, obtener todos los cupones
+                $cupones = $cuponModel->obtenerTodos();
+
+                header('Content-Type: application/json');
+                echo json_encode($cupones);
+            }
         } catch (Exception $e) {
+            error_log('Error en listarCupones: ' . $e->getMessage());
             header('Content-Type: application/json');
             echo json_encode(['error' => 'Error al obtener cupones: ' . $e->getMessage()]);
         }

@@ -151,6 +151,39 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                         </div>
                                     </div>
 
+                                    <!-- ✅ NUEVO: Configuración de Comisión para Variante -->
+                                    <div class="row mt-3 p-3 border rounded" style="background-color: #e8f5e9;">
+                                        <div class="col-12 mb-2">
+                                            <h6>
+                                                <i class="fas fa-dollar-sign me-2" style="color: #28a745;"></i>
+                                                <strong>Comisión para esta Variante</strong>
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Si no se especifica, se usará la comisión del plan principal
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="monto_comision_var" class="form-label">
+                                                <i class="fas fa-money-bill-wave me-1"></i>Monto de Comisión
+                                            </label>
+                                            <input type="number" class="form-control" id="monto_comision_var"
+                                                name="monto_comision_var" step="0.01" min="0" 
+                                                placeholder="Dejar vacío para usar comisión del plan"
+                                                style="background-color: #ffffff;">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="moneda_comision_var" class="form-label">
+                                                <i class="fas fa-coins me-1"></i>Moneda de Comisión
+                                            </label>
+                                            <select class="form-select" id="moneda_comision_var" name="moneda_comision_var"
+                                                    style="background-color: #ffffff;">
+                                                <option value="S/.">Soles (S/.)</option>
+                                                <option value="$">Dólares ($)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
                                     <!-- Label informativo para tipo de financiamiento -->
                                     <div class="mb-3">
                                         <div class="alert alert-info" id="infoFinanciamientoVar" style="display: none;">
@@ -338,6 +371,52 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     <small class="form-text text-muted ms-4" style="font-size: 0.83rem;">
                                         <i class="fas fa-info-circle me-1"></i>
                                         Esta opción determina si se aplicará mora a las cuotas que se paguen después de su fecha de vencimiento
+                                    </small>
+                                </div>
+
+                                <!-- ✅ NUEVO: Configuración de Comisiones -->
+                                <div class="mb-3 p-3 border rounded" style="background-color: #e8f5e9;">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-dollar-sign me-2" style="color: #28a745;"></i>
+                                        <strong>Configuración de Comisiones para Asesores</strong>
+                                    </h6>
+                                    
+                                    <!-- Checkbox para activar/desactivar comisión -->
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" value="1" id="aplicaComisionCheckbox" checked>
+                                        <label class="form-check-label" for="aplicaComisionCheckbox">
+                                            <strong>Este plan genera comisión para asesores</strong>
+                                        </label>
+                                    </div>
+
+                                    <!-- Campos de comisión (se muestran solo si está activado) -->
+                                    <div id="camposComision">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="monto_comision" class="form-label">
+                                                    <i class="fas fa-money-bill-wave me-1"></i>Monto de Comisión
+                                                </label>
+                                                <input type="number" class="form-control" id="monto_comision" 
+                                                       name="monto_comision" step="0.01" min="0" 
+                                                       placeholder="Ej: 50.00" style="background-color: #ffffff;">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="moneda_comision" class="form-label">
+                                                    <i class="fas fa-coins me-1"></i>Moneda de Comisión
+                                                </label>
+                                                <select class="form-select" id="moneda_comision" name="moneda_comision" 
+                                                        style="background-color: #ffffff;">
+                                                    <option value="S/.">Soles (S/.)</option>
+                                                    <option value="$">Dólares ($)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <small class="form-text text-muted d-block mt-2" style="font-size: 0.83rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        La comisión se generará automáticamente cuando un asesor registre un financiamiento de este plan.
+                                        <strong>Los directores NO reciben comisiones.</strong>
                                     </small>
                                 </div>
                                 
@@ -651,6 +730,28 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
             const estadoCheckbox = $('#estadoActivo');
             if (estadoCheckbox.length) {
                 estadoCheckbox.on('change', toggleEstadoGrupo);
+            }
+
+            // ✅ NUEVO: Manejar activación/desactivación de campos de comisión
+            const aplicaComisionCheckbox = $('#aplicaComisionCheckbox');
+            if (aplicaComisionCheckbox.length) {
+                aplicaComisionCheckbox.on('change', function() {
+                    const isChecked = $(this).prop('checked');
+                    const camposComision = $('#camposComision');
+                    
+                    if (isChecked) {
+                        camposComision.slideDown(300);
+                    } else {
+                        camposComision.slideUp(300);
+                        // Limpiar valores cuando se desactiva
+                        $('#monto_comision').val('');
+                    }
+                });
+                
+                // Inicializar estado al cargar la página
+                if (!aplicaComisionCheckbox.prop('checked')) {
+                    $('#camposComision').hide();
+                }
             }
         });
 
@@ -1528,7 +1629,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     }
                 });
 
-                // Obtener y establecer cobrar_mora (nuevo)
+                // Obtener y establecer cobrar_mora y datos de comisión
                 $.ajax({
                     url: '/arequipago/obtenerPlanFinanciamiento',
                     type: 'POST',
@@ -1539,6 +1640,25 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                             // Establecer el checkbox de cobrar mora
                             const cobrarMoraCheckbox = $('#cobrarMoraCheckbox');
                             cobrarMoraCheckbox.prop('checked', result.plan.cobrar_mora == 1);
+                            
+                            // ✅ NUEVO: Establecer el checkbox de es_yango
+                            const esYangoCheckbox = $('#esYangoCheckbox');
+                            esYangoCheckbox.prop('checked', result.plan.es_yango == 1);
+                            
+                            // ✅ NUEVO: Establecer campos de comisión
+                            const aplicaComisionCheckbox = $('#aplicaComisionCheckbox');
+                            aplicaComisionCheckbox.prop('checked', result.plan.aplica_comision == 1);
+                            
+                            // Mostrar/ocultar campos de comisión según el checkbox
+                            if (result.plan.aplica_comision == 1) {
+                                $('#camposComision').show();
+                            } else {
+                                $('#camposComision').hide();
+                            }
+                            
+                            // Establecer valores de comisión
+                            $('#monto_comision').val(result.plan.monto_comision || '');
+                            $('#moneda_comision').val(result.plan.moneda_comision || 'S/.');
                         }
                     },
                     error: function() {
@@ -1953,13 +2073,18 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 $("#fechasVehicular").hide();
                 $("#checkboxContainer").removeClass("active");
                 $("#btnRegistrar").show();
+                
+                // ✅ MEJORADO: Eliminar botones y contenedor
                 $("#guardarCambios, #cancelarEdicion").remove();
+                $("#contenedorBotonesEdicion").remove();
+                
                 // Mostrar nuevamente el botón "Agregar variantes"
-                $('#btnAgregarVariante').show(); // ← MODIFICACIÓN: Volvemos a mostrar botón al cancelar edición
-                // Asegurar que el botón permanezca visible
                 $('#btnAgregarVariante').show();
+                
+                // ✅ MEJORADO: Eliminar título de edición
                 $("#tituloEdicion").remove();
                 $("#tituloRegistro").show();
+                
                 // Resetear estado a activo
                 document.getElementById("estadoActivo").checked = true;
                 toggleEstadoGrupo();
@@ -1967,7 +2092,6 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 // Limpiar mensajes de error
                 $(".error-message").hide();
                 $(".is-invalid").removeClass("is-invalid");
-
 
                 $("#financiamientoTabs a[href='#asociarProducto']").tab("show");
 
@@ -2016,6 +2140,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     tipo_vehicular: getTipoVehicular(), // Usar directamente el valor de getTipoVehicular()
                     estado: $('#estadoActivo').is(':checked') ? 'activo' : 'inactivo',
                     cobrar_mora: getCobrarMora(),
+                    es_yango: $('#esYangoCheckbox').is(':checked') ? 1 : 0,
+                    aplica_comision: $('#aplicaComisionCheckbox').is(':checked') ? 1 : 0,
+                    monto_comision: $('#monto_comision').val() || null,
+                    moneda_comision: $('#moneda_comision').val() || 'S/.',
                     variantes: currentVariantes,
                     nuevas_variantes: currentVariantes.filter(v => v.es_nueva === true)
                 };
@@ -2025,6 +2153,9 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 console.log('Estado enviado:', formData.estado);
                 console.log('Checkbox marcado:', $('#estadoActivo').is(':checked'));
                 console.log('Valor del checkbox:', $('#estadoActivo').prop('checked'));
+                console.log('✅ Comisión - aplica_comision:', formData.aplica_comision);
+                console.log('✅ Comisión - monto_comision:', formData.monto_comision);
+                console.log('✅ Comisión - moneda_comision:', formData.moneda_comision);
                 console.log('================================');
 
                 // Enviar datos al backend mediante AJAX
@@ -2054,20 +2185,27 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     $("#fechasVehicular").hide();
                                     $("#checkboxContainer").removeClass("active");
                                     $("#btnRegistrar").show();
+                                    
+                                    // ✅ MEJORADO: Eliminar botones y contenedor
                                     $("#guardarCambios, #cancelarEdicion").remove();
+                                    $("#contenedorBotonesEdicion").remove();
+                                    
+                                    // ✅ MEJORADO: Eliminar título de edición
                                     $("#tituloEdicion").remove();
                                     $("#tituloRegistro").show();
-                                    // Añade esta línea para limpiar las variantes mostradas
-                                    $('#variantesContainer').empty(); // Limpia las tarjetas de variantes visibles
-                                    currentVariantes = []; // Limpia la variable local de variantes
+                                    
+                                    // Limpiar las variantes mostradas
+                                    $('#variantesContainer').empty();
+                                    currentVariantes = [];
                                     toggleEstadoGrupo();
                                     selectedVarianteId = null;
                                     selectedPlanId = null;
 
                                     // Restablece el botón original del modal de variantes
-                                    $('#btnGuardarCambiosVariante').remove(); // Elimina el botón personalizado si existe
+                                    $('#btnGuardarCambiosVariante').remove();
                                     $('#btnGuardarVariante').show();
                                     $("#financiamientoTabs a[href='#asociarProducto']").tab("show");
+                                    
                                     // Mostrar el botón "Agregar variantes" después de guardar cambios
                                     $('#btnAgregarVariante').show();
                                 });
@@ -2386,7 +2524,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     }
                 });
 
-                // Obtener y establecer cobrar_mora
+                // Obtener y establecer cobrar_mora y datos de comisión
                 $.ajax({
                     url: '/arequipago/obtenerPlanFinanciamiento',
                     type: 'POST',
@@ -2396,6 +2534,25 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                         if (result.success && result.plan) {
                             const cobrarMoraCheckbox = $('#cobrarMoraCheckbox');
                             cobrarMoraCheckbox.prop('checked', result.plan.cobrar_mora == 1);
+                            
+                            // ✅ NUEVO: Establecer el checkbox de es_yango
+                            const esYangoCheckbox = $('#esYangoCheckbox');
+                            esYangoCheckbox.prop('checked', result.plan.es_yango == 1);
+                            
+                            // ✅ NUEVO: Establecer campos de comisión
+                            const aplicaComisionCheckbox = $('#aplicaComisionCheckbox');
+                            aplicaComisionCheckbox.prop('checked', result.plan.aplica_comision == 1);
+                            
+                            // Mostrar/ocultar campos de comisión según el checkbox
+                            if (result.plan.aplica_comision == 1) {
+                                $('#camposComision').show();
+                            } else {
+                                $('#camposComision').hide();
+                            }
+                            
+                            // Establecer valores de comisión
+                            $('#monto_comision').val(result.plan.monto_comision || '');
+                            $('#moneda_comision').val(result.plan.moneda_comision || 'S/.');
                         }
                     },
                     error: function() {
@@ -2504,20 +2661,26 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 $("#tituloRegistro").hide();
                 $("#btnRegistrar").hide();
                 
-                const tituloEdicion = $('<h5 id="tituloEdicion" class="mb-4"><i class="fas fa-edit me-2"></i>Editar Grupo de Financiamiento</h5>');
-                $("#tituloRegistro").after(tituloEdicion);
+                // ✅ CORREGIDO: Solo crear título si no existe
+                if (!$("#tituloEdicion").length) {
+                    const tituloEdicion = $('<h5 id="tituloEdicion" class="mb-4"><i class="fas fa-edit me-2"></i>Editar Grupo de Financiamiento</h5>');
+                    $("#tituloRegistro").after(tituloEdicion);
+                }
                 
-                const botonesEdicion = $(`
-                    <div class="mt-4">
-                        <button type="button" class="btn btn-success me-2" id="guardarCambios">
-                            <i class="fas fa-save me-2"></i>Guardar Cambios
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="cancelarEdicion">
-                            <i class="fas fa-times me-2"></i>Cancelar
-                        </button>
-                    </div>
-                `);
-                $("#btnRegistrar").parent().append(botonesEdicion);
+                // ✅ CORREGIDO: Solo crear botones si no existen
+                if (!$("#guardarCambios").length) {
+                    const botonesEdicion = $(`
+                        <div class="mt-4" id="contenedorBotonesEdicion">
+                            <button type="button" class="btn btn-success me-2" id="guardarCambios">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancelarEdicion">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </button>
+                        </div>
+                    `);
+                    $("#btnRegistrar").parent().append(botonesEdicion);
+                }
                 
                 // Cambiar a la pestaña de edición
                 $("#financiamientoTabs a[href='#planFinanciamiento']").tab("show");
@@ -2970,10 +3133,23 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
 
         });
 
+        // ✅ NUEVO: Manejar activación/desactivación de campos de comisión
+        $('#aplicaComisionCheckbox').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#camposComision').slideDown(300);
+            } else {
+                $('#camposComision').slideUp(300);
+                // Limpiar valores cuando se desactiva
+                $('#monto_comision').val('');
+            }
+        });
+
+        // ✅ NUEVO: Inicializar estado de campos de comisión al cargar
+        if (!$('#aplicaComisionCheckbox').is(':checked')) {
+            $('#camposComision').hide();
+        }
 
     </script>
 </body>
-
-</html>
 
 </html>

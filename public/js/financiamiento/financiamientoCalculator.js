@@ -8,6 +8,15 @@ function calcularFinanciamiento() {
     return;
   }
 
+  // ✅ NUEVO: Para Plan 36 y planes con fechaIngreso, usar calcularFinanciamientoConFechaIngreso
+  const fechaIngresoElement = document.getElementById("fechaIngreso");
+  const esPlan36 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36;
+  if (esPlan36 && fechaIngresoElement && fechaIngresoElement.value) {
+    console.log("🔄 Plan 36 con fechaIngreso - Redirigiendo a calcularFinanciamientoConFechaIngreso");
+    calcularFinanciamientoConFechaIngreso(planGlobal);
+    return;
+  }
+
   // NUEVO: CrediYango - No calcular cronograma, se generará al entregar vehículo
   // IMPORTANTE: Solo mostrar mensaje si hay un GRUPO seleccionado Y es CrediYango
   const grupoSeleccionado = document.getElementById("grupo")?.value;
@@ -70,18 +79,20 @@ function calcularFinanciamiento() {
   );
   const cuotaInicialRaw = document.getElementById("cuotaInicial").value;
   const tasaInteresRaw = document.getElementById("tasaInteres").value;
-  // Cambio: Usar frecuencia del select solo si está habilitado
+  // Cambio: Usar frecuencia del select solo si está habilitado, si no usar la del planGlobal
   const frecuenciaSelectCalc = document.getElementById("frecuenciaPago");
   const frecuenciaPago =
     frecuenciaSelectCalc && !frecuenciaSelectCalc.disabled
       ? frecuenciaSelectCalc.value
-      : "semanal"; // valor por defecto
+      : (planGlobal && planGlobal.frecuencia_pago) || "semanal"; // ✅ Usar frecuencia del plan global
 
   console.log(
     "🔄 Frecuencia utilizada en calcularFinanciamiento:",
     frecuenciaPago,
     "- Select habilitado:",
-    !frecuenciaSelectCalc?.disabled
+    !frecuenciaSelectCalc?.disabled,
+    "- Frecuencia del plan global:",
+    planGlobal?.frecuencia_pago
   );
   const tipoMoneda = obtenerTipoMoneda();
 
@@ -129,12 +140,17 @@ function calcularFinanciamiento() {
 
   document.getElementById("monto").value = montoTotal.toFixed(2);
 
+  // ✅ NUEVO: Verificar si es plan con variantes (ID 38 o 44) que permite montoSinIntereses = 0
+  const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
+  const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
+  const permiteCeroMontoSinIntereses = esCrediGoGrupo4 || esIncaMotos;
+
   // Verificar si hay valores NaN o faltan datos críticos
   if (
     isNaN(montoTotal) ||
     isNaN(cuotaInicial) ||
     isNaN(tasaInteres) ||
-    montoSinIntereses <= 0 ||
+    (!permiteCeroMontoSinIntereses && montoSinIntereses <= 0) || // ✅ Solo validar si NO es plan con variantes
     !fechaInicio ||
     !frecuenciaPago
   ) {
@@ -146,6 +162,7 @@ function calcularFinanciamiento() {
       montoSinIntereses: montoSinIntereses,
       fechaInicio: fechaInicio,
       frecuenciaPago: frecuenciaPago,
+      permiteCeroMontoSinIntereses: permiteCeroMontoSinIntereses,
     });
     return; // Salir si hay problemas con los valores
   }
@@ -181,11 +198,12 @@ function calcularFinanciamiento() {
   // ✅ Corregido: Ahora el cálculo de la cuota sigue la fórmula correctamente
   let valorCuota;
 
-  // Solo para planes de celular (ID 41), usar valor fijo sin recalcular
-  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-    // Para celulares: NUNCA recalcular, usar el valor original del monto_cuota
+  // ✅ Para Plan 36 (chips corporativos) y Plan 41 (celulares), usar valor fijo sin recalcular
+  if (planGlobal && [36, 41].includes(parseInt(planGlobal.idplan_financiamiento))) {
+    // NUNCA recalcular, usar el valor original del monto_cuota
     valorCuota = parseFloat(planGlobal.monto_cuota) || 0;
-    console.log("📱 CELULARES - Usando valor cuota FIJO del plan:", valorCuota);
+    const planNombre = parseInt(planGlobal.idplan_financiamiento) === 36 ? "CHIPS CORPORATIVOS" : "CELULARES";
+    console.log(`📱 ${planNombre} - Usando valor cuota FIJO del plan:`, valorCuota);
 
     // Si no hay monto_cuota en planGlobal, calcular una sola vez
     if (
@@ -198,7 +216,7 @@ function calcularFinanciamiento() {
       const cuotaInicial = parseFloat(planGlobal.cuota_inicial);
       const cantCuotas = parseInt(planGlobal.cantidad_cuotas);
       valorCuota = (montoTotal - cuotaInicial) / cantCuotas;
-      console.log("📱 CELULARES - Cuota calculada ÚNICA VEZ:", valorCuota);
+      console.log(`📱 ${planNombre} - Cuota calculada ÚNICA VEZ:`, valorCuota);
     }
 } else {
     // ✅ NUEVO: Para CrediGo Autos Grupo 4 (ID 38), mantener cuota fija y recalcular semanas
@@ -284,14 +302,16 @@ function calcularFinanciamiento() {
       primeraFechaVencimiento.toLocaleDateString()
     );
   } else if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
-    // Para plan corporativo de chips (ID 36): siempre día 24 del siguiente mes
+    // Para plan corporativo de chips (ID 36): día 24 del mes actual o siguiente
     console.log(
       "🔧 BEFORE - Fecha original:",
       primeraFechaVencimiento.toLocaleDateString()
     );
     const año = primeraFechaVencimiento.getFullYear();
-    const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
-    console.log("🔧 Creando fecha para año:", año, "mes:", mes, "día: 24");
+    const diaActual = primeraFechaVencimiento.getDate();
+    // Si ya pasó el día 24, usar mes siguiente; si no, usar mes actual
+    const mes = diaActual >= 24 ? primeraFechaVencimiento.getMonth() + 1 : primeraFechaVencimiento.getMonth();
+    console.log("🔧 Día actual:", diaActual, "| Mes a usar:", mes, "| Año:", año);
     primeraFechaVencimiento = new Date(año, mes, 24);
     console.log(
       "🔧 AFTER - Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
@@ -325,23 +345,22 @@ function calcularFinanciamiento() {
     );
   }
 
-  // NUEVO: Para planes especiales (14, 15, 16), primera cuota una semana después
+  // NUEVO: Para planes especiales (14, 15, 16, 44), primera cuota una semana después
   if (planGlobal && planGlobal.idplan_financiamiento) {
     const idPlan = parseInt(planGlobal.idplan_financiamiento);
 
-    if ([14, 15, 16].includes(idPlan)) {
+    if ([14, 15, 16, 44].includes(idPlan)) {
       console.log(
         "🔧 Plan especial detectado en calcularFinanciamiento, ID:",
         idPlan
       );
 
-      // Calcular fecha EXACTAMENTE una semana después de hoy (sin ajustar al lunes)
-      const fechaHoy = new Date();
-      const fechaEspecial = new Date(fechaHoy);
+      // Calcular fecha EXACTAMENTE una semana después de la fecha de inicio (sin ajustar al lunes)
+      const fechaEspecial = new Date(fechaInicioObj);
       fechaEspecial.setDate(fechaEspecial.getDate() + 7); // Solo sumar 7 días
 
       primeraFechaVencimiento = new Date(fechaEspecial);
-      console.log("🔧 Fecha hoy:", fechaHoy.toLocaleDateString());
+      console.log("🔧 Fecha de inicio:", fechaInicioObj.toLocaleDateString());
       console.log(
         "🔧 Primera fecha ajustada (7 días después):",
         primeraFechaVencimiento.toLocaleDateString()
@@ -878,33 +897,16 @@ function calcularCronogramaDinamico() {
   if (planGlobal && planGlobal.idplan_financiamiento) {
     const idPlan = parseInt(planGlobal.idplan_financiamiento);
 
-    // Verificar si es plan especial (IDs: 14, 15, 16)
-    if ([14, 15, 16].includes(idPlan)) {
+    // Verificar si es plan especial (IDs: 14, 15, 16, 44)
+    if ([14, 15, 16, 44].includes(idPlan)) {
       console.log("🔧 Plan especial detectado por ID:", idPlan);
 
-      // Para planes especiales, la fecha de inicio en el input es HOY
-      // Pero el cronograma debe empezar UNA SEMANA DESPUÉS
-      const fechaInicioInput = document.getElementById("fechaInicio");
-      const fechaHoy = new Date();
-
-      // Establecer fecha de hoy en el input (para referencia)
-      const year = fechaHoy.getFullYear();
-      const month = (fechaHoy.getMonth() + 1).toString().padStart(2, "0");
-      const day = fechaHoy.getDate().toString().padStart(2, "0");
-      const fechaHoyFormateada = `${year}-${month}-${day}`;
-
-      fechaInicioInput.value = fechaHoyFormateada;
-      console.log(
-        "🔧 Fecha de inicio (input) establecida:",
-        fechaHoyFormateada
-      );
-
-      // Pero para el cronograma, usar una semana después
-      const fechaCronograma = new Date(fechaHoy);
+      // Para planes especiales, el cronograma debe empezar UNA SEMANA DESPUÉS de la fecha de inicio
+      const fechaCronograma = new Date(fechaPago);
       fechaCronograma.setDate(fechaCronograma.getDate() + 7);
 
-      // Ajustar al próximo lunes si es semanal
-      if (planGlobal.frecuencia_pago === "semanal") {
+      // ✅ NUEVO: Solo ajustar al lunes para planes 14, 15, 16 (NO para plan 44 IncaMotos)
+      if (planGlobal.frecuencia_pago === "semanal" && idPlan !== 44) {
         const diaSemana = fechaCronograma.getDay(); // 0 = domingo, 1 = lunes
         if (diaSemana !== 1) {
           // Si no es lunes
@@ -917,11 +919,11 @@ function calcularCronogramaDinamico() {
       primeraFechaVencimiento = new Date(fechaCronograma);
 
       console.log(
-        "🔧 Fecha para cronograma (una semana después):",
-        fechaCronograma.toLocaleDateString()
+        "🔧 Fecha de inicio del plan:",
+        fechaPago.toLocaleDateString()
       );
       console.log(
-        "🔧 Primera fecha de vencimiento actualizada:",
+        "🔧 Primera fecha de vencimiento (una semana después):",
         primeraFechaVencimiento.toLocaleDateString()
       );
     }
@@ -929,13 +931,16 @@ function calcularCronogramaDinamico() {
 
   fechasVencimiento.push(primeraFechaVencimiento);
 
+  // ✅ CRÍTICO: Usar la primera fecha de vencimiento como base para calcular las siguientes
+  let fechaBase = new Date(primeraFechaVencimiento);
+
   for (let i = 1; i < cuotas; i++) {
     if (frecuencia === "semanal") {
-      // 🔴 CORREGIDO: Para semanal, siempre sumar 7 días para mantener el lunes
-      fechaPago.setDate(fechaPago.getDate() + 7);
-      fechasVencimiento.push(new Date(fechaPago));
+      // ✅ CORREGIDO: Sumar 7 días a la fecha base (no a fechaPago)
+      fechaBase.setDate(fechaBase.getDate() + 7);
+      fechasVencimiento.push(new Date(fechaBase));
     } else if (frecuencia === "mensual") {
-      let nuevaFecha = new Date(fechaPago);
+      let nuevaFecha = new Date(fechaBase);
       let diaOriginal = nuevaFecha.getDate();
       nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
 
@@ -962,7 +967,7 @@ function calcularCronogramaDinamico() {
       }
 
       fechasVencimiento.push(new Date(nuevaFecha));
-      fechaPago = new Date(nuevaFecha);
+      fechaBase = new Date(nuevaFecha);
     }
   }
 
@@ -1173,12 +1178,31 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     // Si la fecha de ingreso es posterior a la fecha de referencia, calculamos cuántas cuotas se deben restar
     const diasIntervalo = frecuenciaPago === "semanal" ? 7 : 30;
 
-    const cuotasRestantes = Math.floor(diffDays / diasIntervalo);
+    // ✅ CORREGIDO: Para planes vehiculares semanales, ajustar la fecha al lunes ANTES de calcular cuotasRestantes
+    let fechaParaCalculo = new Date(fechaIngresoObj);
+    if (esVehicular && frecuenciaPago === "semanal") {
+      fechaParaCalculo = obtenerProximoLunes(fechaIngresoObj);
+      console.log("📅 Fecha ajustada al lunes para cálculo de cuotas:", fechaParaCalculo.toLocaleDateString());
+    }
+
+    // Recalcular diffDays usando la fecha ajustada
+    const diffTimeAjustadoParaCalculo = fechaParaCalculo - fechaInicioObj;
+    const diffDaysAjustadoParaCalculo = Math.floor(diffTimeAjustadoParaCalculo / (1000 * 60 * 60 * 24));
+
+    const cuotasRestantes = Math.floor(diffDaysAjustadoParaCalculo / diasIntervalo);
 
     let cantidadCuotas = parseInt(plan.cantidad_cuotas);
 
-    // Restamos las cuotas restantes de la cantidad total de cuotas
-    cantidadCuotas -= cuotasRestantes;
+    // ✅ NUEVO: Para Grupo 4 (Plan ID 38) con variante, NO restar cuotasRestantes
+    // porque las cuotas ya están calculadas correctamente en base a la cuota inicial
+    const esCrediGoGrupo4Variante = plan && parseInt(plan.idplan_financiamiento) === 38 && window.varianteSeleccionadaId;
+
+    if (!esCrediGoGrupo4Variante) {
+      // Para otros planes: restamos las cuotas restantes de la cantidad total de cuotas
+      cantidadCuotas -= cuotasRestantes;
+    } else {
+      console.log("💡 G4 - NO restando cuotasRestantes, manteniendo total de", cantidadCuotas, "cuotas");
+    }
 
     // Si la cantidad de cuotas es menor o igual a cero, mostramos un mensaje de error
     if (!cantidadCuotas || cantidadCuotas <= 0) {
@@ -1192,23 +1216,51 @@ function calcularFinanciamientoConFechaIngreso(plan) {
     // La cuota sigue siendo la misma, no la vamos a cambiar
     const valorCuota = parseFloat(plan.monto_cuota);
 
-    // 🔹 Recalcular el monto total basado en las nuevas cuotas
-    const nuevoMontoTotal = cantidadCuotas * valorCuota;
+    // ✅ Para Grupo 4 (Plan ID 38) y Plan 36 (Chips), NO recalcular el monto total
+    // porque el monto total es FIJO y las cuotas se ajustan según la cuota inicial
+    const esPlan36 = plan && parseInt(plan.idplan_financiamiento) === 36;
 
-    // 🔹 Recalcular el monto sin intereses aplicando la fórmula inversa de interés
-    const nuevoMontoSinIntereses = nuevoMontoTotal / (1 + tasaInteres);
+    let nuevoMontoTotal;
+    let nuevoMontoSinIntereses;
+
+    if (esCrediGoGrupo4Variante || esPlan36) {
+      // Para Grupo 4 y Plan 36: mantener el monto total original
+      nuevoMontoTotal = parseFloat(plan.monto);
+      nuevoMontoSinIntereses = parseFloat(plan.monto_sin_interes);
+      const planNombre = esPlan36 ? "CHIPS CORPORATIVOS (ID 36)" : "GRUPO 4";
+      console.log(`💡 ${planNombre} - Manteniendo monto total original:`, nuevoMontoTotal, "| Monto sin intereses:", nuevoMontoSinIntereses);
+    } else {
+      // Para otros planes: recalcular el monto total y sin intereses basado en las cuotas restantes
+      nuevoMontoTotal = cantidadCuotas * valorCuota;
+
+      // ✅ Calcular montoSinIntereses manteniendo la proporción del plan original
+      const montoOriginal = parseFloat(plan.monto);
+      const montoSinInteresesOriginal = parseFloat(plan.monto_sin_interes);
+
+      if (montoOriginal > 0 && montoSinInteresesOriginal > 0) {
+        // Mantener la misma proporción que el plan original
+        const proporcion = montoSinInteresesOriginal / montoOriginal;
+        nuevoMontoSinIntereses = nuevoMontoTotal * proporcion;
+        console.log(`🔄 Monto recalculado:`, nuevoMontoTotal, "| Proporción:", (proporcion * 100).toFixed(2) + "%", "| Monto sin intereses:", nuevoMontoSinIntereses.toFixed(2));
+      } else {
+        // Si no hay valores originales válidos, usar la tasa de interés
+        nuevoMontoSinIntereses = nuevoMontoTotal / (1 + tasaInteres);
+        console.log(`🔄 Monto recalculado:`, nuevoMontoTotal, "| Monto sin intereses (por tasa):", nuevoMontoSinIntereses.toFixed(2));
+      }
+    }
 
     // 🔹 Actualizamos los campos de `monto` (total) y `montoSinIntereses`
-    document.getElementById("monto").value = nuevoMontoTotal;
+    document.getElementById("monto").value = nuevoMontoTotal.toFixed(2);
 
-    // MODIFICADO: No recalcular montoSinIntereses para CrediGo Autos Grupo 4 con variantes
+    // MODIFICADO: No recalcular montoSinIntereses para CrediGo Autos Grupo 4 con variantes y Plan 36
     const esCrediGoGrupo4 = plan && parseInt(plan.idplan_financiamiento) === 38;
     const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
-    
-    if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
-      // Para CrediGo Autos Grupo 4 con variante, mantener el valor original de la variante
-      console.log("✅ Manteniendo montoSinIntereses original para CrediGo Autos Grupo 4 con variante");
-      // No modificar el campo montoSinIntereses
+
+    if ((esCrediGoGrupo4 && tieneVarianteSeleccionada) || esPlan36) {
+      // Para CrediGo Autos Grupo 4 con variante y Plan 36: mantener el valor original
+      const planNombre = esPlan36 ? "Plan 36 (Chips)" : "CrediGo Autos Grupo 4 con variante";
+      console.log(`✅ Manteniendo montoSinIntereses original para ${planNombre}`);
+      // No modificar el campo montoSinIntereses (ya fue establecido arriba)
     } else {
       // Para otros planes, aplicar el cálculo normal
       document.getElementById("montoSinIntereses").value = nuevoMontoSinIntereses.toFixed(2);
@@ -1226,19 +1278,25 @@ function calcularFinanciamientoConFechaIngreso(plan) {
       numeroInicial = 1; // Siempre empezar desde la primera cuota
       console.log("Plan corporativo CLARO (ID 36) - Iniciando desde cuota 1");
     } else {
-      // CORREGIDO: Asegurar que numeroInicial siempre sea al menos 1
-      numeroInicial = Math.max(1, cuotasRestantes + 1); // Cálculo base del número de cuota para otros planes
+      // ✅ CORREGIDO: El número de cuota debe ser cuotasRestantes + 1
+      // Porque cuotasRestantes cuenta las cuotas YA vencidas, entonces la siguiente es +1
+      // Ejemplo: Si cuotasRestantes = 0 (no hay cuotas vencidas) → numeroInicial = 1
+      // Ejemplo: Si cuotasRestantes = 1 (ya pasó 1 cuota) → numeroInicial = 2
+      numeroInicial = Math.max(1, cuotasRestantes + 1);
       console.log("📊 Número inicial de cuota calculado:", numeroInicial, "| cuotasRestantes:", cuotasRestantes);
     }
 
     // NUEVO: Para plan corporativo de chips (ID 36), ajustar primera fecha al día 24
     if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 36) {
       const año = primeraFechaVencimiento.getFullYear();
-      const mes = primeraFechaVencimiento.getMonth() + 1; // Siguiente mes
+      const diaActual = primeraFechaVencimiento.getDate();
+      // Si ya pasó el día 24, usar mes siguiente; si no, usar mes actual
+      const mes = diaActual >= 24 ? primeraFechaVencimiento.getMonth() + 1 : primeraFechaVencimiento.getMonth();
       primeraFechaVencimiento = new Date(año, mes, 24);
       console.log(
         "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
-        primeraFechaVencimiento.toLocaleDateString()
+        primeraFechaVencimiento.toLocaleDateString(),
+        "| Día ingreso:", diaActual
       );
     } else if (esVehicular && frecuenciaPago === "semanal") {
       const fechaOriginalIngreso = new Date(fechaIngresoObj);
@@ -1434,11 +1492,14 @@ function recalcularMonto() {
           frecuenciaPago === "mensual"
         ) {
           const año = fechaVencimientoInicio.getFullYear();
-          const mes = fechaVencimientoInicio.getMonth() + 1; // Siguiente mes
+          const diaActual = fechaVencimientoInicio.getDate();
+          // Si ya pasó el día 24, usar mes siguiente; si no, usar mes actual
+          const mes = diaActual >= 24 ? fechaVencimientoInicio.getMonth() + 1 : fechaVencimientoInicio.getMonth();
           fechaVencimientoInicio = new Date(año, mes, 24);
           console.log(
             "Plan corporativo CLARO (ID 36) - Primera fecha ajustada al día 24:",
-            fechaVencimientoInicio.toLocaleDateString()
+            fechaVencimientoInicio.toLocaleDateString(),
+            "| Día ingreso:", diaActual
           );
         }
 

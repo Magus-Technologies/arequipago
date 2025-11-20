@@ -59,6 +59,14 @@ class ReportFinanciamientoController extends Controller
             
             $idFinanciamiento = null;
             $detalleCuotasHTML = '';
+            $esPagoMora = false;
+            $tituloDetalle = 'Detalle de Cuotas'; // Título por defecto
+
+            // ✅ NUEVO: Detectar si es pago de mora
+            if (!empty($pago['concepto']) && $pago['concepto'] == 'Pago de mora pendiente') {
+                $esPagoMora = true;
+                $tituloDetalle = 'Detalle de Mora';
+            }
 
             if (!empty($cuotasSeleccionadas) && isset($cuotasSeleccionadas[0]['idCuota'])) {
 
@@ -164,37 +172,40 @@ class ReportFinanciamientoController extends Controller
                     $numeroDocumento = "N/A";
                 }
             } else {
-                // MODIFICADO: No hay ni conductor ni cliente registrado en el pago, buscamos por el ID proporcionado
-                if ($idPersona) {
-                    // MODIFICADO: Primero intentamos buscar como conductor
+                // MODIFICADO: No hay conductor ni cliente en el pago, buscamos en el financiamiento
+                if ($financiamiento['id_conductor']) {
+                    // MODIFICADO: El financiamiento tiene conductor
                     $conductor = new Conductor();
-                    $conductor->setIdConductor($idPersona);
+                    $conductor->setIdConductor($financiamiento['id_conductor']);
                     if ($conductor->obtenerDatos()) {
-                        // MODIFICADO: Es un conductor
                         $nombrePersona = $conductor->getNombres() . ' ' . $conductor->getApellidoPaterno() . ' ' . $conductor->getApellidoMaterno();
                         $tipoDocumento = $conductor->getTipoDoc();
                         $numeroDocumento = $conductor->getNroDocumento();
                     } else {
-                        // MODIFICADO: No es un conductor, buscamos como cliente
-                        $sql = "SELECT * FROM clientes_financiar WHERE id = ?";
-                        $stmt = $this->conexion->prepare($sql);
-                        $stmt->bind_param("i", $idPersona);
-                        $stmt->execute();
-                        $resultCliente = $stmt->get_result();
-                        $cliente = $resultCliente->fetch_assoc();
-                        
-                        if ($cliente) {
-                            $nombrePersona = $cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno'];
-                            $tipoDocumento = $cliente['tipo_doc'];
-                            $numeroDocumento = $cliente['n_documento'];
-                        } else {
-                            $nombrePersona = "Persona no encontrada";
-                            $tipoDocumento = "N/A";
-                            $numeroDocumento = "N/A";
-                        }
+                        $nombrePersona = "Conductor no encontrado";
+                        $tipoDocumento = "N/A";
+                        $numeroDocumento = "N/A";
+                    }
+                } elseif ($financiamiento['id_cliente']) {
+                    // MODIFICADO: El financiamiento tiene cliente
+                    $sql = "SELECT * FROM clientes_financiar WHERE id = ?";
+                    $stmt = $this->conexion->prepare($sql);
+                    $stmt->bind_param("i", $financiamiento['id_cliente']);
+                    $stmt->execute();
+                    $resultCliente = $stmt->get_result();
+                    $cliente = $resultCliente->fetch_assoc();
+
+                    if ($cliente) {
+                        $nombrePersona = $cliente['nombres'] . ' ' . $cliente['apellido_paterno'] . ' ' . $cliente['apellido_materno'];
+                        $tipoDocumento = $cliente['tipo_doc'];
+                        $numeroDocumento = $cliente['n_documento'];
+                    } else {
+                        $nombrePersona = "Cliente no encontrado";
+                        $tipoDocumento = "N/A";
+                        $numeroDocumento = "N/A";
                     }
                 } else {
-                    $nombrePersona = "No se proporcionó ID de persona";
+                    $nombrePersona = "Persona no encontrada";
                     $tipoDocumento = "N/A";
                     $numeroDocumento = "N/A";
                 }
@@ -271,6 +282,43 @@ class ReportFinanciamientoController extends Controller
                                                 <span>{$monedaFinanciamiento} {$cuotaSeleccionada['mora']}</span>
                                             </div>";
                     }
+                }
+            } elseif ($esPagoMora) {
+                // ✅ NUEVO: Si es pago de mora, obtener datos de la mora
+                $sqlMora = "SELECT
+                    dp.mora,
+                    cuota.numero_cuota,
+                    cuota.fecha_vencimiento
+                FROM detalle_pago_financiamiento dp
+                JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
+                WHERE dp.estado_mora = 'pagada'
+                AND dp.mora > 0
+                AND (SELECT COUNT(*) FROM pagos_financiamiento WHERE idpagos_financiamiento = ? AND concepto = 'Pago de mora pendiente') > 0
+                ORDER BY dp.iddetalle_pago_financiamiento DESC
+                LIMIT 1";
+
+                $stmtMora = $this->conexion->prepare($sqlMora);
+                $stmtMora->bind_param("i", $idPago);
+                $stmtMora->execute();
+                $resultMora = $stmtMora->get_result();
+                $mora = $resultMora->fetch_assoc();
+
+                if ($mora) {
+                    $fechaVencimiento = date('d/m/Y', strtotime($mora['fecha_vencimiento']));
+                    $detalleCuotasHTML = "<div class='cuota-item'>
+                                        <span>Cuota N° {$mora['numero_cuota']}</span>
+                                        <span>Vencida el: {$fechaVencimiento}</span>
+                                    </div>
+                                    <div class='cuota-item' style='font-weight: bold; color: #dc3545;'>
+                                        <span>Mora</span>
+                                        <span>{$monedaFinanciamiento} " . number_format($pago['monto'], 2) . "</span>
+                                    </div>";
+                } else {
+                    // Si no se encuentra la mora, mostrar genérico
+                    $detalleCuotasHTML = "<div class='cuota-item' style='font-weight: bold; color: #dc3545;'>
+                                        <span>Pago de Mora</span>
+                                        <span>{$monedaFinanciamiento} " . number_format($pago['monto'], 2) . "</span>
+                                    </div>";
                 }
             } else {
                 // Si no hay cuotas, mostrar solo el monto total // MODIFICADO: Mostrar monto total cuando no hay cuotas
@@ -396,7 +444,7 @@ class ReportFinanciamientoController extends Controller
                 </div>
 
                 <div class="detalle-section">
-                    <h5>Detalle de Cuotas</h5>
+                    <h5>' . $tituloDetalle . '</h5>
                     ' . $detalleCuotasHTML . '
                 </div>
 

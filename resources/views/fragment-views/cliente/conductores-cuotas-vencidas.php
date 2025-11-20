@@ -628,6 +628,11 @@ $(document).ready(function() {
                 data: null,
                 class: "text-center deuda",
                 render: function(data, type, row) {
+                    // Para ordenamiento, devolver valor numérico
+                    if (type === 'sort' || type === 'type') {
+                        return parseFloat(row.deuda_total);
+                    }
+                    // Para display, devolver formateado con símbolo de moneda
                     const deudaFormateada = parseFloat(row.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
                     return `<strong>${row.moneda} ${deudaFormateada}</strong>`;
                 }

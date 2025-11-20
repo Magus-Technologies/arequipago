@@ -128,6 +128,11 @@ function selectPlan(idPlan) {
 
   // ✅ NUEVO: Actualizar resumen de financiamiento
   actualizarResumenFinanciamiento(idPlan);
+  
+  // ✅ NUEVO: Ocultar campo de placa al cambiar de plan (se mostrará solo si cumple condiciones)
+  if (typeof ocultarCampoPlaca === 'function') {
+    ocultarCampoPlaca();
+  }
 
   // NUEVO: Para CrediYango, mostrar mensaje y cargar solo vehículos
   if (idPlan === "45" || idPlan === 45) {
@@ -1227,6 +1232,17 @@ function seleccionarVariante(index) {
       inputFechaInicio.style.color = "#212529";
       inputFechaInicio.style.pointerEvents = "auto";
       inputFechaInicio.style.cursor = "text";
+      
+      // ✅ NUEVO: Establecer fecha de hoy si el campo está vacío
+      if (!inputFechaInicio.value) {
+        const hoy = new Date();
+        const año = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+        const dia = String(hoy.getDate()).padStart(2, "0");
+        const fechaHoyFormateada = `${año}-${mes}-${dia}`;
+        inputFechaInicio.value = fechaHoyFormateada;
+        console.log("📅 Fecha de inicio establecida automáticamente en seleccionarVariante:", fechaHoyFormateada);
+      }
     }
   }
 
@@ -1241,6 +1257,15 @@ function seleccionarVariante(index) {
   } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
     // Para variantes de MotosYa, habilitar cantidad para edición manual
     $("#cantidad").prop("disabled", false);
+  } else {
+    // ✅ NUEVO: Para otras variantes sin fechas (como IncaMotos ID 44), establecer cantidad en 1
+    const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
+    const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
+    
+    if (esCrediGoGrupo4 || esIncaMotos) {
+      $("#cantidad").val(1);
+      console.log("✅ Cantidad establecida en 1 para plan con variantes (ID 38 o 44)");
+    }
   }
 
   // MODIFICADO: Para planes vehiculares, usar calcularFinanciamientoConFechaIngreso en lugar de calcularCronogramaDinamico
@@ -1453,12 +1478,13 @@ function verificarInputsVacios() {
     camposMontoEspeciales.forEach((id) => {
       const input = document.getElementById(id);
       if (input) {
-        // MODIFICADO: Verificar si es CrediGo Autos Grupo 4 con variante para montoSinIntereses
+        // MODIFICADO: Verificar si es CrediGo Autos Grupo 4 (ID 38) o IncaMotos (ID 44) con variante
         const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
-        const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+        const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
+        const tieneVarianteSeleccionada = window.varianteSeleccionadaId || planGlobal?.idgrupos_variantes;
         
-        if (id === "montoSinIntereses" && esCrediGoGrupo4 && tieneVarianteSeleccionada) {
-          // Para montoSinIntereses en CrediGo Autos Grupo 4 con variante, mantener habilitado
+        if (id === "montoSinIntereses" && (esCrediGoGrupo4 || esIncaMotos)) {
+          // ✅ Para montoSinIntereses en planes con variantes (38 o 44), SIEMPRE mantener habilitado
           input.style.backgroundColor = "#ffffff";
           input.style.color = "#212529";
           input.style.border = "1px solid #ced4da";
@@ -1466,7 +1492,7 @@ function verificarInputsVacios() {
           input.readOnly = false;
           input.style.pointerEvents = "auto";
           input.style.cursor = "text";
-          console.log("✅ Campo montoSinIntereses mantenido habilitado para CrediGo Autos Grupo 4");
+          console.log("✅ Campo montoSinIntereses mantenido habilitado para plan con variantes (ID 38 o 44)");
         } else {
           // Para otros casos, deshabilitar normalmente
           input.style.backgroundColor = "#e9ecef";
@@ -1553,22 +1579,22 @@ function verificarInputsVacios() {
 
   // ... resto del código original igual
 
-  // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4
+  // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4 o IncaMotos
   const montoSinInteresesInput = document.getElementById("montoSinIntereses");
   if (montoSinInteresesInput) {
-    // Verificar si es CrediGo Autos Grupo 4 (ID 38) con variante seleccionada
+    // ✅ Verificar si es CrediGo Autos Grupo 4 (ID 38) o IncaMotos (ID 44) - SIN requerir variante
     const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
-    const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+    const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
     
-    if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
-      // Para CrediGo Autos Grupo 4 con variante, mantener el campo habilitado y con estilo normal
+    if (esCrediGoGrupo4 || esIncaMotos) {
+      // ✅ Para CrediGo Autos Grupo 4 o IncaMotos, SIEMPRE mantener el campo habilitado
       montoSinInteresesInput.disabled = false;
       montoSinInteresesInput.style.backgroundColor = "#ffffff";
       montoSinInteresesInput.style.color = "#212529";
       montoSinInteresesInput.classList.remove("disabled-input");
       montoSinInteresesInput.style.pointerEvents = "auto";
       montoSinInteresesInput.style.cursor = "text";
-      console.log("✅ Campo montoSinIntereses habilitado para CrediGo Autos Grupo 4");
+      console.log("✅ Campo montoSinIntereses habilitado para plan con variantes (ID 38 o 44)");
     } else {
       // Para otros planes, mantenerlo deshabilitado
       montoSinInteresesInput.disabled = true;
@@ -1782,22 +1808,22 @@ function NotGrupo() {
       }
     });
 
-    // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4
+    // MODIFICADO: Solo mantener el campo 'montoSinIntereses' deshabilitado si NO es CrediGo Autos Grupo 4 o IncaMotos
     const montoSinInteresesInput = document.getElementById("montoSinIntereses");
     if (montoSinInteresesInput) {
-      // Verificar si es CrediGo Autos Grupo 4 (ID 38) con variante seleccionada
+      // Verificar si es CrediGo Autos Grupo 4 (ID 38) o IncaMotos (ID 44) con variante seleccionada
       const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
-      const tieneVarianteSeleccionada = window.varianteSeleccionadaId;
+      const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
       
-      if (esCrediGoGrupo4 && tieneVarianteSeleccionada) {
-        // Para CrediGo Autos Grupo 4 con variante, mantener el campo habilitado y con estilo normal
+      if (esCrediGoGrupo4 || esIncaMotos) {
+        // ✅ Para CrediGo Autos Grupo 4 o IncaMotos, SIEMPRE mantener el campo habilitado
         montoSinInteresesInput.disabled = false;
         montoSinInteresesInput.style.backgroundColor = "#ffffff";
         montoSinInteresesInput.style.color = "#212529";
         montoSinInteresesInput.classList.remove("disabled-input");
         montoSinInteresesInput.style.pointerEvents = "auto";
         montoSinInteresesInput.style.cursor = "text";
-        console.log("✅ Campo montoSinIntereses habilitado para CrediGo Autos Grupo 4 (segunda ocurrencia)");
+        console.log("✅ Campo montoSinIntereses habilitado para plan con variantes (ID 38 o 44) - segunda ocurrencia");
       } else {
         // Para otros planes, mantenerlo deshabilitado
         montoSinInteresesInput.disabled = true;
@@ -2300,13 +2326,16 @@ function manejarCambioFrecuencia() {
     const valorCuotaActual = parseFloat(
       valorCuotaInput.value.replace(/[^0-9.-]+/g, "")
     );
+    // ✅ Obtener el monto total directamente del campo "monto" en lugar de calcularlo
+    const montoInput = document.getElementById("monto");
+    const montoTotalActual = montoInput ? parseFloat(montoInput.value.replace(/[^0-9.-]+/g, "")) : cuotasRestantesActuales * valorCuotaActual;
 
     valoresOriginalesPlan = {
       cuotas_restantes_originales: cuotasRestantesActuales,
       monto_cuota_original: valorCuotaActual,
       frecuencia_pago_original: planGlobal.frecuencia_pago,
-      // NUEVO: Almacenar también el monto total original para preservar consistencia
-      monto_total_original: cuotasRestantesActuales * valorCuotaActual,
+      // CORREGIDO: Usar el monto total del campo "monto" en lugar de calcularlo
+      monto_total_original: montoTotalActual,
     };
     console.log("💾 Valores originales almacenados:", valoresOriginalesPlan);
   }
@@ -2595,9 +2624,41 @@ function verificarYMantenerCamposEspeciales() {
 function manejarCambioFechaInicioPorDirector() {
   const rolUsuario = window.rolUsuarioActual || "1";
   const fechaInicioInput = document.getElementById("fechaInicio");
+  const fechaFinInput = document.getElementById("fechaFin");
 
   if (!fechaInicioInput) return;
 
+  // ✅ NUEVO: Verificar si el plan tiene fechas definidas desde el backend
+  const planTieneFechasDefinidas = planGlobal && planGlobal.fecha_inicio && planGlobal.fecha_fin;
+
+  // ✅ NUEVO: Si el plan tiene fechas definidas, bloquear SIEMPRE (incluso para directores)
+  if (planTieneFechasDefinidas) {
+    fechaInicioInput.disabled = true;
+    fechaInicioInput.readOnly = true;
+    fechaInicioInput.classList.add("disabled-input");
+    fechaInicioInput.style.backgroundColor = "#f8f9fa";
+    fechaInicioInput.style.color = "#6c757d";
+    fechaInicioInput.style.pointerEvents = "none";
+    fechaInicioInput.style.cursor = "not-allowed";
+    fechaInicioInput.title = "Las fechas están definidas por el plan y no se pueden modificar";
+
+    // También bloquear fecha de fin
+    if (fechaFinInput) {
+      fechaFinInput.disabled = true;
+      fechaFinInput.readOnly = true;
+      fechaFinInput.classList.add("disabled-input");
+      fechaFinInput.style.backgroundColor = "#f8f9fa";
+      fechaFinInput.style.color = "#6c757d";
+      fechaFinInput.style.pointerEvents = "none";
+      fechaFinInput.style.cursor = "not-allowed";
+      fechaFinInput.title = "Las fechas están definidas por el plan y no se pueden modificar";
+    }
+
+    console.log("🔒 Plan con fechas definidas - fechas bloqueadas para todos los usuarios");
+    return;
+  }
+
+  // ✅ Si el plan NO tiene fechas definidas, aplicar lógica según el rol
   // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2)
   if (rolUsuario === "3" || rolUsuario === "2") {
     // CRÍTICO: Remover todos los atributos y estilos de bloqueo
@@ -2616,8 +2677,20 @@ function manejarCambioFechaInicioPorDirector() {
 
     fechaInicioInput.title = "Puedes modificar la fecha de inicio del grupo";
 
+    // También habilitar fecha de fin
+    if (fechaFinInput) {
+      fechaFinInput.disabled = false;
+      fechaFinInput.readOnly = false;
+      fechaFinInput.classList.remove("disabled-input");
+      fechaFinInput.style.backgroundColor = "#ffffff";
+      fechaFinInput.style.color = "#212529";
+      fechaFinInput.style.pointerEvents = "auto";
+      fechaFinInput.style.cursor = "pointer";
+      fechaFinInput.title = "Puedes modificar la fecha de fin del grupo";
+    }
+
     console.log(
-      "✅ Usuario con permisos (Director/Asesor) - fecha de inicio COMPLETAMENTE habilitada"
+      "✅ Usuario con permisos (Director/Asesor) - fechas COMPLETAMENTE habilitadas (plan sin fechas definidas)"
     );
 
     // Event listener para recalcular cuando cambie la fecha
@@ -2637,7 +2710,19 @@ function manejarCambioFechaInicioPorDirector() {
     fechaInicioInput.title =
       "Solo los directores y asesores pueden modificar la fecha de inicio";
 
-    console.log("🔒 Usuario sin permisos - fecha de inicio bloqueada");
+    // También bloquear fecha de fin
+    if (fechaFinInput) {
+      fechaFinInput.disabled = true;
+      fechaFinInput.readOnly = true;
+      fechaFinInput.classList.add("disabled-input");
+      fechaFinInput.style.backgroundColor = "#f8f9fa";
+      fechaFinInput.style.color = "#6c757d";
+      fechaFinInput.style.pointerEvents = "none";
+      fechaFinInput.style.cursor = "not-allowed";
+      fechaFinInput.title = "Solo los directores y asesores pueden modificar la fecha de fin";
+    }
+
+    console.log("🔒 Usuario sin permisos - fechas bloqueadas");
   }
 }
 
@@ -2653,6 +2738,13 @@ function protegerFechaInicioPorDirector() {
 
   const fechaInicioInput = document.getElementById("fechaInicio");
   if (!fechaInicioInput) return;
+
+  // ✅ NUEVO: Si el plan tiene fechas definidas, NO proteger (dejar bloqueado)
+  const planTieneFechasDefinidas = planGlobal && planGlobal.fecha_inicio && planGlobal.fecha_fin;
+  if (planTieneFechasDefinidas) {
+    console.log("🔒 Plan con fechas definidas - protección desactivada (campo debe permanecer bloqueado)");
+    return;
+  }
 
   // Configuración del observer
   const observer = new MutationObserver((mutations) => {
@@ -2848,16 +2940,74 @@ function recalcularPorCambioCuotaInicial() {
   }
 
   // 🛡️ PROTECCIÓN: Si hay variante seleccionada, NO recalcular automáticamente
+  // ✅ EXCEPCIÓN: Para Grupo 4 (Plan ID 38), SÍ recalcular semanas cuando cambia la cuota inicial
   if (window.varianteSeleccionadaId) {
+    const idPlanActual = parseInt(planGlobal.idplan_financiamiento);
+
+    // ✅ NUEVO: Excepción para Grupo 4 - Recalcular semanas manteniendo cuota fija
+    if (idPlanActual === 38) {
+      console.log("💡 GRUPO 4 - Recalculando semanas por cambio en cuota inicial");
+
+      const cuotaInicialInput = document.getElementById("cuotaInicial");
+      const nuevaCuotaInicial = parseFloat(
+        cuotaInicialInput.value.replace(/[^\d.-]/g, "")
+      );
+
+      if (isNaN(nuevaCuotaInicial) || nuevaCuotaInicial < 0) {
+        console.warn("⚠️ Cuota inicial inválida");
+        return;
+      }
+
+      // Actualizar cuota inicial en planGlobal
+      planGlobal.cuota_inicial = nuevaCuotaInicial;
+
+      // Obtener valores necesarios
+      const montoTotal = parseFloat(document.getElementById("monto").value.replace(/[^\d.-]/g, "")) || parseFloat(planGlobal.monto) || 0;
+      const valorCuotaFijo = parseFloat(planGlobal.monto_cuota) || 0;
+
+      console.log("📊 Valores para recálculo:", {
+        montoTotal,
+        nuevaCuotaInicial,
+        valorCuotaFijo
+      });
+
+      if (valorCuotaFijo > 0) {
+        // ✅ Recalcular la cantidad de semanas con cuota fija
+        const montoRestante = montoTotal - nuevaCuotaInicial;
+        const nuevasSemanas = Math.ceil(montoRestante / valorCuotaFijo);
+
+        console.log("💡 Semanas recalculadas:", {
+          montoRestante,
+          nuevasSemanas,
+          formula: `(${montoTotal} - ${nuevaCuotaInicial}) / ${valorCuotaFijo} = ${nuevasSemanas}`
+        });
+
+        // Actualizar el campo de cuotas
+        document.getElementById("cuotas").value = nuevasSemanas;
+        planGlobal.cantidad_cuotas = nuevasSemanas;
+
+        // ✅ CORRECCIÓN: Usar calcularFinanciamientoConFechaIngreso para mantener el número inicial de cuota correcto
+        console.log("🔄 Recalculando cronograma con calcularFinanciamientoConFechaIngreso...");
+        calcularFinanciamientoConFechaIngreso(planGlobal);
+
+        console.log("✅ GRUPO 4 - Semanas actualizadas a:", nuevasSemanas);
+      } else {
+        console.error("❌ No se puede recalcular: monto_cuota no está definido en planGlobal");
+      }
+
+      return; // Salir después del recálculo específico para Grupo 4
+    }
+
+    // Para otras variantes, mantener la protección original
     console.log("🛡️ VARIANTE ACTIVA - NO se recalcula automáticamente al cambiar cuota inicial");
     console.log("🛡️ Los valores de cuotas y fechas se mantienen según la variante seleccionada");
-    
+
     // Solo actualizar el valor en planGlobal pero NO recalcular
     const cuotaInicialInput = document.getElementById("cuotaInicial");
     const nuevaCuotaInicial = parseFloat(
       cuotaInicialInput.value.replace(/[^\d.-]/g, "")
     );
-    
+
     if (!isNaN(nuevaCuotaInicial) && nuevaCuotaInicial >= 0) {
       planGlobal.cuota_inicial = nuevaCuotaInicial;
       console.log("✅ Cuota inicial actualizada a:", nuevaCuotaInicial, "sin recalcular");
@@ -3770,6 +3920,7 @@ function actualizarResumenFinanciamiento(idPlan) {
 
     // Mapeo de IDs de planes a nombres
     const NOMBRES_PLANES = {
+        36: 'FINANCIAMIENTO CORPORATIVO CLARO (Chips)',
         41: 'FINANCIAMIENTO CELULARES',
         22: 'FINANCIAMIENTO MOTOS (CrediGo Motos)',
         9: 'FINANCIAMIENTO VEHICULAR (Grupo 1)',

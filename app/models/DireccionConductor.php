@@ -192,6 +192,7 @@ class DireccionConductor
         $sql = "
             SELECT 
                 dc.direccion_detalle,
+                dc.departamento AS departamento_id,
                 dist.nombre AS distrito,
                 prov.nombre AS provincia,
                 dep.nombre AS departamento

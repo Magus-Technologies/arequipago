@@ -355,6 +355,12 @@ mysqli_stmt_close($stmt);
                 }
             }
 
+            // ⭐ NUEVO: Filtro por financiamiento específico
+            if (!empty($filtros['id_financiamiento'])) {
+                $whereConditions[] = "idfinanciamiento = ?";
+                $whereValues[] = $filtros['id_financiamiento'];
+            }
+
             $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
             // Consulta unificada que combina historial existente + simulación con lógica corregida
@@ -520,6 +526,7 @@ mysqli_stmt_close($stmt);
                     WHERE f.$campoId = ?
                     AND DATE(cf.fecha_pago) > DATE(cf.fecha_vencimiento)
                     AND cf.fecha_pago IS NOT NULL
+                    AND cf.penalizacion_perdonada = 0
                     AND f.estado_eliminado = 0
                     AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
@@ -539,6 +546,7 @@ mysqli_stmt_close($stmt);
                                 AND cf.fecha_vencimiento < CURDATE()
                                 AND cf.estado = 'En progreso'
                                 AND cf.fecha_pago IS NULL
+                                AND cf.penalizacion_perdonada = 0
                                 AND f.estado_eliminado = 0
                                 AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
@@ -632,12 +640,14 @@ mysqli_stmt_close($stmt);
     }
 
     // Restablecer puntaje de un cliente/conductor a 100
-    public function restablecerPuntajeIndividual($tipo, $id)
+    public function restablecerPuntajeIndividual($tipo, $id, $usuarioId = null)
     {
         try {
+            mysqli_begin_transaction($this->conexion);
+
             $campoId = ($tipo === 'cliente') ? 'id_cliente' : 'id_conductor';
 
-            // Verificar si existe un registro
+            // 1. Verificar si existe un registro
             $sqlExiste = "SELECT id, puntaje_actual, total_retrasos FROM puntaje_crediticio WHERE tipo_cliente = ? AND $campoId = ?";
             $stmt = mysqli_prepare($this->conexion, $sqlExiste);
             mysqli_stmt_bind_param($stmt, 'si', $tipo, $id);
@@ -646,47 +656,71 @@ mysqli_stmt_close($stmt);
             $existeRegistro = mysqli_fetch_assoc($result);
             mysqli_stmt_close($stmt);
 
+            $puntajeAnterior = $existeRegistro ? $existeRegistro['puntaje_actual'] : 0;
+            $retrasosPerdonados = $existeRegistro ? $existeRegistro['total_retrasos'] : 0;
+
+            // 2. ⭐ NUEVO: Marcar TODAS las cuotas con retraso como "perdonadas"
+            $sqlPerdonarCuotas = "UPDATE cuotas_financiamiento cf
+                                  INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                                  SET cf.penalizacion_perdonada = 1,
+                                      cf.fecha_perdon = NOW(),
+                                      cf.motivo_perdon = 'Restablecimiento administrativo de puntaje a 100'
+                                  WHERE f.$campoId = ?
+                                  AND (
+                                      (cf.fecha_pago IS NOT NULL AND DATE(cf.fecha_pago) > DATE(cf.fecha_vencimiento))
+                                      OR
+                                      (cf.fecha_pago IS NULL AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En progreso')
+                                  )
+                                  AND cf.penalizacion_perdonada = 0
+                                  AND f.estado_eliminado = 0";
+
+            $stmt = mysqli_prepare($this->conexion, $sqlPerdonarCuotas);
+            mysqli_stmt_bind_param($stmt, 'i', $id);
+            mysqli_stmt_execute($stmt);
+            $cuotasPerdonadasCount = mysqli_stmt_affected_rows($stmt);
+            mysqli_stmt_close($stmt);
+
+            // 3. Actualizar o crear registro en puntaje_crediticio
             if (!$existeRegistro) {
-                // Si no existe registro, crear uno nuevo con puntaje 100
                 $sqlInsert = "INSERT INTO puntaje_crediticio
-                             (tipo_cliente, $campoId, puntaje_actual, total_financiamientos, total_retrasos)
-                             VALUES (?, ?, 100, 0, 0)";
+                             (tipo_cliente, $campoId, puntaje_actual, total_financiamientos, total_retrasos,
+                              restablecimientos_totales, ultimo_restablecimiento, usuario_ultimo_restablecimiento)
+                             VALUES (?, ?, 100, 0, 0, 1, NOW(), ?)";
 
                 $stmt = mysqli_prepare($this->conexion, $sqlInsert);
-                mysqli_stmt_bind_param($stmt, 'si', $tipo, $id);
+                mysqli_stmt_bind_param($stmt, 'sii', $tipo, $id, $usuarioId);
                 mysqli_stmt_execute($stmt);
-                $nuevoId = mysqli_insert_id($this->conexion);
+                $puntajeCrediticioId = mysqli_insert_id($this->conexion);
+                mysqli_stmt_close($stmt);
+            } else {
+                $sqlUpdate = "UPDATE puntaje_crediticio
+                             SET puntaje_actual = 100,
+                                 total_retrasos = 0,
+                                 restablecimientos_totales = restablecimientos_totales + 1,
+                                 ultimo_restablecimiento = NOW(),
+                                 usuario_ultimo_restablecimiento = ?,
+                                 fecha_actualizacion = NOW()
+                             WHERE id = ?";
+
+                $stmt = mysqli_prepare($this->conexion, $sqlUpdate);
+                mysqli_stmt_bind_param($stmt, 'ii', $usuarioId, $existeRegistro['id']);
+                mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
 
-                return [
-                    'success' => true,
-                    'puntaje_crediticio_id' => $nuevoId,
-                    'retrasos_eliminados' => 0
-                ];
+                $puntajeCrediticioId = $existeRegistro['id'];
             }
 
-            // Guardar cantidad de retrasos antes de resetear
-            $retrasosEliminados = $existeRegistro['total_retrasos'];
-
-            // Actualizar registro existente: resetear a 100 y eliminar retrasos
-            $sqlUpdate = "UPDATE puntaje_crediticio
-                         SET puntaje_actual = 100,
-                             total_retrasos = 0,
-                             fecha_actualizacion = CURRENT_TIMESTAMP
-                         WHERE id = ?";
-
-            $stmt = mysqli_prepare($this->conexion, $sqlUpdate);
-            mysqli_stmt_bind_param($stmt, 'i', $existeRegistro['id']);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+            mysqli_commit($this->conexion);
 
             return [
                 'success' => true,
-                'puntaje_crediticio_id' => $existeRegistro['id'],
-                'retrasos_eliminados' => $retrasosEliminados
+                'puntaje_crediticio_id' => $puntajeCrediticioId,
+                'retrasos_eliminados' => $retrasosPerdonados,
+                'cuotas_perdonadas' => $cuotasPerdonadasCount
             ];
 
         } catch (Exception $e) {
+            mysqli_rollback($this->conexion);
             return [
                 'success' => false,
                 'message' => "Error al restablecer puntaje: " . $e->getMessage()
