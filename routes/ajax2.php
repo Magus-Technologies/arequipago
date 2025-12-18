@@ -100,6 +100,7 @@ Route::post('/ajs/aprobarPagoPendiente', 'PagosController@aprobarPagoPendiente')
 Route::get('/ajs/getMorasPendientes', 'FinanciamientoController@getMorasPendientes');
 Route::get('/ajs/getContadorMorasPendientes', 'FinanciamientoController@getContadorMorasPendientes');
 Route::post('/ajs/pagarMoraPendiente', 'FinanciamientoController@pagarMoraPendiente');
+Route::get('/ajs/getHistorialCuotasPagadas', 'FinanciamientoController@getHistorialCuotasPagadas');
 
 // RUTA PARA ENTREGAR VEHÍCULO CREDIYANGO Y GENERAR CRONOGRAMA
 Route::post('/ajs/entregarVehiculoCrediYango', 'FinanciamientoController@entregarVehiculoCrediYango');
@@ -119,3 +120,26 @@ Route::post('/ajs/aprobacion/aprobar', 'AprobacionFinanciamientoController@aprob
 Route::post('/ajs/aprobacion/rechazar', 'AprobacionFinanciamientoController@rechazarFinanciamiento');
 Route::post('/ajs/aprobacion/eliminar', 'AprobacionFinanciamientoController@eliminarFinanciamiento');
 Route::post('/ajs/aprobacion/reactivar', 'AprobacionFinanciamientoController@reactivarFinanciamiento');
+
+// RUTAS PARA CONSTATACIONES DOMICILIARIAS
+Route::get('/ajs/constataciones/listar', 'ConstatacionesController@listar');
+Route::get('/ajs/constataciones/contador', 'ConstatacionesController@contador');
+Route::post('/ajs/constataciones/guardar', 'ConstatacionesController@guardar');
+Route::get('/ajs/constataciones/detalle', 'ConstatacionesController@detalle');
+Route::get('/ajs/constataciones/foto', 'ConstatacionesController@servirFoto');
+Route::get('/ajs/constataciones/pdf', 'ConstatacionesController@generarPDF');
+Route::post('/ajs/constataciones/eliminar', 'ConstatacionesController@eliminar');
+Route::get('/ajs/constataciones/info-financiamiento', 'ConstatacionesController@infoFinanciamiento');
+Route::get('/ajs/constataciones/exportar-excel', 'ConstatacionesController@exportarExcel');
+
+// RUTA PARA BÚSQUEDA DE SUGERENCIAS DE CONDUCTORES
+Route::get('/ajs/buscarSugerenciasConductores', 'FinanciamientoController@buscarSugerenciasConductores');
+
+// RUTA PARA GENERAR BOLETA DE CUOTA (pagos por app o registrados)
+Route::post('/ajs/generarBoletaCuota', 'FinanciamientoController@generarBoletaCuota');
+
+// RUTAS PARA RECAUDACIONES DE CAJA AREQUIPA
+Route::post('/ajs/recaudaciones/listar', 'RecaudacionesController@listarRecaudaciones');
+Route::post('/ajs/recaudaciones/resumen', 'RecaudacionesController@obtenerResumen');
+Route::post('/ajs/recaudaciones/detalle', 'RecaudacionesController@obtenerDetalle');
+Route::post('/ajs/recaudaciones/exportar', 'RecaudacionesController@exportarExcel');

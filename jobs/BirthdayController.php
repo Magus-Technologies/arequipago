@@ -79,17 +79,17 @@ class BirthdayController
             $mail->SMTPDebug = 3; // Nivel de depuración: 2 o 3 para más detalles
             $mail->Debugoutput = 'html'; // Formato de salida de la depuración
             $mail->isSMTP();
-           $mail->Host       = 'smtp.zoho.com';
+            $mail->Host       = HOST_SMTP;
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'envios@magustechnologies.com';
-            $mail->Password   = 'C4p1cu4$$211088';
-            $mail->SMTPSecure = 'tls';
-            $mail->Port       = 587;
+            $mail->Username   = USER_SMTP;
+            $mail->Password   = CLAVE_SMTP;
+            $mail->SMTPSecure = 'ssl';
+            $mail->Port       = PUERTO_SMTP;
             
             echo "<p>Configuración SMTP establecida correctamente.</p><br>";
 
             // Remitente
-            $mail->setFrom('envios@magustechnologies.com', 'Feliz Cumpleaños');
+            $mail->setFrom(USER_SMTP, 'Feliz Cumpleaños');
 
             echo "<p>Configuración SMTP establecida correctamente.</p><br>";
 
