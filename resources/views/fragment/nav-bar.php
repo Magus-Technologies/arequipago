@@ -98,7 +98,6 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     </a>
                 </li>
 
-                <li class="nav-item">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
@@ -112,8 +111,17 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                         </li>
                     </ul>
                 </li>
-                </li>
 
+                <?php if ($id_rol == 4): ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="/arequipago/recaudaciones">
+                        <i class="ti-receipt"></i>
+                        RECAUDACIONES
+                    </a>
+                </li>
+                <?php endif; ?>
+
+                <?php if ($id_rol != 4): ?>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" id="navbarDropdownPagos" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -122,11 +130,14 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPagos">
                         <li><a class="dropdown-item" href="/arequipago/nuevo-pago">Pagos Inscripción</a></li>
+              
                         <li><a class="dropdown-item" href="/arequipago/pago-financiamiento">Pagos Financiamiento</a>
                         </li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
+                <?php if ($id_rol != 4): ?>
                 <!----<li class="nav-item">
                             <a class="nav-link" href="/arequipago/registrar-inventario">
                                 <i class="ti-package"></i>
@@ -228,6 +239,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             </a></li>
                     </ul>
                 </li>
+                <?php endif; ?>
 
                 <?php if ($id_rol == 3): ?>
                     <li class="nav-item">
@@ -238,12 +250,14 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     </li>
                 <?php endif; ?>
 
+                <?php if ($id_rol != 4): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="/arequipago/module-financiamiento">
                         <i class="ti-money"></i>
                         CREDI GO
                     </a>
                 </li>
+                <?php endif; ?>
 
                 <?php if ($id_rol == 1 || $id_rol == 3): ?>
                     <li class="nav-item">

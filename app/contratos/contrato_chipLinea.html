@@ -1,92 +1,163 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Acta de Entrega de Chip más Plan Móvil</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 2.5cm 3cm;
-            line-height: 1.5;
-            font-size: 12pt;
-            text-align: justify;
-        }
-        h2 {
-            text-align: center;
-            font-size: 16pt;
-            margin-bottom: 1cm;
-        }
-        .firmas {
-            margin-top: 40px;
-        }
-        .espacio-importante {
-            margin-top: 30px;
-        }
-        .firmas table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .firmas table td {
-            text-align: center;
-            padding: 10px;
-            width: 50%;
-            vertical-align: top;
-        }
-        .linea {
-            height: 1px;
-            background-color: transparent;
-        }
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 11pt;
+        text-align: justify;
+        line-height: 1.4;
+      }
+      h2 {
+        text-align: center;
+        font-size: 12pt;
+        font-weight: bold;
+        margin-bottom: 0.5cm;
+        text-decoration: underline;
+      }
+      h3 {
+        font-size: 11pt;
+        font-weight: bold;
+        margin-top: 0.3cm;
+        margin-bottom: 0.2cm;
+      }
+      p {
+        margin-top: 0.2cm;
+        margin-bottom: 0.2cm;
+      }
+      ul, ol {
+        margin-top: 0.2cm;
+        margin-bottom: 0.2cm;
+      }
+      li {
+        margin-bottom: 0.1cm;
+      }
+      .firmas {
+        margin-top: 40px;
+      }
+      .espacio-importante {
+        margin-top: 30px;
+      }
+      .firmas table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .firmas table td {
+        text-align: center;
+        padding: 10px;
+        width: 50%;
+        vertical-align: top;
+      }
+      .linea {
+        height: 1px;
+        background-color: transparent;
+      }
+      .page-break {
+        page-break-before: always;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h2>ACTA DE ENTREGA DE CHIP MAS PLAN MOVIL</h2>
-    
-    <p>Siendo las <span id="hora"></span> hrs. del día <span id="dia"></span>; Año <span id="anio"></span>; La empresa <strong>Arequipa Go E.I.R.L</strong> con <strong>RUC N° 20612112763</strong> con domicilio en URB. LA ESPERANZA MZA. L LOTE. 15 URB. ADEPA AREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE Y RIVERO hace entrega al <span id="persona"></span> <span id="conductor"></span> Identificado con N° DNI: <span id="dni"></span><span id="licencia_bloque"></span>,</p>
-    
-    <p>El <span id="persona_mayus"></span><span id="frase_afiliacion"></span> se le hace entrega de <span id="cantidad"></span> (un) CHIP (nuevo), de la empresa <span id="operadora"></span> con las siguientes características:</p>
-    
-    <p><strong>PLAN MENSUAL DE S/<span id="precio"></span></strong></p>
-    
-    <p>El receptor declara conocer y asume la responsabilidad del adecuado uso del CHIP más PLAN MENSUAL, el cual es de s/ <span id="precio"></span> (<span id="precio_letras"></span>) mensuales (con plan ilimitado)</p>
-    
+
+    <p>
+      Siendo las <span id="hora"></span> hrs. del día <span id="dia"></span>;
+      Año <span id="anio"></span>; La empresa
+      <strong>Arequipa Go E.I.R.L</strong> con
+      <strong>RUC N° 20612112763</strong> con domicilio en URB. LA ESPERANZA
+      MZA. L LOTE. 15 URB. ADEPA AREQUIPA - AREQUIPA - JOSE LUIS BUSTAMANTE Y
+      RIVERO hace entrega al <span id="persona"></span>
+      <span id="conductor"></span> Identificado con N° DNI:
+      <span id="dni"></span><span id="licencia_bloque"></span>,
+    </p>
+
+    <p>
+      El <span id="persona_mayus"></span><span id="frase_afiliacion"></span> se
+      le hace entrega de <span id="cantidad"></span> (un) CHIP (nuevo), de la
+      empresa <span id="operadora"></span> con las siguientes características:
+    </p>
+
+    <p>
+      <strong>PLAN MENSUAL DE S/<span id="precio"></span></strong>
+    </p>
+
+    <p>
+      El receptor declara conocer y asume la responsabilidad del adecuado uso
+      del CHIP más PLAN MENSUAL, el cual es de s/
+      <span id="precio"></span> (<span id="precio_letras"></span>) mensuales
+      (con plan ilimitado)
+    </p>
+
     <ul>
-        <li>Plan de s/<span id="precio"></span> soles</li>
-        <li>Plan <span id="plan_mensual"></span></li>
+      <li>Plan de s/<span id="precio"></span> soles</li>
+      <li>Plan <span id="plan_mensual"></span></li>
     </ul>
-    
-    <p>Nª <span id="numero_linea"></span></p>
-    
-    <p>Los pagos serán los 24 de cada mes.</p>
-    
-    <p>En caso de extravío, perdida o sustracción del equipo con la línea corporativa, el usuario será el único responsable y tendrá que hacer la cancelación total de la línea.</p>
-    
-    <p><strong>IMPORTANTE:</strong><br>
-    <strong>CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</strong></p>
-    
-    <p>Si cancelan después de la fecha pactada se le cobrara una mora diaria de s/ 10.00 soles.</p>
-    
-    <span id="clausula_conductor"></span>
+
+    <p>Número Corporativo: <span id="numero_corporativo"></span></p>
+    <!-- <p>Nª <span id="numero_linea"></span></p> -->
+
+    <h3>CONDICIONES DE PAGO:</h3>
+
+    <ol>
+      <li>
+        Los pagos deberán realizarse ,<strong
+          >exclusivamente a través del aplicativo de Caja Arequipa</strong
+        >
+        permitiendo la correcta validación y registro de cada abono
+      </li>
+      <li> El usuario se compromete a realizar los pagos únicamente por dicho medio <strong>los días 24 de cada
+mes.</strong></li>
+    </ol>
+    <p>En caso de extravío, pérdida o sustracción del equipo con la línea corporativa,<strong> el usuario será el único responsable</strong> y tendrá que hacer la cancelación total de la línea.</p>
+
+    <!-- SALTO DE PÁGINA - INICIA SEGUNDA HOJA -->
+    <div class="page-break"></div>
+
+    <h2>IMPORTANTE:</h2>
+    <strong>CLÁUSULA DE DESCUENTO AUTOMÁTICO POR MOROSIDAD</strong>
+
+        <p>En caso de que el conductor incumpla con el pago en las fechas pactadas, se aplicarán las siguientes
+condiciones:</p>
+    <h3>Mora:</h3>
+    <p>Se cobrará una penalidad de S/ 10.00 (diez soles) por cada día de atraso.</p>
+
+    <h3>Autorización de descuento</h3>
+    <p>En caso de que <strong>EL CONDUCTOR</strong> incurra en morosidad respecto a las obligaciones económicas adquiridas con <strong>LA EMPRESA AREQUIPA GO E.I.R.L</strong>, <strong>EL CONDUCTOR</strong> autoriza expresamente a la empresa a realizar un descuento automático de la cantidad adeudada de su bono semanal, con el fin de saldar el monto correspondiente. Dicho descuento se efectuará sin necesidad de notificación adicional, y será aplicado a la mayor brevedad posible para regularizar la deuda.</p>
+<h3>Falta de fondos:</h3>
+<p><strong>EL CONDUCTOR</strong> reconoce que esta autorización se otorga como parte de las condiciones contractuales y que, en caso de no contar con fondos suficientes, la empresa podrá tomar las medidas legales necesarias para recuperar la deuda.</p>
+
+<h3>CLÁUSULA DE DEVOLUCIÓN Y BAJA DEL CHIP CORPORATIVO</h3>
+<p>En caso de que <strong>EL CONDUCTOR</strong> ya no desee continuar haciendo uso del chip corporativo proporcionado por <strong>LA EMPRESA AREQUIPA GO E.I.R.L</strong>, debe acercarse obligatoriamente a las oficinas de la empresa para efectuar la devolución física del chip, solicitar su baja correspondiente y firmar el documento de culminación de contrato relacionado al servicio.</p>
+
+<p><strong>EL CONDUCTOR</strong> reconoce que hasta que no se realice la devolución y baja formal del chip, así como la firma del documento respectivo, continuará siendo responsable de cualquier cargo, consumo u obligación generada por el uso del mencionado chip corporativo.</p>
 
     <div class="firmas">
-        <p class="espacio-importante"></p>
-        
-        <table>
-            <tr>
-                <td>
-                    <div class="linea"></div> <!-- Línea de firma del conductor -->
-                    <p>____________________________</p>
-                    <p>Nombres y Apellidos: <span id="nombre_conductor"></span></p> <!-- Nombre del conductor -->
-                    <p>DNI: <span id="dni_firma"></span></p>
-                </td>
-                <td>
-                    <div class="linea"></div> <!-- Línea de firma de la empresa -->
-                    <p>____________________________</p>
-                    <p>La Empresa</p> <!-- Nombre de la empresa -->
-                    <p>. </p><!--Espacio vacío-->
-                </td>
-            </tr>
-        </table>
+      <p class="espacio-importante"></p>
+
+      <table>
+        <tr>
+          <td>
+            <div class="linea"></div>
+            <!-- Línea de firma del conductor -->
+            <p>____________________________</p>
+            <p>Nombres y Apellidos: <span id="nombre_conductor"></span></p>
+            <!-- Nombre del conductor -->
+            <p>DNI: <span id="dni_firma"></span></p>
+          </td>
+          <td>
+            <div class="linea"></div>
+            <!-- Línea de firma de la empresa -->
+            <p>____________________________</p>
+            <p>La Empresa</p>
+            <!-- Nombre de la empresa -->
+            <p>.</p>
+            <!--Espacio vacío-->
+          </td>
+        </tr>
+      </table>
     </div>
-</body>
+  </body>
 </html>

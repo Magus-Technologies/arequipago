@@ -383,6 +383,7 @@
                 'CATEGORIA': { type: 'select', icon: 'fa-tags' },
                 'TIPO_PRODUCTO': { type: 'select', icon: 'fa-cube' },
                 'UNIDAD_MEDIDA': { type: 'select', icon: 'fa-balance-scale' },
+                'OFICINA': { type: 'select', icon: 'fa-building' },
                 'PRECIO': { type: 'number', icon: 'fa-dollar-sign', step: '0.01' },
                 'PRECIO_VENTA': { type: 'number', icon: 'fa-money-bill-wave', step: '0.01' },
                 'CANTIDAD': { type: 'number', icon: 'fa-boxes', step: '1' },
@@ -437,6 +438,7 @@
                 'UNIDAD_MEDIDA': 'Unidad de Medida',
                 'TIPO_PRODUCTO': 'Tipo de Producto',
                 'CATEGORIA': 'Categoría',
+                'OFICINA': 'Oficina',
                 'FECHA_VENCIMIENTO': 'Fecha de Vencimiento',
                 'RUC': 'RUC',
                 'RAZON_SOCIAL': 'Razón Social',
@@ -504,6 +506,22 @@
                 monedas.forEach(moneda => {
                     const selected = (productData.MONEDA === moneda) ? 'selected' : '';
                     monedaSelect.append(`<option value="${moneda}" ${selected}>${moneda}</option>`);
+                });
+            }
+
+            // Actualizar select de oficina
+            const oficinaSelect = $('#OFICINA');
+            if (oficinaSelect.length) {
+                const oficinas = [
+                    { value: '1', text: 'Oficina 1' },
+                    { value: '2', text: 'Oficina 2' },
+                    { value: '3', text: 'Oficina Lima' }
+                ];
+                oficinaSelect.empty();
+                oficinas.forEach(oficina => {
+                    // Comparación flexible que funciona tanto con números como strings
+                    const selected = (String(productData.OFICINA) === String(oficina.value)) ? 'selected' : '';
+                    oficinaSelect.append(`<option value="${oficina.value}" ${selected}>${oficina.text}</option>`);
                 });
             }
         }

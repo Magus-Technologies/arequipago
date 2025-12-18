@@ -1,9 +1,9 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(); // Inicia la sesión si aún no ha sido iniciada
+    session_start();  // Inicia la sesión si aún no ha sido iniciada
 }
 
-$rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obtener el rol del usuario logueado
+$rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obtener el rol del usuario logueado
 ?>
 
     <link rel="stylesheet" href="<?= URL::to('/public/css/pagos-financiamineto.css') ?>?v=<?= time() ?>">
@@ -33,6 +33,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         }
     </style>
 
+<?php if ($rol_usuario != 2): ?>
 <div class="switch-container">
     <span class="switch-label mt-3">Reportes</span>
 
@@ -44,6 +45,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
     <span id="regislabel" class="switch-label mt-3">Registrar Pago</span>
 </div>
+<?php endif; ?>
 
     <!-- <div id="reportes" class="content text-center">
         <h1>Próximamente podrás ver notas de venta y registros de pago de inscripción. Estamos trabajando en su desarrollo.</h1>
@@ -185,7 +187,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
 
     <!-- Modal para enviar PDF por WhatsApp -->
     <div class="modal fade" id="modalWhatsappReportes" tabindex="-1" aria-labelledby="modalWhatsappLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalWhatsappLabel">Enviar Nota de Venta por WhatsApp</h5>
@@ -234,11 +236,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 <div class="card-header bg-white">
                     <div class="row align-items-end">
                         <!-- Filtros de Fecha -->
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="fechaInicio">Fecha de inicio:</label>
                             <input type="date" id="fechaInicio" class="form-control">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="fechaFin">Fecha de fin:</label>
                             <input type="date" id="fechaFin" class="form-control">
                         </div>
@@ -251,7 +253,10 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                                 <i class="fa fa-undo"></i> Limpiar
                             </button>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end justify-content-end" style="gap: 8px;">
+                        <div class="col-md-5 d-flex align-items-end justify-content-end ms-auto" style="gap: 8px;">
+                            <button id="btnHistorialCuotas" class="btn btn-info d-inline-flex align-items-center" onclick="abrirModalHistorialCuotas()" style="white-space: nowrap;">
+                                <i class="fas fa-list-alt me-1"></i> Historial de Cuotas
+                            </button>
                             <button id="btnMorasPendientes" class="btn btn-warning d-inline-flex align-items-center" onclick="abrirModalMorasPendientes()" style="white-space: nowrap;">
                                 <i class="fas fa-exclamation-triangle me-1"></i> Moras Pendientes
                                 <span id="badgeMorasPendientes" class="badge bg-danger ms-1" style="display: none;">0</span>
@@ -269,7 +274,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                                 <tr>
                                     <th>#</th>
                                     <th>Conductor</th>
-                                    <!-- <th>Nº Documento</th> -->
+                                    <th>Nº Documento</th>
                                     <th>N° Unid</th>
                                     <th>Asesor</th>
                                     <th>Monto</th>
@@ -388,6 +393,96 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 <button type="button" class="btn btn-primary" onclick="procesarPagoMora()">
                     <i class="fas fa-check"></i> Confirmar Pago
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Historial de Cuotas -->
+<div class="modal fade" id="modalHistorialCuotas" tabindex="-1" aria-labelledby="modalHistorialCuotasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalHistorialCuotasLabel">
+                    <i class="fas fa-list-alt"></i> Historial de Cuotas Pagadas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Buscador de Conductor -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="buscarConductorCuotas" class="form-label"><strong>Buscar Conductor:</strong></label>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="buscarConductorCuotas"
+                                   placeholder="Ingrese DNI o nombre del conductor"
+                                   autocomplete="off"
+                                   oninput="buscarSugerenciasConductores()">
+                            <!-- Dropdown de sugerencias -->
+                            <div id="sugerenciasConductores" class="list-group position-absolute w-100"
+                                 style="display: none; z-index: 1000; max-height: 300px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="filtroPlanCuotas" class="form-label"><strong>Plan/Financiamiento:</strong></label>
+                        <select class="form-select" id="filtroPlanCuotas" disabled>
+                            <option value="">Todos los planes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary" onclick="buscarHistorialCuotas()" style="white-space: nowrap;">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loader -->
+                <div id="loaderHistorialCuotas" class="text-center" style="display: none;">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando historial de cuotas...</p>
+                </div>
+
+                <!-- Información del Conductor -->
+                <div id="infoConduchistorialCuotas" style="display: none;" class="alert alert-info mb-3">
+                    <h6 class="mb-2"><i class="fas fa-user"></i> Información del Conductor</h6>
+                    <p class="mb-1"><strong>Nombre:</strong> <span id="nombreConductorCuotas"></span></p>
+                    <p class="mb-1"><strong>DNI:</strong> <span id="dniConductorCuotas"></span></p>
+                    <p class="mb-0"><strong>Total de cuotas pagadas:</strong> <span id="totalCuotasPagadas" class="badge bg-success">0</span></p>
+                </div>
+
+                <!-- Tabla de Historial de Cuotas -->
+                <div id="contenedorTablaHistorialCuotas" style="display: none;">
+                    <div class="table-responsive">
+                        <table id="tablaHistorialCuotas" class="table table-striped table-hover table-bordered table-sm">
+                            <thead class="table-info">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Plan/Financiamiento</th>
+                                    <th>Producto</th>
+                                    <th>N° Cuota</th>
+                                    <th>Monto</th>
+                                    <th>Fecha Pago</th>
+                                    <th>Fecha Venc.</th>
+                                    <th>Mora</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llenará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mensaje cuando no hay resultados -->
+                <div id="sinResultadosCuotas" class="alert alert-warning text-center" style="display: none;">
+                    <i class="fas fa-info-circle"></i> No se encontraron cuotas pagadas para este conductor.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -898,10 +993,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         let ultimoPagado = -1; // Variable para rastrear la última cuota pagada
         // 🔽 NUEVO: Obtener categoría del producto y normalizar texto
         let categoria = (financiamientoData.producto?.categoria || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); // 🛠️ Nuevo
-        let esCategoriaVehiculo = categoria.trim().includes("vehiculo"); 
+        let esCategoriaVehiculo = categoria.trim().includes("vehiculo");
 
         // NUEVO: Obtener valor de cobrar_mora del financiamiento
         let cobraMora = financiamientoData.financiamiento.cobrar_mora || 0;
+
+        // NUEVO: Obtener frecuencia del financiamiento
+        let frecuenciaFinanciamiento = (financiamientoData.financiamiento.frecuencia || "").toLowerCase();
 
         // NUEVO: Agregar indicador de mora al inicio de la lista de cuotas
         let indicadorMora = '';
@@ -926,7 +1024,27 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         cuotas.forEach((cuota, index) => {
             let cuotaPagada = cuota.estado === "pagado";
             let fechaVencimiento = new Date(cuota.fecha_vencimiento);
-            let vencida = fechaVencimiento < fechaActual;
+
+            // ✅ FIX: Parsear fecha manualmente para evitar problemas de zona horaria
+            // Dividir el string "2025-11-24" en partes [año, mes, día]
+            let partesFechaVenc = cuota.fecha_vencimiento.split('-');
+            let fechaVencimientoSolo = new Date(
+                parseInt(partesFechaVenc[0]),
+                parseInt(partesFechaVenc[1]) - 1, // Mes es 0-indexed en JS
+                parseInt(partesFechaVenc[2])
+            );
+
+            // Fecha actual sin hora (solo año, mes, día)
+            let fechaActualSolo = new Date(
+                fechaActual.getFullYear(),
+                fechaActual.getMonth(),
+                fechaActual.getDate()
+            );
+
+            // La cuota solo está vencida si HOY es DESPUÉS del día de vencimiento
+            let vencida = fechaActualSolo > fechaVencimientoSolo;
+
+            console.log(`📅 Cuota ${cuota.numero_cuota}: Vencimiento=${cuota.fecha_vencimiento}, Hoy=${fechaActualSolo.toISOString().split('T')[0]}, Vencida=${vencida}`);
             // MODIFICADO: Permitir cuotas 2 días antes del vencimiento
             let fechaLimite = new Date(fechaVencimiento);
             fechaLimite.setDate(fechaLimite.getDate() - 2); // 2 días antes
@@ -1013,13 +1131,43 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 
                 cuotaDiv.append(checkbox);
 
-                // MODIFICADO: Solo mostrar input de mora si cobrar_mora es 1 y la cuota está vencida
+                // MODIFICADO: Solo mostrar input de mora si cobrar_mora es 1, la cuota está vencida Y tiene mora > 0
                 if (!cuotaPagada && vencida && cobraMora === 1) {
-                    let moraContainer = $('<div class="mora-container" style="display: none;"></div>'); 
-                    
+
+                    // ✅ SOLUCIÓN 3: Calcular mora dinámicamente si viene null o vacía
+                    if (cuota.mora == null || cuota.mora === "" || cuota.mora === 0) {
+                        let montoCuota = parseFloat(cuota.monto) || 0;
+
+                        // NUEVA LÓGICA: Para vehículos en dólares, usar mora según frecuencia
+                        if (esCategoriaVehiculo && moneda === '$') {
+                            if (frecuenciaFinanciamiento === 'semanal') {
+                                cuota.mora = 5;  // $5 dólares para frecuencia semanal
+                            } else if (frecuenciaFinanciamiento === 'mensual') {
+                                cuota.mora = 20; // $20 dólares para frecuencia mensual
+                            } else {
+                                cuota.mora = 5;  // Por defecto $5
+                            }
+                            console.log(`✅ Mora vehicular calculada (${frecuenciaFinanciamiento}): $${cuota.mora}`);
+                        } else if (moneda === 'S/.') {
+                            cuota.mora = (montoCuota >= 100) ? 10 : 5;
+                        } else if (moneda === '$') {
+                            cuota.mora = 5;
+                        } else {
+                            cuota.mora = 0;
+                        }
+                        console.log(`✅ Mora calculada dinámicamente para cuota ${cuota.numero_cuota}: ${cuota.mora}`);
+                    }
+
+                    // Guardar el valor de mora calculado para usarlo en los radio buttons
+                    let moraCalculada = parseFloat(cuota.mora) || 0;
+
+                    // ✅ NUEVO: Solo mostrar el input de mora si realmente hay mora > 0
+                    if (moraCalculada > 0) {
+                        let moraContainer = $('<div class="mora-container" style="display: none;"></div>');
+
                     // NUEVO: Agregar radio buttons para elegir opción de mora
                     let opcionesMora = $('<div class="opciones-mora mb-2"></div>');
-                    
+
                     let radioPagarMora = $(`
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" name="mora_${cuota.idcuotas_financiamiento}" id="pagar_mora_${cuota.idcuotas_financiamiento}" value="pagar" checked>
@@ -1069,20 +1217,25 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                         if (this.checked) {
                             inputMoraContainer.show();
                             data.moraPendiente = false;
-                            actualizarMoraCheckbox(checkbox, inputMora.val() || 0);
+                            // ✅ FIX: Usar el valor del input, o el valor calculado si está vacío
+                            let valorMora = parseFloat(inputMora.val()) || moraCalculada;
+                            inputMora.val(valorMora); // Asegurar que el input tenga el valor
+                            actualizarMoraCheckbox(checkbox, valorMora);
                         }
                     });
-                    
+
                     radioPendienteMora.find('input').on('change', function() {
                         if (this.checked) {
                             inputMoraContainer.hide();
                             data.moraPendiente = true;
-                            data.mora = parseFloat(inputMora.val()) || 0; // Guardar el monto pero no cobrarlo
+                            // ✅ FIX: Guardar el monto correcto
+                            data.mora = parseFloat(inputMora.val()) || moraCalculada;
                             actualizarMoraCheckbox(checkbox, 0); // Para el cálculo del total, mora = 0
                         }
                     });
 
-                    cuotaDiv.append(moraContainer);  
+                        cuotaDiv.append(moraContainer);
+                    } // Cierre del if (moraCalculada > 0)
                 }
             }
 
@@ -1779,25 +1932,6 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         }
     }
 
-    // Función para descargar reporte en Excel
-    function downloadData() {
-        const fechaInicio = $("#fechaInicio").val();
-        const fechaFin = $("#fechaFin").val();
-        
-        let url = '/arequipago/exportReportFinance';
-        let params = [];
-        
-        if (fechaInicio) params.push(`fechaInicio=${fechaInicio}`);
-        if (fechaFin) params.push(`fechaFin=${fechaFin}`);
-        
-        if (params.length > 0) {
-            url += '?' + params.join('&');
-        }
-        
-        window.location.href = url;
-    }
-
-
 function eliminarPagoReporte(id) {
     Swal.fire({
         title: '¿Estás seguro?',
@@ -2179,6 +2313,11 @@ function abrirPDFEnNuevaPestaña() {
      * Función para descargar el reporte de pagos de financiamiento en formato Excel
      */
     function downloadData() {
+        // Obtener valores de búsqueda y filtros de la tabla
+        const searchValue = tablaReportes.search(); // Valor de búsqueda de DataTables
+        const fechaInicio = $("#fechaInicio").val();
+        const fechaFin = $("#fechaFin").val();
+
         // Mostrar indicador de carga o spinner
         Swal.fire({
             title: 'Generando reporte',
@@ -2193,6 +2332,11 @@ function abrirPDFEnNuevaPestaña() {
         $.ajax({
             url: '/arequipago/get-reporte-pagos-finan',
             type: 'GET',
+            data: {
+                search: searchValue,
+                fechaInicio: fechaInicio,
+                fechaFin: fechaFin
+            },
             xhrFields: {
                 responseType: 'blob' // Importante: para recibir el archivo como blob
             },
@@ -2801,8 +2945,17 @@ function eliminarPago(idPago) {
         // Asegurar que #registrarPago esté completamente oculto desde el inicio
         $("#registrarPago").addClass("hidden hidden-right");
 
+        <?php if ($rol_usuario == 2): ?>
+        // Para asesores (rol 2): Ocultar completamente la sección de registro
+        $("#registrarPago").remove();
+        $("#reportes").removeClass("hidden");
+        <?php endif; ?>
 
         $("#toggleSwitch").change(function () {
+            <?php if ($rol_usuario == 2): ?>
+            // Asesores no pueden cambiar de vista
+            return false;
+            <?php else: ?>
             if ($(this).is(":checked")) {
                 $("#reportes").addClass("hidden-left"); // Oculta reportes con animación
                 setTimeout(() => { $("#reportes").addClass("hidden"); }, 500); // Oculta completamente después de la animación
@@ -2816,6 +2969,7 @@ function eliminarPago(idPago) {
                 $("#reportes").removeClass("hidden"); // Muestra antes de iniciar la animación
                 setTimeout(() => { $("#reportes").removeClass("hidden-left"); }, 10); // Retraso corto para evitar el salto abrupto
             }
+            <?php endif; ?>
         });
 
         // Event listener para el botón de filtrar
@@ -3083,10 +3237,10 @@ function eliminarPago(idPago) {
                     data: "conductor",
                     class: "text-center",
                 },
-                // {
-                //     data:"nro_documento",
-                //     class  :"text-center",
-                // },
+                {
+                    data:"nro_documento",
+                    class  :"text-center",
+                },
                 {
                     data: "numUnidad",
                     class: "text-center",
@@ -3486,6 +3640,310 @@ function eliminarPago(idPago) {
         const mes = String(date.getMonth() + 1).padStart(2, '0');
         const anio = date.getFullYear();
         return `${dia}/${mes}/${anio}`;
+    }
+
+    // ========================================
+    // FUNCIONES PARA HISTORIAL DE CUOTAS
+    // ========================================
+
+    /**
+     * Abrir modal de historial de cuotas
+     */
+    function abrirModalHistorialCuotas() {
+        $('#modalHistorialCuotas').modal('show');
+        // Limpiar búsqueda anterior
+        $('#buscarConductorCuotas').val('');
+        $('#sugerenciasConductores').hide().empty();
+        $('#filtroPlanCuotas').prop('disabled', true).html('<option value="">Todos los planes</option>');
+        $('#infoConduchistorialCuotas').hide();
+        $('#contenedorTablaHistorialCuotas').hide();
+        $('#sinResultadosCuotas').hide();
+
+        // Destruir DataTable si existe
+        if (dataTableHistorialCuotas) {
+            dataTableHistorialCuotas.destroy();
+            dataTableHistorialCuotas = null;
+        }
+    }
+
+    // Variable para almacenar el timeout de la búsqueda
+    let timeoutSugerencias = null;
+
+    /**
+     * Buscar sugerencias de conductores mientras escribe
+     */
+    function buscarSugerenciasConductores() {
+        const busqueda = $('#buscarConductorCuotas').val().trim();
+        const contenedorSugerencias = $('#sugerenciasConductores');
+
+        // Si la búsqueda es muy corta, ocultar sugerencias
+        if (busqueda.length < 1) {
+            contenedorSugerencias.hide().empty();
+            return;
+        }
+
+        // Cancelar búsqueda anterior si existe
+        if (timeoutSugerencias) {
+            clearTimeout(timeoutSugerencias);
+        }
+
+        // Esperar 300ms antes de buscar (debounce)
+        timeoutSugerencias = setTimeout(() => {
+            $.ajax({
+                url: _URL + '/ajs/buscarSugerenciasConductores',
+                type: 'GET',
+                data: { busqueda: busqueda },
+                dataType: 'json',
+                success: function(response) {
+                    contenedorSugerencias.empty();
+
+                    if (response.success && response.sugerencias && response.sugerencias.length > 0) {
+                        response.sugerencias.forEach(conductor => {
+                            const item = `
+                                <a href="javascript:void(0)" class="list-group-item list-group-item-action"
+                                   onclick="seleccionarConductorSugerencia('${conductor.dni}', '${conductor.nombre}')">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${conductor.nombre}</strong><br>
+                                            <small class="text-muted">DNI: ${conductor.dni}</small>
+                                        </div>
+                                        <span class="badge bg-info">${conductor.tipo}</span>
+                                    </div>
+                                </a>
+                            `;
+                            contenedorSugerencias.append(item);
+                        });
+                        contenedorSugerencias.show();
+                    } else {
+                        contenedorSugerencias.hide();
+                    }
+                },
+                error: function() {
+                    contenedorSugerencias.hide();
+                }
+            });
+        }, 300);
+    }
+
+    /**
+     * Seleccionar conductor de las sugerencias
+     */
+    function seleccionarConductorSugerencia(dni, nombre) {
+        $('#buscarConductorCuotas').val(dni);
+        $('#sugerenciasConductores').hide().empty();
+        // Buscar automáticamente
+        buscarHistorialCuotas();
+    }
+
+    // Cerrar sugerencias al hacer click fuera
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#buscarConductorCuotas, #sugerenciasConductores').length) {
+            $('#sugerenciasConductores').hide();
+        }
+    });
+
+    // Variable global para DataTable de historial de cuotas
+    let dataTableHistorialCuotas = null;
+
+    /**
+     * Buscar historial de cuotas del conductor
+     */
+    function buscarHistorialCuotas() {
+        const busqueda = $('#buscarConductorCuotas').val().trim();
+
+        if (!busqueda) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atención',
+                text: 'Por favor ingrese un DNI o nombre para buscar'
+            });
+            return;
+        }
+
+        // Mostrar loader
+        $('#loaderHistorialCuotas').show();
+        $('#infoConduchistorialCuotas').hide();
+        $('#contenedorTablaHistorialCuotas').hide();
+        $('#sinResultadosCuotas').hide();
+
+        // Llamada AJAX
+        $.ajax({
+            url: _URL + '/ajs/getHistorialCuotasPagadas',
+            type: 'GET',
+            data: { busqueda: busqueda },
+            dataType: 'json',
+            success: function(response) {
+                $('#loaderHistorialCuotas').hide();
+
+                if (response.success && response.cuotas && response.cuotas.length > 0) {
+                    // Mostrar información del conductor
+                    $('#nombreConductorCuotas').text(response.conductor.nombre);
+                    $('#dniConductorCuotas').text(response.conductor.dni);
+                    $('#totalCuotasPagadas').text(response.cuotas.length);
+                    $('#infoConduchistorialCuotas').show();
+
+                    // Llenar select de planes
+                    llenarFiltroPlanesHistorial(response.cuotas);
+
+                    // Llenar tabla
+                    llenarTablaHistorialCuotas(response.cuotas);
+                    $('#contenedorTablaHistorialCuotas').show();
+                } else {
+                    $('#sinResultadosCuotas').show();
+                    $('#filtroPlanCuotas').prop('disabled', true).html('<option value="">Todos los planes</option>');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#loaderHistorialCuotas').hide();
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al buscar el historial de cuotas'
+                });
+            }
+        });
+    }
+
+    /**
+     * Llenar select de planes únicos del historial
+     */
+    function llenarFiltroPlanesHistorial(cuotas) {
+        const selectPlan = $('#filtroPlanCuotas');
+        selectPlan.empty().append('<option value="">Todos los planes</option>');
+
+        // Obtener planes únicos
+        const planesUnicos = [...new Set(cuotas.map(c => c.nombre_plan || 'Sin plan'))];
+
+        planesUnicos.forEach(plan => {
+            selectPlan.append(`<option value="${plan}">${plan}</option>`);
+        });
+
+        selectPlan.prop('disabled', false);
+
+        // Evento change para filtrar
+        selectPlan.off('change').on('change', function() {
+            const planSeleccionado = $(this).val();
+            if (dataTableHistorialCuotas) {
+                dataTableHistorialCuotas.column(1).search(planSeleccionado).draw();
+            }
+        });
+    }
+
+    /**
+     * Llenar tabla con historial de cuotas usando DataTables
+     */
+    function llenarTablaHistorialCuotas(cuotas) {
+        // Destruir DataTable si existe
+        if (dataTableHistorialCuotas) {
+            dataTableHistorialCuotas.destroy();
+        }
+
+        const tbody = $('#tablaHistorialCuotas tbody');
+        tbody.empty();
+
+        cuotas.forEach((cuota, index) => {
+            const fechaPago = formatearFecha(cuota.fecha_pago);
+            const fechaVenc = formatearFecha(cuota.fecha_vencimiento);
+            const monto = parseFloat(cuota.monto).toFixed(2);
+            const mora = cuota.mora ? parseFloat(cuota.mora).toFixed(2) : '0.00';
+            const moneda = cuota.moneda_cuota || 'S/.';
+
+            const row = `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${cuota.nombre_plan || 'Sin plan'}</td>
+                    <td>${cuota.producto_nombre || 'N/A'}</td>
+                    <td class="text-center"><span class="badge bg-primary">Cuota ${cuota.numero_cuota}</span></td>
+                    <td class="text-end">${moneda} ${monto}</td>
+                    <td class="text-center">${fechaPago}</td>
+                    <td class="text-center">${fechaVenc}</td>
+                    <td class="text-end">${mora > 0 ? '<span class="text-danger">' + moneda + ' ' + mora + '</span>' : '-'}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-success" onclick="compartirBoletaCuota(${cuota.idcuotas_financiamiento})" title="Compartir Boleta">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+
+        // Inicializar DataTable
+        dataTableHistorialCuotas = $('#tablaHistorialCuotas').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+            },
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+            order: [[0, 'asc']],
+            responsive: true,
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                 '<"row"<"col-sm-12"tr>>' +
+                 '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p">>'
+        });
+    }
+
+    /**
+     * Compartir boleta de cuota por WhatsApp
+     * Usa el mismo sistema que "Enviar Nota de Venta por WhatsApp"
+     */
+    function compartirBoletaCuota(idCuota) {
+        // Mostrar loader mientras se genera la boleta
+        Swal.fire({
+            title: 'Generando boleta...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Llamar al backend para generar la boleta
+        $.ajax({
+            url: _URL + '/ajs/generarBoletaCuota',
+            type: 'POST',
+            data: { id_cuota: idCuota },
+            dataType: 'json',
+            success: function(response) {
+                Swal.close();
+
+                if (response.success && response.pdf_base64) {
+                    // Guardar el PDF en localStorage
+                    localStorage.setItem('pdfBase64', response.pdf_base64);
+
+                    // Cargar el PDF en el iframe
+                    const pdfDataUri = 'data:application/pdf;base64,' + response.pdf_base64;
+                    $('#pdfContainer').html(`<iframe src="${pdfDataUri}" style="width:100%; height:400px; border:none;"></iframe>`);
+
+                    // Limpiar el número de WhatsApp
+                    $('#numeroWhatsapp').val('');
+
+                    // Cerrar modal de historial antes de abrir el de WhatsApp
+                    $('#modalHistorialCuotas').modal('hide');
+
+                    // Esperar a que se cierre completamente antes de abrir el nuevo
+                    setTimeout(() => {
+                        $('#modalWhatsappReportes').modal('show');
+                    }, 300);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'No se pudo generar la boleta'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                Swal.close();
+                console.error('Error al generar boleta:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al generar la boleta'
+                });
+            }
+        });
     }
 
     // Cargar contador de moras al cargar la página

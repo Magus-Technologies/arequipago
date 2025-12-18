@@ -124,6 +124,30 @@ class AprobacionFinanciamientoController extends Controller
                 $financiamiento['usuario_creador'] = $nombreUsuario;
             }
 
+            // ✅ NUEVO: Obtener motivo de rechazo si el financiamiento está rechazado
+            if ($financiamiento['aprobado'] == 2) {
+                $queryMotivo = "SELECT motivo, fecha_hora, usuario_id
+                                FROM log_aprobaciones_financiamiento
+                                WHERE id_financiamiento = ? AND accion = 'rechazado'
+                                ORDER BY fecha_hora DESC LIMIT 1";
+                $stmtMotivo = $this->conexion->prepare($queryMotivo);
+                $stmtMotivo->bind_param('i', $id);
+                $stmtMotivo->execute();
+                $resultMotivo = $stmtMotivo->get_result();
+                $logRechazo = $resultMotivo->fetch_assoc();
+
+                if ($logRechazo) {
+                    $financiamiento['motivo_rechazo'] = $logRechazo['motivo'];
+                    $financiamiento['fecha_rechazo'] = $logRechazo['fecha_hora'];
+
+                    // Obtener nombre del usuario que rechazó
+                    if (!empty($logRechazo['usuario_id'])) {
+                        $nombreUsuarioRechazo = $this->financiamientoModel->obtenerUsuarioPorId($logRechazo['usuario_id']);
+                        $financiamiento['usuario_rechazo'] = $nombreUsuarioRechazo;
+                    }
+                }
+            }
+
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,

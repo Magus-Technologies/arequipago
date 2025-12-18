@@ -634,222 +634,402 @@ class GenerarReporte extends Controller
 
     public function getReportePagoFinan()
     {
+        try {
+            // Obtener parámetros de búsqueda desde GET
+            $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $fechaInicio = isset($_GET['fechaInicio']) ? trim($_GET['fechaInicio']) : '';
+            $fechaFin = isset($_GET['fechaFin']) ? trim($_GET['fechaFin']) : '';
 
-        // Crear una nueva hoja de cálculo
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+            // Crear una nueva hoja de cálculo
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+        // Configurar propiedades del documento
+        $spreadsheet->getProperties()
+            ->setCreator("ArequipaGo")
+            ->setTitle("Reporte de Pagos de Financiamiento")
+            ->setSubject("Detalle de pagos")
+            ->setDescription("Reporte generado por ArequipaGo");
+
+        // ENCABEZADO PRINCIPAL
+        $sheet->mergeCells('A1:K1');
+        $sheet->setCellValue('A1', 'REPORTE DE PAGOS DE FINANCIAMIENTO');
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['rgb' => 'FFFFFF']
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4472C4']
+            ]
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(30);
+
+        // Subtítulo con filtros aplicados
+        $filtrosTexto = 'Fecha de generación: ' . date('d/m/Y H:i:s');
+        if ($search) $filtrosTexto .= ' | Búsqueda: "' . $search . '"';
+        if ($fechaInicio && $fechaFin) $filtrosTexto .= ' | Período: ' . date('d/m/Y', strtotime($fechaInicio)) . ' - ' . date('d/m/Y', strtotime($fechaFin));
+
+        $sheet->mergeCells('A2:K2');
+        $sheet->setCellValue('A2', $filtrosTexto);
+        $sheet->getStyle('A2')->applyFromArray([
+            'font' => [
+                'italic' => true,
+                'size' => 10
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER
+            ]
+        ]);
+        $sheet->getRowDimension(2)->setRowHeight(20);
+
         $sheet->setTitle('Reporte de Pagos');
 
-        // Establecer los encabezados de columna
+        // ENCABEZADOS DE COLUMNAS (fila 4)
         $headers = [
-            'A1' => 'Ítem',
-            'B1' => 'Conductor',
-            'C1' => 'DNI',
-            'D1' => 'Nº Unidad',
-            'E1' => 'Asesor',
-            'F1' => 'Monto Inicial',
-            'G1' => 'Monto Recalculado',
-            'H1' => 'Grupo',
-            'I1' => 'Producto',
-            'J1' => 'Cuotas Pagadas',
-            'K1' => 'Cuotas No Pagadas'
+            'A4' => '#',
+            'B4' => 'Conductor/Cliente',
+            'C4' => 'DNI',
+            'D4' => 'N° Unidad',
+            'E4' => 'Asesor',
+            'F4' => 'Método Pago',
+            'G4' => 'Moneda',
+            'H4' => 'Monto Total',
+            'I4' => 'Fecha de Pago',
+            'J4' => 'Estado',
+            'K4' => 'Cuotas Pagadas'
         ];
 
-        // Aplicar encabezados a la hoja
         foreach ($headers as $cell => $value) {
             $sheet->setCellValue($cell, $value);
         }
 
-        // Estilo para los encabezados
-        $headerStyle = [
+        // Estilo de encabezados
+        $sheet->getStyle('A4:K4')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4472C4'],
+                'size' => 11
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '70AD47']
             ],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
-                ],
-            ],
-        ];
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ]);
+        $sheet->getRowDimension(4)->setRowHeight(20);
 
-        // Aplicar estilo a los encabezados
-        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+        // Construir query con filtros (igual que obtenerReportesPagos del modelo)
+        $query = "SELECT p.*,
+            CONCAT(COALESCE(c.nombres, cf.nombres), ' ', COALESCE(c.apellido_paterno, cf.apellido_paterno), ' ', COALESCE(c.apellido_materno, cf.apellido_materno)) AS conductor,
+            COALESCE(c.nro_documento, cf.n_documento) AS nro_documento,
+            c.numUnidad AS numUnidad,
+            CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS asesor,
+            f.grupo_financiamiento,
+            prod.nombre as producto_nombre,
+            plan.nombre_plan as nombre_plan
+        FROM pagos_financiamiento p
+        LEFT JOIN conductores c ON p.id_conductor = c.id_conductor
+        LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
+        LEFT JOIN usuarios u ON p.id_asesor = u.usuario_id
+        LEFT JOIN financiamiento f ON p.id_financiamiento = f.idfinanciamiento
+        LEFT JOIN productosv2 prod ON f.idproductosv2 = prod.idproductosv2
+        LEFT JOIN planes_financiamiento plan ON f.grupo_financiamiento = plan.idplan_financiamiento
+        WHERE (p.estado = 1 OR p.estado = 3 OR p.estado IS NULL)";
 
-        // Obtener datos para el reporte
-        $query = "SELECT DISTINCT pf.idpagos_financiamiento, pf.id_financiamiento, pf.id_conductor, 
-                  pf.id_asesor, pf.monto, pf.metodo_pago, pf.fecha_pago, pf.moneda
-                  FROM pagos_financiamiento pf
-                  ORDER BY pf.fecha_pago DESC";
+        $params = [];
+        $types = '';
+
+        // Aplicar filtro de búsqueda
+        if (!empty($search)) {
+            $query .= " AND (
+                CONCAT(COALESCE(c.nombres, cf.nombres), ' ', COALESCE(c.apellido_paterno, cf.apellido_paterno), ' ', COALESCE(c.apellido_materno, cf.apellido_materno)) LIKE ? OR
+                COALESCE(c.nro_documento, cf.n_documento) LIKE ? OR
+                c.numUnidad LIKE ? OR
+                CONCAT(u.nombres, ' ', u.apellidos) LIKE ?
+            )";
+            $searchTerm = "%$search%";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $types .= 'ssss';
+        }
+
+        // Aplicar filtro de fechas
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            $query .= ' AND DATE(p.fecha_pago) BETWEEN ? AND ?';
+            $params[] = $fechaInicio;
+            $params[] = $fechaFin;
+            $types .= 'ss';
+        }
+
+        $query .= " ORDER BY p.fecha_pago DESC";
 
         $stmt = $this->conexion->prepare($query);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // Array para controlar financiamientos ya procesados
-        $financiamientosYaProcesados = [];
+        // Primero, obtener todos los pagos y agruparlos por financiamiento
+        $pagosPorFinanciamiento = [];
 
-        // Iniciar fila para datos
-        $row = 2;
-        $item = 1;
-
-        $usuarioModel = new Usuario();
-
-        // Procesar resultados
         while ($pago = $result->fetch_assoc()) {
-            $id_financiamiento = $pago['id_financiamiento'];
+            // Para pagos antiguos sin id_financiamiento, intentar obtenerlo desde detalle_pago
+            $idFinanciamientoReal = $pago['id_financiamiento'];
 
-            // Si id_financiamiento es null, obtenerlo desde las tablas relacionadas
-            if ($id_financiamiento === null) {
-                $id_financiamiento = $this->buscarIdFinanciamiento($pago['idpagos_financiamiento']);
-            }
+            if (empty($idFinanciamientoReal)) {
+                // Intentar obtener desde detalle_pago -> cuotas
+                $queryFinan = "SELECT cf.id_financiamiento
+                              FROM detalle_pago_financiamiento dpf
+                              INNER JOIN cuotas_financiamiento cf ON dpf.id_cuota = cf.idcuotas_financiamiento
+                              WHERE dpf.idfinanciamiento = ?
+                              LIMIT 1";
+                $stmtFinan = $this->conexion->prepare($queryFinan);
+                $stmtFinan->bind_param("i", $pago['idpagos_financiamiento']);
+                $stmtFinan->execute();
+                $resultFinan = $stmtFinan->get_result();
+                if ($rowFinan = $resultFinan->fetch_assoc()) {
+                    $idFinanciamientoReal = $rowFinan['id_financiamiento'];
 
-            // Si no se puede obtener id_financiamiento o ya fue procesado, continuar con el siguiente registro
-            if ($id_financiamiento === null || in_array($id_financiamiento, $financiamientosYaProcesados)) {
-                continue;
-            }
-
-            // Marcar este id_financiamiento como procesado
-            $financiamientosYaProcesados[] = $id_financiamiento;
-
-            // 3. Obtener datos del financiamiento
-            $financiamientoData = $this->obtenerDatosFinanciamiento($id_financiamiento);
-
-            // 1. Obtener datos del conductor
-            if ($pago['id_conductor'] !== null) {
-                // Llamar a la función para obtener datos del conductor
-                $conductorData = $this->obtenerDatosConductor($pago['id_conductor']);
-            } else {
-                // Verificar si id_cliente existe y no es null
-                if (isset($financiamientoData['id_cliente']) && $financiamientoData['id_cliente'] !== null) {
-                    // Si no hay ID de conductor, obtener datos del cliente
-                    $queryCliente = "SELECT * FROM clientes_financiar WHERE id = ?";
-                    $stmtCliente = $this->conexion->prepare($queryCliente);
-                    $stmtCliente->bind_param("i", $financiamientoData['id_cliente']);
-                    $stmtCliente->execute();
-                    $resultCliente = $stmtCliente->get_result();
-
-                    if ($resultCliente->num_rows > 0) {
-                        $clienteData = $resultCliente->fetch_assoc();
-                        $nombreCompleto = $clienteData['nombres'] . ' ' . $clienteData['apellido_paterno'] . ' ' . $clienteData['apellido_materno'];
-
-                        $conductorData = [
-                            'nombre_completo' => $nombreCompleto,
-                            'nro_documento' => $clienteData['n_documento'],
-                            'numUnidad' => ''
-                        ];
-                    } else {
-                        // Si no se encontró el cliente, dejar los campos vacíos
-                        $conductorData = [
-                            'nombre_completo' => '',
-                            'nro_documento' => '',
-                            'numUnidad' => ''
-                        ];
+                    // Obtener datos del financiamiento para este pago antiguo
+                    $queryFinanData = "SELECT f.grupo_financiamiento, prod.nombre as producto_nombre, plan.nombre_plan
+                                      FROM financiamiento f
+                                      LEFT JOIN productosv2 prod ON f.idproductosv2 = prod.idproductosv2
+                                      LEFT JOIN planes_financiamiento plan ON f.grupo_financiamiento = plan.idplan_financiamiento
+                                      WHERE f.idfinanciamiento = ?";
+                    $stmtFinanData = $this->conexion->prepare($queryFinanData);
+                    $stmtFinanData->bind_param("i", $idFinanciamientoReal);
+                    $stmtFinanData->execute();
+                    $resultFinanData = $stmtFinanData->get_result();
+                    if ($rowFinanData = $resultFinanData->fetch_assoc()) {
+                        $pago['nombre_plan'] = $rowFinanData['nombre_plan'];
+                        $pago['producto_nombre'] = $rowFinanData['producto_nombre'];
+                        $pago['grupo_financiamiento'] = $rowFinanData['grupo_financiamiento'];
                     }
-                } else {
-                    // Si id_cliente no está o es null
-                    $conductorData = [
-                        'nombre_completo' => '',
-                        'nro_documento' => '',
-                        'numUnidad' => ''
-                    ];
                 }
             }
 
+            // Actualizar el id_financiamiento en el array
+            $pago['id_financiamiento_real'] = $idFinanciamientoReal;
 
-            // 2. Obtener datos del asesor
-            $asesorData = $usuarioModel->getData($pago['id_asesor']);
-            $nombreAsesor = $asesorData ? $asesorData['nombres'] . ' ' . $asesorData['apellidos'] : 'No registrado';
+            // Agrupar por financiamiento (usar 0 para pagos sin financiamiento)
+            $keyFinan = !empty($idFinanciamientoReal) ? $idFinanciamientoReal : 'sin_financiamiento';
 
+            if (!isset($pagosPorFinanciamiento[$keyFinan])) {
+                $pagosPorFinanciamiento[$keyFinan] = [
+                    'id_financiamiento' => $idFinanciamientoReal,
+                    'nombre_plan' => $pago['nombre_plan'],
+                    'producto_nombre' => $pago['producto_nombre'],
+                    'grupo_financiamiento' => $pago['grupo_financiamiento'],
+                    'pagos' => []
+                ];
+            }
 
-            // 4. Obtener información del grupo
-            $grupoInfo = $this->obtenerGrupoInfo($financiamientoData['grupo_financiamiento']);
+            $pagosPorFinanciamiento[$keyFinan]['pagos'][] = $pago;
+        }
 
-            // 5. Obtener nombre del producto
-            $nombreProducto = $this->obtenerNombreProducto($financiamientoData['idproductosv2']);
+        // Ahora procesar los grupos y escribir en Excel
+        $row = 5;
+        $item = 1;
 
+        foreach ($pagosPorFinanciamiento as $keyFinan => $grupoFinan) {
+            // Agregar espacio entre financiamientos (excepto el primero)
+            if ($row > 5) {
+                $row += 2;
+            }
 
+            // Obtener nombre del plan
+            $nombrePlan = !empty($grupoFinan['nombre_plan'])
+                ? $grupoFinan['nombre_plan']
+                : (!empty($grupoFinan['grupo_financiamiento'])
+                    ? "Plan #" . $grupoFinan['grupo_financiamiento']
+                    : 'Sin plan');
 
-            $moneda = isset($financiamientoData['moneda']) && $financiamientoData['moneda'] !== null
-                ? $financiamientoData['moneda']
-                : 'S/.';
+            $productoNombre = !empty($grupoFinan['producto_nombre']) ? $grupoFinan['producto_nombre'] : 'Sin producto';
 
+            // Título del grupo
+            if ($keyFinan === 'sin_financiamiento') {
+                $tituloFinan = 'PAGOS SIN FINANCIAMIENTO ASOCIADO';
+            } else {
+                $tituloFinan = 'FINANCIAMIENTO: ' . $nombrePlan . ' | Producto: ' . $productoNombre . ' | ID: ' . $grupoFinan['id_financiamiento'];
+            }
 
-            // 6. Obtener cuotas pagadas y pendientes
-            $cuotasPagadas = $this->obtenerCuotasPagadas($id_financiamiento, $moneda);
-            $cuotasPendientes = $this->obtenerCuotasPendientes($id_financiamiento, $moneda);
+            // Encabezado del financiamiento/grupo
+            $sheet->mergeCells('A' . $row . ':K' . $row);
+            $sheet->setCellValue('A' . $row, $tituloFinan);
+            $sheet->getStyle('A' . $row)->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'size' => 12,
+                    'color' => ['rgb' => 'FFFFFF']
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '4472C4']
+                ],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_LEFT,
+                    'vertical' => Alignment::VERTICAL_CENTER
+                ]
+            ]);
+            $sheet->getRowDimension($row)->setRowHeight(25);
+            $row++;
+
+            // Procesar pagos de este financiamiento
+            $itemGrupo = 1;
+            foreach ($grupoFinan['pagos'] as $pago) {
+            // Obtener nombre del conductor/cliente (ya viene del JOIN)
+            $conductor = $pago['conductor'] ?: 'N/A';
+            $dni = $pago['nro_documento'] ?: 'N/A';
+            $numUnidad = $pago['numUnidad'] ?: 'N/A';
+            $asesor = $pago['asesor'] ?: 'No registrado';
+
+            // Método de pago y moneda
+            $metodoPago = $pago['metodo_pago'] ?: 'N/A';
+            $moneda = $pago['moneda'] ?: 'S/.';
+            $montoTotal = number_format((float)$pago['monto'], 2, '.', ',');
+
+            // Fecha de pago
+            $fechaPago = 'N/A';
+            if (!empty($pago['fecha_pago'])) {
+                $fechaPago = date('d/m/Y H:i', strtotime($pago['fecha_pago']));
+            }
+
+            // Estado del pago
+            $estado = 'Desconocido';
+            if ($pago['estado'] == 0) $estado = 'Pendiente';
+            elseif ($pago['estado'] == 1) $estado = 'Pagado';
+            elseif ($pago['estado'] == 2) $estado = 'Rechazado';
+            elseif ($pago['estado'] == 3) $estado = 'Anulado';
+
+            // Obtener cuotas pagadas en este pago desde detalle_pago_financiamiento
+            $queryCuotas = "SELECT dpf.mora as mora_detalle, cf.numero_cuota, cf.monto, cf.fecha_vencimiento, cf.mora as mora_cuota
+                           FROM detalle_pago_financiamiento dpf
+                           INNER JOIN cuotas_financiamiento cf ON dpf.id_cuota = cf.idcuotas_financiamiento
+                           WHERE dpf.idfinanciamiento = ?
+                           ORDER BY cf.numero_cuota ASC";
+            $stmtCuotas = $this->conexion->prepare($queryCuotas);
+            $stmtCuotas->bind_param("i", $pago['idpagos_financiamiento']);
+            $stmtCuotas->execute();
+            $resultCuotas = $stmtCuotas->get_result();
+
+            // Formatear cuotas para mostrar
+            $cuotasTexto = '';
+            $totalCuotas = 0;
+            while ($cuota = $resultCuotas->fetch_assoc()) {
+                $totalCuotas++;
+                $numCuota = $cuota['numero_cuota'];
+                $montoCuota = number_format((float)$cuota['monto'], 2);
+                // La mora puede venir del detalle o de la cuota
+                $mora = isset($cuota['mora_detalle']) && $cuota['mora_detalle'] > 0
+                    ? (float)$cuota['mora_detalle']
+                    : (isset($cuota['mora_cuota']) ? (float)$cuota['mora_cuota'] : 0);
+                $moraTexto = $mora > 0 ? ' + Mora: ' . number_format($mora, 2) : '';
+                $fechaVenc = date('d/m/Y', strtotime($cuota['fecha_vencimiento']));
+
+                $cuotasTexto .= "Cuota #{$numCuota}: {$moneda} {$montoCuota}{$moraTexto} (Venc: {$fechaVenc})\n";
+            }
+
+            if (empty($cuotasTexto)) {
+                $cuotasTexto = 'Sin cuotas registradas';
+            }
 
             // Llenar la fila con datos
-            $sheet->setCellValue('A' . $row, $item);
-            $sheet->setCellValue('B' . $row, $conductorData['nombre_completo']);
-            $sheet->setCellValue('C' . $row, $conductorData['nro_documento']);
-            $sheet->setCellValue('D' . $row, $conductorData['numUnidad']);
-            $sheet->setCellValue('E' . $row, $nombreAsesor);
+            $sheet->setCellValue('A' . $row, $itemGrupo);
+            $sheet->setCellValue('B' . $row, $conductor);
+            $sheet->setCellValue('C' . $row, $dni);
+            $sheet->setCellValue('D' . $row, $numUnidad);
+            $sheet->setCellValue('E' . $row, $asesor);
+            $sheet->setCellValue('F' . $row, $metodoPago);
+            $sheet->setCellValue('G' . $row, $moneda);
+            $sheet->setCellValue('H' . $row, $moneda . ' ' . $montoTotal);
+            $sheet->setCellValue('I' . $row, $fechaPago);
+            $sheet->setCellValue('J' . $row, $estado);
+            $sheet->setCellValue('K' . $row, $cuotasTexto);
 
-            // MODIFICADO: Obtener la fecha de pago de la cuota inicial
-            $queryFechaPagoInicial = "SELECT fecha_pago 
-                                    FROM pagos_financiamiento 
-                                    WHERE id_financiamiento = ? AND concepto = 'Cuota Inicial' 
-                                    LIMIT 1";
-            $stmtFechaPagoInicial = $this->conexion->prepare($queryFechaPagoInicial);
-            $stmtFechaPagoInicial->bind_param("i", $id_financiamiento);
-            $stmtFechaPagoInicial->execute();
-            $resultFechaPagoInicial = $stmtFechaPagoInicial->get_result();
-            $fechaPagoInicial = '';
-            if ($pagoInicial = $resultFechaPagoInicial->fetch_assoc()) {
-                $fechaPagoInicial = date('d/m/Y', strtotime($pagoInicial['fecha_pago'])); // MODIFICADO: Formatear la fecha
-            }
-
-            // MODIFICADO: Concatenar el monto inicial con la fecha de pago
-            if ($financiamientoData['cuota_inicial'] > 0) { // MODIFICADO: Validación para agregar la fecha de pago solo cuando el monto es mayor que 0
-                $sheet->setCellValue('F' . $row, $financiamientoData['cuota_inicial'] . ' | Fecha de Pago: ' . $fechaPagoInicial);
-            } else {
-                $sheet->setCellValue('F' . $row, $financiamientoData['cuota_inicial']); // MODIFICADO: Solo mostrar el monto cuando es 0
-            }
-
-            $sheet->setCellValue('G' . $row, $financiamientoData['monto_recalculado']);
-            $sheet->setCellValue('H' . $row, $grupoInfo);
-            $sheet->setCellValue('I' . $row, $nombreProducto);
-            $sheet->setCellValue('J' . $row, $cuotasPagadas);
-            $sheet->setCellValue('K' . $row, $cuotasPendientes);
-
-            // Aplicar alineación para cuotas (para manejar múltiples líneas)
-            $sheet->getStyle('J' . $row)->getAlignment()->setWrapText(true);
+            // Aplicar wrap text para las cuotas
             $sheet->getStyle('K' . $row)->getAlignment()->setWrapText(true);
+
+            // Aplicar bordes a la fila
+            $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ],
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_TOP
+                ]
+            ]);
 
             $row++;
             $item++;
+            $itemGrupo++;
+            }
         }
 
-        // Ajustar ancho de columnas automáticamente
-        foreach (range('A', 'K') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
+            // Ajustar ancho de columnas automáticamente
+            foreach (range('A', 'K') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            // Agregar línea de totales
+            $sheet->mergeCells('A' . ($row) . ':J' . ($row));
+            $sheet->setCellValue('A' . $row, 'Total de registros: ' . ($item - 1));
+            $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E7E6E6']
+                ]
+            ]);
+
+            // Limpiar cualquier salida anterior
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
+            ob_start();
+
+            // Configurar la respuesta HTTP
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="Reporte_Pagos_Financiamiento_' . date('d-m-Y') . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            header('Expires: 0');
+            header('Pragma: public');
+
+            // Crear el archivo Excel en PHP memory y enviarlo al navegador
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+
+            ob_end_flush();
+            exit;
+
+        } catch (Exception $e) {
+            // En caso de error, registrar y mostrar mensaje
+            error_log("Error en getReportePagoFinan: " . $e->getMessage());
+            header('Content-Type: text/html; charset=utf-8');
+            echo "Error al generar el reporte: " . $e->getMessage();
+            exit;
         }
-
-        // Configurar la respuesta HTTP
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="Reporte_Pagos_Financiamiento.xlsx"');
-        header('Cache-Control: max-age=0');
-        header('Expires: 0');
-        header('Pragma: public');
-
-        // Limpiar cualquier salida anterior
-        ob_clean();
-        flush();
-
-        // Crear el archivo Excel en PHP memory y enviarlo al navegador
-        $writer = new Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
     }
 
     /**

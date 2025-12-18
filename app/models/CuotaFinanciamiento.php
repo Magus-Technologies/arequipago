@@ -106,16 +106,28 @@ class CuotaFinanciamiento
         $stmt->execute();
     }
 
-    public function obtenerCuotasPorFinanciamiento($id_financiamiento)
+    public function obtenerCuotasPorFinanciamiento($id_financiamiento, $limite = null)
     {
         try {
-            $sql = "SELECT fecha_vencimiento, monto, estado 
+            // ✅ MODIFICADO: Incluir ID de cuota y aceptar límite opcional
+            $sql = "SELECT idcuotas_financiamiento as id, fecha_vencimiento, monto, estado, numero_cuota
                     FROM cuotas_financiamiento
                     WHERE id_financiamiento = ?
                     ORDER BY numero_cuota ASC";
 
+            // Si se especifica un límite, agregarlo a la query
+            if ($limite !== null && $limite > 0) {
+                $sql .= " LIMIT ?";
+            }
+
             $stmt = $this->conectar->prepare($sql);
-            $stmt->bind_param("i", $id_financiamiento);
+
+            if ($limite !== null && $limite > 0) {
+                $stmt->bind_param("ii", $id_financiamiento, $limite);
+            } else {
+                $stmt->bind_param("i", $id_financiamiento);
+            }
+
             $stmt->execute();
             $result = $stmt->get_result();
 

@@ -402,9 +402,9 @@ class VentasController extends Controller
             
             // MODIFICADO: Siempre usamos nuestro modelo personalizado
             $ventasModel = new Venta();
-            
-            // MODIFICADO: Determinar si aplicar filtro de sucursal
-            $sucursalFiltro = ($id_rol === 1 || $id_rol === 2 || $id_rol === 3) ? null : $sucursal;
+
+            // MODIFICADO: Determinar si aplicar filtro de sucursal (roles 1, 2, 3 y 4 pueden ver todas las ventas)
+            $sucursalFiltro = ($id_rol === 1 || $id_rol === 2 || $id_rol === 3 || $id_rol === 4) ? null : $sucursal;
             
             // MODIFICADO: Obtener datos usando el modelo
             $resultado = $ventasModel->buscarVentas($searchTerm, $start, $length, $orderColumn, $orderDir, $sucursalFiltro);

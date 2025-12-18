@@ -649,8 +649,8 @@
                                                                 {{ conductor.nombres }} {{ conductor.apellido_paterno }}
                                                             </h6>
                                                             <p class="text-muted small mb-1">
-                                                                <i class="bi bi-card-text me-1"></i>{{
-                                                                conductor.nro_documento }}
+                                                                <i class="bi bi-card-text me-1"></i>
+                                                                {{conductor.nro_documento }}
                                                             </p>
                                                         </div>
                                                         <div class="form-check">
@@ -1203,9 +1203,16 @@
 
                                             <!-- NUEVO: Resumen de selección -->
                                             <div class="mt-4 p-3 bg-light rounded">
-                                                <h6 class="fw-semibold mb-2">
-                                                    <i class="bi bi-people me-1"></i>Usuarios Seleccionados
-                                                </h6>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="fw-semibold mb-0">
+                                                        <i class="bi bi-people me-1"></i>Usuarios Seleccionados
+                                                    </h6>
+                                                    <button v-if="modoEdicion" type="button" class="btn btn-sm btn-outline-primary" 
+                                                            @click="abrirModalAgregarUsuarios"
+                                                            title="Agregar más usuarios">
+                                                        <i class="bi bi-person-plus me-1"></i>Agregar más
+                                                    </button>
+                                                </div>
                                                 <div class="row">
                                                     <div class="col-6">
                                                         <small class="text-primary d-block">
@@ -1224,6 +1231,12 @@
                                                 <small class="text-muted">
                                                     <strong>Total:</strong> {{ totalUsuariosSeleccionados }} usuario(s)
                                                 </small>
+                                                
+                                                <!-- Mensaje informativo en modo edición -->
+                                                <div v-if="modoEdicion" class="alert alert-info mt-2 mb-0 py-2" style="font-size: 0.85rem;">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Haz clic en "Agregar más" para seleccionar usuarios adicionales
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1239,6 +1252,222 @@
                             <span v-if="creandoCupon" class="spinner-border spinner-border-sm me-2"></span>
                             <i v-if="!creandoCupon" class="bi bi-check-circle me-2"></i>
                             {{ creandoCupon ? (modoEdicion ? 'Actualizando...' : 'Creando...') : (modoEdicion ? 'Actualizar Cupón' : 'Crear Cupón') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Agregar Usuarios al Cupón -->
+        <div class="modal fade" id="modalAgregarUsuarios" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-person-plus me-2"></i>Agregar Usuarios al Cupón
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Loading State -->
+                        <div v-if="cargandoUsuariosDisponibles" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-3 text-muted">Cargando usuarios disponibles...</p>
+                        </div>
+
+                        <!-- Tabs para Conductores y Clientes -->
+                        <ul class="nav nav-tabs mb-3" role="tablist" v-if="!cargandoUsuariosDisponibles">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-conductores-disp-btn" data-bs-toggle="tab" data-bs-target="#tabConductoresDisponibles" type="button" role="tab">
+                                    <i class="bi bi-car-front me-1"></i>Conductores Disponibles
+                                    <span class="badge bg-primary ms-2">{{ conductoresDisponibles.length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-clientes-disp-btn" data-bs-toggle="tab" data-bs-target="#tabClientesDisponibles" type="button" role="tab">
+                                    <i class="bi bi-person me-1"></i>Clientes Disponibles
+                                    <span class="badge bg-success ms-2">{{ clientesDisponibles.length }}</span>
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" v-if="!cargandoUsuariosDisponibles">
+                            <!-- Tab Conductores Disponibles -->
+                            <div class="tab-pane fade show active" id="tabConductoresDisponibles" role="tabpanel">
+                                <div v-if="conductoresDisponibles.length === 0" class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Todos los conductores ya están asignados a este cupón.
+                                </div>
+                                <div v-else>
+                                    <!-- Botones de selección -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="bi bi-people me-1"></i>
+                                                {{ conductoresDisponibles.length }} conductores disponibles
+                                            </small>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    @click="seleccionarTodosConductoresDisponibles">
+                                                <i class="bi bi-check-all me-1"></i>Seleccionar Todos
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" 
+                                                    @click="deseleccionarTodosConductoresDisponibles">
+                                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div v-for="conductor in conductoresDisponiblesPaginados" :key="'disp-conductor-' + conductor.id_conductor"
+                                             class="col-md-6 col-lg-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           :id="'check-conductor-' + conductor.id_conductor"
+                                                           :value="conductor"
+                                                           v-model="nuevosConductoresSeleccionados">
+                                                    <label class="form-check-label w-100" :for="'check-conductor-' + conductor.id_conductor">
+                                                        <div class="d-flex align-items-center">
+                                                            <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-2">
+                                                                <img :src="conductor.foto" class="rounded-circle" 
+                                                                     style="width: 40px; height: 40px; object-fit: cover;" 
+                                                                     :alt="conductor.nombres">
+                                                            </div>
+                                                            <div v-else class="me-2">
+                                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                                     style="width: 40px; height: 40px; font-size: 14px;">
+                                                                    {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <div class="fw-semibold">{{ conductor.nombres }} {{ conductor.apellido_paterno }}</div>
+                                                                <small class="text-muted">{{ conductor.nro_documento }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paginación Conductores Disponibles -->
+                                    <nav v-if="totalPaginasConductoresDisponibles > 1" class="mt-4">
+                                        <ul class="pagination pagination-sm justify-content-center">
+                                            <li class="page-item" :class="{ disabled: paginaActualConductoresDisponibles === 1 }">
+                                                <a class="page-link" href="#" @click.prevent="paginaActualConductoresDisponibles > 1 && cambiarPaginaConductoresDisponibles(paginaActualConductoresDisponibles - 1)">
+                                                    Anterior
+                                                </a>
+                                            </li>
+                                            <li v-for="pagina in totalPaginasConductoresDisponibles" :key="'pag-cond-disp-' + pagina" 
+                                                class="page-item" :class="{ active: pagina === paginaActualConductoresDisponibles }">
+                                                <a class="page-link" href="#" @click.prevent="cambiarPaginaConductoresDisponibles(pagina)">{{ pagina }}</a>
+                                            </li>
+                                            <li class="page-item" :class="{ disabled: paginaActualConductoresDisponibles === totalPaginasConductoresDisponibles }">
+                                                <a class="page-link" href="#" @click.prevent="paginaActualConductoresDisponibles < totalPaginasConductoresDisponibles && cambiarPaginaConductoresDisponibles(paginaActualConductoresDisponibles + 1)">
+                                                    Siguiente
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+
+                            <!-- Tab Clientes Disponibles -->
+                            <div class="tab-pane fade" id="tabClientesDisponibles" role="tabpanel">
+                                <div v-if="clientesDisponibles.length === 0" class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Todos los clientes ya están asignados a este cupón.
+                                </div>
+                                <div v-else>
+                                    <!-- Botones de selección -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="bi bi-people me-1"></i>
+                                                {{ clientesDisponibles.length }} clientes disponibles
+                                            </small>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    @click="seleccionarTodosClientesDisponibles">
+                                                <i class="bi bi-check-all me-1"></i>Seleccionar Todos
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" 
+                                                    @click="deseleccionarTodosClientesDisponibles">
+                                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div v-for="cliente in clientesDisponiblesPaginados" :key="'disp-cliente-' + cliente.id"
+                                             class="col-md-6 col-lg-4">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           :id="'check-cliente-' + cliente.id"
+                                                           :value="cliente"
+                                                           v-model="nuevosClientesSeleccionados">
+                                                    <label class="form-check-label w-100" :for="'check-cliente-' + cliente.id">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="me-2">
+                                                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                                                                     style="width: 40px; height: 40px; font-size: 14px;">
+                                                                    {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <div class="fw-semibold">{{ cliente.nombres }} {{ cliente.apellido_paterno }}</div>
+                                                                <small class="text-muted">{{ cliente.n_documento }}</small>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paginación Clientes Disponibles -->
+                                    <nav v-if="totalPaginasClientesDisponibles > 1" class="mt-4">
+                                        <ul class="pagination pagination-sm justify-content-center">
+                                            <li class="page-item" :class="{ disabled: paginaActualClientesDisponibles === 1 }">
+                                                <a class="page-link" href="#" @click.prevent="paginaActualClientesDisponibles > 1 && cambiarPaginaClientesDisponibles(paginaActualClientesDisponibles - 1)">
+                                                    Anterior
+                                                </a>
+                                            </li>
+                                            <li v-for="pagina in totalPaginasClientesDisponibles" :key="'pag-cli-disp-' + pagina" 
+                                                class="page-item" :class="{ active: pagina === paginaActualClientesDisponibles }">
+                                                <a class="page-link" href="#" @click.prevent="cambiarPaginaClientesDisponibles(pagina)">{{ pagina }}</a>
+                                            </li>
+                                            <li class="page-item" :class="{ disabled: paginaActualClientesDisponibles === totalPaginasClientesDisponibles }">
+                                                <a class="page-link" href="#" @click.prevent="paginaActualClientesDisponibles < totalPaginasClientesDisponibles && cambiarPaginaClientesDisponibles(paginaActualClientesDisponibles + 1)">
+                                                    Siguiente
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="me-auto">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Seleccionados: {{ nuevosConductoresSeleccionados.length + nuevosClientesSeleccionados.length }} usuario(s)
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" 
+                                @click="agregarUsuariosSeleccionadosAlCupon"
+                                :disabled="nuevosConductoresSeleccionados.length === 0 && nuevosClientesSeleccionados.length === 0">
+                            <i class="bi bi-check-circle me-2"></i>Agregar Seleccionados
                         </button>
                     </div>
                 </div>
@@ -1271,8 +1500,9 @@
                             <div class="mb-3">
                                 <h6 class="text-muted">Total: {{ usuariosCupon.length }} usuario(s)</h6>
                             </div>
-                           <div class="usuario-item d-flex align-items-center" v-for="usuario in usuariosCupon"
-     :key="usuario.tipo_usuario + '-' + (usuario.id_conductor || usuario.id_cliente)">
+                           <div class="usuario-item d-flex align-items-center" 
+                                v-for="usuario in usuariosCupon"
+                                :key="usuario.tipo_usuario + '-' + (usuario.id_conductor || usuario.id_cliente)">
 
                                 <!-- Badge de tipo -->
                                 <span class="badge me-2" 
@@ -1335,6 +1565,8 @@
     </div>
 
    
+    <!-- Fin de #app -->
+
     <script>
         // Se envuelve en un timeout para asegurar que el DOM esté listo cuando es inyectado por AJAX
         setTimeout(function () {
@@ -1361,6 +1593,10 @@
                         conductores: [],
                         conductoresFiltrados: [],
                         conductoresSeleccionados: [],
+                        conductoresDisponibles: [],
+                        nuevosConductoresSeleccionados: [],
+                        paginaActualConductoresDisponibles: 1,
+                        itemsPorPaginaDisponibles: 12,
                         busquedaConductor: '',
                         buscandoConductor: false,
                         cargandoConductores: true,
@@ -1371,6 +1607,10 @@
                         clientes: [],
                         clientesFiltrados: [],
                         clientesSeleccionados: [],
+                        clientesDisponibles: [],
+                        nuevosClientesSeleccionados: [],
+                        paginaActualClientesDisponibles: 1,
+                        cargandoUsuariosDisponibles: false,
                         busquedaCliente: '',
                         buscandoCliente: false,
                         cargandoClientes: false,
@@ -1418,6 +1658,26 @@
                     // PAGINACIÓN CONDUCTORES
                     totalPaginasConductores: function () {
                         return Math.ceil(this.conductoresFiltrados.length / this.itemsPorPagina);
+                    },
+                    
+                    // PAGINACIÓN CONDUCTORES DISPONIBLES
+                    totalPaginasConductoresDisponibles: function() {
+                        return Math.ceil(this.conductoresDisponibles.length / this.itemsPorPaginaDisponibles);
+                    },
+                    conductoresDisponiblesPaginados: function() {
+                        var inicio = (this.paginaActualConductoresDisponibles - 1) * this.itemsPorPaginaDisponibles;
+                        var fin = inicio + this.itemsPorPaginaDisponibles;
+                        return this.conductoresDisponibles.slice(inicio, fin);
+                    },
+                    
+                    // PAGINACIÓN CLIENTES DISPONIBLES
+                    totalPaginasClientesDisponibles: function() {
+                        return Math.ceil(this.clientesDisponibles.length / this.itemsPorPaginaDisponibles);
+                    },
+                    clientesDisponiblesPaginados: function() {
+                        var inicio = (this.paginaActualClientesDisponibles - 1) * this.itemsPorPaginaDisponibles;
+                        var fin = inicio + this.itemsPorPaginaDisponibles;
+                        return this.clientesDisponibles.slice(inicio, fin);
                     },
 
                     // PAGINACIÓN CLIENTES
@@ -1841,6 +2101,107 @@
                         }
                         
                         this.modal.show();
+                    },
+
+                    abrirModalAgregarUsuarios: function() {
+                        var self = this;
+                        
+                        // Abrir modal de agregar usuarios
+                        var modalAgregarUsuarios = new bootstrap.Modal(document.getElementById('modalAgregarUsuarios'));
+                        modalAgregarUsuarios.show();
+                        
+                        // Cargar usuarios disponibles (que no tienen este cupón)
+                        self.cargarUsuariosDisponibles();
+                    },
+
+                    cargarUsuariosDisponibles: function() {
+                        var self = this;
+                        self.cargandoUsuariosDisponibles = true;
+                        
+                        // Obtener IDs de usuarios ya asignados
+                        var conductoresAsignados = self.conductoresSeleccionados.map(c => c.id_conductor);
+                        var clientesAsignados = self.clientesSeleccionados.map(c => c.id);
+                        
+                        // Filtrar conductores disponibles (que no están asignados)
+                        self.conductoresDisponibles = self.conductores.filter(function(conductor) {
+                            return !conductoresAsignados.includes(conductor.id_conductor);
+                        });
+                        
+                        // Filtrar clientes disponibles (que no están asignados)
+                        self.clientesDisponibles = self.clientes.filter(function(cliente) {
+                            return !clientesAsignados.includes(cliente.id);
+                        });
+                        
+                        self.cargandoUsuariosDisponibles = false;
+                    },
+
+                    agregarUsuariosSeleccionadosAlCupon: function() {
+                        var self = this;
+                        
+                        // Agregar nuevos conductores seleccionados
+                        self.nuevosConductoresSeleccionados.forEach(function(conductor) {
+                            if (!self.conductoresSeleccionados.find(c => c.id_conductor === conductor.id_conductor)) {
+                                self.conductoresSeleccionados.push(conductor);
+                            }
+                        });
+                        
+                        // Agregar nuevos clientes seleccionados
+                        self.nuevosClientesSeleccionados.forEach(function(cliente) {
+                            if (!self.clientesSeleccionados.find(c => c.id === cliente.id)) {
+                                self.clientesSeleccionados.push(cliente);
+                            }
+                        });
+                        
+                        // Limpiar selecciones temporales
+                        self.nuevosConductoresSeleccionados = [];
+                        self.nuevosClientesSeleccionados = [];
+                        
+                        // Resetear paginación
+                        self.paginaActualConductoresDisponibles = 1;
+                        self.paginaActualClientesDisponibles = 1;
+                        
+                        // Cerrar modal
+                        bootstrap.Modal.getInstance(document.getElementById('modalAgregarUsuarios')).hide();
+                        
+                        // Mostrar mensaje de éxito
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Usuarios agregados',
+                            text: 'Los usuarios han sido agregados. Haz clic en "Actualizar Cupón" para guardar los cambios.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    },
+
+                    // Métodos de paginación para usuarios disponibles
+                    cambiarPaginaConductoresDisponibles: function(pagina) {
+                        this.paginaActualConductoresDisponibles = pagina;
+                    },
+                    
+                    cambiarPaginaClientesDisponibles: function(pagina) {
+                        this.paginaActualClientesDisponibles = pagina;
+                    },
+
+                    // Seleccionar todos los conductores disponibles
+                    seleccionarTodosConductoresDisponibles: function() {
+                        var self = this;
+                        self.nuevosConductoresSeleccionados = [...self.conductoresDisponibles];
+                    },
+
+                    // Deseleccionar todos los conductores disponibles
+                    deseleccionarTodosConductoresDisponibles: function() {
+                        this.nuevosConductoresSeleccionados = [];
+                    },
+
+                    // Seleccionar todos los clientes disponibles
+                    seleccionarTodosClientesDisponibles: function() {
+                        var self = this;
+                        self.nuevosClientesSeleccionados = [...self.clientesDisponibles];
+                    },
+
+                    // Deseleccionar todos los clientes disponibles
+                    deseleccionarTodosClientesDisponibles: function() {
+                        this.nuevosClientesSeleccionados = [];
                     },
 
                     limpiarFormulario: function() {

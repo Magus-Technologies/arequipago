@@ -329,8 +329,13 @@ class ReportFinanciamientoController extends Controller
             }
             
             // Nombre completo del asesor
-            $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
-            
+            // $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
+            // VALIDACIÓN: Si no hay datos del asesor (por ejemplo, cuando es un pago desde la app), usar "Sistema"
+            if ($datosAsesor && isset($datosAsesor['nombres']) && isset($datosAsesor['apellidos'])) {
+                $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
+            } else {
+                $nombreAsesor = '';
+            }
             $html = '
             <!DOCTYPE html>
             <html lang="es">

@@ -378,6 +378,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             estadoBadge = '<span class="badge bg-success">Aprobado</span>';
         }
 
+        // ✅ NUEVO: Sección de motivo de rechazo
+        let motivoRechazoHtml = '';
+        if (data.aprobado == 2 && data.motivo_rechazo) {
+            motivoRechazoHtml = `
+                <hr style="border-color: #dc3545; opacity: 0.3;">
+                <div class="alert alert-danger mb-2" style="padding: 10px; font-size: 0.9em;">
+                    <div class="mb-2"><i class="fas fa-ban text-danger me-2"></i><strong>Motivo del Rechazo:</strong></div>
+                    <div class="text-muted" style="white-space: pre-wrap;">${data.motivo_rechazo}</div>
+                </div>
+                ${data.fecha_rechazo ? `<div class="mb-2"><i class="fas fa-calendar-times text-danger me-2"></i><strong>Fecha Rechazo:</strong> <span class="text-muted">${formatearFecha(data.fecha_rechazo)}</span></div>` : ''}
+                ${data.usuario_rechazo ? `<div class="mb-2"><i class="fas fa-user-slash text-danger me-2"></i><strong>Rechazado por:</strong> <span class="text-muted">${data.usuario_rechazo}</span></div>` : ''}
+            `;
+        }
+
         let detalleFinanciamiento = `
             <div class="mb-2"><i class="fas fa-fingerprint text-warning me-2"></i><strong>ID Financiamiento:</strong> <span class="text-muted">${data.idfinanciamiento}</span></div>
             <div class="mb-2"><i class="fas fa-money-bill-wave text-warning me-2"></i><strong>Monto Total:</strong> <span class="text-muted">S/ ${parseFloat(data.monto_total).toFixed(2)}</span></div>
@@ -389,6 +403,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             <div class="mb-2"><i class="fas fa-clock text-warning me-2"></i><strong>Fecha Creación:</strong> <span class="text-muted">${formatearFecha(data.fecha_creacion)}</span></div>
             <div class="mb-2"><i class="fas fa-info-circle text-warning me-2"></i><strong>Estado:</strong> ${estadoBadge}</div>
             ${data.usuario_creador ? `<div class="mb-2"><i class="fas fa-user-tie text-warning me-2"></i><strong>Creado por:</strong> <span class="text-muted">${data.usuario_creador}</span></div>` : ''}
+            ${motivoRechazoHtml}
         `;
 
         // Llenar el body del modal

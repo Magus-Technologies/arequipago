@@ -110,6 +110,7 @@ class GenerarContratosController extends controller
     {
         $input = json_decode(file_get_contents('php://input'), true);
         $ids = $input['ids'] ?? [];
+        $soloExcel = $input['soloExcel'] ?? false;  // ✅ Nuevo parámetro para indicar si solo se quiere Excel
 
         if (empty($ids)) {
             echo json_encode(['success' => false, 'errores' => ['No se enviaron IDs.']]);
@@ -130,8 +131,18 @@ class GenerarContratosController extends controller
 
         foreach ($ids as $idFinanciamiento) {
             try {
-                $financiamiento = $financiamientoModel->getFinanciamientoById($idFinanciamiento);
+                // ✅ CORREGIDO: Usar getFinanciamientoByIdParaAprobacion para obtener el financiamiento sin filtrar por aprobación
+                // Esto permite validar el estado DESPUÉS de obtener los datos
+                $financiamiento = $financiamientoModel->getFinanciamientoByIdParaAprobacion($idFinanciamiento);
 
+                // ✅ VALIDACIÓN: Verificar si el financiamiento existe
+                if (empty($financiamiento)) {
+                    $errores[] = $idFinanciamiento;
+                    error_log("Financiamiento ID $idFinanciamiento no encontrado o fue eliminado");
+                    continue;
+                }
+
+                // ✅ VALIDACIÓN: Verificar estado de aprobación
                 if (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] == 2) {
                     echo json_encode([
                         'success' => false,
@@ -140,14 +151,25 @@ class GenerarContratosController extends controller
                         'mensaje' => 'No se puede generar contrato, El financiamiento fue rechazado'  //
                     ]);  // 🚀
                     return;  // 🚀
-                } elseif (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] === 0) {  // 🚀
-                    echo json_encode([  // 🚀
-                        'success' => false,  // 🚀
-                        'errores' => ['No se puede generar contrato, El financiamiento está pendiente'],  // 🚀
-                        'pdfs' => [],  // 🚀
-                        'mensaje' => 'No se puede generar contrato, El financiamiento está pendiente'  // 🚀
-                    ]);  // 🚀
-                    return;  // 🚀
+                } elseif (isset($financiamiento['aprobado']) && $financiamiento['aprobado'] === 0) {
+                    // ✅ MEJORADO: Mensaje específico según el rol del usuario
+                    $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+                    
+                    if ($rol_usuario === 2) {
+                        // Mensaje para asesores
+                        $mensaje = 'No se puede generar contrato. El financiamiento está pendiente de aprobación por el Director. Por favor, solicita la aprobación antes de generar el contrato.';
+                    } else {
+                        // Mensaje para directores/admins
+                        $mensaje = 'No se puede generar contrato. El financiamiento está pendiente de aprobación. Por favor, apruébalo primero en la sección "Aprobaciones".';
+                    }
+                    
+                    echo json_encode([
+                        'success' => false,
+                        'errores' => [$mensaje],
+                        'pdfs' => [],
+                        'mensaje' => $mensaje
+                    ]);
+                    return;
                 }
 
                 // Determinar si es conductor o cliente
@@ -202,8 +224,8 @@ class GenerarContratosController extends controller
 
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
-                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33, 38 y 45)
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 38 && $financiamiento['grupo_financiamiento'] != 45) {
+                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33, 45)
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 45) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -240,37 +262,34 @@ class GenerarContratosController extends controller
                             }
                         }
 
+                        // ✅ NUEVO: Si es grupo 38 Y NO se solicitó solo Excel, también generar el PDF especial
+                        if ($financiamiento['grupo_financiamiento'] == 38 && !$soloExcel) {
+                            try {
+                                $htmlContrato = $this->generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona);
+
+                                $mpdf = new \Mpdf\Mpdf([
+                                    'format' => 'A4',
+                                    'margin_left' => 15,
+                                    'margin_right' => 15,
+                                    'margin_top' => 15,
+                                    'margin_bottom' => 15
+                                ]);
+
+                                $mpdf->WriteHTML($htmlContrato);
+                                $pdfContent = $mpdf->Output('', 'S');
+
+                                $pdfs[] = [
+                                    'content' => base64_encode($pdfContent),
+                                    'nombre' => "contrato_credigo_grupo4_{$idFinanciamiento}_{$nombrePersona}.pdf"
+                                ];
+                            } catch (\Exception $e) {
+                                error_log("Error generando contrato PDF Grupo 4 ID $idFinanciamiento: " . $e->getMessage());
+                            }
+                        }
+
                         continue;
                     } catch (\Exception $e) {
                         error_log("Error generando contrato Excel de vehículo ID $idFinanciamiento: " . $e->getMessage());
-                        continue;
-                    }
-                }
-
-                // Generar contrato PDF para CrediGo Autos Grupo 4 (grupo 38)
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] == 38) {
-                    try {
-                        $htmlContrato = $this->generarContratoGrupo38($financiamiento, $persona, $tipoPersona, $nombrePersona);
-
-                        $mpdf = new \Mpdf\Mpdf([
-                            'format' => 'A4',
-                            'margin_left' => 15,
-                            'margin_right' => 15,
-                            'margin_top' => 15,
-                            'margin_bottom' => 15
-                        ]);
-
-                        $mpdf->WriteHTML($htmlContrato);
-                        $pdfContent = $mpdf->Output('', 'S');
-
-                        $pdfs[] = [
-                            'content' => base64_encode($pdfContent),
-                            'nombre' => "contrato_credigo_grupo4_{$idFinanciamiento}_{$nombrePersona}.pdf"
-                        ];
-
-                        continue;
-                    } catch (\Exception $e) {
-                        error_log("Error generando contrato PDF Grupo 4 ID $idFinanciamiento: " . $e->getMessage());
                         continue;
                     }
                 }
@@ -339,8 +358,8 @@ class GenerarContratosController extends controller
                         } else {
                             // Márgenes por defecto para los otros contratos
                             $mpdf = new \Mpdf\Mpdf([
-                                'margin_left' => 30,  // Margen izquierdo (en milímetros)
-                                'margin_right' => 30,
+                                'margin_left' => 15,  // Margen izquierdo (en milímetros)
+                                'margin_right' => 15,
                             ]);
                         }
                         $mpdf->WriteHTML($html);
@@ -466,7 +485,14 @@ class GenerarContratosController extends controller
             // Plan normal - usar nombre del grupo
             $nombreGrupo = $grupoInfo['nombre'] ?? '';
         }
-        $worksheet->setCellValue('D20', $nombreGrupo);
+
+        // 🔍 DEBUG: Log para verificar qué valor se está asignando
+        error_log('📊 [EXCEL] Grupo ID: ' . ($financiamiento['grupo_financiamiento'] ?? 'N/A'));
+        error_log('📊 [EXCEL] Nombre del grupo obtenido: ' . $nombreGrupo);
+        error_log('📊 [EXCEL] grupoInfo completo: ' . print_r($grupoInfo, true));
+
+        // Asegurarse de que sea texto y no número
+        $worksheet->setCellValueExplicit('D20', $nombreGrupo, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
 
         // 14. Duración del grupo - Celda H20
         // ✅ MODIFICADO: Calcular duración usando fecha_inicio y fecha_fin del financiamiento
@@ -725,6 +751,9 @@ class GenerarContratosController extends controller
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_MotosYa.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 36) {
+            // ✅ NUEVO: Plan 36 - CORPORATIVO CLARO
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 19) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigo_autos.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
@@ -790,10 +819,6 @@ class GenerarContratosController extends controller
                 $plantillaChip = str_replace('<span id="precio2">', $producto2['precio'], $plantillaChip);
                 $plantillaChip = str_replace('<span id="plan_mensual">', $plan, $plantillaChip);
                 $plantillaChip = str_replace('<span id="plan_mensual2">', $plan, $plantillaChip);
-
-                // Guardar la plantilla con los datos reemplazados en un archivo nuevo o devolverla
-                $rutaArchivoSalida = "$rutaBase\contrato_chipLinea_relleno.html";
-                file_put_contents($rutaArchivoSalida, $plantillaChip);
 
                 $plantillas['plantillaChip'] = $plantillaChip;
             }
@@ -926,8 +951,15 @@ class GenerarContratosController extends controller
             'numero_linea' => '',  // Se llenará con las características del producto
             // Nuevos campos para Plan Chip Movil
             'plan_descripcion' => '',  // Default empty
-            'numero_linea' => ''  // Default empty
+            'numero_linea' => '',  // Default empty
+            'numero_corporativo' => ''  // ✅ NUEVO: Para Plan 36 (CORPORATIVO CLARO)
         ];
+
+        // ✅ NUEVO: Lógica para Plan 36 (CORPORATIVO CLARO)
+        if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 36) {
+            // Para plan 36, el número corporativo viene del financiamiento, NO de características del producto
+            $reemplazos['numero_corporativo'] = $financiamiento['numero_corporativo'] ?? '';
+        }
 
         // Lógica para Plan Chip Movil (ID 35)
         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
@@ -1969,5 +2001,191 @@ class GenerarContratosController extends controller
         $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
 
         return $html;
+    }
+
+    /**
+     * Método para generar vista previa de contratos hardcodeados desde la vista de grupos
+     * Este método maneja la generación de contratos para grupos específicos sin necesidad de un financiamiento
+     */
+    public function generarContratoHardcodeadoPreview()
+    {
+        try {
+            $grupoId = $_POST['grupo_id'] ?? $_GET['grupo_id'] ?? null;
+
+            // Detectar si es una petición AJAX (para verificación) o directa (para mostrar PDF)
+            $isAjaxCheck = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
+            if (!$grupoId) {
+                if ($isAjaxCheck) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'No se especificó el ID del grupo'
+                    ]);
+                } else {
+                    echo 'Error: No se especificó el ID del grupo';
+                }
+                return;
+            }
+
+            // Mapeo de grupos con contratos hardcodeados
+            $gruposConContrato = [
+                19 => 'CrediGo auto (Grupo 3)',
+                22 => 'CrediGo Motos (Grupo 1)',
+                33 => 'MotosYa',
+                38 => 'CrediGo Autos Grupo 4',
+                45 => 'Credit Yango',
+                9 => 'Financiamiento Vehicular Grupo 1',
+                12 => 'Financiamiento Vehicular Grupo 2'
+            ];
+
+            // Verificar si el grupo tiene contrato hardcodeado
+            if (!isset($gruposConContrato[$grupoId])) {
+                if ($isAjaxCheck) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'No hay contrato hardcodeado para este grupo'
+                    ]);
+                } else {
+                    echo 'Error: No hay contrato hardcodeado para este grupo';
+                }
+                return;
+            }
+
+            // Generar HTML de ejemplo según el grupo
+            $html = $this->generarHTMLEjemploContrato($grupoId);
+
+            if (!$html) {
+                if ($isAjaxCheck) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'No se pudo generar el contrato de ejemplo'
+                    ]);
+                } else {
+                    echo 'Error: No se pudo generar el contrato de ejemplo';
+                }
+                return;
+            }
+
+            // Generar PDF
+            $mpdf = new \Mpdf\Mpdf([
+                'format' => 'A4',
+                'margin_left' => $grupoId == 22 ? 0 : 15,
+                'margin_right' => $grupoId == 22 ? 0 : 15,
+                'margin_top' => $grupoId == 22 ? 0 : 15,
+                'margin_bottom' => $grupoId == 22 ? 0 : 15,
+            ]);
+
+            $mpdf->WriteHTML($html);
+
+            // Si es AJAX, retornar JSON con success true
+            if ($isAjaxCheck) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Contrato disponible'
+                ]);
+            } else {
+                // Si es petición directa (POST desde form), mostrar el PDF
+                $nombreArchivo = "contrato_ejemplo_grupo_{$grupoId}_" . date('Ymd_His') . '.pdf';
+                $mpdf->Output($nombreArchivo, 'I');  // 'I' = inline en el navegador
+            }
+        } catch (Exception $e) {
+            error_log('Error en generarContratoHardcodeadoPreview: ' . $e->getMessage());
+
+            if (isset($isAjaxCheck) && $isAjaxCheck) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Error al generar el contrato: ' . $e->getMessage()
+                ]);
+            } else {
+                echo 'Error al generar el contrato: ' . $e->getMessage();
+            }
+        }
+    }
+
+    /**
+     * Genera HTML de ejemplo para vista previa de contratos hardcodeados
+     */
+    private function generarHTMLEjemploContrato($grupoId)
+    {
+        $templatePath = '';
+
+        // Determinar qué plantilla usar según el grupo
+        switch ($grupoId) {
+            case 9:  // Financiamiento Vehicular Grupo 1
+            case 12:  // Financiamiento Vehicular Grupo 2
+                // Estos usan Excel, no PDF
+                return $this->generarHTMLMensajeExcel($grupoId);
+
+            case 19:  // CrediGo auto Grupo 3
+                $templatePath = 'app/contratos/credigo_AutosGrupo3.html';
+                break;
+
+            case 22:  // CrediGo Motos (Grupo 1)
+                $templatePath = 'app/contratos/contrato_Motos.html';
+                break;
+
+            case 33:  // MotosYa
+                $templatePath = 'app/contratos/contrato_MotosYa.html';
+                break;
+
+            case 38:  // CrediGo Autos Grupo 4
+                $templatePath = 'app/contratos/contrato_credigo_grupo4.html';
+                break;
+
+            case 45:  // Credit Yango
+                $templatePath = 'app/contratos/crediYango.html';
+                break;
+
+            default:
+                error_log("No hay plantilla configurada para el grupo ID: $grupoId");
+                return null;
+        }
+
+        // Cargar y llenar la plantilla
+        if (!file_exists($templatePath)) {
+            error_log("Plantilla no encontrada: $templatePath");
+            return null;
+        }
+
+        $html = file_get_contents($templatePath);
+
+        // Reemplazar con datos de ejemplo
+        $html = str_replace('{{NOMBRE_COMPLETO}}', 'JUAN PÉREZ GARCÍA (EJEMPLO)', $html);
+        $html = str_replace('{{TIPO_DOCUMENTO}}', 'DNI', $html);
+        $html = str_replace('{{NUMERO_DOCUMENTO}}', '12345678', $html);
+        $html = str_replace('{{NRO_DOCUMENTO}}', '12345678', $html);
+        $html = str_replace('{{DIRECCION}}', 'AV. EJEMPLO 123, AREQUIPA', $html);
+        $html = str_replace('{{FECHA_ACTUAL}}', date('d/m/Y'), $html);
+
+        return $html;
+    }
+
+    /**
+     * Genera mensaje para grupos que usan Excel
+     */
+    private function generarHTMLMensajeExcel($grupoId)
+    {
+        $nombreGrupo = $grupoId == 9 ? 'Financiamiento Vehicular Grupo 1' : 'Financiamiento Vehicular Grupo 2';
+
+        return '
+        <div style="padding: 40px; font-family: Arial, sans-serif; text-align: center;">
+            <div style="background: #e8f5e9; padding: 30px; border-radius: 10px; border: 2px solid #4caf50;">
+                <i class="fas fa-file-excel" style="font-size: 48px; color: #4caf50; margin-bottom: 20px;"></i>
+                <h2 style="color: #2e7d32; margin-bottom: 15px;">CONTRATO EN FORMATO EXCEL</h2>
+                <h3 style="color: #666; margin-bottom: 20px;">' . $nombreGrupo . '</h3>
+                <p style="color: #555; font-size: 16px; line-height: 1.6;">
+                    Este grupo de financiamiento utiliza un contrato en formato <strong>Excel (.xlsx)</strong>
+                </p>
+                <p style="color: #777; margin-top: 20px;">
+                    Para generar el contrato, debe hacerlo desde un financiamiento específico en el módulo de financiamientos.
+                </p>
+            </div>
+        </div>';
     }
 }

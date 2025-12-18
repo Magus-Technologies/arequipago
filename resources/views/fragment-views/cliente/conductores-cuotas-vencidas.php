@@ -14,16 +14,17 @@ if (session_status() == PHP_SESSION_NONE) {
 // Verificamos si el usuario tiene sesión activa
 $id_rol = $_SESSION['id_rol'] ?? null;
 
-// Consultas para obtener los conductores con cuotas vencidas
+// Consultas para obtener los conductores con cuotas vencidas CON MORAS
 $query = "
     SELECT 
         c.id_conductor, 
         CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
         COUNT(cc.id_conductorcuota) AS num_cuotas,
         SUM(cc.monto_cuota) AS deuda_total,
+        0 AS total_moras,
         'Financiamiento de Inscripción' AS tipo_financiamiento,
-        c.numUnidad, /* Columna numUnidad */
-        c.desvinculado, /* Columna desvinculado */
+        c.numUnidad,
+        c.desvinculado,
         c.telefono,
         'S/.' AS moneda,
         'conductor' AS tipo_persona 
@@ -47,9 +48,10 @@ $query = "
         CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
         COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
         SUM(cf.monto) AS deuda_total,
+        COALESCE(SUM(cf.mora), 0) AS total_moras,
         p.nombre AS tipo_financiamiento,
-        c.numUnidad, /* Columna numUnidad */
-        c.desvinculado, /* Columna desvinculado */
+        c.numUnidad,
+        c.desvinculado,
         c.telefono,
         f.moneda,
         'conductor' AS tipo_persona
@@ -75,6 +77,7 @@ $query = "
         CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo,
         COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
         SUM(cf.monto) AS deuda_total,
+        COALESCE(SUM(cf.mora), 0) AS total_moras,
         p.nombre AS tipo_financiamiento,
         NULL AS numUnidad,
         0 AS desvinculado,
@@ -150,6 +153,7 @@ while ($row = $result->fetch_assoc()) {
                                     <th>Nº Unidad</th>
                                     <th>N° Cuotas</th>
                                     <th>Deuda Total</th>
+                                    <th>Moras</th>
                                     <th>Tipo de Financiamiento</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -551,8 +555,8 @@ $(document).ready(function() {
                 width: "60px"
             },
             { 
-                targets: [1], // Nombre - MODIFICADO para controlar overflow
-                width: "200px",  // Cambiado de "25%" a ancho fijo
+                targets: [1], // Nombre
+                width: "200px",
                 className: "text-truncate"
             },
             { 
@@ -568,16 +572,20 @@ $(document).ready(function() {
                 width: "120px"
             },
             { 
-                targets: [5], // Columna de tipo_financiamiento (índice 5)
+                targets: [5], // Moras (NUEVA COLUMNA)
+                width: "100px"
+            },
+            { 
+                targets: [6], // Tipo de Financiamiento
                 width: "200px",
                 className: "text-truncate"
             },
             { 
-                targets: [6], // Estado
+                targets: [7], // Estado
                 width: "100px"
             },
             { 
-                targets: [7], // Columna de acciones (índice 7)
+                targets: [8], // Acciones
                 width: "150px",
                 orderable: false
             }
@@ -638,6 +646,20 @@ $(document).ready(function() {
                 }
             },
             {
+                data: null,
+                class: "text-center",
+                render: function(data, type, row) {
+                    // Para ordenamiento, devolver valor numérico
+                    if (type === 'sort' || type === 'type') {
+                        return parseFloat(row.total_moras || 0);
+                    }
+                    // Para display, devolver formateado con símbolo de moneda
+                    const morasFormateadas = parseFloat(row.total_moras || 0).toLocaleString('es-PE', {minimumFractionDigits: 2});
+                    const colorMora = parseFloat(row.total_moras || 0) > 0 ? '#FF5630' : '#666';
+                    return `<strong style="color: ${colorMora};">${row.moneda} ${morasFormateadas}</strong>`;
+                }
+            },
+            {
                 data: "tipo_financiamiento",
                 class: "text-center",
                 render: function(data, type, row) {
@@ -659,15 +681,17 @@ $(document).ready(function() {
                 class: "text-center",
                 render: function(data, type, row) {
                     const deudaFormateada = parseFloat(row.deuda_total).toLocaleString('es-PE', {minimumFractionDigits: 2});
+                    const morasFormateadas = parseFloat(row.total_moras || 0).toLocaleString('es-PE', {minimumFractionDigits: 2});
                     const rolUsuario = <?php echo json_encode($id_rol); ?>;
-                    
+
                     let botones = `
                         <div class="btn-group btn-sm" role="group">
-                            <button class="btn btn-sm btn-info open-whatsapp-modal" 
-                                    data-nombre="${row.nombre_completo}" 
+                            <button class="btn btn-sm btn-info open-whatsapp-modal"
+                                    data-nombre="${row.nombre_completo}"
                                     data-telefono="${row.telefono}"
                                     data-cuotas="${row.num_cuotas}"
                                     data-deuda="${deudaFormateada}"
+                                    data-moras="${morasFormateadas}"
                                     data-financiamiento="${row.tipo_financiamiento}"
                                     data-moneda="${row.moneda}"
                                     data-tipo="${row.tipo_persona}"
@@ -1057,15 +1081,24 @@ $(document).ready(function() {
             telefono: $btn.data('telefono'),
             cuotas: $btn.data('cuotas'),
             deuda: $btn.data('deuda'),
+            moras: $btn.data('moras'),
             financiamiento: $btn.data('financiamiento'),
             moneda: $btn.data('moneda')
         };
-        
-        $('#storedPhoneNumber').text(`+51 ${currentConductorData.telefono}`);
-        
-        const mensajePredefinido = `Estimado(a) ${currentConductorData.nombre},
 
-Esperamos se encuentre bien. Le recordamos que tiene ${currentConductorData.cuotas} cuota(s) pendiente(s) por un monto total de ${currentConductorData.moneda} ${currentConductorData.deuda} correspondiente a su ${currentConductorData.financiamiento}.
+        $('#storedPhoneNumber').text(`+51 ${currentConductorData.telefono}`);
+
+        // Construir mensaje incluyendo moras si existe
+        let mensajePredefinido = `Estimado(a) ${currentConductorData.nombre},
+
+Esperamos se encuentre bien. Le recordamos que tiene ${currentConductorData.cuotas} cuota(s) pendiente(s) por un monto total de ${currentConductorData.moneda} ${currentConductorData.deuda}`;
+
+        // Agregar información de moras si es mayor a 0
+        if (currentConductorData.moras && parseFloat(currentConductorData.moras.replace(/,/g, '')) > 0) {
+            mensajePredefinido += ` + ${currentConductorData.moneda} ${currentConductorData.moras} de mora`;
+        }
+
+        mensajePredefinido += ` correspondiente a su ${currentConductorData.financiamiento}.
 
 Por favor, regularice su pago a la brevedad posible para evitar inconvenientes con su servicio.
 

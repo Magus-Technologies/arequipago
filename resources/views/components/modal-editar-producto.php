@@ -118,6 +118,7 @@
                                             <select class="form-select" id="edit_oficina" name="OFICINA" required>
                                                 <option value="1">Oficina 1</option>
                                                 <option value="2">Oficina 2</option>
+                                                <option value="3">Oficina Lima</option>
                                             </select>
                                         </div>
                                     </div>

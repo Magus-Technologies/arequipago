@@ -54,17 +54,18 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 <!-- Agregar al final del body -->
                 <div class="modal fade" id="modalVariante" tabindex="-1" aria-labelledby="modalVarianteLabel"
                     aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
+                    <div class="modal-dialog modal-xl">
                         <div class="modal-content" style="background-color: #fafafa;">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="modalVarianteLabel">Agregar Variante</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                             </div>
-                            <div class="modal-body">
+                            <div class="modal-body" style="max-height: calc(100vh - 200px); overflow-y: auto;">
                                 <form id="formVariante">
+                                    <!-- Fila 1: Nombre de Variante | Cuota Inicial | Monto Inscripción -->
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="nombre_variante" class="form-label">
                                                     <i class="fas fa-tag me-1"></i>Nombre de Variante
@@ -72,7 +73,8 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                 <input type="text" class="form-control" id="nombre_variante"
                                                     name="nombre_variante" style="background-color: #ffffff;">
                                             </div>
-
+                                        </div>
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="cuota_inicial_var" class="form-label">
                                                     <i class="fas fa-hand-holding-usd me-1"></i>Cuota Inicial
@@ -81,7 +83,22 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                     name="cuota_inicial_var" step="0.01" min="0"
                                                     style="background-color: #ffffff;">
                                             </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="monto_inscripcion_var" class="form-label">
+                                                    <i class="fas fa-file-invoice-dollar me-1"></i>Monto Inscripción
+                                                </label>
+                                                <input type="number" class="form-control" id="monto_inscripcion_var"
+                                                    name="monto_inscripcion_var" step="0.01" min="0"
+                                                    style="background-color: #ffffff;">
+                                            </div>
+                                        </div>
+                                    </div>
 
+                                    <!-- Fila 2: Monto de Cuota | Frecuencia de Pago | Cantidad de Cuotas -->
+                                    <div class="row">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="monto_cuota_var" class="form-label">
                                                     <i class="fas fa-money-bill-wave me-1"></i>Monto de Cuota
@@ -89,17 +106,8 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                 <input type="number" class="form-control" id="monto_cuota_var"
                                                     name="monto_cuota_var" style="background-color: #ffffff;">
                                             </div>
-
-                                            <div class="mb-3">
-                                                <label for="cantidad_cuotas_var" class="form-label">
-                                                    <i class="fas fa-list-ol me-1"></i>Cantidad de Cuotas
-                                                </label>
-                                                <input type="number" class="form-control" id="cantidad_cuotas_var"
-                                                    name="cantidad_cuotas_var" style="background-color: #ffffff;">
-                                            </div>
                                         </div>
-
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="frecuencia_pago_var" class="form-label">
                                                     <i class="fas fa-calendar-alt me-1"></i>Frecuencia de Pago
@@ -108,10 +116,25 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                     name="frecuencia_pago_var" style="background-color: #ffffff;">
                                                     <option value="">Seleccione</option>
                                                     <option value="mensual">Mensual</option>
+                                                    <option value="quincenal">Quincenal</option>
                                                     <option value="semanal">Semanal</option>
                                                 </select>
                                             </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="cantidad_cuotas_var" class="form-label">
+                                                    <i class="fas fa-list-ol me-1"></i>Cantidad de Cuotas
+                                                </label>
+                                                <input type="number" class="form-control" id="cantidad_cuotas_var"
+                                                    name="cantidad_cuotas_var" style="background-color: #ffffff;">
+                                            </div>
+                                        </div>
+                                    </div>
 
+                                    <!-- Fila 3: Moneda | Tasa de Interés | Monto -->
+                                    <div class="row">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="moneda_var" class="form-label">
                                                     <i class="fas fa-coins me-1"></i>Moneda
@@ -122,7 +145,8 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                     <option value="$">Dólares ($)</option>
                                                 </select>
                                             </div>
-
+                                        </div>
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="tasa_interes_var" class="form-label">
                                                     <i class="fas fa-percentage me-1"></i>Tasa de Interés (%)
@@ -131,7 +155,8 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                     name="tasa_interes_var" step="0.01" min="0"
                                                     style="background-color: #ffffff;">
                                             </div>
-
+                                        </div>
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="monto_var" class="form-label">
                                                     <i class="fas fa-coins me-1"></i>Monto
@@ -140,7 +165,12 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                                     name="monto_var" step="0.01" min="0"
                                                     style="background-color: #ffffff;">
                                             </div>
+                                        </div>
+                                    </div>
 
+                                    <!-- Fila 4: Monto sin Interés -->
+                                    <div class="row">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label for="monto_sin_interes_var" class="form-label">
                                                     <i class="fas fa-money-bill-alt me-1"></i>Monto sin Interés
@@ -220,8 +250,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                <button type="button" class="btn btn-primary" id="btnGuardarVariante">Guardar
-                                    Variante</button>
+                                <button type="button" class="btn btn-primary" id="btnGuardarVariante">Guardar Variante</button>
                             </div>
                         </div>
                     </div>
@@ -278,6 +307,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     <select class="form-select" id="frecuencia_pago" name="frecuencia_pago">
                                         <option value="">Seleccione</option>
                                         <option value="mensual">Mensual</option>
+                                        <option value="quincenal">Quincenal</option>
                                         <option value="semanal">Semanal</option>
                                     </select>
                                     <p class="error-message" id="error_frecuencia_pago">Debe seleccionar una frecuencia
@@ -356,7 +386,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                                     </div>
                                     <small class="form-text text-muted ms-4" style="font-size: 0.83rem;">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Los productos Yango no requieren fechas de grupo. El financiamiento inicia 1 mes después del pago inicial. Los valores predeterminados son editables.
+                                        Los productos Yango no requieren fechas de grupo. El financiamiento inicia 1 semana después de la entrega del vehiculo.
                                     </small>
                                 </div>
 
@@ -1182,6 +1212,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 const variante = {
                     nombre_variante: document.getElementById('nombre_variante').value,
                     cuota_inicial: document.getElementById('cuota_inicial_var').value || null,
+                    monto_inscripcion: document.getElementById('monto_inscripcion_var').value || null,
                     monto_cuota: document.getElementById('monto_cuota_var').value || null,
                     cantidad_cuotas: document.getElementById('cantidad_cuotas_var').value || null,
                     frecuencia_pago: document.getElementById('frecuencia_pago_var').value,
@@ -1566,11 +1597,12 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     return;
                 }
 
-                // Obtener los datos de la fila
+                // Obtener los datos originales directamente de DataTables (sin HTML renderizado)
+                const rowData = tabla.row(row).data();
                 const cells = row.find('td');
 
-                // Poblar el formulario
-                $('#nombre_plan').val(cells.eq(0).text());
+                // Poblar el formulario con el dato original del backend
+                $('#nombre_plan').val(rowData.nombre_plan);
                 $('#moneda').val(cells.eq(5).text());
 
                 // Procesar cuota inicial (remover símbolo de moneda)
@@ -1832,10 +1864,10 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     ${botonesAccion}
                 </div>
                 <div class="variante-body">
-                    <p><strong>Cuota inicial:</strong> ${variante.moneda} ${variante.cuota_inicial}</p>
-                    <p><strong>Monto cuota:</strong> ${variante.moneda} ${variante.monto_cuota}</p>
-                    <p><strong>Número cuotas:</strong> ${variante.cantidad_cuotas}</p>
-                    <p><strong>Tasa interés:</strong> ${variante.tasa_interes}%</p>
+                    <p><strong>Cuota inicial:</strong> ${variante.cuota_inicial ? `${variante.moneda} ${variante.cuota_inicial}` : 'Sin cuota inicial'}</p>
+                    <p><strong>Monto cuota:</strong> ${variante.monto_cuota ? `${variante.moneda} ${variante.monto_cuota}` : 'No especificado'}</p>
+                    <p><strong>Número cuotas:</strong> ${variante.cantidad_cuotas || 'No especificado'}</p>
+                    <p><strong>Tasa interés:</strong> ${variante.tasa_interes ? `${variante.tasa_interes}%` : 'No especificado'}</p>
                 </div>
             </div>`;
 
@@ -1901,6 +1933,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                 // Modificación para variantes: Llenar el formulario del modal con datos de la variante
                 $('#nombre_variante').val(variante.nombre_variante);
                 $('#cuota_inicial_var').val(variante.cuota_inicial);
+                $('#monto_inscripcion_var').val(variante.monto_inscripcion);
                 $('#monto_cuota_var').val(variante.monto_cuota);
                 $('#cantidad_cuotas_var').val(variante.cantidad_cuotas);
                 $('#frecuencia_pago_var').val(variante.frecuencia_pago);
@@ -1991,6 +2024,7 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
                     idplan_financiamiento: selectedPlanId,
                     nombre_variante: nombreVariante,
                     cuota_inicial: $('#cuota_inicial_var').val() || null,
+                    monto_inscripcion: $('#monto_inscripcion_var').val() || null,
                     monto_cuota: $('#monto_cuota_var').val() || null,
                     cantidad_cuotas: $('#cantidad_cuotas_var').val() || null,
                     frecuencia_pago: $('#frecuencia_pago_var').val() || null,
@@ -2462,10 +2496,11 @@ if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos 
 
                 // Obtener los datos de la fila usando el currentPlanId
                 const row = $(`tr[data-plan-id="${currentPlanId}"]`);
+                const rowData = tabla.row(row).data();
                 const cells = row.find('td');
 
-                // Poblar el formulario
-                $('#nombre_plan').val(cells.eq(0).text().replace(/YANGO\s*/, '').trim());
+                // Poblar el formulario con el dato original del backend
+                $('#nombre_plan').val(rowData.nombre_plan);
                 $('#moneda').val(cells.eq(5).text());
 
                 // Procesar cuota inicial (remover símbolo de moneda)

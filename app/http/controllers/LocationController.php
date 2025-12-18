@@ -25,6 +25,7 @@ class LocationController extends Controller{
             $departments = $departamentoModel->obtenerDepartamentos();
         }
         
+        header('Content-Type: application/json');
         echo json_encode($departments);
         exit;
     }
@@ -36,7 +37,7 @@ class LocationController extends Controller{
     
                
         if(empty($iddepartamento)|| !is_numeric($iddepartamento)){
-          
+           header('Content-Type: application/json');
            echo json_encode(['error' => 'ID de departamento inválido']);
            exit;
         }
@@ -47,7 +48,7 @@ class LocationController extends Controller{
 
         $provincias = $provinciaModel->obtenerProvincias($iddepartamento);
 
-        
+        header('Content-Type: application/json');
         echo json_encode($provincias);
         exit;
     }
@@ -63,7 +64,7 @@ class LocationController extends Controller{
     
                
         if(empty($idprovincia)|| !is_numeric($idprovincia)){
-          
+           header('Content-Type: application/json');
            echo json_encode(['error' => 'ID de distrito inválido']);
            exit;
         }
@@ -74,7 +75,7 @@ class LocationController extends Controller{
 
         $distritos = $distritoModel->obtenerDistritos($idprovincia);
 
-        
+        header('Content-Type: application/json');
         echo json_encode($distritos);
         exit;
     }
