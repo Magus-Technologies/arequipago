@@ -14,7 +14,9 @@ function getAllPlanes() {
 
         response.planes.forEach((plan) => {
           // CAMBIO: antes filtraba != 9 && != 12, ahora solo filtrará != 9 para que el 12 sí cargue
-          if (plan.estado === "activo") {
+          const esFinanciamientoEditable = plan.idplan_financiamiento === "42" || plan.idplan_financiamiento === 42;
+          const esDirector = ROL_USUARIO === 3;
+          if (plan.estado === "activo" && !(esFinanciamientoEditable && !esDirector)) {
             // CAMBIO: Solo filtrar por estado activo desde BD
             // NUEVO: Aplicar estilo especial al plan FINANCIAMIENTO EDITABLE (ID 42)
             let estiloEspecial = "";
@@ -48,6 +50,12 @@ function selectPlan(idPlan) {
 
   // NUEVO: Limpiar valores originales al cambiar de plan
   valoresOriginalesPlan = null;
+
+  // ✅ NUEVO: Restaurar campo a "Cuota Inicial" si NO es plan 22 ni 38
+  const planesConCuotasAdelantadas = [22, 38];
+  if (!planesConCuotasAdelantadas.includes(parseInt(idPlan)) && typeof restaurarCuotaInicialNormal === 'function') {
+    restaurarCuotaInicialNormal();
+  }
 
   // NUEVO: Mostrar/ocultar campo de nombre personalizado Y checkbox de entrega especial
   const nombrePersonalizadoContainer = document.getElementById('nombrePersonalizadoContainer');
@@ -303,6 +311,47 @@ function selectPlan(idPlan) {
           }
         }
 
+        // ✅ NUEVO: Lógica específica para CREDI MOTOS (ID 22) - Fecha inicio = HOY
+        if (parseInt(plan.idplan_financiamiento) === 22) {
+          // Para CREDI MOTOS, establecer fecha de inicio como HOY
+          const hoyCrediMotos = new Date();
+          const year = hoyCrediMotos.getFullYear();
+          const month = (hoyCrediMotos.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const day = hoyCrediMotos.getDate().toString().padStart(2, "0");
+          const fechaInicioFormateada = `${year}-${month}-${day}`;
+
+          // Asegurar que el input esté habilitado antes de establecer el valor
+          const fechaInicioInput = document.getElementById("fechaInicio");
+          if (fechaInicioInput) {
+            fechaInicioInput.disabled = false;
+            fechaInicioInput.readOnly = false;
+            fechaInicioInput.value = fechaInicioFormateada;
+
+            console.log(
+              "🏍️ CREDI MOTOS detectado - Fecha de inicio establecida a HOY:",
+              fechaInicioFormateada
+            );
+            console.log(
+              "🏍️ Valor del input después de setear:",
+              fechaInicioInput.value
+            );
+          }
+
+          // ✅ NUEVO: Cambiar "Cuota Inicial" a "Cuotas Adelantadas"
+          configurarCuotasAdelantadasCrediMotos();
+        }
+
+        // ✅ NUEVO: Lógica específica para CrediGo Autos Grupo 4 (ID 38) - Cuotas Adelantadas
+        if (parseInt(plan.idplan_financiamiento) === 38) {
+          console.log("🚗 CrediGo Autos Grupo 4 detectado - Configurando cuotas adelantadas");
+          
+          // Para CrediGo Autos, las fechas ya están definidas en el plan, no necesitamos establecerlas
+          // Solo configuramos el campo de cuotas adelantadas
+          configurarCuotasAdelantadasCrediMotos();
+        }
+
         // Agregar después de: planGlobal = plan;
         // Verificar si es un plan especial (Llantas, Aceites, Baterías)
         if ([14, 15, 16].includes(parseInt(plan.idplan_financiamiento))) {
@@ -324,6 +373,24 @@ function selectPlan(idPlan) {
             cuotaInicialInput.disabled = false;
             cuotaInicialInput.readOnly = false;
           }
+        }
+
+        // NUEVO: Bloquear cuota inicial para ASESORES en planes específicos (41, 44, 45)
+        const planesBloquearCuotaInicial = [41, 44, 45];
+        if (ROL_USUARIO === 2 && planesBloquearCuotaInicial.includes(parseInt(plan.idplan_financiamiento))) {
+          const cuotaInicialInput = document.getElementById("cuotaInicial");
+          if (cuotaInicialInput) {
+            cuotaInicialInput.readOnly = true;
+            cuotaInicialInput.style.backgroundColor = "#e9ecef";
+            cuotaInicialInput.style.color = "#495057";
+            cuotaInicialInput.style.cursor = "not-allowed";
+            console.log(`🔒 Cuota Inicial bloqueada para ASESOR en plan ${plan.idplan_financiamiento}`);
+          }
+        }
+
+        // ✅ NUEVO: Verificar si debe mostrarse el campo de número corporativo (Plan 36 - CORPORATIVO CLARO)
+        if (typeof verificarMostrarCampoNumeroCorporativo === 'function') {
+          verificarMostrarCampoNumeroCorporativo();
         }
 
         ocultarCarruselVariantes();
@@ -349,12 +416,15 @@ function selectPlan(idPlan) {
         $("#valorCuota").val(""); // Limpiar valor cuota
         $("#cuotas").val(""); // Limpiar cantidad de cuotas
         $("#tasaInteres").val(""); // Limpiar tasa de interés
-        // MODIFICADO: No limpiar fechaInicio si es MotosYa
-        if (parseInt(plan.idplan_financiamiento) !== 33) {
+        // MODIFICADO: No limpiar fechaInicio si es MotosYa, CREDI MOTOS o CrediGo Autos Grupo 4
+        const planesNoLimpiarFecha = [22, 33, 38];
+        if (!planesNoLimpiarFecha.includes(parseInt(plan.idplan_financiamiento))) {
           $("#fechaInicio").val("");
           // No establecer disabled aquí, se manejará por manejarCambioFechaInicioPorDirector()
         } else {
-          console.log("🏍️ No limpiando fechaInicio para MotosYa en selectPlan");
+          const nombresPlan = {22: "CREDI MOTOS", 33: "MotosYa", 38: "CrediGo Autos Grupo 4"};
+          const planNombre = nombresPlan[parseInt(plan.idplan_financiamiento)] || "Plan Especial";
+          console.log(`🚗 No limpiando fechaInicio para ${planNombre} en selectPlan`);
         }
         $("#fechaFin").val(""); // Limpiar fecha fin
 
@@ -381,6 +451,35 @@ function selectPlan(idPlan) {
           );
         }
 
+        // ✅ NUEVO: Aplicar lógica de CREDI MOTOS DESPUÉS de limpiar campos
+        if (parseInt(plan.idplan_financiamiento) === 22) {
+          // Para CREDI MOTOS, establecer fecha de inicio como HOY
+          const hoyCrediMotos = new Date();
+          const year = hoyCrediMotos.getFullYear();
+          const month = (hoyCrediMotos.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const day = hoyCrediMotos.getDate().toString().padStart(2, "0");
+          const fechaInicioFormateada = `${year}-${month}-${day}`;
+
+          // Establecer el valor (NO bloquearlo, dejar editable)
+          $("#fechaInicio").val(fechaInicioFormateada);
+
+          console.log(
+            "🏍️ CREDI MOTOS - Fecha de inicio establecida a HOY después de limpiar:",
+            fechaInicioFormateada
+          );
+        }
+
+        // ✅ NUEVO: Aplicar lógica de CrediGo Autos Grupo 4 DESPUÉS de limpiar campos
+        if (parseInt(plan.idplan_financiamiento) === 38) {
+          // Para CrediGo Autos Grupo 4, usar las fechas del plan (ya están definidas)
+          if (plan.fecha_inicio) {
+            $("#fechaInicio").val(plan.fecha_inicio);
+            console.log("🚗 CrediGo Autos Grupo 4 - Fecha de inicio del plan:", plan.fecha_inicio);
+          }
+        }
+
         $("#contenedorVehicular").empty();
         $("#contenedorFechas").empty();
         // Limpiar el input "Monto Recalculado" y ocultar su contenedor
@@ -400,7 +499,13 @@ function selectPlan(idPlan) {
           $("#monedaDolares").prop("checked", true);
         }
 
-        $("#cuotaInicial").val(plan.cuota_inicial);
+        // ✅ NUEVO: NO establecer cuota_inicial si es un plan con cuotas adelantadas
+        const planesConCuotasAdelantadas = [22, 38];
+        if (!planesConCuotasAdelantadas.includes(parseInt(plan.idplan_financiamiento))) {
+          $("#cuotaInicial").val(plan.cuota_inicial);
+        } else {
+          console.log("🚗 Plan con cuotas adelantadas - NO estableciendo valor de cuota_inicial desde BD");
+        }
         
         setTimeout(function() {
            actualizarSelectMetodoPago();
@@ -587,6 +692,16 @@ function selectPlan(idPlan) {
               calcularFinanciamientoConFechaIngreso(plan);
             }, 300);
           }
+
+          // ✅ NUEVO: Reconfigurar cuotas adelantadas DESPUÉS de toda la lógica vehicular
+          // Esto asegura que el campo mantenga su configuración correcta
+          const planesConCuotasAdelantadas = [22, 38];
+          if (planesConCuotasAdelantadas.includes(parseInt(plan.idplan_financiamiento))) {
+            setTimeout(() => {
+              console.log("🚗 Reconfigurando cuotas adelantadas después de lógica vehicular");
+              configurarCuotasAdelantadasCrediMotos();
+            }, 500);
+          }
         }
 
         if (idPlan === "33") {
@@ -601,7 +716,10 @@ function selectPlan(idPlan) {
               timeZone: "America/Lima",
             }); // Formato: "YYYY-MM-DD"
             fechaInicioInput.value = hoyPeru;
-            fechaInicioInput.disabled = false; // Permitir edición
+            // CAMBIO: Solo permitir edición si NO es Asesor (rol 2)
+            if (ROL_USUARIO !== 2) {
+              fechaInicioInput.disabled = false; // Permitir edición
+            }
           }
         } else {
           const fechaInicioInput = document.getElementById("fechaInicio");
@@ -612,6 +730,24 @@ function selectPlan(idPlan) {
               timeZone: "America/Lima",
             }); // Formato: "YYYY-MM-DD"
             fechaInicioInput.value = hoyPeru;
+
+            // ✅ NUEVO: Para CrediYango (Plan 45), calcular fecha_fin inmediatamente
+            if (parseInt(plan.idplan_financiamiento) === 45) {
+              const cantidadCuotas = parseInt(plan.cantidad_cuotas) || 200;
+              const frecuencia = plan.frecuencia_pago || "semanal";
+              const diasIntervalo = frecuencia === "semanal" ? 7 : 30;
+
+              const fechaInicioObj = new Date(hoyPeru + "T00:00:00");
+              const fechaFinObj = new Date(fechaInicioObj);
+              fechaFinObj.setDate(fechaFinObj.getDate() + (cantidadCuotas * diasIntervalo));
+
+              const fechaFinFormateada = fechaFinObj.toISOString().split("T")[0];
+              const fechaFinInput = document.getElementById("fechaFin");
+              if (fechaFinInput) {
+                fechaFinInput.value = fechaFinFormateada;
+                console.log("🚗 CREDIYANGO - Fecha fin calculada al seleccionar plan:", fechaFinFormateada);
+              }
+            }
           }
 
           // Suavemente "bloquear" inputs: fondo gris y quitar clase de resaltado
@@ -686,14 +822,23 @@ function selectPlan(idPlan) {
 
         // MODIFICADO: Calcular y aplicar monto de inscripción según tipo vehicular y MotosYa
         if (plan.tipo_vehicular && plan.monto_sin_interes) {
-          const montoInscripcionCalculado = calcularMontoInscripcion(
-            plan.tipo_vehicular,
-            plan.monto_sin_interes
-          );
+          // ✅ PRIORIDAD: Usar monto_inscripcion del plan si existe, sino calcular
+          let montoInscripcionFinal;
+          if (plan.monto_inscripcion && parseFloat(plan.monto_inscripcion) > 0) {
+            montoInscripcionFinal = parseFloat(plan.monto_inscripcion);
+            console.log("✅ Usando monto_inscripcion del plan:", montoInscripcionFinal);
+          } else {
+            montoInscripcionFinal = calcularMontoInscripcion(
+              plan.tipo_vehicular,
+              plan.monto_sin_interes
+            );
+            console.log("🔄 Calculando monto_inscripcion:", montoInscripcionFinal);
+          }
+          
           const monedaInscripcion =
             plan.tipo_vehicular === "moto" ? "S/." : plan.moneda;
           aplicarMontoInscripcion(
-            montoInscripcionCalculado,
+            montoInscripcionFinal,
             plan.tipo_vehicular,
             monedaInscripcion
           );
@@ -701,8 +846,12 @@ function selectPlan(idPlan) {
           parseInt(plan.idplan_financiamiento) === 33 ||
           plan.tipo_vehicular === "moto"
         ) {
-          // NUEVO: Para MotosYa (ID 33) o tipo moto, bloquear monto de inscripción
-          aplicarMontoInscripcion(200, "moto", "S/.");
+          // NUEVO: Para MotosYa (ID 33) o tipo moto, usar monto_inscripcion del plan o 200 por defecto
+          const montoInscripcionPlan = plan.monto_inscripcion && parseFloat(plan.monto_inscripcion) > 0 
+            ? parseFloat(plan.monto_inscripcion) 
+            : 200;
+          console.log("🏍️ Monto inscripción para moto - Plan:", montoInscripcionPlan, "| Fuente:", plan.monto_inscripcion ? "Plan" : "Default 200");
+          aplicarMontoInscripcion(montoInscripcionPlan, "moto", "S/.");
         } else if (plan.fecha_inicio && plan.fecha_fin) {
           // NUEVO: Para otros financiamientos vehiculares (con fechas), bloquear monto de inscripción
           aplicarMontoInscripcion(0, "vehicular_bloqueado");
@@ -1121,7 +1270,12 @@ function seleccionarVariante(index) {
 
   // MODIFICADO: No limpiar fechaInicio si es variante de MotosYa
   if (![18, 19, 20].includes(parseInt(variante.id_variante))) {
-    $("#fechaInicio").val("").prop("disabled", false);
+    // CAMBIO: Solo habilitar si NO es Asesor (rol 2)
+    if (ROL_USUARIO !== 2) {
+      $("#fechaInicio").val("").prop("disabled", false);
+    } else {
+      $("#fechaInicio").val(""); // Solo limpiar valor, mantener bloqueado
+    }
   } else {
     console.log("🏍️ No limpiando fechaInicio para variante MotosYa");
     // Asegurar que la fecha esté establecida para MotosYa
@@ -1160,7 +1314,12 @@ function seleccionarVariante(index) {
 
   // MODIFICADO: No limpiar fechaInicio si es variante de MotosYa
   if (![18, 19, 20].includes(parseInt(variante.id_variante))) {
-    $("#fechaInicio").val("").prop("disabled", false);
+    // CAMBIO: Solo habilitar si NO es Asesor (rol 2)
+    if (ROL_USUARIO !== 2) {
+      $("#fechaInicio").val("").prop("disabled", false);
+    } else {
+      $("#fechaInicio").val(""); // Solo limpiar valor, mantener bloqueado
+    }
   } else {
     console.log("🏍️ No limpiando fechaInicio para variante MotosYa");
   }
@@ -1183,6 +1342,17 @@ function seleccionarVariante(index) {
   const montoSinInteresesFormateado = variante.monto_sin_interes ? parseFloat(variante.monto_sin_interes).toFixed(2) : "";
   $("#montoSinIntereses").val(montoSinInteresesFormateado);
 
+  // ✅ NUEVO: Si es Plan 22 o 38, reconfigurar modo "Cuotas Adelantadas"
+  const planesConCuotasAdelantadas = [22, 38];
+  if (planesConCuotasAdelantadas.includes(parseInt(variante.idplan_financiamiento)) && typeof configurarCuotasAdelantadasCrediMotos === 'function') {
+    const nombrePlan = parseInt(variante.idplan_financiamiento) === 22 ? "Plan 22" : "Plan 38";
+    console.log(`🚗 Reconfigurando modo Cuotas Adelantadas para variante de ${nombrePlan}`);
+    // Limpiar el valor antes de reconfigurar
+    $("#cuotaInicial").val("");
+    // Reconfigurar el campo a modo "Cuotas Adelantadas"
+    configurarCuotasAdelantadasCrediMotos();
+  }
+
   // Agrega DESPUÉS de esas líneas:
   // NUEVO: Para variantes de celular, calcular y fijar valor de cuota
   if (parseInt(variante.idplan_financiamiento) === 41) {
@@ -1197,14 +1367,23 @@ function seleccionarVariante(index) {
 
   // MODIFICADO: Calcular y aplicar monto de inscripción para variante y MotosYa
   if (variante.tipo_vehicular && variante.monto_sin_interes) {
-    const montoInscripcionCalculado = calcularMontoInscripcion(
-      variante.tipo_vehicular,
-      variante.monto_sin_interes
-    );
+    // ✅ PRIORIDAD: Usar monto_inscripcion de la variante si existe, sino calcular
+    let montoInscripcionFinal;
+    if (variante.monto_inscripcion && parseFloat(variante.monto_inscripcion) > 0) {
+      montoInscripcionFinal = parseFloat(variante.monto_inscripcion);
+      console.log("✅ Usando monto_inscripcion de la variante:", montoInscripcionFinal);
+    } else {
+      montoInscripcionFinal = calcularMontoInscripcion(
+        variante.tipo_vehicular,
+        variante.monto_sin_interes
+      );
+      console.log("🔄 Calculando monto_inscripcion:", montoInscripcionFinal);
+    }
+    
     const monedaInscripcion =
       variante.tipo_vehicular === "moto" ? "S/." : variante.moneda;
     aplicarMontoInscripcion(
-      montoInscripcionCalculado,
+      montoInscripcionFinal,
       variante.tipo_vehicular,
       monedaInscripcion
     );
@@ -1212,8 +1391,12 @@ function seleccionarVariante(index) {
     // Actualizar planGlobal con el tipo vehicular de la variante
     planGlobal.tipo_vehicular = variante.tipo_vehicular;
   } else if ([18, 19, 20].includes(parseInt(variante.id_variante))) {
-    // NUEVO: Para variantes de MotosYa, bloquear monto de inscripción
-    aplicarMontoInscripcion(200, "moto", "S/.");
+    // NUEVO: Para variantes de MotosYa, usar monto_inscripcion de la variante o 200 por defecto
+    const montoInscripcionVariante = variante.monto_inscripcion && parseFloat(variante.monto_inscripcion) > 0 
+      ? parseFloat(variante.monto_inscripcion) 
+      : 200;
+    console.log("🏍️ Monto inscripción para variante MotosYa - Variante:", montoInscripcionVariante, "| Fuente:", variante.monto_inscripcion ? "Variante" : "Default 200");
+    aplicarMontoInscripcion(montoInscripcionVariante, "moto", "S/.");
   } else if (variante.fecha_inicio && variante.fecha_fin) {
     // NUEVO: Para otras variantes vehiculares (con fechas), bloquear monto de inscripción
     aplicarMontoInscripcion(0, "vehicular_bloqueado");
@@ -2286,6 +2469,10 @@ let valoresOriginalesPlan = null;
 // ✅ NUEVA VARIABLE: Bandera para evitar sobrescritura por calcularFinanciamiento()
 let estaProcesandoCambioFrecuencia = false;
 
+// ✅ NUEVO: Variables globales para evitar observers duplicados
+let observerFechaInicio = null;
+let observerCuotaInicial = null;
+
 // FUNCIÓN CORREGIDA: Preservar la cantidad de cuotas restantes exacta
 function manejarCambioFrecuencia() {
   // ✅ Activar bandera para evitar sobrescritura
@@ -2435,28 +2622,28 @@ function manejarCambioFrecuencia() {
       }
     }
 
-    // CORREGIDO: Aplicar lógica específica para planes de celular en primera fecha
-    if (
-      planGlobal &&
-      parseInt(planGlobal.idplan_financiamiento) === 41 &&
-      frecuenciaSeleccionada === "mensual"
-    ) {
-      // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
-      const añoActual = primeraFechaVencimiento.getFullYear();
-      const mesActual = primeraFechaVencimiento.getMonth();
-      primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
+    // ✅ ELIMINADO: Ya no forzamos día 30 para plan 41
+    // if (
+    //   planGlobal &&
+    //   parseInt(planGlobal.idplan_financiamiento) === 41 &&
+    //   frecuenciaSeleccionada === "mensual"
+    // ) {
+    //   // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
+    //   const añoActual = primeraFechaVencimiento.getFullYear();
+    //   const mesActual = primeraFechaVencimiento.getMonth();
+    //   primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
 
-      // Si es febrero, ajustar al día 28
-      if (mesActual === 1) {
-        const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
-        primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
-      }
+    //   // Si es febrero, ajustar al día 28
+    //   if (mesActual === 1) {
+    //     const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
+    //     primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
+    //   }
 
-      console.log(
-        "📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:",
-        primeraFechaVencimiento.toLocaleDateString()
-      );
-    }
+    //   console.log(
+    //     "📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:",
+    //     primeraFechaVencimiento.toLocaleDateString()
+    //   );
+    // }
 
     fechasVencimiento.push(primeraFechaVencimiento);
 
@@ -2467,36 +2654,23 @@ function manejarCambioFrecuencia() {
       if (frecuenciaSeleccionada === "semanal") {
         nuevaFecha.setDate(nuevaFecha.getDate() + 7);
       } else {
-        const diaInicio = fechasVencimiento[0].getDate(); // MODIFICADO: Usar el día de la primera fecha
+        // ✅ Para TODOS los planes mensuales: avanzar 1 mes y mantener el día de la fecha de inicio
+        const diaInicio = fechasVencimiento[0].getDate();
         nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+        nuevaFecha.setDate(diaInicio);
 
-        // CORREGIDO: Aplicar lógica específica para planes de celular en fechas posteriores
-        if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
-          // Para financiamiento de celulares (ID 41): siempre día 30, excepto febrero
-          if (nuevaFecha.getMonth() === 1) {
-            const esBisiesto =
-              new Date(nuevaFecha.getFullYear(), 1, 29).getMonth() === 1;
-            nuevaFecha.setDate(esBisiesto ? 29 : 28);
-          } else {
-            nuevaFecha.setDate(30);
-          }
-        } else {
-          // MODIFICADO: Mantener el día de la primera cuota
-          nuevaFecha.setDate(diaInicio);
-
-          // Verificar si el día existe en el mes
-          const mesEsperado = (fechaAnterior.getMonth() + 1) % 12;
-          if (nuevaFecha.getMonth() !== mesEsperado) {
-            // El día no existe, usar el último día del mes
-            nuevaFecha.setDate(0);
-            nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-            nuevaFecha.setDate(0);
-            console.log(
-              `⚠️ Día ${diaInicio} no existe en este mes, usando último día`
-            );
-          }
+        // Verificar si el día existe en el mes
+        const mesEsperado = (fechaAnterior.getMonth() + 1) % 12;
+        if (nuevaFecha.getMonth() !== mesEsperado) {
+          // El día no existe, usar el último día del mes
+          nuevaFecha.setDate(0);
+          nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
+          nuevaFecha.setDate(0);
+          console.log(
+            `⚠️ Día ${diaInicio} no existe en este mes, usando último día`
+          );
         }
-      }
+      } // ← Cierra el else de "no es semanal"
 
       fechasVencimiento.push(new Date(nuevaFecha));
     }
@@ -2659,8 +2833,8 @@ function manejarCambioFechaInicioPorDirector() {
   }
 
   // ✅ Si el plan NO tiene fechas definidas, aplicar lógica según el rol
-  // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2)
-  if (rolUsuario === "3" || rolUsuario === "2") {
+  // CAMBIO: Permitir modificación SOLO a Directores (rol 3), NO a Asesores (rol 2)
+  if (rolUsuario === "3") {
     // CRÍTICO: Remover todos los atributos y estilos de bloqueo
     fechaInicioInput.disabled = false;
     fechaInicioInput.readOnly = false;
@@ -2746,40 +2920,51 @@ function protegerFechaInicioPorDirector() {
     return;
   }
 
+  // ✅ NUEVO: Desconectar observer anterior si existe para evitar duplicados
+  if (observerFechaInicio) {
+    observerFechaInicio.disconnect();
+    observerFechaInicio = null;
+  }
+
   // Configuración del observer
-  const observer = new MutationObserver((mutations) => {
+  observerFechaInicio = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === "attributes") {
         const atributo = mutation.attributeName;
 
-        // Si alguien intenta bloquear el campo, revertirlo inmediatamente
-        if (atributo === "disabled" || atributo === "readonly") {
-          if (fechaInicioInput.disabled || fechaInicioInput.readOnly) {
-            fechaInicioInput.disabled = false;
-            fechaInicioInput.readOnly = false;
-            console.log(
-              "🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio"
-            );
+        // CAMBIO: Solo revertir bloqueos si el usuario es Director (rol 3), NO para Asesores (rol 2)
+        if (rolUsuario === "3") {
+          // Si alguien intenta bloquear el campo, revertirlo inmediatamente
+          if (atributo === "disabled" || atributo === "readonly") {
+            if (fechaInicioInput.disabled || fechaInicioInput.readOnly) {
+              fechaInicioInput.disabled = false;
+              fechaInicioInput.readOnly = false;
+              console.log(
+                "🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio (Director)"
+              );
+            }
+          }
+
+          // Si cambian el estilo, restaurar permisos
+          if (atributo === "style") {
+            const estilosActuales = window.getComputedStyle(fechaInicioInput);
+            if (estilosActuales.pointerEvents === "none") {
+              fechaInicioInput.style.pointerEvents = "auto";
+              fechaInicioInput.style.cursor = "pointer";
+              fechaInicioInput.style.backgroundColor = "#ffffff";
+              fechaInicioInput.style.color = "#212529";
+              console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción (Director)");
+            }
           }
         }
 
-        // Si cambian el estilo, restaurar permisos
-        if (atributo === "style") {
-          const estilosActuales = window.getComputedStyle(fechaInicioInput);
-          if (estilosActuales.pointerEvents === "none") {
-            fechaInicioInput.style.pointerEvents = "auto";
-            fechaInicioInput.style.cursor = "pointer";
-            fechaInicioInput.style.backgroundColor = "#ffffff";
-            fechaInicioInput.style.color = "#212529";
-            console.log("🛡️ PROTECCIÓN: Restaurados estilos de interacción");
-          }
-        }
-
-        // Remover clases de bloqueo
-        if (atributo === "class") {
-          if (fechaInicioInput.classList.contains("disabled-input")) {
-            fechaInicioInput.classList.remove("disabled-input");
-            console.log("🛡️ PROTECCIÓN: Removida clase disabled-input");
+        // CAMBIO: Solo remover clases de bloqueo si es Director (rol 3)
+        if (rolUsuario === "3") {
+          if (atributo === "class") {
+            if (fechaInicioInput.classList.contains("disabled-input")) {
+              fechaInicioInput.classList.remove("disabled-input");
+              console.log("🛡️ PROTECCIÓN: Removida clase disabled-input (Director)");
+            }
           }
         }
       }
@@ -2787,7 +2972,7 @@ function protegerFechaInicioPorDirector() {
   });
 
   // Observar cambios en atributos
-  observer.observe(fechaInicioInput, {
+  observerFechaInicio.observe(fechaInicioInput, {
     attributes: true,
     attributeOldValue: true,
   });
@@ -2883,8 +3068,14 @@ function manejarCambioCuotaInicial() {
 
   if (!cuotaInicialInput) return;
 
-  // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2)
-  if (rolUsuario === "3" || rolUsuario === "2") {
+  // CAMBIO: Verificar si es plan restringido (41, 44, 45) para asesores
+  const planesRestringidos = [41, 44, 45];
+  const idPlanActual = planGlobal ? parseInt(planGlobal.idplan_financiamiento) : null;
+  const esPlanRestringido = planesRestringidos.includes(idPlanActual);
+  const esAsesorEnPlanRestringido = rolUsuario === "2" && esPlanRestringido;
+
+  // CAMBIO: Permitir modificación a Directores (rol 3) Y Asesores (rol 2), EXCEPTO asesores en planes 41, 44, 45
+  if ((rolUsuario === "3" || rolUsuario === "2") && !esAsesorEnPlanRestringido) {
     // CRÍTICO: Remover todos los atributos y estilos de bloqueo
     cuotaInicialInput.disabled = false;
     cuotaInicialInput.readOnly = false;
@@ -2920,10 +3111,14 @@ function manejarCambioCuotaInicial() {
     cuotaInicialInput.style.color = "#6c757d";
     cuotaInicialInput.style.pointerEvents = "none";
     cuotaInicialInput.style.cursor = "not-allowed";
-    cuotaInicialInput.title =
-      "Solo los directores y asesores pueden modificar la cuota inicial";
 
-    console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
+    if (esAsesorEnPlanRestringido) {
+      cuotaInicialInput.title = "Cuota inicial bloqueada para asesores en planes de Celulares, Credi Yango e Incarmotors";
+      console.log(`🔒 ASESOR bloqueado en plan ${idPlanActual} - cuota inicial bloqueada`);
+    } else {
+      cuotaInicialInput.title = "Solo los directores y asesores pueden modificar la cuota inicial";
+      console.log("🔒 Usuario sin permisos - cuota inicial bloqueada");
+    }
   }
 }
 
@@ -2996,6 +3191,29 @@ function recalcularPorCambioCuotaInicial() {
       }
 
       return; // Salir después del recálculo específico para Grupo 4
+    }
+
+    // ✅ NUEVO: Excepción para Plan 22 (CREDI MOTOS) y Plan 38 (CrediGo Autos Grupo 4) en modo "Cuotas Adelantadas"
+    const planesConCuotasAdelantadas = [22, 38];
+    if (planesConCuotasAdelantadas.includes(idPlanActual)) {
+      const cuotaInicialInput = document.getElementById("cuotaInicial");
+      const modoAdelantadas = cuotaInicialInput?.getAttribute('data-modo-cuotas-adelantadas');
+
+      if (modoAdelantadas === 'true') {
+        console.log("🏍️ CREDI MOTOS - Recalculando cronograma para actualizar etiquetas PAGADO");
+
+        // Actualizar cuota inicial en planGlobal
+        const cantidadCuotasAdelantadas = parseInt(cuotaInicialInput.value) || 0;
+        planGlobal.cuota_inicial = cantidadCuotasAdelantadas;
+
+        console.log("🏍️ Cuotas adelantadas:", cantidadCuotasAdelantadas);
+
+        // Recalcular cronograma para actualizar las etiquetas "PAGADO"
+        calcularCronogramaDinamico();
+
+        console.log("✅ CREDI MOTOS - Cronograma actualizado con", cantidadCuotasAdelantadas, "cuotas marcadas como PAGADO");
+        return; // Salir después del recálculo específico para CREDI MOTOS
+      }
     }
 
     // Para otras variantes, mantener la protección original
@@ -3232,13 +3450,25 @@ function formatearFecha(fechaString) {
 function protegerCuotaInicialPorDirector() {
   const rolUsuario = window.rolUsuarioActual || "1";
 
-  // CAMBIO: Proteger para Directores (rol 3) Y Asesores (rol 2)
-  if (rolUsuario !== "3" && rolUsuario !== "2") return;
+  // CAMBIO: Verificar si es plan restringido (41, 44, 45) para asesores
+  const planesRestringidos = [41, 44, 45];
+  const idPlanActual = planGlobal ? parseInt(planGlobal.idplan_financiamiento) : null;
+  const esPlanRestringido = planesRestringidos.includes(idPlanActual);
+  const esAsesorEnPlanRestringido = rolUsuario === "2" && esPlanRestringido;
+
+  // CAMBIO: Proteger para Directores (rol 3) Y Asesores (rol 2), EXCEPTO asesores en planes 41, 44, 45
+  if ((rolUsuario !== "3" && rolUsuario !== "2") || esAsesorEnPlanRestringido) return;
 
   const cuotaInicialInput = document.getElementById("cuotaInicial");
   if (!cuotaInicialInput) return;
 
-  const observer = new MutationObserver((mutations) => {
+  // ✅ NUEVO: Desconectar observer anterior si existe para evitar duplicados
+  if (observerCuotaInicial) {
+    observerCuotaInicial.disconnect();
+    observerCuotaInicial = null;
+  }
+
+  observerCuotaInicial = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === "attributes") {
         const atributo = mutation.attributeName;
@@ -3282,7 +3512,7 @@ function protegerCuotaInicialPorDirector() {
     });
   });
 
-  observer.observe(cuotaInicialInput, {
+  observerCuotaInicial.observe(cuotaInicialInput, {
     attributes: true,
     attributeOldValue: true,
   });
@@ -3412,18 +3642,31 @@ function habilitarModoPersonalizado() {
       elemento.classList.remove("disabled-input");
       elemento.classList.remove("input-bloqueado-suave");
 
-      // FORZAR habilitación removiendo atributos
-      elemento.removeAttribute("disabled");
-      elemento.removeAttribute("readonly");
+      // CAMBIO: NO habilitar fechaInicio y fechaFin si es Asesor (rol 2)
+      if (ROL_USUARIO === 2 && (campo === "fechaInicio" || campo === "fechaFin")) {
+        console.log(`    ⚠️ Campo "${campo}" bloqueado para ASESOR (rol 2)`);
+        // Mantener bloqueado para asesores
+        elemento.disabled = false; // Permitir temporalmente para aplicar estilos
+        elemento.readOnly = true; // Readonly para asesores
+        elemento.style.setProperty("background-color", "#e9ecef", "important");
+        elemento.style.setProperty("color", "#495057", "important");
+        elemento.style.setProperty("cursor", "not-allowed", "important");
+        elemento.style.setProperty("pointer-events", "auto", "important");
+        elemento.style.setProperty("border", "1px solid #ced4da", "important");
+      } else {
+        // FORZAR habilitación removiendo atributos
+        elemento.removeAttribute("disabled");
+        elemento.removeAttribute("readonly");
 
-      // Aplicar nuevos estilos con !important mediante setAttribute
-      elemento.disabled = false;
-      elemento.readOnly = false;
-      elemento.style.setProperty("background-color", "#ffffff", "important");
-      elemento.style.setProperty("color", "#000000", "important");
-      elemento.style.setProperty("cursor", "text", "important");
-      elemento.style.setProperty("pointer-events", "auto", "important");
-      elemento.style.setProperty("border", "1px solid #ced4da", "important");
+        // Aplicar nuevos estilos con !important mediante setAttribute
+        elemento.disabled = false;
+        elemento.readOnly = false;
+        elemento.style.setProperty("background-color", "#ffffff", "important");
+        elemento.style.setProperty("color", "#000000", "important");
+        elemento.style.setProperty("cursor", "text", "important");
+        elemento.style.setProperty("pointer-events", "auto", "important");
+        elemento.style.setProperty("border", "1px solid #ced4da", "important");
+      }
 
       console.log(`    Estado anterior:`, estadoAnterior);
       console.log(

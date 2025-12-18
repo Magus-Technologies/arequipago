@@ -125,7 +125,11 @@ function saveFinanciamiento(event) {
     tipoMoneda = "$";
   }
 
-  const cuotaInicial = $("#cuotaInicial").val();
+  // ✅ CORREGIDO: Usar obtenerMontoCuotaInicial() para Plan 22 (cuotas adelantadas)
+  const cuotaInicial = typeof obtenerMontoCuotaInicial === 'function'
+    ? obtenerMontoCuotaInicial()
+    : parseFloat($("#cuotaInicial").val() || 0);
+
   const cuotas = $("#cuotas").val();
 
   let valorCuota = $("#valorCuota").val(); // Obtenemos el valor del monto total
@@ -176,8 +180,11 @@ function saveFinanciamiento(event) {
   $("#contenedorFechas span").each(function () {
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento
     if (textoFecha) {
+      // ✅ CORREGIDO: Limpiar el texto de "PAGADO ✅" u otros elementos
+      const soloFecha = textoFecha.trim().split(" ")[0]; // Tomar solo "DD/MM/YYYY" antes del primer espacio
+
       // Convertir la fecha a formato 'YYYY-MM-DD' para evitar problemas en el servidor
-      const partesFecha = textoFecha.split("/");
+      const partesFecha = soloFecha.split("/");
       const fechaVencimiento = `${partesFecha[2]}-${partesFecha[1]}-${partesFecha[0]}`;
       fechasVencimiento.push(fechaVencimiento); // Agregar la fecha formateada al arreglo
     }
@@ -362,6 +369,12 @@ function saveFinanciamiento(event) {
 
   const procesarGuardadoFinanciamiento = function (idConductor, idCliente) {
     // Modificado: Función expresada para acceder a las variables del ámbito
+
+    // 🔍 DEBUG: Verificar número corporativo antes de enviar
+    const numeroCorporativoCapturado = typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null;
+    console.log("📤 Preparando envío - Número corporativo:", numeroCorporativoCapturado);
+    console.log("📤 Grupo financiamiento:", grupoFinanciamiento);
+
     // Enviar los datos al controlador para guardar el financiamiento
     $.ajax({
       url: _URL + "/guardarFinanciamiento",
@@ -399,6 +412,25 @@ function saveFinanciamiento(event) {
         fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
         fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
         placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+        numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+        // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas
+        cantidad_cuotas_adelantadas: (function() {
+          const input = document.getElementById("cuotaInicial");
+          const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+          const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+          console.log("🔍 DEBUG JS - Input cuotaInicial existe:", !!input);
+          console.log("🔍 DEBUG JS - Modo adelantadas:", modoAdelantadas);
+          console.log("🔍 DEBUG JS - Valor input:", input ? input.value : 'N/A');
+          console.log("🔍 DEBUG JS - Cantidad a enviar:", cantidad);
+
+          if (input && modoAdelantadas === 'true') {
+            console.log("✅ DEBUG JS - Enviando cantidad de cuotas adelantadas:", cantidad);
+            return cantidad;
+          }
+          console.log("⚠️ DEBUG JS - NO es modo cuotas adelantadas, enviando 0");
+          return 0;
+        })(),
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -497,6 +529,25 @@ function saveFinanciamiento(event) {
             fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
             fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
             placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+            numero_corporativo: typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+            // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas (SEGUNDA LLAMADA AJAX)
+            cantidad_cuotas_adelantadas: (function() {
+              const input = document.getElementById("cuotaInicial");
+              const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+              const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+              console.log("🔍 DEBUG JS (2da llamada) - Input cuotaInicial existe:", !!input);
+              console.log("🔍 DEBUG JS (2da llamada) - Modo adelantadas:", modoAdelantadas);
+              console.log("🔍 DEBUG JS (2da llamada) - Valor input:", input ? input.value : 'N/A');
+              console.log("🔍 DEBUG JS (2da llamada) - Cantidad a enviar:", cantidad);
+
+              if (input && modoAdelantadas === 'true') {
+                console.log("✅ DEBUG JS (2da llamada) - Enviando cantidad de cuotas adelantadas:", cantidad);
+                return cantidad;
+              }
+              console.log("⚠️ DEBUG JS (2da llamada) - NO es modo cuotas adelantadas, enviando 0");
+              return 0;
+            })(),
           },
           success: function (response) {
             if (response.success) {
@@ -725,17 +776,36 @@ function saveFinanciamientoVehicular() {
   // Obtener el monto total
   const monto_total = document.getElementById("monto").value.trim(); // ✅ Trim para eliminar espacios adicionales
 
-  // Obtener la cuota inicial desde el objeto planGlobal
-  const cuota_inicial = planGlobal?.cuota_inicial; // ✅ Obteniendo la cuota inicial del objeto global
+  // ✅ CORREGIDO: Usar obtenerMontoCuotaInicial() para planes con cuotas adelantadas (Plan 38)
+  const cuota_inicial = typeof obtenerMontoCuotaInicial === 'function'
+    ? obtenerMontoCuotaInicial()
+    : (planGlobal?.cuota_inicial || 0);
 
   // Obtener las cuotas y eliminar decimales, puntos, y comas
   let cuotas = document.getElementById("cuotas").value;
   cuotas = parseInt(cuotas, 10); // ✅ Eliminar decimales
 
   // Obtener el valor de la cuota del input y convertirlo a número con decimales
-  const valor_cuota = parseFloat(
-    document.getElementById("valorCuota").value.replace(/,/g, "")
-  ); // ✅ Obtener y tratar los decimales correctamente
+  const valorCuotaInput = document.getElementById("valorCuota").value;
+  // ✅ CORREGIDO: Eliminar prefijos de moneda (US$, S/., $) y comas antes de parsear
+  const valorCuotaLimpio = valorCuotaInput.replace(/US\$|S\/\.|[$,\s]/g, "").trim();
+  const valor_cuota = parseFloat(valorCuotaLimpio) || 0;
+  
+  // 🔍 DEBUG: Verificar valor de cuota antes de enviar
+  console.log("🔍 [GUARDAR] Grupo financiamiento:", grupo_financiamiento);
+  console.log("🔍 [GUARDAR] Valor cuota del input:", valorCuotaInput);
+  console.log("🔍 [GUARDAR] Valor cuota limpio:", valorCuotaLimpio);
+  console.log("🔍 [GUARDAR] Valor cuota parseado:", valor_cuota);
+  
+  // ⚠️ VALIDACIÓN: Si el valor de cuota es 0 o inválido, mostrar error
+  if (!valor_cuota || valor_cuota <= 0) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "El valor de la cuota no puede ser 0. Por favor, verifica el cronograma de pagos."
+    });
+    return;
+  }
 
   // Obtener el estado del select
   const estado = document.getElementById("estado").value; // ✅ Obtener value del select
@@ -792,7 +862,10 @@ function saveFinanciamientoVehicular() {
     // Iterar sobre cada span dentro del contenedor ✅
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento ✅
     if (textoFecha) {
-      const partesFecha = textoFecha.split("/"); // Dividir la fecha en día/mes/año ✅
+      // ✅ CORREGIDO: Limpiar el texto de "PAGADO ✅" u otros elementos
+      const soloFecha = textoFecha.trim().split(" ")[0]; // Tomar solo "DD/MM/YYYY" antes del primer espacio
+
+      const partesFecha = soloFecha.split("/"); // Dividir la fecha en día/mes/año ✅
       const fechaVencimiento = `${partesFecha[2]}-${partesFecha[1]}-${partesFecha[0]}`; // Convertir al formato 'YYYY-MM-DD' ✅
       fechasVencimiento.push(fechaVencimiento); // Agregar la fecha formateada al arreglo ✅
     }
@@ -832,6 +905,12 @@ function saveFinanciamientoVehicular() {
     idCliente
   ) {
     // Añadido: Nueva función para procesar con conductor o cliente
+
+    // 🔍 DEBUG: Capturar numero_corporativo antes de enviar
+    const numeroCorporativoCapturado = typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null;
+    console.log("📤 [VEHICULAR] Preparando envío - Número corporativo:", numeroCorporativoCapturado);
+    console.log("📤 [VEHICULAR] Grupo financiamiento:", grupo_financiamiento);
+
     // Datos a enviar
     const data = {
       cliente,
@@ -864,6 +943,26 @@ function saveFinanciamientoVehicular() {
       id_variante: idVariante,
       cobrar_mora: cobrarMora,
       verificacion_domiciliaria: verificacionDomiciliaria,
+      placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+      numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO (Plan 36)
+      // ✅ NUEVO: Para Plan 38 (CrediGo Autos Grupo 4), enviar la cantidad de cuotas adelantadas
+      cantidad_cuotas_adelantadas: (function() {
+        const input = document.getElementById("cuotaInicial");
+        const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+        const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+        console.log("🔍 DEBUG JS VEHICULAR - Input cuotaInicial existe:", !!input);
+        console.log("🔍 DEBUG JS VEHICULAR - Modo adelantadas:", modoAdelantadas);
+        console.log("🔍 DEBUG JS VEHICULAR - Valor input:", input ? input.value : 'N/A');
+        console.log("🔍 DEBUG JS VEHICULAR - Cantidad a enviar:", cantidad);
+
+        if (input && modoAdelantadas === 'true') {
+          console.log("✅ DEBUG JS VEHICULAR - Enviando cantidad de cuotas adelantadas:", cantidad);
+          return cantidad;
+        }
+        console.log("⚠️ DEBUG JS VEHICULAR - NO es modo cuotas adelantadas, enviando 0");
+        return 0;
+      })(),
     };
 
     $.ajax({

@@ -478,7 +478,7 @@ function clearTable() {
 } */
 
 // ✅ Nueva función para generar y descargar contrato instantáneamente
-function generarContratoInstant(idFinanciamiento) {
+function generarContratoInstant(idFinanciamiento, soloExcel = false) {
   // 水 Mostrar mensaje de carga
   Swal.fire({
     title: "Generando contrato",
@@ -494,7 +494,10 @@ function generarContratoInstant(idFinanciamiento) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ids: [idFinanciamiento] }),
+    body: JSON.stringify({ 
+      ids: [idFinanciamiento],
+      soloExcel: soloExcel  // ✅ Nuevo parámetro para indicar si solo se quiere Excel
+    }),
   })
     .then((response) => response.json()) // ✅ Cambiado a json() para manejar la respuesta JSON
     .then((data) => {
@@ -543,10 +546,11 @@ function generarContratoInstant(idFinanciamiento) {
           "success"
         );
       } else {
-        // 水 Si no hay archivos, mostrar mensaje de error
+        // 水 Si no hay archivos, mostrar mensaje específico del backend
+        const mensajeError = data.mensaje || data.errores?.[0] || "No se pudo generar el contrato para este financiamiento.";
         Swal.fire(
           "Atención",
-          "No se pudo generar el contrato para este financiamiento.",
+          mensajeError,
           "warning"
         );
       }

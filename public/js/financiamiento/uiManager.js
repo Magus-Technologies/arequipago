@@ -1872,7 +1872,8 @@ function descargarContratoExcelDesdeModal() {
   }
 
   // Llamar a la función existente que genera y descarga el contrato
-  generarContratoInstant(idFinanciamientoSeleccionado);
+  // ✅ Pasar true para indicar que solo se quiere el Excel (sin PDF adicional)
+  generarContratoInstant(idFinanciamientoSeleccionado, true);
 }
 
 function procesarEntregaCrediYango(fechaEntrega, idProducto) {

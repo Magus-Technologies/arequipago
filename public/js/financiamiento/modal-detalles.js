@@ -128,9 +128,9 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
         esVehicularConExcel = categoria.includes("vehiculo") || categoria.includes("vehículo");
       }
 
-      // Verificar que NO sea de los grupos que NO generan Excel (33, 19, 38, 45)
+      // Verificar que NO sea de los grupos que NO generan Excel (33, 19, 45)
       const grupoFinanciamiento = financiamiento.financiamiento.grupo_financiamiento;
-      const gruposSinExcel = [33, 19, 38, 45];
+      const gruposSinExcel = [33, 19, 45];
 
       if (gruposSinExcel.includes(parseInt(grupoFinanciamiento))) {
         esVehicularConExcel = false;
@@ -259,6 +259,14 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
     }
 
     // Llenar los datos del financiamiento solo si los elementos existen
+
+    // ✅ NUEVO: Llenar el ID del financiamiento
+    const elementoIdFinanciamiento = document.getElementById("modalFinanciamientoID");
+    if (elementoIdFinanciamiento) {
+      const idFinanciamiento = financiamiento.financiamiento.idfinanciamiento || "N/A";
+      elementoIdFinanciamiento.innerText = idFinanciamiento;
+    }
+
     if (elementos.codigo) {
       elementos.codigo.innerText =
         financiamiento.financiamiento.codigo_asociado || "N/A";
@@ -815,9 +823,10 @@ window.descargarCronogramaDesdeModal = function() {
 
   // Preparar datos del cronograma
   const cronogramaDatos = cuotas.map((cuota, index) => ({
-    cuota: index + 1,
+    cuota: cuota.numero_cuota || cuota.num_cuota || (index + 1), // Usar el número real de la cuota
     valor: parseFloat(cuota.monto || cuota.monto_cuota_base || 0),
-    vencimiento: cuota.fecha_vencimiento
+    vencimiento: cuota.fecha_vencimiento,
+    estado: (cuota.estado === 'pagado' || cuota.estado === 'PAGADO') ? 'PAGADO' : 'PENDIENTE' // ✅ AGREGADO: Estado de la cuota
   }));
 
   // Obtener nombre del grupo/plan
