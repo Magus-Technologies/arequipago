@@ -487,9 +487,9 @@ class GenerarContratosController extends controller
         }
 
         // 🔍 DEBUG: Log para verificar qué valor se está asignando
-        error_log('📊 [EXCEL] Grupo ID: ' . ($financiamiento['grupo_financiamiento'] ?? 'N/A'));
-        error_log('📊 [EXCEL] Nombre del grupo obtenido: ' . $nombreGrupo);
-        error_log('📊 [EXCEL] grupoInfo completo: ' . print_r($grupoInfo, true));
+        // error_log('📊 [EXCEL] Grupo ID: ' . ($financiamiento['grupo_financiamiento'] ?? 'N/A'));
+        // error_log('📊 [EXCEL] Nombre del grupo obtenido: ' . $nombreGrupo);
+        // error_log('📊 [EXCEL] grupoInfo completo: ' . print_r($grupoInfo, true));
 
         // Asegurarse de que sea texto y no número
         $worksheet->setCellValueExplicit('D20', $nombreGrupo, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
@@ -762,6 +762,8 @@ class GenerarContratosController extends controller
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_incamotors.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 45) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'crediYango.html';
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 46) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contratoGPS.html';
         } elseif ($categoria === 'Llantas') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_llantas.html';
         } elseif ($categoria === 'Aceites') {

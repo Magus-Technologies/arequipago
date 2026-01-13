@@ -190,14 +190,15 @@ function saveFinanciamiento(event) {
     }
   });
 
-  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42) o CrediYango (ID 45)
+  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42), CrediYango (ID 45) o Revisión Técnica (ID 47)
   const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
   const esCrediYango = (grupoFinanciamiento === '45' || grupoFinanciamiento === 45);
+  const esPlanRevisionTecnica = (grupoFinanciamiento === '47' || grupoFinanciamiento === 47);
 
   const idProducto = productoSeleccionado?.id;
 
-  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado ni CrediYango
-  if (!esPlanPersonalizado && !esCrediYango && !idProducto) {
+  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado, CrediYango o Revisión Técnica
+  if (!esPlanPersonalizado && !esCrediYango && !esPlanRevisionTecnica && !idProducto) {
     Swal.fire("Error", "Debe seleccionar un producto.", "error");
     return;
   }
@@ -279,11 +280,11 @@ function saveFinanciamiento(event) {
     }
   } else if (esPlanPersonalizado) {
     // 🔹 Para planes personalizados, validar campos específicos (SIN cantidad de producto)
+    // ✅ MODIFICADO: Cuota inicial es OPCIONAL para plan 42
     const camposPersonalizados = {
       'Grupo de financiamiento': grupoFinanciamiento,
       'Monto total': montoTotal,
       'Monto sin intereses': montoSinIntereses,
-      'Cuota inicial': cuotaInicial,
       'Cantidad de cuotas': cuotas,
       'Estado': estado,
       'Fecha de inicio': fechaInicio,
@@ -313,6 +314,46 @@ function saveFinanciamiento(event) {
     if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
       cantidadProducto = '1';
       console.log('🎨 Plan personalizado - Cantidad de producto establecida en 1');
+    }
+    
+    // ✅ NUEVO: Si cuota inicial está vacía o es 0, establecer en 0 por defecto
+    if (!cuotaInicial || cuotaInicial === '' || cuotaInicial === '0' || cuotaInicial === 0) {
+      console.log('🎨 Plan personalizado (ID 42) - Cuota inicial establecida en 0 (opcional)');
+    }
+  } else if (esPlanRevisionTecnica) {
+    // 🔧 Para Plan 47 (Revisión Técnica), validar campos específicos SIN cuota inicial
+    const camposRevisionTecnica = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Cantidad de producto': cantidadProducto,
+      'Monto total': montoTotal,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposRevisionTecnica)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Revisión Técnica - Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // 🔧 NUEVO: Para Revisión Técnica, cuota inicial siempre es 0
+    if (!cuotaInicial || cuotaInicial === '' || cuotaInicial === '0' || cuotaInicial === 0) {
+      console.log('🔧 Plan 47 (Revisión Técnica) - Cuota inicial establecida en 0 (sin inicial)');
     }
   } else {
     // ✅ MEJORADO: Validaciones detalladas para otros planes
@@ -349,7 +390,9 @@ function saveFinanciamiento(event) {
   }
 
   // Validar que la cuota inicial no supere el monto total
-  if (parseFloat(cuotaInicial) > parseFloat(montoTotal)) {
+  // ✅ MODIFICADO: Permitir cuota inicial 0 para plan personalizado (ID 42)
+  const cuotaInicialNum = parseFloat(cuotaInicial) || 0;
+  if (cuotaInicialNum > parseFloat(montoTotal)) {
     Swal.fire(
       "Error",
       "La cuota inicial no puede ser mayor al monto total.",
@@ -438,7 +481,7 @@ function saveFinanciamiento(event) {
          // Preparar array de pagos a generar
           const pagos = [];
           const metodoPago = $("#metodoPago").val() || "Efectivo"; // Valor por defecto
-          
+
           // CORREGIDO: Priorizar Cuota Inicial sobre Monto de Inscripción
           if (cuotaInicial > 0) {
             pagos.push({
@@ -450,6 +493,14 @@ function saveFinanciamiento(event) {
             pagos.push({
               monto: montoInscrip,
               tipo: "Monto de Inscripción",
+            });
+          }
+          // ✅ NUEVO: Para Plan 47 generar nota de venta mostrando PENDIENTE DE PAGO
+          else if ((grupoFinanciamiento === "47" || grupoFinanciamiento === 47) && (parseFloat(montoTotal) > 0 || parseFloat(valorCuota) > 0)) {
+            const montoProducto = parseFloat(montoTotal) || parseFloat(valorCuota) || 0;
+            pagos.push({
+              monto: montoProducto,
+              tipo: "Producto Financiado",
             });
           }
           // Solo hacer la llamada si hay pagos para generar
@@ -565,6 +616,14 @@ function saveFinanciamiento(event) {
                 pagos.push({
                   monto: montoInscrip,
                   tipo: "Monto de Inscripción",
+                });
+              }
+              // ✅ NUEVO: Para Plan 47 u otros planes sin cuota inicial - generar nota de venta con monto total
+              else if ((grupoFinanciamiento === "47" || grupoFinanciamiento === 47) && (parseFloat(montoTotal) > 0 || parseFloat(valorCuota) > 0)) {
+                const montoProducto = parseFloat(montoTotal) || parseFloat(valorCuota) || 0;
+                pagos.push({
+                  monto: montoProducto,
+                  tipo: "Producto Financiado",
                 });
               }
               // Solo hacer la llamada si hay pagos para generar
@@ -700,18 +759,19 @@ function saveFinanciamientoVehicular() {
       verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
   }
 
-  // 🔹 NUEVO: Verificar si es plan personalizado
+  // 🔹 NUEVO: Verificar si es plan personalizado o Revisión Técnica
   const grupoFinanciamientoActual = document.getElementById("grupo").value;
   const esPlanPersonalizado = (grupoFinanciamientoActual === '42' || grupoFinanciamientoActual === 42);
-  
+  const esPlanRevisionTecnica = (grupoFinanciamientoActual === '47' || grupoFinanciamientoActual === 47);
+
   // 🔹 Declarar entregarSiElement ANTES para que esté disponible en todo el scope
   const entregarSiElement = document.getElementById("entregarSi");
   const entregarNoElement = document.getElementById("entregarNo");
-  
+
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  // 🔹 MODIFICADO: Si es plan personalizado, no requerir producto
-  if (esPlanPersonalizado) {
+  // 🔹 MODIFICADO: Si es plan personalizado o Revisión Técnica, no requerir producto vehicular
+  if (esPlanPersonalizado || esPlanRevisionTecnica) {
     idProducto = 37; // ID genérico para planes personalizados (ajustar según necesidad)
   } else {
     // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
@@ -749,9 +809,10 @@ function saveFinanciamientoVehicular() {
   const grupoFinanciamiento = document.getElementById("grupo").value;
 
   // Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
-  // Y NO es plan personalizado
+  // Y NO es plan personalizado NI Revisión Técnica
   if (
     !esPlanPersonalizado &&
+    !esPlanRevisionTecnica &&
     entregarSiElement && entregarNoElement &&
     grupoFinanciamiento !== "33" &&
     !entregarSiElement.checked &&

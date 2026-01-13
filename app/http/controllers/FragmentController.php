@@ -227,6 +227,9 @@ class FragmentController extends Controller
     public function cuponesDrivers(){
         return $this->view("fragment-views/cliente/cupones-drivers");
     }
+    public function clientesConductoresConCupon(){
+        return $this->view("fragment-views/cliente/clientesConductoresConCupon");
+    }
        public function beneficiosUsuarios(){
         return $this->view("fragment-views/cliente/beneficios");
     }

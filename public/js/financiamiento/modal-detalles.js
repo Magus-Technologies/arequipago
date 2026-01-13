@@ -89,9 +89,10 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
         parseFloat(financiamiento.financiamiento.monto_inscrip) || 0;
       const montoRecalculado =
         parseFloat(financiamiento.financiamiento.monto_recalculado) || 0;
+      const grupoFinanciamiento = financiamiento.financiamiento.grupo_financiamiento;
 
-      // Mostrar botón si hay algún pago inicial
-      if (cuotaInicial > 0 || montoInscrip > 0 || montoRecalculado > 0) {
+      // ✅ MODIFICADO: Mostrar botón si hay algún pago inicial O es Plan 47 (Revisión Técnica)
+      if (cuotaInicial > 0 || montoInscrip > 0 || montoRecalculado > 0 || grupoFinanciamiento == 47) {
         btnBoletasIniciales.style.display = "block";
       } else {
         btnBoletasIniciales.style.display = "none";

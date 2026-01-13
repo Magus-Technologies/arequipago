@@ -673,7 +673,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        frunction actualizarInfoPaginacion(inicio, fin) {
+        function actualizarInfoPaginacion(inicio, fin) {
             const total = comisionesGlobales.length;
             document.getElementById('info-desde').textContent = total > 0 ? inicio + 1 : 0;
             document.getElementById('info-hasta').textContent = Math.min(fin, total);

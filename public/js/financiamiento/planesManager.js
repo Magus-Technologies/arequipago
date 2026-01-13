@@ -72,6 +72,14 @@ function selectPlan(idPlan) {
       nombrePersonalizadoInput.value = ''; // Limpiar valor anterior
     }
 
+    // ✅ NUEVO: Hacer cuota inicial OPCIONAL para plan 42
+    const cuotaInicialInput = document.getElementById('cuotaInicial');
+    if (cuotaInicialInput) {
+      cuotaInicialInput.removeAttribute('required');
+      cuotaInicialInput.placeholder = 'Cuota inicial (opcional)';
+      console.log("✅ Cuota inicial configurada como OPCIONAL para plan 42");
+    }
+
     // ✅ NUEVO: Mostrar checkbox de entrega especial SOLO para plan 42
     if (checkboxEntregaContainer) {
         checkboxEntregaContainer.style.display = '';
@@ -104,6 +112,14 @@ function selectPlan(idPlan) {
       nombrePersonalizadoContainer.style.display = 'none';
       nombrePersonalizadoInput.required = false;
       nombrePersonalizadoInput.value = '';
+    }
+
+    // ✅ NUEVO: Restaurar cuota inicial como OBLIGATORIA para otros planes
+    const cuotaInicialInput = document.getElementById('cuotaInicial');
+    if (cuotaInicialInput) {
+      cuotaInicialInput.setAttribute('required', 'required');
+      cuotaInicialInput.placeholder = 'Cuota inicial';
+      console.log("✅ Cuota inicial restaurada como OBLIGATORIA para otros planes");
     }
 
     // ✅ NUEVO: Ocultar checkbox y limpiar estado para otros planes
@@ -262,6 +278,12 @@ function selectPlan(idPlan) {
       if (respuesta.success) {
         var plan = respuesta.plan;
         planGlobal = plan;
+        
+        // ✅ CRÍTICO: Guardar el valor ORIGINAL de cantidad_cuotas que NUNCA se modificará
+        if (!planGlobal.cantidad_cuotas_original) {
+          planGlobal.cantidad_cuotas_original = plan.cantidad_cuotas;
+          console.log("💾 Guardando cantidad_cuotas_original:", planGlobal.cantidad_cuotas_original);
+        }
 
         // APLICAR PROTECCIÓN INMEDIATA PARA CELULARES
         if (parseInt(plan.idplan_financiamiento) === 41) {
@@ -1138,6 +1160,9 @@ function seleccionarVariante(index) {
   // NUEVO: Limpiar valores originales al cambiar de variante
   limpiarValoresOriginalesPlan();
 
+  // ✅ CRÍTICO: Guardar el valor original antes de reemplazar planGlobal
+  const cantidadCuotasOriginalGuardada = planGlobal?.cantidad_cuotas_original;
+
   // Limpiar planGlobal y asignar los valores de la variante seleccionada
   // REEMPLÁZALO POR:
   planGlobal = {
@@ -1158,7 +1183,10 @@ function seleccionarVariante(index) {
       typeof planGlobal.cobrar_mora !== "undefined"
         ? planGlobal.cobrar_mora
         : 1,
+    cantidad_cuotas_original: cantidadCuotasOriginalGuardada || varianteSeleccionada.cantidad_cuotas, // ✅ Preservar el valor original
   };
+  
+  console.log("✅ Variante seleccionada - Preservando cantidad_cuotas_original:", planGlobal.cantidad_cuotas_original);
 
   // APLICAR PROTECCIÓN INMEDIATA PARA VARIANTES DE CELULARES
   if (parseInt(variante.idplan_financiamiento) === 41) {
@@ -1453,7 +1481,7 @@ function seleccionarVariante(index) {
 
   // MODIFICADO: Para planes vehiculares, usar calcularFinanciamientoConFechaIngreso en lugar de calcularCronogramaDinamico
   if (variante.fecha_inicio && variante.fecha_fin) {
-    // Es plan vehicular - usar la función específica para fechas de ingreso
+    // Para todos los planes vehiculares (incluyendo Plan 38), recalcular normalmente
     setTimeout(() => {
       console.log(
         "🚗 Recalculando cronograma vehicular para variante seleccionada"
@@ -4175,6 +4203,7 @@ function actualizarResumenFinanciamiento(idPlan) {
         16: 'FINANCIAMIENTO BATERÍAS',
         33: 'FINANCIAMIENTO MOTOS (MotosYa)',
         42: 'FINANCIAMIENTO EDITABLE',
+        47: 'FINANCIAMIENTO REVISION TECNICA',
     };
 
     const idPlanNum = parseInt(idPlan);

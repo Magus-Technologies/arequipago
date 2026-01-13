@@ -37,19 +37,19 @@ class PagoCajaArequipa
                         pca.created_at,
                         pca.updated_at,
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN CONCAT(cf.nombres, ' ', cf.apellido_paterno)
-                            WHEN f.id_conductor IS NOT NULL THEN CONCAT(cond.nombres, ' ', cond.apellido_paterno)
-                            ELSE 'Sin datos'
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN CONCAT(cf.nombres, ' ', cf.apellido_paterno)
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN CONCAT(cond.nombres, ' ', cond.apellido_paterno)
+                            ELSE 'N/A'
                         END as nombre_cliente,
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN cf.n_documento
-                            WHEN f.id_conductor IS NOT NULL THEN cond.nro_documento
-                            ELSE NULL
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN cf.n_documento
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN cond.nro_documento
+                            ELSE 'N/A'
                         END as dni_cliente,
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN cf.telefono
-                            WHEN f.id_conductor IS NOT NULL THEN cond.telefono
-                            ELSE NULL
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN cf.telefono
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN cond.telefono
+                            ELSE 'N/A'
                         END as celular_cliente,
                         f.codigo_asociado,
                         f.grupo_financiamiento as nombre_plan
@@ -214,19 +214,19 @@ class PagoCajaArequipa
                         pca.*,
                         -- Información del cliente
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN CONCAT(cf.nombres, ' ', cf.apellido_paterno)
-                            WHEN f.id_conductor IS NOT NULL THEN CONCAT(cond.nombres, ' ', cond.apellido_paterno)
-                            ELSE 'Sin datos'
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN CONCAT(cf.nombres, ' ', cf.apellido_paterno)
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN CONCAT(cond.nombres, ' ', cond.apellido_paterno)
+                            ELSE 'N/A'
                         END as nombre_cliente,
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN cf.n_documento
-                            WHEN f.id_conductor IS NOT NULL THEN cond.nro_documento
-                            ELSE NULL
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN cf.n_documento
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN cond.nro_documento
+                            ELSE 'N/A'
                         END as dni_cliente,
                         CASE
-                            WHEN f.id_cliente IS NOT NULL THEN cf.telefono
-                            WHEN f.id_conductor IS NOT NULL THEN cond.telefono
-                            ELSE NULL
+                            WHEN f.id_cliente IS NOT NULL AND f.id_cliente > 0 THEN cf.telefono
+                            WHEN f.id_conductor IS NOT NULL AND f.id_conductor > 0 THEN cond.telefono
+                            ELSE 'N/A'
                         END as celular_cliente,
                         -- Información del financiamiento
                         f.idfinanciamiento as id_financiamiento,

@@ -374,4 +374,55 @@ class Constatacion
 
         return $result->fetch_all(MYSQLI_ASSOC);
     }
+
+    /**
+     * Obtener vehículos pendientes de constatación para reporte Excel
+     */
+    public function obtenerPendientesParaReporte()
+    {
+        $query = "
+            SELECT
+                f.idfinanciamiento,
+                f.fecha_entrega,
+                f.monto_total,
+                f.moneda,
+                p.nombre as producto_nombre,
+                p.categoria,
+                CASE
+                    WHEN f.id_conductor IS NOT NULL THEN CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno)
+                    ELSE CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno)
+                END as cliente_nombre,
+                CASE
+                    WHEN f.id_conductor IS NOT NULL THEN c.nro_documento
+                    ELSE cf.n_documento
+                END as documento,
+                CASE
+                    WHEN f.id_conductor IS NOT NULL THEN c.telefono
+                    ELSE cf.telefono
+                END as telefono,
+                CASE
+                    WHEN f.id_conductor IS NOT NULL THEN 'Conductor'
+                    ELSE 'Cliente'
+                END as tipo_persona,
+                c.numUnidad as numero_unidad
+            FROM financiamiento f
+            LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+            LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
+            JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+            LEFT JOIN constataciones_domiciliarias cd ON f.idfinanciamiento = cd.id_financiamiento
+            WHERE f.estado_entrega = 'entregado'
+            AND f.estado_eliminado = 0
+            AND cd.id_constatacion IS NULL
+            ORDER BY f.fecha_entrega DESC
+        ";
+
+        $result = $this->conexion->query($query);
+
+        if (!$result) {
+            error_log("Error en obtenerPendientesParaReporte: " . $this->conexion->error);
+            return [];
+        }
+
+        return $result->fetch_all(MYSQLI_ASSOC);
+    }
 }

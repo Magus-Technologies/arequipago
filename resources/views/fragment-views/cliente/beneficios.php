@@ -529,6 +529,9 @@
                         <h1 style="color: #6f42c1" class="mb-0">
                             <i class="fa fa-gift me-2" style="color: #6f42c1;"></i>
                             Catálago De Beneficios
+                            <span v-if="!cargandoBeneficios" class="badge" style="background: linear-gradient(45deg, #6f42c1, #17a2b8); font-size: 0.5em; vertical-align: middle; margin-left: 10px; padding: 8px 15px; border-radius: 20px;">
+                                {{ beneficiosFiltrados.length }} {{ beneficiosFiltrados.length === 1 ? 'Producto' : 'Productos' }}
+                            </span>
                         </h1>
                     </div>
                     <div class="col-auto">
@@ -942,13 +945,14 @@
 
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label class="form-label fw-semibold">Cuota Inicial *</label>
+                                        <label class="form-label fw-semibold">Cuota Inicial</label>
                                         <div class="input-group">
                                             <span class="input-group-text" id="currency-cuota-inicial">{{
                                                 getCurrencySymbol() }}</span>
                                             <input type="number" class="form-control" v-model="formData.cuota_inicial"
-                                                step="0.01" min="0" placeholder="0.00" required>
+                                                step="0.01" min="0" placeholder="0.00">
                                         </div>
+                                        <small class="text-muted">Opcional. Dejar en 0 si no aplica.</small>
                                         <div v-if="errores.cuota_inicial" class="error-message">{{ errores.cuota_inicial
                                             }}</div>
                                     </div>
@@ -1757,8 +1761,9 @@
                             */
                         }
 
-                        if (!this.formData.cuota_inicial || this.formData.cuota_inicial <= 0) {
-                            this.errores.cuota_inicial = 'La cuota inicial es obligatoria y debe ser mayor a 0';
+                        // Cuota inicial es opcional, permitir 0
+                        if (this.formData.cuota_inicial && this.formData.cuota_inicial < 0) {
+                            this.errores.cuota_inicial = 'La cuota inicial no puede ser negativa';
                         }
 
                         if (!this.formData.cantidad_cuotas || this.formData.cantidad_cuotas <= 0) {
@@ -1915,7 +1920,7 @@
                         }
                     },
                     'formData.cuota_inicial': function (newVal) {
-                        if (newVal && newVal > 0) {
+                        if (newVal >= 0) {
                             this.errores.cuota_inicial = '';
                         }
                     },

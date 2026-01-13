@@ -173,8 +173,9 @@ class BeneficioController
                 return;
             }
 
-            if (!isset($_POST['cuota_inicial']) || $_POST['cuota_inicial'] === '' || $_POST['cuota_inicial'] <= 0) {
-                echo json_encode(['success' => false, 'message' => 'La cuota inicial es obligatoria y debe ser mayor a 0.']);
+            // Cuota inicial es opcional, validar solo si está presente que no sea negativa
+            if (isset($_POST['cuota_inicial']) && $_POST['cuota_inicial'] !== '' && $_POST['cuota_inicial'] < 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota inicial no puede ser negativa.']);
                 return;
             }
 
@@ -249,7 +250,7 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'plan_financiamiento_id' => (int)$_POST['plan_financiamiento_id'],
                 'categoria' => !empty($_POST['categoria']) ? (int)$_POST['categoria'] : null,
                 'descripcion' => isset($_POST['descripcion']) && !empty($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
-                'cuota_inicial' => (float)$_POST['cuota_inicial'],
+                'cuota_inicial' => !empty($_POST['cuota_inicial']) ? (float)$_POST['cuota_inicial'] : 0,
                 'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
                 'cuota_mensual' => (float)$_POST['cuota_mensual'],
                 'pago_inscripcion' => !empty($_POST['pago_inscripcion']) ? (float)$_POST['pago_inscripcion'] : null,
@@ -357,8 +358,9 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 return;
             }
 
-            if (!isset($_POST['cuota_inicial']) || $_POST['cuota_inicial'] === '' || $_POST['cuota_inicial'] <= 0) {
-                echo json_encode(['success' => false, 'message' => 'La cuota inicial es obligatoria y debe ser mayor a 0.']);
+            // Cuota inicial es opcional, validar solo si está presente que no sea negativa
+            if (isset($_POST['cuota_inicial']) && $_POST['cuota_inicial'] !== '' && $_POST['cuota_inicial'] < 0) {
+                echo json_encode(['success' => false, 'message' => 'La cuota inicial no puede ser negativa.']);
                 return;
             }
 
@@ -431,7 +433,7 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 'plan_financiamiento_id' => (int)$_POST['plan_financiamiento_id'],
                 'categoria' => (int)$_POST['categoria'],
                 'descripcion' => isset($_POST['descripcion']) ? trim($_POST['descripcion']) : '',
-                'cuota_inicial' => (float)$_POST['cuota_inicial'],
+                'cuota_inicial' => !empty($_POST['cuota_inicial']) ? (float)$_POST['cuota_inicial'] : 0,
                 'cantidad_cuotas' => (int)$_POST['cantidad_cuotas'],
                 'cuota_mensual' => (float)$_POST['cuota_mensual'],
                 'pago_inscripcion' => !empty($_POST['pago_inscripcion']) ? (float)$_POST['pago_inscripcion'] : null,

@@ -336,6 +336,7 @@ Route::post('/simularPagoCuota', 'PuntajeCrediticioController@simularPagoCuota')
 Route::get('/obtenerLogs', 'PuntajeCrediticioController@obtenerLogs');
 
 Route::postBase('/cupones', 'FragmentController@cuponesDrivers');
+Route::postBase('/cliente/cupones/conductores-clientes', 'FragmentController@clientesConductoresConCupon');
 
 // OBTENER PUNTAJES POR ID �NICO
 Route::get('/obtenerPuntajeYDatos', 'PuntajeCrediticioController@obtenerPuntajeYDatos');

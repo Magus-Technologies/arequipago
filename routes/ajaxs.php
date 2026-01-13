@@ -19,6 +19,7 @@ Route::post('/listarConductoresPorFecha', 'ListarConductoresController@listarCon
 Route::post('/ajs/cupones/crear', 'CuponController@crearCupon');  // Para crear un nuevo cupón
 Route::get('/ajs/cupones/listar/:idUsuario/:tipo', 'CuponController@listarCupones');  // Para listar cupones filtrados por departamento del usuario
 Route::get('/ajs/cupones/listar', 'CuponController@listarCupones');  // Para listar todos los cupones
+Route::get('/ajs/cupones/publicos', 'CuponController@listarCuponesPublicos');  // Para listar solo cupones públicos (sin login)
 Route::get('/ajs/cupones/listar-con-conductores', 'CuponController@listarCuponesConConductores');  // Para listar todos los cupones y los conductores asociados
 Route::post('/ajs/cupones/buscar/usuarios', 'CuponController@buscarUsuarios');
 Route::post('/ajs/cupones/usuarios', 'CuponController@obtenerUsuariosCupon');
@@ -28,6 +29,8 @@ Route::get('/ajs/cupones/departamentos-habilitados', 'CuponController@obtenerDep
 Route::post('/ajs/cupones/obtener', 'CuponController@obtenerCupon');  // Para obtener un cupón específico para edición
 Route::post('/ajs/cupones/actualizar', 'CuponController@actualizarCupon');  // Para actualizar un cupón existente
 Route::post('/ajs/cupones/eliminar', 'CuponController@eliminarCupon');  // Para eliminar un cupón (soft delete)
+Route::post('/ajs/cupones/desactivar-expirados', 'CuponController@desactivarCuponesExpirados');  // Para desactivar automáticamente cupones expirados
+
 // Mantener compatibilidad hacia atrás
 Route::post('/ajs/cupones/buscar/conductores', 'CuponController@buscarConductores');  // Para buscar conductores
 Route::post('/ajs/cupones/conductores', 'CuponController@obtenerConductoresCupon');  // Para obtener los conductores asociados a un cupón

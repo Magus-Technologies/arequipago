@@ -6,889 +6,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cupones para Conductores y Clientes</title>
+    <link rel="stylesheet" href="<?= URL::to('public/css/cupones.css') ?>?v=<?= time() ?>">
  
-    <style>
-        .conductor-card, .cliente-card {
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-
-        .conductor-card:hover, .cliente-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .conductor-card.selected, .cliente-card.selected {
-            border-color: #0d6efd;
-            background-color: rgba(13, 110, 253, 0.05);
-        }
-
-        /* NUEVO: Estilos para usuarios que ya tienen cupones */
-        .conductor-card.tiene-cupones {
-            border-color: #fd7e14;
-            background-color: rgba(253, 126, 20, 0.08);
-        }
-
-        .cliente-card.tiene-cupones {
-            border-color: #fd7e14;
-            background-color: rgba(253, 126, 20, 0.08);
-        }
-
-        .conductor-card.tiene-cupones.selected, .cliente-card.tiene-cupones.selected {
-            border-color: #dc3545;
-            background-color: rgba(220, 53, 69, 0.08);
-        }
-
-        .badge-cupones-existentes {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 15;
-            background: linear-gradient(45deg, #fd7e14, #f8ad0a) !important;
-            color: white !important;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            font-weight: 600;
-            font-size: 0.75rem;
-        }
-
-        .foto-usuario {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .badge-vehiculo {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-        }
-
-        .search-container {
-            position: relative;
-        }
-
-        .loading-spinner {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .cupon-preview {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .banner-preview {
-            max-width: 100%;
-            max-height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-
-        .usuarios-seleccionados {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .stats-card {
-            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
-            border-left: 4px solid #0d6efd;
-        }
-
-        .error-message {
-            color: #dc3545;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .cupon-card {
-            transition: all 0.3s ease;
-            border: 1px solid #dee2e6;
-        }
-
-        .cupon-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            border-color: #0d6efd;
-        }
-
-        .cupon-banner {
-            height: 200px;
-            object-fit: cover;
-            width: 100%;
-        }
-
-        .cupon-card .card-body {
-            padding: 1.5rem;
-        }
-
-        .cupon-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 0.75rem;
-        }
-
-        .cupon-description {
-            color: #6c757d;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 1rem;
-        }
-
-        .cupon-valor {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 1.75rem;
-            font-weight: 800;
-        }
-
-        .cupon-estado {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .vista-cupones-header {
-            color: #8A8484;
-            padding: 2rem 0;
-            margin: -1.5rem -15px 2rem -15px;
-            border-radius: 0 0 15px 15px;
-        }
-
-        .usuarios-link {
-            color: #0d6efd;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        .usuarios-link:hover {
-            color: #0b5ed7;
-        }
-
-        .usuario-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .usuario-item:last-child {
-            border-bottom: none;
-        }
-
-        .usuario-foto-small {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            margin-right: 0.75rem;
-        }
-
-        .badge {
-            font-size: 0.7rem;
-        }
-
-        .usuario-item .badge {
-            margin-right: 0.25rem;
-        }
-
-        /* Estilos para avatar con iniciales */
-        .avatar-iniciales {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.5rem;
-            text-transform: uppercase;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            user-select: none;
-        }
-
-        .avatar-iniciales-small {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            text-transform: uppercase;
-            user-select: none;
-        }
-
-        /* NUEVOS ESTILOS PARA LAS PESTAÑAS */
-        .nav-tabs .nav-link {
-            color: #6c757d;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            background-color: transparent;
-            border-radius: 0;
-            margin-right: 0.25rem;
-        }
-
-        .nav-tabs .nav-link:hover {
-            border-color: transparent;
-            background-color: rgba(13, 110, 253, 0.1);
-            color: #0d6efd;
-        }
-
-        .nav-tabs .nav-link.active {
-            color: #0d6efd;
-            background-color: #fff;
-            border-color: #0d6efd #0d6efd transparent;
-            border-bottom: 2px solid #0d6efd;
-        }
-
-        .tab-content {
-            border-top: 1px solid #dee2e6;
-            padding-top: 1rem;
-        }
-
-        .tipo-usuario-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 10;
-        }
-
-        /* Estilos para filtros de departamento */
-        .departamentos-badges-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding: 15px 0;
-        }
-
-        .departamento-badge-item {
-            position: relative;
-            cursor: pointer;
-            margin: 0;
-        }
-
-        .departamento-input {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .departamento-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 10px 20px;
-            background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 25px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #495057;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .departamento-badge:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.2);
-            border-color: #28a745;
-        }
-
-        .departamento-input:checked + .departamento-badge {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            border-color: #28a745;
-            color: white;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-        }
-
-        .departamento-badge i {
-            margin-right: 8px;
-            font-size: 1.1rem;
-        }
-
-        /* Badge de departamento en tarjetas de cupones */
-        .cupon-departamento-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .badge-nacional {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: white;
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-        }
-
-        .badge-regional {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-        }
-    </style>
 </head>
 
 <body>
 
     <div id="app" class="container-fluid py-4">
 
-        <!-- Vista Principal -->
-        <div v-if="vistaActual === 'principal'">
-            <!-- Header Principal -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="display-5 fw-bold text-primary mb-0">
-                                <i class="bi bi-ticket-perforated me-3"></i>
-                                Cupones para Conductores y Clientes
-                            </h1>
-                            <p class="text-muted mb-0">Gestiona y asigna cupones promocionales</p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary" @click="toggleEstadisticas">
-                                <i class="bi bi-graph-up me-2"></i>Estadísticas
-                            </button>
-                            <button class="btn btn-outline-info" @click="mostrarCupones">
-                                <i class="bi bi-eye me-2"></i>Ver Cupones Activos
-                            </button>
-                            <button class="btn btn-success" @click="abrirModalCrearCupon"
-                                :disabled="totalUsuariosSeleccionados === 0">
-                                <i class="bi bi-plus-circle me-2"></i>
-                                Crear Cupón (<span>{{ totalUsuariosSeleccionados }}</span>)
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="display-5 fw-bold text-primary mb-0">
+                    <i class="bi bi-ticket-perforated me-3"></i>
+                    Cupones para Conductores y Clientes
+                </h1>
+                <p class="text-muted mb-0">Gestiona y asigna cupones promocionales</p>
             </div>
-
-            <!-- Estadísticas -->
-            <div class="row mb-4" v-if="mostrarEstadisticas">
-                <div class="col-md-3">
-                    <div class="card stats-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-people-fill display-4 text-primary mb-2"></i>
-                            <h4 class="fw-bold">{{ totalConductores + totalClientes }}</h4>
-                            <p class="text-muted mb-0">Total Usuarios</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stats-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-check-circle-fill display-4 text-success mb-2"></i>
-                            <h4 class="fw-bold">{{ totalUsuariosSeleccionados }}</h4>
-                            <p class="text-muted mb-0">Seleccionados</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stats-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-ticket-perforated-fill display-4 text-warning mb-2"></i>
-                            <h4 class="fw-bold">{{ cupones.length }}</h4>
-                            <p class="text-muted mb-0">Cupones Activos</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card stats-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-graph-up-arrow display-4 text-info mb-2"></i>
-                            <h4 class="fw-bold">C:{{ conductoresSeleccionados.length }} | CL:{{ clientesSeleccionados.length }}</h4>
-                            <p class="text-muted mb-0">Conductores | Clientes</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NUEVO: Panel de usuarios seleccionados - MOVIDO AQUÍ PARA MAYOR VISIBILIDAD -->
-            <div class="row mb-4" v-if="totalUsuariosSeleccionados > 0">
-                <div class="col-12">
-                    <div class="card shadow-sm border-success">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="card-title fw-semibold mb-0">
-                                <i class="bi bi-person-check me-2"></i>Usuarios Seleccionados ({{ totalUsuariosSeleccionados }})
-                                <span class="float-end">
-                                    <button class="btn btn-sm btn-light" @click="limpiarTodasSelecciones">
-                                        <i class="bi bi-x-circle me-1"></i>Limpiar Todo
-                                    </button>
-                                </span>
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="usuarios-seleccionados">
-                                <div>
-                                    <!-- Conductores seleccionados -->
-                                    <div v-if="conductoresSeleccionados.length > 0" class="mb-3">
-                                        <h6 class="text-primary mb-2">
-                                            <i class="bi bi-car-front me-1"></i>
-                                            Conductores ({{ conductoresSeleccionados.length }})
-                                        </h6>
-                                        <div class="row g-2">
-                                            <div v-for="conductor in conductoresSeleccionados" :key="'sel-conductor-' + conductor.id_conductor"
-                                                class="col-md-6">
-                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-2">
-                                                            <img :src="conductor.foto"
-                                                                class="usuario-foto-small rounded-circle" :alt="conductor.nombres">
-                                                        </div>
-                                                        <div v-else class="avatar-iniciales-small me-2">
-                                                            {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
-                                                        </div>
-                                                        <div>
-                                                            <small class="fw-semibold">{{ conductor.nombres }} {{
-                                                                conductor.apellido_paterno }}</small>
-                                                            <br>
-                                                            <small class="text-muted">{{ conductor.nro_documento }}</small>
-                                                        </div>
-                                                    </div>
-                                                    <button type="button" class="btn-close"
-                                                        @click="toggleSeleccionConductor(conductor)"
-                                                        title="Quitar conductor"
-                                                        aria-label="Quitar conductor"></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Clientes seleccionados -->
-                                    <div v-if="clientesSeleccionados.length > 0">
-                                        <h6 class="text-success mb-2">
-                                            <i class="bi bi-person me-1"></i>
-                                            Clientes ({{ clientesSeleccionados.length }})
-                                        </h6>
-                                        <div class="row g-2">
-                                            <div v-for="cliente in clientesSeleccionados" :key="'sel-cliente-' + cliente.id"
-                                                class="col-md-6">
-                                                <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-iniciales-small me-2">
-                                                            {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
-                                                        </div>
-                                                        <div>
-                                                            <small class="fw-semibold">{{ cliente.nombres }} {{
-                                                                cliente.apellido_paterno }}</small>
-                                                            <br>
-                                                            <small class="text-muted">{{ cliente.n_documento }}</small>
-                                                        </div>
-                                                    </div>
-                                                    <button type="button" class="btn-close"
-                                                        @click="toggleSeleccionCliente(cliente)"
-                                                        title="Quitar cliente"
-                                                        aria-label="Quitar cliente"></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NUEVO: Pestañas para Conductores y Clientes -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <!-- Nav Tabs -->
-                            <ul class="nav nav-tabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" 
-                                            :class="{ active: tabActiva === 'conductores' }"
-                                            @click="cambiarTab('conductores')"
-                                            type="button">
-                                        <i class="bi bi-car-front me-2"></i>
-                                        Conductores 
-                                        <span class="badge bg-primary ms-2">{{ conductoresSeleccionados.length }}</span>
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" 
-                                            :class="{ active: tabActiva === 'clientes' }"
-                                            @click="cambiarTab('clientes')"
-                                            type="button">
-                                        <i class="bi bi-person me-2"></i>
-                                        Clientes 
-                                        <span class="badge bg-success ms-2">{{ clientesSeleccionados.length }}</span>
-                                    </button>
-                                </li>
-                            </ul>
-
-                            <!-- Tab Content -->
-                            <div class="tab-content">
-                                <!-- PESTAÑA CONDUCTORES -->
-                                <div class="tab-pane fade" :class="{ 'show active': tabActiva === 'conductores' }">
-                                    <!-- Filtros y Búsqueda Conductores -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-9">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-search me-1"></i>Buscar Conductor
-                                            </label>
-                                            <div class="search-container">
-                                                <input type="text" class="form-control" v-model="busquedaConductor"
-                                                    @input="buscarConductores"
-                                                    placeholder="Nombre, apellido, documento o placa...">
-                                                <div class="loading-spinner" v-if="buscandoConductor">
-                                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-check-all me-1"></i>Acciones
-                                            </label>
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="d-flex gap-1">
-                                                    <button class="btn btn-outline-primary btn-sm flex-fill"
-                                                        @click="seleccionarTodosConductores">
-                                                        <i class="bi bi-check-all me-1"></i>Seleccionar Todos
-                                                    </button>
-                                                    <button class="btn btn-outline-danger btn-sm flex-fill"
-                                                        @click="limpiarSeleccionConductores">
-                                                        <i class="bi bi-x-circle me-1"></i>Limpiar
-                                                    </button>
-                                                </div>
-                                                <button class="btn btn-primary btn-sm w-100"
-                                                    @click="seleccionarTodosConductoresCompleto"
-                                                    :disabled="buscandoConductor">
-                                                    <i class="bi bi-check-all me-1"></i>Todos ({{ totalConductores }})
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Loading State Conductores -->
-                                    <div v-if="cargandoConductores" class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status"></div>
-                                        <p class="mt-3 text-muted">Cargando conductores...</p>
-                                    </div>
-
-                                    <!-- Empty State Conductores -->
-                                    <div v-if="!cargandoConductores && conductoresFiltrados.length === 0"
-                                        class="text-center py-5">
-                                        <i class="bi bi-search display-1 text-muted"></i>
-                                        <h5 class="mt-3 text-muted">No se encontraron conductores</h5>
-                                        <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
-                                    </div>
-
-                                    <!-- Lista de Conductores -->
-                                    <div v-if="!cargandoConductores && conductoresFiltrados.length > 0" class="row g-3">
-                                        <div v-for="conductor in conductoresFiltrados.slice((paginaActualConductores - 1) * itemsPorPagina, paginaActualConductores * itemsPorPagina)" 
-                                             :key="'conductor-' + conductor.id_conductor"
-                                             class="col-xl-3 col-lg-4 col-md-6">
-                                            <div class="card conductor-card h-100 position-relative"
-                                                :class="{
-                                                    selected: estaSeleccionadoConductor(conductor.id_conductor),
-                                                    'tiene-cupones': conductor.tiene_cupones
-                                                }"
-                                                @click="toggleSeleccionConductor(conductor)">
-
-                                                <!-- Badge de tipo -->
-                                                <span class="badge bg-primary tipo-usuario-badge">
-                                                    <i class="bi bi-car-front me-1"></i>Conductor
-                                                </span>
-
-                                                <!-- Badge de cupones existentes -->
-                                                <span v-if="conductor.tiene_cupones" class="badge badge-cupones-existentes">
-                                                    <i class="bi bi-ticket-perforated me-1"></i>{{ conductor.total_cupones }} cupón{{ conductor.total_cupones > 1 ? 'es' : '' }}
-                                                </span>
-
-
-                                                <div class="card-body p-3">
-                                                    <div class="d-flex align-items-start mb-3">
-                                                        <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-3">
-                                                            <img :src="conductor.foto"
-                                                                class="foto-usuario rounded-circle"
-                                                                :alt="conductor.nombres">
-                                                        </div>
-                                                        <div v-else class="avatar-iniciales me-3">
-                                                            {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="card-title mb-1 fw-bold">
-                                                                {{ conductor.nombres }} {{ conductor.apellido_paterno }}
-                                                            </h6>
-                                                            <p class="text-muted small mb-1">
-                                                                <i class="bi bi-card-text me-1"></i>
-                                                                {{conductor.nro_documento }}
-                                                            </p>
-                                                        </div>
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                :checked="estaSeleccionadoConductor(conductor.id_conductor)"
-                                                                @click.stop="toggleSeleccionConductor(conductor)">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                        <span class="badge bg-info badge-vehiculo">
-                                                            <i class="bi bi-car-front me-1"></i>{{ conductor.placa || 'S/P'
-                                                            }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Paginación Conductores -->
-                                    <nav v-if="totalPaginasConductores > 1" class="mt-4 d-flex justify-content-center">
-                                        <ul class="pagination">
-                                            <li class="page-item" :class="{ disabled: paginaActualConductores === 1 }">
-                                                <a class="page-link" href="#" @click.prevent="paginaAnteriorConductores">Anterior</a>
-                                            </li>
-                                            <li v-for="pagina in totalPaginasConductores" :key="pagina" class="page-item"
-                                                :class="{ active: pagina === paginaActualConductores }">
-                                                <a class="page-link" href="#" @click.prevent="cambiarPaginaConductores(pagina)">{{
-                                                    pagina }}</a>
-                                            </li>
-                                            <li class="page-item" :class="{ disabled: paginaActualConductores === totalPaginasConductores }">
-                                                <a class="page-link" href="#" @click.prevent="paginaSiguienteConductores">Siguiente</a>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                </div>
-
-                                <!-- PESTAÑA CLIENTES -->
-                                <div class="tab-pane fade" :class="{ 'show active': tabActiva === 'clientes' }">
-                                    <!-- Filtros y Búsqueda Clientes -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-9">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-search me-1"></i>Buscar Cliente
-                                            </label>
-                                            <div class="search-container">
-                                                <input type="text" class="form-control" v-model="busquedaCliente"
-                                                    @input="buscarClientes"
-                                                    placeholder="Nombre, apellido o documento...">
-                                                <div class="loading-spinner" v-if="buscandoCliente">
-                                                    <div class="spinner-border spinner-border-sm text-success" role="status">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label fw-semibold">
-                                                <i class="bi bi-check-all me-1"></i>Acciones
-                                            </label>
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="d-flex gap-1">
-                                                    <button class="btn btn-outline-success btn-sm flex-fill"
-                                                        @click="seleccionarTodosClientes">
-                                                        <i class="bi bi-check-all me-1"></i>Seleccionar Todos
-                                                    </button>
-                                                    <button class="btn btn-outline-danger btn-sm flex-fill"
-                                                        @click="limpiarSeleccionClientes">
-                                                        <i class="bi bi-x-circle me-1"></i>Limpiar
-                                                    </button>
-                                                </div>
-                                                <button class="btn btn-success btn-sm w-100"
-                                                    @click="seleccionarTodosClientesCompleto"
-                                                    :disabled="buscandoCliente">
-                                                    <i class="bi bi-check-all me-1"></i>Todos ({{ totalClientes }})
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Loading State Clientes -->
-                                    <div v-if="cargandoClientes" class="text-center py-5">
-                                        <div class="spinner-border text-success" role="status"></div>
-                                        <p class="mt-3 text-muted">Cargando clientes...</p>
-                                    </div>
-
-                                    <!-- Empty State Clientes -->
-                                    <div v-if="!cargandoClientes && clientesFiltrados.length === 0"
-                                        class="text-center py-5">
-                                        <i class="bi bi-search display-1 text-muted"></i>
-                                        <h5 class="mt-3 text-muted">No se encontraron clientes</h5>
-                                        <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
-                                    </div>
-
-                                    <!-- Lista de Clientes -->
-                                    <div v-if="!cargandoClientes && clientesFiltrados.length > 0" class="row g-3">
-                                        <div v-for="cliente in clientesFiltrados.slice((paginaActualClientes - 1) * itemsPorPagina, paginaActualClientes * itemsPorPagina)" 
-                                             :key="'cliente-' + cliente.id"
-                                             class="col-xl-3 col-lg-4 col-md-6">
-                                            <div class="card cliente-card h-100 position-relative"
-                                                :class="{
-                                                    selected: estaSeleccionadoCliente(cliente.id),
-                                                    'tiene-cupones': cliente.tiene_cupones
-                                                }"
-                                                @click="toggleSeleccionCliente(cliente)">
-
-                                                <!-- Badge de tipo -->
-                                                <span class="badge bg-success tipo-usuario-badge">
-                                                    <i class="bi bi-person me-1"></i>Cliente
-                                                </span>
-
-                                                <!-- Badge de cupones existentes -->
-                                                <span v-if="cliente.tiene_cupones" class="badge badge-cupones-existentes">
-                                                    <i class="bi bi-ticket-perforated me-1"></i>{{ cliente.total_cupones }} cupón{{ cliente.total_cupones > 1 ? 'es' : '' }}
-                                                </span>
-
-
-                                                <div class="card-body p-3">
-                                                    <div class="d-flex align-items-start mb-3">
-                                                        <div class="avatar-iniciales me-3">
-                                                            {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
-                                                        </div>
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="card-title mb-1 fw-bold">
-                                                                {{ cliente.nombres }} {{ cliente.apellido_paterno }}
-                                                            </h6>
-                                                            <p class="text-muted small mb-1">
-                                                                <i class="bi bi-card-text me-1"></i>{{
-                                                                cliente.n_documento }}
-                                                            </p>
-                                                        </div>
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                :checked="estaSeleccionadoCliente(cliente.id)"
-                                                                @click.stop="toggleSeleccionCliente(cliente)">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="d-flex flex-wrap gap-1">
-                                                        <span v-if="cliente.telefono" class="badge bg-secondary badge-vehiculo">
-                                                            <i class="bi bi-telephone me-1"></i>{{ cliente.telefono }}
-                                                        </span>
-                                                        <span v-if="cliente.apellido_materno" class="badge bg-light text-dark badge-vehiculo">
-                                                            {{ cliente.apellido_materno }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Paginación Clientes -->
-                                    <nav v-if="totalPaginasClientes > 1" class="mt-4 d-flex justify-content-center">
-                                        <ul class="pagination">
-                                            <li class="page-item" :class="{ disabled: paginaActualClientes === 1 }">
-                                                <a class="page-link" href="#" @click.prevent="paginaAnteriorClientes">Anterior</a>
-                                            </li>
-                                            <li v-for="pagina in totalPaginasClientes" :key="pagina" class="page-item"
-                                                :class="{ active: pagina === paginaActualClientes }">
-                                                <a class="page-link" href="#" @click.prevent="cambiarPaginaClientes(pagina)">{{
-                                                    pagina }}</a>
-                                            </li>
-                                            <li class="page-item" :class="{ disabled: paginaActualClientes === totalPaginasClientes }">
-                                                <a class="page-link" href="#" @click.prevent="paginaSiguienteClientes">Siguiente</a>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Vista de Cupones -->
-        <div v-if="vistaActual === 'cupones'">
-            <!-- Header Simple de Cupones -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h3 class="fw-bold text-dark mb-1">
-                        <i class="bi bi-ticket-perforated me-2 text-primary"></i>Cupones Activos
-                    </h3>
-                    <p class="text-muted mb-0">Todos los cupones creados en el sistema</p>
-                </div>
-                <button class="btn btn-outline-primary" @click="regresarVistaPrincipal">
-                    <i class="bi bi-arrow-left me-2"></i>Regresar
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" @click="irAConductoresClientes">
+                    <i class="bi bi-graph-up me-2"></i>Ver Conductores y Clientes Estadísticas
+                </button>
+                <button class="btn btn-success" @click="abrirModalCrearCupon">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Crear Cupón
                 </button>
             </div>
+        </div>
 
-            <!-- Filtros de Departamento -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h6 class="fw-semibold mb-3">
-                        <i class="bi bi-funnel me-2"></i>Filtrar por Departamento
-                    </h6>
-                    
-                    <!-- Loading State -->
-                    <div v-if="cargandoDepartamentos" class="text-center py-3">
-                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
-                        <span class="ms-2 text-muted">Cargando departamentos...</span>
-                    </div>
+        <!-- Filtros-->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-3">
+                    <i class="bi bi-funnel me-2"></i>Filtros
+                </h6>
+                
+                <!-- Loading State -->
+                <div v-if="cargandoDepartamentos" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                    <span class="ms-2 text-muted">Cargando departamentos...</span>
+                </div>
 
-                    <!-- Badges de Departamento -->
-                    <div v-else class="departamentos-badges-container">
-                        <!-- Badge "Todos" -->
-                        <label class="departamento-badge-item">
-                            <input type="radio" 
-                                   class="departamento-input" 
-                                   name="departamento" 
-                                   value="" 
-                                   v-model="departamentoSeleccionado"
-                                   @change="filtrarCupones">
-                            <span class="departamento-badge">
-                                <i class="bi bi-globe"></i>
-                                Todos
-                            </span>
-                        </label>
+                <div v-else>
+                    <div class="row g-3">
+                        <!-- Filtro por Departamento - Izquierda -->
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold text-muted mb-2" style="font-size: 0.85rem;">
+                                <i class="bi bi-geo-alt me-1"></i>Por Departamento
+                            </label>
+                            <div class="departamentos-badges-container">
+                                <!-- Badge "Todos" -->
+                                <label class="departamento-badge-item">
+                                    <input type="radio" 
+                                           class="departamento-input" 
+                                           name="departamento" 
+                                           value="" 
+                                           v-model="departamentoSeleccionado"
+                                           @change="filtrarCupones">
+                                    <span class="departamento-badge">
+                                        <i class="bi bi-globe"></i>
+                                        Todos
+                                    </span>
+                                </label>
 
-                        <!-- Badges dinámicos de departamentos -->
-                        <label v-for="depto in departamentosHabilitados" 
-                               :key="depto.iddepast" 
-                               class="departamento-badge-item">
-                            <input type="radio" 
-                                   class="departamento-input" 
-                                   name="departamento" 
-                                   :value="depto.iddepast" 
-                                   v-model="departamentoSeleccionado"
-                                   @change="filtrarCupones">
-                            <span class="departamento-badge">
-                                <i class="bi bi-map-marker-alt"></i>
-                                {{ depto.nombre }}
-                            </span>
-                        </label>
+                                <!-- Badges dinámicos de departamentos -->
+                                <label v-for="depto in departamentosHabilitados" 
+                                       :key="depto.iddepast" 
+                                       class="departamento-badge-item">
+                                    <input type="radio" 
+                                           class="departamento-input" 
+                                           name="departamento" 
+                                           :value="depto.iddepast" 
+                                           v-model="departamentoSeleccionado"
+                                           @change="filtrarCupones">
+                                    <span class="departamento-badge">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                        {{ depto.nombre }}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Filtro por Estado - Derecha -->
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-muted mb-2" style="font-size: 0.85rem;">
+                                <i class="bi bi-toggle-on me-1"></i>Por Estado
+                            </label>
+                            <select class="form-select" v-model="estadoSeleccionado" @change="filtrarCupones">
+                                <option value="">Todos</option>
+                                <option value="activo">Activos</option>
+                                <option value="inactivo">Inactivos</option>
+                                <!-- <option value="programado">Programados</option> -->
+                                <!-- <option value="en_curso">En Curso</option> -->
+                                <!-- <option value="expirado">Expirados</option> -->
+                            </select>
+                        </div>
+
+                        <!-- Filtro por Tipo - Derecha -->
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold text-muted mb-2" style="font-size: 0.85rem;">
+                                <i class="bi bi-shield-check me-1"></i>Por Tipo
+                            </label>
+                            <select class="form-select" v-model="tipoSeleccionado" @change="filtrarCupones">
+                                <option value="">Todos</option>
+                                <option value="publico">Públicos</option>
+                                <option value="exclusivo">Exclusivos</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
             <!-- Loading State -->
             <div v-if="cargandoCupones" class="text-center py-5">
@@ -902,10 +130,9 @@
                     <div class="card-body py-5">
                         <i class="bi bi-emoji-frown display-1 text-muted mb-4"></i>
                         <h3 class="text-muted mb-3">Aún no has creado ningún cupón</h3>
-                        <p class="text-muted mb-4">Regresa a la vista principal y usa el botón "Crear Cupón" para
-                            empezar.</p>
-                        <button class="btn btn-primary btn-lg" @click="regresarVistaPrincipal">
-                            <i class="bi bi-arrow-left me-2"></i>Regresar y Crear Cupón
+                        <p class="text-muted mb-4">Usa el botón "Crear Cupón" en la parte superior para empezar.</p>
+                        <button class="btn btn-primary btn-lg" @click="abrirModalCrearCupon">
+                            <i class="bi bi-plus-circle me-2"></i>Crear Primer Cupón
                         </button>
                     </div>
                 </div>
@@ -926,14 +153,17 @@
             <div v-if="!cargandoCupones && cuponesFiltrados.length > 0" class="row g-4">
                 <div v-for="cupon in cuponesFiltrados" :key="cupon.id" class="col-lg-4 col-md-6">
                     <div class="card cupon-card h-100 shadow-sm position-relative">
-                        <!-- Estado del cupón -->
-                        <span class="cupon-estado"
-                            :class="cupon.activo ? 'bg-success text-white' : 'bg-danger text-white'">
-                            <i class="bi" :class="cupon.activo ? 'bi-check-circle' : 'bi-x-circle'"></i>
-                            {{ cupon.activo ? 'Activo' : 'Inactivo' }}
-                        </span>
+                        <!-- Badge de Estado Activo/Inactivo - Arriba derecha -->
+                        <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                            <span class="badge"
+                                :class="cupon.activo == 1 || cupon.activo === true ? 'bg-success' : 'bg-danger'"
+                                style="font-size: 0.75rem; padding: 0.4rem 0.7rem;">
+                                <i class="bi" :class="cupon.activo == 1 || cupon.activo === true ? 'bi-check-circle' : 'bi-x-circle'"></i>
+                                {{ cupon.activo == 1 || cupon.activo === true ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </div>
 
-                        <!-- Badge de Departamento -->
+                        <!-- Badge de Departamento - Arriba izquierda -->
                         <span class="cupon-departamento-badge"
                             :class="cupon.departamento_id ? 'badge-regional' : 'badge-nacional'">
                             <i class="bi" :class="cupon.departamento_id ? 'bi-geo-alt-fill' : 'bi-globe'"></i>
@@ -952,58 +182,88 @@
                             <i class="bi bi-image-alt display-2 text-white opacity-50"></i>
                         </div>
 
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column" style="padding: 1rem;">
                             <h5 class="cupon-title">{{ cupon.titulo }}</h5>
                                 
                             <p class="cupon-description">{{ cupon.descripcion || 'Sin descripción' }}</p>
 
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="cupon-valor">
-                                    {{ cupon.tipo_descuento === 'porcentaje' ? cupon.valor + '%' : 'S/ ' + cupon.valor
-                                    }}
+                                    {{ cupon.tipo_descuento === 'porcentaje' ? cupon.valor + '%' : 'S/ ' + cupon.valor }}
                                 </div>
                                 <div class="text-end">
-                                    <small class="text-muted d-block">
+                                    <!-- Mostrar "Acceso Público" para cupones públicos -->
+                                    <small v-if="cupon.tipo_cupon === 'publico'" class="badge bg-info text-white">
+                                        <i class="bi bi-globe2 me-1"></i>
+                                        Acceso Público
+                                    </small>
+                                    <!-- Mostrar usuarios asignados para cupones exclusivos -->
+                                    <small v-else class="text-muted d-block">
                                         <i class="bi bi-people me-1"></i>
                                         <span class="usuarios-link" @click="verUsuariosCupon(cupon.id)">
                                             Ver {{ cupon.usuarios_asignados || cupon.conductores_asignados }} usuario(s)
                                         </span>
                                     </small>
-                                    <div class="mt-2 d-flex gap-2">
-                                        <button class="btn btn-sm btn-outline-primary flex-fill"
-                                                @click="editarCupon(cupon)"
-                                                title="Editar cupón">
-                                            <i class="bi bi-pencil-square me-1"></i>Editar
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger flex-fill"
-                                                @click="eliminarCupon(cupon)"
-                                                title="Eliminar cupón">
-                                            <i class="bi bi-trash me-1"></i>Eliminar
-                                        </button>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-2 mb-2">
+                                <div class="row g-2 align-items-center">
+                                    <!-- Fechas a la izquierda -->
+                                    <div class="col-6">
+                                        <div class="d-flex flex-column gap-1">
+                                            <div>
+                                                <small class="text-success d-block">
+                                                    <i class="bi bi-calendar-check me-1"></i>
+                                                    <strong>Inicio:</strong>
+                                                </small>
+                                                <small class="text-muted">{{ cupon.fecha_inicio }}</small>
+                                            </div>
+                                            <div>
+                                                <small class="text-danger d-block">
+                                                    <i class="bi bi-calendar-x me-1"></i>
+                                                    <strong>Fin:</strong>
+                                                </small>
+                                                <small class="text-muted">{{ cupon.fecha_fin }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Contador a la derecha -->
+                                    <div class="col-6">
+                                        <div class="d-flex flex-column align-items-end gap-2">
+                                            <!-- Countdown boxes -->
+                                            <div class="d-flex gap-1">
+                                                <div class="countdown-box">
+                                                    <div class="countdown-value">{{ obtenerTiempoRestante(cupon).dias }}</div>
+                                                    <div class="countdown-label">d</div>
+                                                </div>
+                                                <div class="countdown-box">
+                                                    <div class="countdown-value">{{ obtenerTiempoRestante(cupon).horas }}</div>
+                                                    <div class="countdown-label">h</div>
+                                                </div>
+                                                <div class="countdown-box">
+                                                    <div class="countdown-value">{{ obtenerTiempoRestante(cupon).minutos }}</div>
+                                                    <div class="countdown-label">m</div>
+                                                </div>
+                                                <div class="countdown-box">
+                                                    <div class="countdown-value">{{ obtenerTiempoRestante(cupon).segundos }}</div>
+                                                    <div class="countdown-label">s</div>
+                                                </div>
+                                            </div>
+                                            <!-- Badge de Estado Temporal debajo del countdown -->
+                                            <span class="badge" 
+                                                  :class="obtenerClaseEstadoTemporal(cupon)"
+                                                  style="font-size: 0.7rem; padding: 0.35rem 0.6rem;">
+                                                <i class="bi me-1" :class="obtenerIconoEstadoTemporal(cupon)"></i>
+                                                {{ obtenerEstadoTemporal(cupon) }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="border-top pt-3">
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <small class="text-success d-block">
-                                            <i class="bi bi-calendar-check me-1"></i>
-                                            <strong>Inicio:</strong>
-                                        </small>
-                                        <small class="text-muted">{{ cupon.fecha_inicio }}</small>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-danger d-block">
-                                            <i class="bi bi-calendar-x me-1"></i>
-                                            <strong>Fin:</strong>
-                                        </small>
-                                        <small class="text-muted">{{ cupon.fecha_fin }}</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div v-if="cupon.limite_por_conductor || cupon.limite_total" class="mt-3 pt-2 border-top">
+                            <div v-if="cupon.limite_por_conductor || cupon.limite_total" class="mb-2 pb-2 border-bottom">
                                 <div class="row g-2" v-if="cupon.limite_por_conductor">
                                     <div class="col-12">
                                         <small class="text-info d-block">
@@ -1021,11 +281,37 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="mt-2">
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <button class="btn btn-sm btn-outline-info w-100"
+                                                @click="verDetallesCupon(cupon)"
+                                                title="Ver detalles del cupón">
+                                            <i class="bi bi-eye me-1"></i>Ver Detalles
+                                        </button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-sm btn-outline-primary w-100"
+                                                @click="editarCupon(cupon)"
+                                                title="Editar cupón">
+                                            <i class="bi bi-pencil-square me-1"></i>Editar
+                                        </button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-sm btn-outline-danger w-100"
+                                                @click="eliminarCupon(cupon)"
+                                                title="Eliminar cupón">
+                                            <i class="bi bi-trash me-1"></i>Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Modal Crear/Editar Cupón -->
         <div class="modal fade" id="modalCrearCupon" tabindex="-1">
@@ -1073,16 +359,40 @@
                                                 <select class="form-select" name="departamento_id"
                                                     v-model="formData.departamento_id">
                                                     <option value="">Nacional (Todos los departamentos)</option>
-                                                    <option v-for="depto in departamentosHabilitados" 
-                                                            :key="depto.iddepast" 
+                                                    <option v-for="depto in departamentosHabilitados"
+                                                            :key="depto.iddepast"
                                                             :value="depto.iddepast">
                                                         {{ depto.nombre }}
                                                     </option>
                                                 </select>
                                                 <small class="form-text text-muted">
                                                     <i class="bi bi-info-circle me-1"></i>
-                                                    Selecciona "Nacional" para que el cupón esté disponible en todos los departamentos, 
+                                                    Selecciona "Nacional" para que el cupón esté disponible en todos los departamentos,
                                                     o elige un departamento específico para limitar su alcance.
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="form-label fw-semibold">
+                                                    <i class="bi bi-shield-check me-1"></i>Tipo de Cupón *
+                                                </label>
+                                                <select class="form-select" name="tipo_cupon"
+                                                    v-model="formData.tipo_cupon" @change="onTipoCuponChange" required>
+                                                    <option value="exclusivo">
+                                                        🔒 Exclusivo - Solo para conductores/clientes logueados
+                                                    </option>
+                                                    <option value="publico">
+                                                        🌐 Público - Para todos (sin necesidad de login)
+                                                    </option>
+                                                </select>
+                                                <small class="form-text" :class="formData.tipo_cupon === 'publico' ? 'text-success' : 'text-info'">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    <span v-if="formData.tipo_cupon === 'publico'">
+                                                        <strong>Cupón Público:</strong> Visible para todos sin login. Ideal para descuentos en establecimientos (ópticas, servicios, etc.).
+                                                    </span>
+                                                    <span v-else>
+                                                        <strong>Cupón Exclusivo:</strong> Solo para usuarios logueados que selecciones a continuación.
+                                                    </span>
                                                 </small>
                                             </div>
 
@@ -1201,16 +511,16 @@
                                                 </div>
                                             </div>
 
-                                            <!-- NUEVO: Resumen de selección -->
-                                            <div class="mt-4 p-3 bg-light rounded">
+                                            <!-- NUEVO: Resumen de selección (solo para cupones exclusivos) -->
+                                            <div v-if="formData.tipo_cupon === 'exclusivo'" class="mt-4 p-3 bg-light rounded">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <h6 class="fw-semibold mb-0">
                                                         <i class="bi bi-people me-1"></i>Usuarios Seleccionados
                                                     </h6>
-                                                    <button v-if="modoEdicion" type="button" class="btn btn-sm btn-outline-primary" 
+                                                    <button type="button" class="btn btn-sm btn-primary"
                                                             @click="abrirModalAgregarUsuarios"
-                                                            title="Agregar más usuarios">
-                                                        <i class="bi bi-person-plus me-1"></i>Agregar más
+                                                            title="Seleccionar usuarios">
+                                                        <i class="bi bi-person-plus-fill me-1"></i>Seleccionar Usuarios
                                                     </button>
                                                 </div>
                                                 <div class="row">
@@ -1231,11 +541,21 @@
                                                 <small class="text-muted">
                                                     <strong>Total:</strong> {{ totalUsuariosSeleccionados }} usuario(s)
                                                 </small>
-                                                
-                                                <!-- Mensaje informativo en modo edición -->
-                                                <div v-if="modoEdicion" class="alert alert-info mt-2 mb-0 py-2" style="font-size: 0.85rem;">
-                                                    <i class="bi bi-info-circle me-1"></i>
-                                                    Haz clic en "Agregar más" para seleccionar usuarios adicionales
+                                            </div>
+
+                                            <!-- Mensaje informativo para cupones públicos -->
+                                            <div v-if="formData.tipo_cupon === 'publico'" class="mt-4 p-3 bg-success bg-opacity-10 rounded border border-success">
+                                                <div class="d-flex align-items-start">
+                                                    <i class="bi bi-globe2 text-success fs-3 me-3"></i>
+                                                    <div>
+                                                        <h6 class="fw-semibold text-success mb-2">
+                                                            <i class="bi bi-check-circle me-1"></i>Cupón Público Activado
+                                                        </h6>
+                                                        <p class="mb-0 small text-muted">
+                                                            Este cupón será visible para <strong>todos los usuarios</strong> sin necesidad de iniciar sesión.
+                                                            No es necesario seleccionar conductores o clientes específicos.
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1248,7 +568,9 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-circle me-2"></i>Cancelar
                         </button>
-                        <button type="submit" class="btn btn-primary" :disabled="creandoCupon || totalUsuariosSeleccionados === 0" @click="modoEdicion ? actualizarCupon() : crearCupon()">
+                        <button type="submit" class="btn btn-primary"
+                                :disabled="creandoCupon || (formData.tipo_cupon === 'exclusivo' && totalUsuariosSeleccionados === 0)"
+                                @click="modoEdicion ? actualizarCupon() : crearCupon()">
                             <span v-if="creandoCupon" class="spinner-border spinner-border-sm me-2"></span>
                             <i v-if="!creandoCupon" class="bi bi-check-circle me-2"></i>
                             {{ creandoCupon ? (modoEdicion ? 'Actualizando...' : 'Creando...') : (modoEdicion ? 'Actualizar Cupón' : 'Crear Cupón') }}
@@ -1322,32 +644,33 @@
                                     <div class="row g-3">
                                         <div v-for="conductor in conductoresDisponiblesPaginados" :key="'disp-conductor-' + conductor.id_conductor"
                                              class="col-md-6 col-lg-4">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" 
-                                                           :id="'check-conductor-' + conductor.id_conductor"
-                                                           :value="conductor"
-                                                           v-model="nuevosConductoresSeleccionados">
-                                                    <label class="form-check-label w-100" :for="'check-conductor-' + conductor.id_conductor">
-                                                        <div class="d-flex align-items-center">
-                                                            <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-2">
-                                                                <img :src="conductor.foto" class="rounded-circle" 
-                                                                     style="width: 40px; height: 40px; object-fit: cover;" 
-                                                                     :alt="conductor.nombres">
-                                                            </div>
-                                                            <div v-else class="me-2">
-                                                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
-                                                                     style="width: 40px; height: 40px; font-size: 14px;">
-                                                                    {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               :id="'check-conductor-' + conductor.id_conductor"
+                                                               :value="conductor"
+                                                               v-model="nuevosConductoresSeleccionados">
+                                                        <label class="form-check-label w-100" :for="'check-conductor-' + conductor.id_conductor">
+                                                            <div class="d-flex align-items-center">
+                                                                <div v-if="conductor.foto && conductor.foto.trim() !== ''" class="me-2">
+                                                                    <img :src="conductor.foto" class="rounded-circle" 
+                                                                         style="width: 40px; height: 40px; object-fit: cover;" 
+                                                                         :alt="conductor.nombres">
+                                                                </div>
+                                                                <div v-else class="me-2">
+                                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                                         style="width: 40px; height: 40px; font-size: 14px;">
+                                                                        {{ obtenerIniciales(conductor.nombres, conductor.apellido_paterno) }}
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex-grow-1">
+                                                                    <div class="fw-semibold">{{ conductor.nombres }} {{ conductor.apellido_paterno }}</div>
+                                                                    <small class="text-muted">{{ conductor.nro_documento }}</small>
                                                                 </div>
                                                             </div>
-                                                            <div class="flex-grow-1">
-                                                                <div class="fw-semibold">{{ conductor.nombres }} {{ conductor.apellido_paterno }}</div>
-                                                                <small class="text-muted">{{ conductor.nro_documento }}</small>
-                                                            </div>
-                                                        </div>
-                                                    </label>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1405,27 +728,28 @@
                                     <div class="row g-3">
                                         <div v-for="cliente in clientesDisponiblesPaginados" :key="'disp-cliente-' + cliente.id"
                                              class="col-md-6 col-lg-4">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" 
-                                                           :id="'check-cliente-' + cliente.id"
-                                                           :value="cliente"
-                                                           v-model="nuevosClientesSeleccionados">
-                                                    <label class="form-check-label w-100" :for="'check-cliente-' + cliente.id">
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="me-2">
-                                                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
-                                                                     style="width: 40px; height: 40px; font-size: 14px;">
-                                                                    {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               :id="'check-cliente-' + cliente.id"
+                                                               :value="cliente"
+                                                               v-model="nuevosClientesSeleccionados">
+                                                        <label class="form-check-label w-100" :for="'check-cliente-' + cliente.id">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="me-2">
+                                                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+                                                                         style="width: 40px; height: 40px; font-size: 14px;">
+                                                                        {{ obtenerIniciales(cliente.nombres, cliente.apellido_paterno) }}
+                                                                    </div>
+                                                                </div>
+                                                                <div class="flex-grow-1">
+                                                                    <div class="fw-semibold">{{ cliente.nombres }} {{ cliente.apellido_paterno }}</div>
+                                                                    <small class="text-muted">{{ cliente.n_documento }}</small>
                                                                 </div>
                                                             </div>
-                                                            <div class="flex-grow-1">
-                                                                <div class="fw-semibold">{{ cliente.nombres }} {{ cliente.apellido_paterno }}</div>
-                                                                <small class="text-muted">{{ cliente.n_documento }}</small>
-                                                            </div>
-                                                        </div>
-                                                    </label>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1585,8 +909,7 @@
                 data: function () {
                     return {
                         // DATOS PRINCIPALES
-                        vistaActual: 'principal', // principal/cupones
-                        mostrarEstadisticas: true,
+                        mostrarEstadisticas: false,
                         tabActiva: 'conductores', // conductores/clientes
 
                         // DATOS DE CONDUCTORES
@@ -1631,6 +954,8 @@
                         departamentosHabilitados: [],
                         cargandoDepartamentos: false,
                         departamentoSeleccionado: '', // '' = todos
+                        estadoSeleccionado: '', // '' = todos, 'activo', 'inactivo', 'programado', 'en_curso', 'expirado'
+                        tipoSeleccionado: '', // '' = todos, 'publico', 'exclusivo'
 
                         // FORMULARIO
                         bannerPreview: null,
@@ -1649,7 +974,8 @@
                             limitePorConductor: '',
                             limiteTotal: '',
                             activo: true,
-                            departamento_id: '' // '' = nacional, ID = específico
+                            departamento_id: '', // '' = nacional, ID = específico
+                            tipo_cupon: 'exclusivo' // 'publico' o 'exclusivo'
                         },
                         errores: {}
                     }
@@ -1690,22 +1016,53 @@
                         return this.conductoresSeleccionados.length + this.clientesSeleccionados.length;
                     },
 
-                    // CUPONES FILTRADOS POR DEPARTAMENTO
+                    // CUPONES FILTRADOS POR DEPARTAMENTO, ESTADO Y TIPO
                     cuponesFiltrados: function () {
-                        if (!this.departamentoSeleccionado) {
-                            return this.cupones;
-                        }
-                        return this.cupones.filter(cupon => {
-                            return cupon.departamento_id == this.departamentoSeleccionado;
+                        var self = this;
+                        return this.cupones.filter(function(cupon) {
+                            // Filtro por departamento
+                            if (self.departamentoSeleccionado && cupon.departamento_id != self.departamentoSeleccionado) {
+                                return false;
+                            }
+
+                            // Filtro por estado (activo/inactivo)
+                            if (self.estadoSeleccionado) {
+                                if (self.estadoSeleccionado === 'activo' && (cupon.activo != 1 && cupon.activo !== true)) {
+                                    return false;
+                                }
+                                if (self.estadoSeleccionado === 'inactivo' && (cupon.activo == 1 || cupon.activo === true)) {
+                                    return false;
+                                }
+                                
+                                // Filtro por estado temporal (programado/en_curso/expirado)
+                                var estadoTemporal = self.obtenerEstadoTemporal(cupon);
+                                if (self.estadoSeleccionado === 'programado' && estadoTemporal !== 'PROGRAMADO') {
+                                    return false;
+                                }
+                                if (self.estadoSeleccionado === 'en_curso' && estadoTemporal !== 'EN CURSO') {
+                                    return false;
+                                }
+                                if (self.estadoSeleccionado === 'expirado' && estadoTemporal !== 'EXPIRADO') {
+                                    return false;
+                                }
+                            }
+
+                            // Filtro por tipo (publico/exclusivo)
+                            if (self.tipoSeleccionado && cupon.tipo_cupon !== self.tipoSeleccionado) {
+                                return false;
+                            }
+
+                            return true;
                         });
                     }
                 },
                 mounted: function () {
-                    this.cargarConductores();
+                    this.cargarCupones();
                     this.cargarDepartamentosHabilitados();
                     this.modal = new bootstrap.Modal(document.getElementById('modalCrearCupon'));
                     this.modalUsuarios = new bootstrap.Modal(document.getElementById('modalUsuariosCupon'));
                     this.inicializarFechas();
+                    this.iniciarContadorTiempoReal();
                 },
                 methods: {
                     // ============ MÉTODOS PARA PESTAÑAS ============
@@ -1795,6 +1152,89 @@
                         var resultado = iniciales || 'NN';
                         console.log('Iniciales para:', nombres, apellido, '→', resultado); // Debug temporal
                         return resultado;
+                    },
+
+                    // Métodos para el estado temporal y contador
+                    obtenerEstadoTemporal: function(cupon) {
+                        var ahora = new Date();
+                        var fechaInicio = new Date(cupon.fecha_inicio);
+                        var fechaFin = new Date(cupon.fecha_fin);
+
+                        if (ahora < fechaInicio) {
+                            return 'PROGRAMADO';
+                        } else if (ahora >= fechaInicio && ahora <= fechaFin) {
+                            return 'EN CURSO';
+                        } else {
+                            return 'EXPIRADO';
+                        }
+                    },
+
+                    obtenerClaseEstadoTemporal: function(cupon) {
+                        var estado = this.obtenerEstadoTemporal(cupon);
+                        if (estado === 'PROGRAMADO') {
+                            return 'bg-info';
+                        } else if (estado === 'EN CURSO') {
+                            return 'bg-success';
+                        } else {
+                            return 'bg-danger';
+                        }
+                    },
+
+                    obtenerIconoEstadoTemporal: function(cupon) {
+                        var estado = this.obtenerEstadoTemporal(cupon);
+                        if (estado === 'PROGRAMADO') {
+                            return 'bi-clock-history';
+                        } else if (estado === 'EN CURSO') {
+                            return 'bi-lightning-charge-fill';
+                        } else {
+                            return 'bi-x-octagon-fill';
+                        }
+                    },
+
+                    obtenerTiempoRestante: function(cupon) {
+                        var ahora = new Date();
+                        var fechaInicio = new Date(cupon.fecha_inicio);
+                        var fechaFin = new Date(cupon.fecha_fin);
+                        var fechaObjetivo;
+
+                        // Si aún no ha iniciado, contar hasta el inicio
+                        if (ahora < fechaInicio) {
+                            fechaObjetivo = fechaInicio;
+                        } 
+                        // Si está en curso, contar hasta el fin
+                        else if (ahora >= fechaInicio && ahora <= fechaFin) {
+                            fechaObjetivo = fechaFin;
+                        } 
+                        // Si ya finalizó, mostrar ceros
+                        else {
+                            return { dias: 0, horas: 0, minutos: 0, segundos: 0 };
+                        }
+
+                        var diferencia = fechaObjetivo - ahora;
+                        
+                        if (diferencia <= 0) {
+                            return { dias: 0, horas: 0, minutos: 0, segundos: 0 };
+                        }
+
+                        var dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+                        var horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        var minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+                        var segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+
+                        return {
+                            dias: dias,
+                            horas: horas,
+                            minutos: minutos,
+                            segundos: segundos
+                        };
+                    },
+
+                    iniciarContadorTiempoReal: function() {
+                        var self = this;
+                        // Actualizar cada segundo
+                        setInterval(function() {
+                            self.$forceUpdate(); // Forzar actualización de Vue
+                        }, 1000);
                     },
 
                     estaSeleccionadoConductor: function (id) {
@@ -1986,20 +1426,12 @@
                     },
 
                     // ============ MÉTODOS GENERALES ============
-                    toggleEstadisticas: function() {
-                        this.mostrarEstadisticas = !this.mostrarEstadisticas;
+                    irAConductoresClientes: function() {
+                        // Redirigir a la nueva página de conductores y clientes
+                        window.location.href = _URL + '/cliente/cupones/conductores-clientes';
                     },
 
                     // Vista de cupones
-                    mostrarCupones: function () {
-                        this.vistaActual = 'cupones';
-                        if (!this.cupones.length && !this.cargandoCupones) {
-                            this.cargarCupones();
-                        }
-                    },
-                    regresarVistaPrincipal: function () {
-                        this.vistaActual = 'principal';
-                    },
 
                     cargarCupones: function () {
                         var self = this;
@@ -2012,6 +1444,9 @@
                                 }
                                 self.cupones = data;
                                 self.cargandoCupones = false;
+                                
+                                // Verificar y actualizar cupones expirados automáticamente
+                                self.verificarYActualizarCuponesExpirados();
                             })
                             .catch(error => {
                                 console.error('Error al cargar cupones:', error);
@@ -2022,6 +1457,51 @@
                                     text: 'No se pudieron cargar los cupones: ' + error.message
                                 });
                             });
+                    },
+
+                    verificarYActualizarCuponesExpirados: function() {
+                        var self = this;
+                        var ahora = new Date();
+                        var cuponesAActualizar = [];
+
+                        // Buscar cupones que estén activos pero ya expiraron
+                        self.cupones.forEach(function(cupon) {
+                            // Comparar con == para manejar tanto string "1" como número 1
+                            if (cupon.activo == 1 || cupon.activo === true) {
+                                var fechaFin = new Date(cupon.fecha_fin);
+                                if (ahora > fechaFin) {
+                                    cuponesAActualizar.push(cupon.id);
+                                }
+                            }
+                        });
+
+                        // Si hay cupones para actualizar, enviar al backend
+                        if (cuponesAActualizar.length > 0) {
+                            console.log('Cupones a desactivar:', cuponesAActualizar);
+                            
+                            fetch(_URL + '/ajs/cupones/desactivar-expirados', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ cupones_ids: cuponesAActualizar })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log('Cupones expirados actualizados:', data);
+                                    // Actualizar los cupones en el array local sin recargar
+                                    cuponesAActualizar.forEach(function(idCupon) {
+                                        var cupon = self.cupones.find(c => c.id === idCupon);
+                                        if (cupon) {
+                                            // Usar Vue.set para asegurar reactividad
+                                            self.$set(cupon, 'activo', 0);
+                                        }
+                                    });
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error al actualizar cupones expirados:', error);
+                            });
+                        }
                     },
 
                     cargarDepartamentosHabilitados: function () {
@@ -2074,10 +1554,182 @@
                             });
                     },
 
+                    verDetallesCupon: function(cupon) {
+                        var tipoCuponTexto = cupon.tipo_cupon === 'publico' ? 'Público (sin login)' : 'Exclusivo (con login)';
+                        var departamentoTexto = cupon.departamento_id && cupon.departamento ? cupon.departamento.nombre : 'Nacional (Todos los departamentos)';
+                        
+                        // Construir HTML de la imagen si existe
+                        var imagenHtml = '';
+                        if (cupon.imagen_banner) {
+                            imagenHtml = `
+                                <div class="text-center mb-4">
+                                    <img src="/arequipago/public/${cupon.imagen_banner}" 
+                                         alt="Banner del cupón" 
+                                         style="max-width: 100%; height: auto; max-height: 300px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                </div>
+                            `;
+                        } else {
+                            imagenHtml = `
+                                <div class="text-center mb-4">
+                                    <div style="width: 100%; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                        <i class="bi bi-image-alt display-1 text-white opacity-50"></i>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        var htmlDetalles = `
+                            <div class="text-start">
+                                ${imagenHtml}
+                                
+                                <div class="mb-4 pb-3 border-bottom">
+                                    <h5 class="text-primary mb-2"><i class="bi bi-ticket-perforated me-2"></i>${cupon.titulo}</h5>
+                                    <p class="text-muted mb-0" style="line-height: 1.6;">${cupon.descripcion || 'Sin descripción'}</p>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-tag text-primary me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Tipo de Descuento:</strong>
+                                                <span class="text-muted">${cupon.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto Fijo'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-cash-coin text-success me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Valor del Descuento:</strong>
+                                                <span class="text-success fw-bold" style="font-size: 1.1rem;">${cupon.tipo_descuento === 'porcentaje' ? cupon.valor + '%' : 'S/ ' + cupon.valor}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-calendar-check text-success me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Fecha de Inicio:</strong>
+                                                <span class="text-muted">${cupon.fecha_inicio}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-calendar-x text-danger me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Fecha de Fin:</strong>
+                                                <span class="text-muted">${cupon.fecha_fin}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-shield-check text-info me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Tipo de Cupón:</strong>
+                                                <span class="text-muted">${tipoCuponTexto}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-geo-alt text-warning me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Departamento:</strong>
+                                                <span class="text-muted">${departamentoTexto}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-person-lines-fill text-info me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Límite por Usuario:</strong>
+                                                <span class="text-muted">${cupon.limite_por_conductor || 'Ilimitado'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-collection text-warning me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Límite Total de Usos:</strong>
+                                                <span class="text-muted">${cupon.limite_total || 'Ilimitado'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-people text-primary me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Usuarios Asignados:</strong>
+                                                <span class="text-muted">${cupon.usuarios_asignados || cupon.conductores_asignados || 0} usuario(s)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-check-circle me-2 mt-1" style="font-size: 1.2rem;"></i>
+                                            <div>
+                                                <strong class="d-block mb-1">Estado del Cupón:</strong>
+                                                <span class="badge ${cupon.activo ? 'bg-success' : 'bg-danger'}" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+                                                    ${cupon.activo ? '✓ Activo' : '✗ Inactivo'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        Swal.fire({
+                            title: '<i class="bi bi-info-circle-fill me-2"></i>Detalles del Cupón',
+                            html: htmlDetalles,
+                            width: '900px',
+                            padding: '2rem',
+                            confirmButtonText: '<i class="bi bi-x-circle me-2"></i>Cerrar',
+                            confirmButtonColor: '#6f42c1',
+                            customClass: {
+                                popup: 'swal-wide',
+                                title: 'swal-title-custom'
+                            },
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInDown animate__faster'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutUp animate__faster'
+                            }
+                        });
+                    },
+
                     // ============ MÉTODOS DEL FORMULARIO ============
                     abrirModalCrearCupon: function() {
-                        this.limpiarFormulario();
-                        this.modal.show();
+                        var self = this;
+                        self.limpiarFormulario();
+                        
+                        // Cargar conductores y clientes si no están cargados
+                        if (self.conductores.length === 0) {
+                            self.cargarConductores();
+                        }
+                        if (self.clientes.length === 0) {
+                            self.cargarClientes();
+                        }
+                        
+                        self.modal.show();
                     },
 
                     editarCupon: function(cupon) {
@@ -2106,12 +1758,60 @@
                     abrirModalAgregarUsuarios: function() {
                         var self = this;
                         
-                        // Abrir modal de agregar usuarios
-                        var modalAgregarUsuarios = new bootstrap.Modal(document.getElementById('modalAgregarUsuarios'));
-                        modalAgregarUsuarios.show();
+                        // Cargar conductores y clientes si no están cargados
+                        var promesas = [];
                         
-                        // Cargar usuarios disponibles (que no tienen este cupón)
-                        self.cargarUsuariosDisponibles();
+                        if (self.conductores.length === 0) {
+                            promesas.push(
+                                fetch(_URL + '/ajs/cupones/buscar/usuarios', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: 'term=&tipo=conductor'
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    data.forEach(conductor => {
+                                        conductor.tiene_cupones = conductor.tiene_cupones || false;
+                                        conductor.total_cupones = conductor.total_cupones || 0;
+                                    });
+                                    self.conductores = data;
+                                })
+                            );
+                        }
+                        
+                        if (self.clientes.length === 0) {
+                            promesas.push(
+                                fetch(_URL + '/ajs/cupones/buscar/usuarios', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: 'term=&tipo=cliente'
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    data.forEach(cliente => {
+                                        cliente.tiene_cupones = cliente.tiene_cupones || false;
+                                        cliente.total_cupones = cliente.total_cupones || 0;
+                                    });
+                                    self.clientes = data;
+                                })
+                            );
+                        }
+                        
+                        // Esperar a que se carguen los datos antes de abrir el modal
+                        Promise.all(promesas).then(function() {
+                            // Abrir modal de agregar usuarios
+                            var modalAgregarUsuarios = new bootstrap.Modal(document.getElementById('modalAgregarUsuarios'));
+                            modalAgregarUsuarios.show();
+                            
+                            // Cargar usuarios disponibles (que no tienen este cupón)
+                            self.cargarUsuariosDisponibles();
+                        }).catch(function(error) {
+                            console.error('Error al cargar usuarios:', error);
+                            // Abrir el modal de todos modos
+                            var modalAgregarUsuarios = new bootstrap.Modal(document.getElementById('modalAgregarUsuarios'));
+                            modalAgregarUsuarios.show();
+                            self.cargarUsuariosDisponibles();
+                        });
                     },
 
                     cargarUsuariosDisponibles: function() {
@@ -2217,7 +1917,8 @@
                             limitePorConductor: '',
                             limiteTotal: '',
                             activo: true,
-                            departamento_id: ''
+                            departamento_id: '',
+                            tipo_cupon: 'exclusivo'
                         };
                         this.errores = {};
                         this.bannerPreview = null;
@@ -2226,6 +1927,14 @@
                             this.$refs.bannerInput.value = '';
                         }
                         this.inicializarFechas();
+                    },
+
+                    onTipoCuponChange: function() {
+                        // Si cambia a público, limpiar selecciones de usuarios
+                        if (this.formData.tipo_cupon === 'publico') {
+                            this.conductoresSeleccionados = [];
+                            this.clientesSeleccionados = [];
+                        }
                     },
 
                     inicializarFechas: function () {
@@ -2269,8 +1978,9 @@
                             }
                         }
 
-                        if (this.totalUsuariosSeleccionados === 0) {
-                            this.errores.usuarios = 'Debe seleccionar al menos un usuario';
+                        // Validar usuarios solo si es cupón exclusivo
+                        if (this.formData.tipo_cupon === 'exclusivo' && this.totalUsuariosSeleccionados === 0) {
+                            this.errores.usuarios = 'Debe seleccionar al menos un usuario para cupones exclusivos';
                         }
 
                         return Object.keys(this.errores).length === 0;
@@ -2333,8 +2043,9 @@
                         formData.set('limiteTotal', this.formData.limiteTotal);
                         formData.set('activo', this.formData.activo ? '1' : '0');
                         formData.set('departamento_id', this.formData.departamento_id);
+                        formData.set('tipo_cupon', this.formData.tipo_cupon);
 
-                        // Agregar conductores y clientes
+                        // Agregar conductores y clientes (vacíos si es cupón público)
                         var conductoresIds = this.conductoresSeleccionados.map(c => c.id_conductor);
                         var clientesIds = this.clientesSeleccionados.map(c => c.id);
                         
@@ -2363,10 +2074,8 @@
                                     self.conductoresSeleccionados = [];
                                     self.clientesSeleccionados = [];
 
-                                    // Si estamos en la vista de cupones, recargar
-                                    if (self.vistaActual === 'cupones') {
-                                        self.cargarCupones();
-                                    }
+                                    // Recargar cupones
+                                    self.cargarCupones();
                                     self.cupones = [];
 
                                 } else {
@@ -2494,7 +2203,9 @@
                                     fechaFin: result.cupon.fecha_fin,
                                     limitePorConductor: result.cupon.limite_usos_conductor || '',
                                     limiteTotal: result.cupon.limite_usos_total || '',
-                                    activo: result.cupon.activo == 1
+                                    activo: result.cupon.activo == 1,
+                                    departamento_id: result.cupon.departamento_id || '',
+                                    tipo_cupon: result.cupon.tipo_cupon || 'exclusivo'
                                 };
 
                                 // Configurar banner si existe
@@ -2562,6 +2273,8 @@
                         formData.set('limitePorConductor', this.formData.limitePorConductor);
                         formData.set('limiteTotal', this.formData.limiteTotal);
                         formData.set('activo', this.formData.activo ? '1' : '0');
+                        formData.set('departamento_id', this.formData.departamento_id || '');
+                        formData.set('tipo_cupon', this.formData.tipo_cupon);
 
                         // Agregar conductores y clientes
                         var conductoresIds = this.conductoresSeleccionados.map(c => c.id_conductor);
@@ -2592,10 +2305,8 @@
                                 self.conductoresSeleccionados = [];
                                 self.clientesSeleccionados = [];
 
-                                // Si estamos en la vista de cupones, recargar
-                                if (self.vistaActual === 'cupones') {
-                                    self.cargarCupones();
-                                }
+                                // Recargar cupones
+                                self.cargarCupones();
                                 self.cupones = [];
 
                             } else {

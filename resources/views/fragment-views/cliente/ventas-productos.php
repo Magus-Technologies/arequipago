@@ -2136,16 +2136,35 @@ if (isset($_GET["guia"])) {
                                 const item = document.createElement("li");
                                 item.classList.add("dropdown-item");
 
+                                // 🔹 Determinar nombre de oficina
+                                let nombreOficina = '';
+                                let colorOficina = '';
+                                if (producto.oficina == 1) {
+                                    nombreOficina = 'Oficina 1';
+                                    colorOficina = '#007bff'; // Azul
+                                } else if (producto.oficina == 2) {
+                                    nombreOficina = 'Oficina 2';
+                                    colorOficina = '#28a745'; // Verde
+                                } else if (producto.oficina == 3) {
+                                    nombreOficina = 'Lima';
+                                    colorOficina = '#ffc107'; // Amarillo
+                                } else {
+                                    nombreOficina = 'Sin oficina';
+                                    colorOficina = '#6c757d'; // Gris
+                                }
+
                                 // 🔹 Mostrar advertencia si hay duplicados
                                 const tieneDuplicado = codigosEncontrados[codigo].length > 1;
                                 const advertencia = tieneDuplicado ? ' <span style="color: red; font-weight: bold;">⚠ DUPLICADO</span>' : '';
 
-                                item.innerHTML = `<strong>${codigo}</strong> - ${producto.nombre} (ID: ${producto.idproductosv2})${advertencia}`;
+                                // 🔹 NUEVO: Mostrar oficina con badge de color
+                                item.innerHTML = `<strong>${codigo}</strong> - ${producto.nombre} (ID: ${producto.idproductosv2}) <span style="background-color: ${colorOficina}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; margin-left: 8px;">${nombreOficina}</span>${advertencia}`;
                                 item.dataset.codigo = codigo;
                                 item.dataset.nombre = producto.nombre;
                                 item.dataset.cantidad = producto.cantidad;
                                 item.dataset.precio = producto.precio_venta;
                                 item.dataset.idproducto = producto.idproductosv2; // 🔹 Guardar el ID real
+                                item.dataset.oficina = producto.oficina; // 🔹 Guardar oficina
 
                                 // Resaltar al pasar el mouse
                                 item.addEventListener("mouseover", function () {

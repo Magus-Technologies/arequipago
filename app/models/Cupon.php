@@ -26,8 +26,8 @@ class Cupon
     public function crear($datos)
     {
         try {
-            $sql = "INSERT INTO cupones (titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo, departamento_id) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = 'INSERT INTO cupones (titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo, departamento_id, tipo_cupon)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -38,8 +38,13 @@ class Cupon
             // Manejar departamento_id: si es vacío o null, guardar como NULL
             $departamentoId = !empty($datos['departamento_id']) ? $datos['departamento_id'] : null;
 
+            // Manejar tipo_cupon: por defecto 'exclusivo' si no se especifica
+            $tipoCupon = isset($datos['tipo_cupon']) && in_array($datos['tipo_cupon'], ['publico', 'exclusivo'])
+                ? $datos['tipo_cupon']
+                : 'exclusivo';
+
             $stmt->bind_param(
-                'sssdsssiisi',
+                'sssdsssiisis',
                 $datos['titulo'],
                 $datos['descripcion'],
                 $datos['tipo_descuento'],
@@ -50,7 +55,8 @@ class Cupon
                 $datos['limite_usos_conductor'],
                 $datos['limite_usos_total'],
                 $datos['activo'],
-                $departamentoId
+                $departamentoId,
+                $tipoCupon
             );
 
             if (!$stmt->execute()) {
@@ -70,7 +76,12 @@ class Cupon
     public function asignarAUsuarios($idCupon, $usuarios)
     {
         try {
-            $sql = "INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)";
+            // Si no hay usuarios para asignar, retornar true (cupones públicos no requieren asignación)
+            if (empty($usuarios)) {
+                return true;
+            }
+
+            $sql = 'INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -129,8 +140,8 @@ class Cupon
             $cupones = [];
             while ($row = $result->fetch_assoc()) {
                 // Corregir para mostrar el total de usuarios correctamente
-                $row['conductores_asignados'] = $row['usuarios_asignados']; // Para mantener compatibilidad
-                
+                $row['conductores_asignados'] = $row['usuarios_asignados'];  // Para mantener compatibilidad
+
                 // Agregar objeto departamento para compatibilidad con frontend
                 if ($row['departamento_id']) {
                     $row['departamento'] = [
@@ -140,7 +151,7 @@ class Cupon
                 } else {
                     $row['departamento'] = null;
                 }
-                
+
                 $cupones[] = $row;
             }
 
@@ -190,8 +201,8 @@ class Cupon
 
             while ($row = $result->fetch_assoc()) {
                 // Corregir para mostrar el total de usuarios correctamente
-                $row['conductores_asignados'] = $row['usuarios_asignados']; // Para mantener compatibilidad
-                
+                $row['conductores_asignados'] = $row['usuarios_asignados'];  // Para mantener compatibilidad
+
                 // Agregar objeto departamento para compatibilidad con frontend
                 if ($row['departamento_id']) {
                     $row['departamento'] = [
@@ -201,7 +212,7 @@ class Cupon
                 } else {
                     $row['departamento'] = null;
                 }
-                
+
                 $cupones[] = $row;
             }
 
@@ -264,7 +275,7 @@ class Cupon
             while ($row = $result->fetch_assoc()) {
                 // NUEVO FORMATO: Siempre retornar id_cliente e id_conductor
                 $usuarioFormateado = [
-                    'tipo_usuario' => $row['tipo_usuario'], // Mantener para compatibilidad
+                    'tipo_usuario' => $row['tipo_usuario'],  // Mantener para compatibilidad
                     'fecha_asignacion' => $row['fecha_asignacion'],
                     'asignacion_activa' => $row['asignacion_activa'],
                     'veces_usado' => (int) $row['veces_usado'],
@@ -298,7 +309,6 @@ class Cupon
                 }
 
                 $usuarios[] = $usuarioFormateado;
-
             }
 
             $stmt->close();
@@ -323,7 +333,8 @@ class Cupon
 
             // Verificar conductores
             $conductores = array_filter($usuarios, function ($u) {
-                return $u['tipo'] === 'conductor'; });
+                return $u['tipo'] === 'conductor';
+            });
             if (!empty($conductores)) {
                 $idsConductores = array_column($conductores, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsConductores), '?'));
@@ -353,7 +364,8 @@ class Cupon
 
             // Verificar clientes
             $clientes = array_filter($usuarios, function ($u) {
-                return $u['tipo'] === 'cliente'; });
+                return $u['tipo'] === 'cliente';
+            });
             if (!empty($clientes)) {
                 $idsClientes = array_column($clientes, 'id');
                 $placeholders = implode(',', array_fill(0, count($idsClientes), '?'));
@@ -442,7 +454,7 @@ class Cupon
     public function verificarConductorTieneCupon($idConductor)
     {
         try {
-            $sql = "SELECT c.id, c.titulo, c.tipo_descuento, c.valor, c.fecha_fin, c.limite_usos_conductor, c.imagen_banner,
+            $sql = "SELECT c.id, c.titulo,c.descripcion, c.tipo_descuento, c.valor, c.fecha_fin, c.limite_usos_conductor, c.imagen_banner,
                            ca.fecha_asignacion,
                            COUNT(cut.id) as usos_realizados
                     FROM cupones c
@@ -584,7 +596,7 @@ class Cupon
     public function obtenerEstadisticasUso($idCupon = null)
     {
         try {
-            $whereClause = $idCupon ? "WHERE c.id = ?" : "";
+            $whereClause = $idCupon ? 'WHERE c.id = ?' : '';
 
             $sql = "SELECT c.id, c.titulo,
                            COUNT(DISTINCT ca.id) as usuarios_asignados,
@@ -632,7 +644,7 @@ class Cupon
     public function verificarUsoCuponEspecifico($idConductor, $idCupon)
     {
         try {
-            $sql = "SELECT 
+            $sql = 'SELECT 
                         COUNT(cut.id) as veces_usado,
                         MAX(cut.fecha_uso) as ultimo_uso,
                         SUM(cut.monto_descuento) as total_descontado,
@@ -640,7 +652,7 @@ class Cupon
                     FROM cupones c
                     LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon AND cut.id_conductor = ?
                     WHERE c.id = ?
-                    GROUP BY c.id, c.limite_usos_conductor";
+                    GROUP BY c.id, c.limite_usos_conductor';
 
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
@@ -694,7 +706,7 @@ class Cupon
     public function verificarUsoCuponEspecificoCliente($idCliente, $idCupon)
     {
         try {
-            $sql = "SELECT 
+            $sql = 'SELECT 
                         COUNT(cut.id) as veces_usado,
                         MAX(cut.fecha_uso) as ultimo_uso,
                         SUM(cut.monto_descuento) as total_descontado,
@@ -702,7 +714,7 @@ class Cupon
                     FROM cupones c
                     LEFT JOIN cupones_uso_tracking cut ON c.id = cut.id_cupon AND cut.id_cliente = ?
                     WHERE c.id = ?
-                    GROUP BY c.id, c.limite_usos_conductor";
+                    GROUP BY c.id, c.limite_usos_conductor';
 
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
@@ -756,10 +768,10 @@ class Cupon
     public function obtenerHistorialUsosCupon($idConductor, $idCupon)
     {
         try {
-            $sql = "SELECT fecha_uso, monto_descuento
+            $sql = 'SELECT fecha_uso, monto_descuento
                     FROM cupones_uso_tracking 
                     WHERE id_conductor = ? AND id_cupon = ?
-                    ORDER BY fecha_uso DESC";
+                    ORDER BY fecha_uso DESC';
 
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
@@ -792,10 +804,10 @@ class Cupon
     public function obtenerHistorialUsosCuponCliente($idCliente, $idCupon)
     {
         try {
-            $sql = "SELECT fecha_uso, monto_descuento
+            $sql = 'SELECT fecha_uso, monto_descuento
                     FROM cupones_uso_tracking 
                     WHERE id_cliente = ? AND id_cupon = ?
-                    ORDER BY fecha_uso DESC";
+                    ORDER BY fecha_uso DESC';
 
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
@@ -828,8 +840,8 @@ class Cupon
     public function obtenerCuponPorId($idCupon)
     {
         try {
-            $sql = "SELECT id, titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo
-                    FROM cupones WHERE id = ?";
+            $sql = 'SELECT id, titulo, descripcion, tipo_descuento, valor, imagen_banner, fecha_inicio, fecha_fin, limite_usos_conductor, limite_usos_total, activo, departamento_id, tipo_cupon
+                    FROM cupones WHERE id = ?';
 
             $stmt = $this->conectar->prepare($sql);
             if (!$stmt) {
@@ -856,38 +868,38 @@ class Cupon
     {
         try {
             $term = "%{$term}%";
-            $sql = "SELECT id, n_documento, nombres, apellido_paterno, apellido_materno, telefono
+            $sql = 'SELECT id, n_documento, nombres, apellido_paterno, apellido_materno, telefono
                     FROM clientes_financiar
                     WHERE nombres LIKE ? 
                     OR apellido_paterno LIKE ? 
                     OR n_documento LIKE ?
                     ORDER BY nombres ASC
-                    LIMIT 20";
+                    LIMIT 20';
 
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
-                throw new Exception("Error preparing statement: " . $this->conectar->error);
+                throw new Exception('Error preparing statement: ' . $this->conectar->error);
             }
 
-            $stmt->bind_param("sss", $term, $term, $term);
+            $stmt->bind_param('sss', $term, $term, $term);
 
             if (!$stmt->execute()) {
-                throw new Exception("Error executing statement: " . $stmt->error);
+                throw new Exception('Error executing statement: ' . $stmt->error);
             }
 
             $result = $stmt->get_result();
             $clientes = [];
 
             while ($row = $result->fetch_assoc()) {
-                $row['foto'] = '/arequipago/public/img/default-user.png'; // Imagen por defecto
+                $row['foto'] = '/arequipago/public/img/default-user.png';  // Imagen por defecto
                 $clientes[] = $row;
             }
 
             $stmt->close();
             return $clientes;
         } catch (Exception $e) {
-            error_log("Error in Cupon::buscarClientes(): " . $e->getMessage());
+            error_log('Error in Cupon::buscarClientes(): ' . $e->getMessage());
             return [];
         }
     }
@@ -901,7 +913,7 @@ class Cupon
             $this->conectar->autocommit(false);
 
             // Primero eliminar las asignaciones del cupón
-            $sqlAsignaciones = "DELETE FROM cupones_asignados WHERE id_cupon = ?";
+            $sqlAsignaciones = 'DELETE FROM cupones_asignados WHERE id_cupon = ?';
             $stmt1 = $this->conectar->prepare($sqlAsignaciones);
             if (!$stmt1) {
                 throw new Exception('Error al preparar la consulta de asignaciones: ' . $this->conectar->error);
@@ -914,7 +926,7 @@ class Cupon
             $stmt1->close();
 
             // Eliminar registros de uso del cupón
-            $sqlUso = "DELETE FROM cupones_uso_tracking WHERE id_cupon = ?";
+            $sqlUso = 'DELETE FROM cupones_uso_tracking WHERE id_cupon = ?';
             $stmt2 = $this->conectar->prepare($sqlUso);
             if (!$stmt2) {
                 throw new Exception('Error al preparar la consulta de usos: ' . $this->conectar->error);
@@ -927,7 +939,7 @@ class Cupon
             $stmt2->close();
 
             // Finalmente eliminar el cupón
-            $sqlCupon = "DELETE FROM cupones WHERE id = ?";
+            $sqlCupon = 'DELETE FROM cupones WHERE id = ?';
             $stmt3 = $this->conectar->prepare($sqlCupon);
             if (!$stmt3) {
                 throw new Exception('Error al preparar la consulta del cupón: ' . $this->conectar->error);
@@ -950,7 +962,6 @@ class Cupon
                 $this->conectar->autocommit(true);
                 return false;
             }
-
         } catch (Exception $e) {
             $this->conectar->rollback();
             $this->conectar->autocommit(true);
@@ -964,6 +975,7 @@ class Cupon
     {
         return $this->id;
     }
+
     public function setId($id)
     {
         $this->id = $id;
@@ -973,6 +985,7 @@ class Cupon
     {
         return $this->titulo;
     }
+
     public function setTitulo($titulo)
     {
         $this->titulo = $titulo;
@@ -982,6 +995,7 @@ class Cupon
     {
         return $this->descripcion;
     }
+
     public function setDescripcion($descripcion)
     {
         $this->descripcion = $descripcion;
@@ -991,6 +1005,7 @@ class Cupon
     {
         return $this->tipo_descuento;
     }
+
     public function setTipoDescuento($tipo_descuento)
     {
         $this->tipo_descuento = $tipo_descuento;
@@ -1000,6 +1015,7 @@ class Cupon
     {
         return $this->valor;
     }
+
     public function setValor($valor)
     {
         $this->valor = $valor;
@@ -1009,6 +1025,7 @@ class Cupon
     {
         return $this->imagen_banner;
     }
+
     public function setImagenBanner($imagen_banner)
     {
         $this->imagen_banner = $imagen_banner;
@@ -1018,6 +1035,7 @@ class Cupon
     {
         return $this->fecha_inicio;
     }
+
     public function setFechaInicio($fecha_inicio)
     {
         $this->fecha_inicio = $fecha_inicio;
@@ -1027,6 +1045,7 @@ class Cupon
     {
         return $this->fecha_fin;
     }
+
     public function setFechaFin($fecha_fin)
     {
         $this->fecha_fin = $fecha_fin;
@@ -1036,6 +1055,7 @@ class Cupon
     {
         return $this->limite_usos_conductor;
     }
+
     public function setLimiteUsosConductor($limite_usos_conductor)
     {
         $this->limite_usos_conductor = $limite_usos_conductor;
@@ -1045,6 +1065,7 @@ class Cupon
     {
         return $this->limite_usos_total;
     }
+
     public function setLimiteUsosTotal($limite_usos_total)
     {
         $this->limite_usos_total = $limite_usos_total;
@@ -1054,6 +1075,7 @@ class Cupon
     {
         return $this->activo;
     }
+
     public function setActivo($activo)
     {
         $this->activo = $activo;
@@ -1109,7 +1131,7 @@ class Cupon
     public function existeCodigo($codigo)
     {
         try {
-            $sql = "SELECT COUNT(*) as total FROM cupones WHERE codigo = ?";
+            $sql = 'SELECT COUNT(*) as total FROM cupones WHERE codigo = ?';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -1135,7 +1157,7 @@ class Cupon
     public function obtenerPorCodigo($codigo)
     {
         try {
-            $sql = "SELECT * FROM cupones WHERE codigo = ? AND activo = 1 AND fecha_fin >= CURDATE()";
+            $sql = 'SELECT * FROM cupones WHERE codigo = ? AND activo = 1 AND fecha_fin >= CURDATE()';
             $stmt = $this->conectar->prepare($sql);
 
             if (!$stmt) {
@@ -1234,7 +1256,7 @@ class Cupon
     public function actualizarCupon($idCupon, $datos)
     {
         try {
-            $sql = "UPDATE cupones SET
+            $sql = 'UPDATE cupones SET
                     titulo = ?,
                     descripcion = ?,
                     tipo_descuento = ?,
@@ -1245,8 +1267,9 @@ class Cupon
                     limite_usos_conductor = ?,
                     limite_usos_total = ?,
                     activo = ?,
-                    departamento_id = ?
-                    WHERE id = ?";
+                    departamento_id = ?,
+                    tipo_cupon = ?
+                    WHERE id = ?';
 
             $stmt = $this->conectar->prepare($sql);
 
@@ -1257,8 +1280,13 @@ class Cupon
             // Manejar departamento_id: si es vacío o null, guardar como NULL
             $departamentoId = !empty($datos['departamento_id']) ? $datos['departamento_id'] : null;
 
+            // Manejar tipo_cupon: por defecto 'exclusivo' si no se especifica
+            $tipoCupon = isset($datos['tipo_cupon']) && in_array($datos['tipo_cupon'], ['publico', 'exclusivo'])
+                ? $datos['tipo_cupon']
+                : 'exclusivo';
+
             $stmt->bind_param(
-                'sssdsssiisii',
+                'sssdsssiisisi',
                 $datos['titulo'],
                 $datos['descripcion'],
                 $datos['tipo_descuento'],
@@ -1270,6 +1298,7 @@ class Cupon
                 $datos['limite_usos_total'],
                 $datos['activo'],
                 $departamentoId,
+                $tipoCupon,
                 $idCupon
             );
 
@@ -1277,10 +1306,10 @@ class Cupon
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
             }
 
-            $filasAfectadas = $stmt->affected_rows;
             $stmt->close();
 
-            return $filasAfectadas > 0;
+            // Retornar true si se ejecutó correctamente, incluso si no hubo cambios
+            return true;
         } catch (Exception $e) {
             error_log('Error en Cupon::actualizarCupon(): ' . $e->getMessage());
             return false;
@@ -1296,7 +1325,7 @@ class Cupon
             $this->conectar->autocommit(false);
 
             // Eliminar asignaciones existentes
-            $sqlEliminar = "DELETE FROM cupones_asignados WHERE id_cupon = ?";
+            $sqlEliminar = 'DELETE FROM cupones_asignados WHERE id_cupon = ?';
             $stmtEliminar = $this->conectar->prepare($sqlEliminar);
             if (!$stmtEliminar) {
                 throw new Exception('Error al preparar la consulta de eliminación: ' . $this->conectar->error);
@@ -1310,7 +1339,7 @@ class Cupon
 
             // Insertar nuevas asignaciones
             if (!empty($usuarios)) {
-                $sql = "INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)";
+                $sql = 'INSERT INTO cupones_asignados (id_cupon, tipo_usuario, id_usuario) VALUES (?, ?, ?)';
                 $stmt = $this->conectar->prepare($sql);
 
                 if (!$stmt) {
@@ -1341,16 +1370,55 @@ class Cupon
     }
 
     /**
+     * Obtener cupones públicos (visibles sin login)
+     */
+    public function obtenerCuponesPublicos($filtros = [])
+    {
+        try {
+            $sql = "SELECT c.*,
+                           d.nombre as departamento_nombre
+                    FROM cupones c
+                    LEFT JOIN depast d ON c.departamento_id = d.iddepast
+                    WHERE c.tipo_cupon = 'publico'
+                      AND c.activo = 1
+                      AND c.fecha_fin >= CURDATE()";
+
+            // Filtro por departamento si se especifica
+            if (!empty($filtros['departamento_id'])) {
+                $sql .= ' AND (c.departamento_id = ' . (int) $filtros['departamento_id'] . ' OR c.departamento_id IS NULL)';
+            }
+
+            $sql .= ' ORDER BY c.created_at DESC';
+
+            $result = $this->conectar->query($sql);
+
+            if (!$result) {
+                throw new Exception('Error al obtener cupones públicos: ' . $this->conectar->error);
+            }
+
+            $cupones = [];
+            while ($row = $result->fetch_assoc()) {
+                $cupones[] = $row;
+            }
+
+            return $cupones;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::obtenerCuponesPublicos(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Obtener departamentos habilitados para cupones
      */
     public function obtenerDepartamentosHabilitados()
     {
         try {
-            $sql = "SELECT d.iddepast, d.nombre
+            $sql = 'SELECT d.iddepast, d.nombre
                     FROM departamentos_habilitados dh
                     INNER JOIN depast d ON dh.iddepast = d.iddepast
                     WHERE dh.habilitado = 1
-                    ORDER BY d.nombre ASC";
+                    ORDER BY d.nombre ASC';
 
             $result = $this->conectar->query($sql);
 
@@ -1367,6 +1435,34 @@ class Cupon
         } catch (Exception $e) {
             error_log('Error en Cupon::obtenerDepartamentosHabilitados(): ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Actualizar solo el estado (activo/inactivo) de un cupón
+     */
+    public function actualizarEstado($idCupon, $activo)
+    {
+        try {
+            $sql = 'UPDATE cupones SET activo = ? WHERE id = ?';
+            $stmt = $this->conectar->prepare($sql);
+
+            if (!$stmt) {
+                throw new Exception('Error al preparar consulta: ' . $this->conectar->error);
+            }
+
+            $stmt->bind_param('ii', $activo, $idCupon);
+            $resultado = $stmt->execute();
+
+            if (!$resultado) {
+                throw new Exception('Error al actualizar estado: ' . $stmt->error);
+            }
+
+            $stmt->close();
+            return true;
+        } catch (Exception $e) {
+            error_log('Error en Cupon::actualizarEstado(): ' . $e->getMessage());
+            return false;
         }
     }
 }

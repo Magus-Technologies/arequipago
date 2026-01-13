@@ -289,8 +289,8 @@ class Productov2
         try {
             $productos = [];
 
-            // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
-            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria
+            // ✅ MODIFICADO: Agregado campo 'oficina' para mostrar de qué oficina es el producto
+            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina
                     FROM productosv2
                     WHERE (nombre LIKE ? OR codigo LIKE ? OR codigo_barra LIKE ?)
                     AND estado != '0'";
@@ -320,8 +320,8 @@ class Productov2
                 $idProducto = $rowIMEI['idproductosv2'];
 
                 // Obtener el producto con el ID encontrado
-                // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
-                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria 
+                // ✅ MODIFICADO: Agregado campo 'oficina' para mostrar de qué oficina es el producto
+                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina 
                                 FROM productosv2 WHERE idproductosv2 = ?';
 
                 $stmtProducto = $this->conectar->prepare($sqlProducto);

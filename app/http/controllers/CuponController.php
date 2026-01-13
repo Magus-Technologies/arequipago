@@ -75,16 +75,21 @@ class CuponController
                 return;
             }
 
+            // Obtener tipo de cupón (público o exclusivo)
+            $tipoCupon = isset($_POST['tipo_cupon']) && in_array($_POST['tipo_cupon'], ['publico', 'exclusivo'])
+                ? $_POST['tipo_cupon']
+                : 'exclusivo';
+
             // Procesar conductores y clientes
             $conductoresJson = $_POST['conductores'] ?? '[]';
             $idConductores = json_decode($conductoresJson, true);
-            
+
             $clientesJson = $_POST['clientes'] ?? '[]';
             $idClientes = json_decode($clientesJson, true);
 
-            // Validar que al menos se seleccione un usuario
-            if (empty($idConductores) && empty($idClientes)) {
-                echo json_encode(['success' => false, 'message' => 'Debe seleccionar al menos un conductor o cliente.']);
+            // Validar que al menos se seleccione un usuario SOLO si es cupón exclusivo
+            if ($tipoCupon === 'exclusivo' && empty($idConductores) && empty($idClientes)) {
+                echo json_encode(['success' => false, 'message' => 'Debe seleccionar al menos un conductor o cliente para cupones exclusivos.']);
                 return;
             }
 
@@ -153,6 +158,7 @@ class CuponController
                 'limite_usos_total' => !empty($_POST['limiteTotal']) ? intval($_POST['limiteTotal']) : null,
                 'activo' => isset($_POST['activo']) ? 1 : 0,
                 'departamento_id' => !empty($_POST['departamento_id']) ? intval($_POST['departamento_id']) : null,
+                'tipo_cupon' => $tipoCupon,
             ];
 
             // CORREGIDO: Crear cupón UNA SOLA VEZ
@@ -188,8 +194,14 @@ class CuponController
                 if ($resultado) {
                     $totalConductores = count($idConductores);
                     $totalClientes = count($idClientes);
-                    $mensaje = "Cupón creado y asignado correctamente a {$totalConductores} conductor(es) y {$totalClientes} cliente(s).";
-                    
+
+                    // Mensaje diferenciado según tipo de cupón
+                    if ($tipoCupon === 'publico') {
+                        $mensaje = "Cupón público creado correctamente. Visible para todos los usuarios sin necesidad de login.";
+                    } else {
+                        $mensaje = "Cupón exclusivo creado y asignado correctamente a {$totalConductores} conductor(es) y {$totalClientes} cliente(s).";
+                    }
+
                     echo json_encode([
                         'success' => true,
                         'message' => $mensaje,
@@ -724,41 +736,44 @@ $response = [
                 return;
             }
 
-            // Verificar si el cupón está asignado al usuario
-            if ($tipo === 'cliente') {
-                $cuponesCliente = $cuponModel->verificarClienteTieneCupon($idUsuario);
-                $cuponAsignado = false;
-                foreach ($cuponesCliente as $cupon) {
-                    if ($cupon['id'] == $idCupon) {
-                        $cuponAsignado = true;
-                        break;
+            // CORREGIDO: Solo verificar asignación para cupones EXCLUSIVOS
+            if ($cuponInfo['tipo_cupon'] === 'exclusivo') {
+                // Verificar si el cupón está asignado al usuario
+                if ($tipo === 'cliente') {
+                    $cuponesCliente = $cuponModel->verificarClienteTieneCupon($idUsuario);
+                    $cuponAsignado = false;
+                    foreach ($cuponesCliente as $cupon) {
+                        if ($cupon['id'] == $idCupon) {
+                            $cuponAsignado = true;
+                            break;
+                        }
                     }
-                }
-                if (!$cuponAsignado) {
-                    echo json_encode(['success' => false, 'message' => 'Este cupón no está asignado al cliente']);
-                    return;
-                }
-            } else {
-                $cuponesConductor = $cuponModel->verificarConductorTieneCupon($idUsuario);
-                $cuponAsignado = false;
-                foreach ($cuponesConductor as $cupon) {
-                    if ($cupon['id'] == $idCupon) {
-                        $cuponAsignado = true;
-                        break;
+                    if (!$cuponAsignado) {
+                        echo json_encode(['success' => false, 'message' => 'Este cupón exclusivo no está asignado a tu cuenta']);
+                        return;
                     }
-                }
-                if (!$cuponAsignado) {
-                    echo json_encode(['success' => false, 'message' => 'Este cupón no está asignado al conductor']);
-                    return;
+                } else {
+                    $cuponesConductor = $cuponModel->verificarConductorTieneCupon($idUsuario);
+                    $cuponAsignado = false;
+                    foreach ($cuponesConductor as $cupon) {
+                        if ($cupon['id'] == $idCupon) {
+                            $cuponAsignado = true;
+                            break;
+                        }
+                    }
+                    if (!$cuponAsignado) {
+                        echo json_encode(['success' => false, 'message' => 'Este cupón exclusivo no está asignado a tu cuenta']);
+                        return;
+                    }
                 }
             }
+            // Para cupones PÚBLICOS, no se verifica asignación - cualquiera puede usarlos
 
             // Verificar límites de uso
             if ($tipo === 'conductor') {
                 $usoInfo = $cuponModel->verificarUsoCuponEspecifico($idUsuario, $idCupon);
             } else {
-                // Para clientes, implementar verificación similar
-                $usoInfo = ['limite_alcanzado' => false]; // Simplificado por ahora
+                $usoInfo = $cuponModel->verificarUsoCuponEspecificoCliente($idUsuario, $idCupon);
             }
             
             if ($usoInfo['limite_alcanzado']) {
@@ -962,6 +977,11 @@ $response = [
                 }
             }
 
+            // Obtener tipo de cupón (público o exclusivo)
+            $tipoCupon = isset($_POST['tipo_cupon']) && in_array($_POST['tipo_cupon'], ['publico', 'exclusivo'])
+                ? $_POST['tipo_cupon']
+                : 'exclusivo';
+
             // Preparar datos del cupón
             $datosCupon = [
                 'titulo' => trim($_POST['titulo']),
@@ -975,6 +995,7 @@ $response = [
                 'limite_usos_total' => !empty($_POST['limiteTotal']) ? intval($_POST['limiteTotal']) : null,
                 'activo' => isset($_POST['activo']) ? 1 : 0,
                 'departamento_id' => !empty($_POST['departamento_id']) ? intval($_POST['departamento_id']) : null,
+                'tipo_cupon' => $tipoCupon,
             ];
 
             // Actualizar cupón
@@ -1067,6 +1088,93 @@ $response = [
             echo json_encode([
                 'success' => false,
                 'error' => 'Error al obtener departamentos: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Listar cupones públicos (endpoint público sin autenticación)
+     * Para ser consumido por la app móvil sin necesidad de login
+     */
+    public function listarCuponesPublicos()
+    {
+        try {
+            $cuponModel = new Cupon();
+
+            // Obtener filtros opcionales
+            $filtros = [];
+            if (isset($_GET['departamento_id']) && !empty($_GET['departamento_id'])) {
+                $filtros['departamento_id'] = intval($_GET['departamento_id']);
+            }
+
+            $cupones = $cuponModel->obtenerCuponesPublicos($filtros);
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'data' => $cupones,
+                'total' => count($cupones)
+            ]);
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener cupones públicos: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
+    /**
+     * Desactivar cupones expirados automáticamente
+     */
+    public function desactivarCuponesExpirados()
+    {
+        try {
+            header('Content-Type: application/json');
+            
+            // Obtener el cuerpo de la petición
+            $input = file_get_contents('php://input');
+            $data = json_decode($input, true);
+            
+            if (!isset($data['cupones_ids']) || !is_array($data['cupones_ids'])) {
+                throw new Exception('IDs de cupones no proporcionados');
+            }
+            
+            $cuponesIds = $data['cupones_ids'];
+            $cuponModel = new Cupon();
+            $actualizados = 0;
+            
+            foreach ($cuponesIds as $idCupon) {
+                // Verificar que el cupón realmente esté expirado
+                $cupon = $cuponModel->obtenerCuponPorId($idCupon);
+                if ($cupon && $cupon['activo'] == 1) {
+                    $fechaFin = new DateTime($cupon['fecha_fin']);
+                    $ahora = new DateTime();
+                    
+                    if ($ahora > $fechaFin) {
+                        // Desactivar el cupón
+                        $resultado = $cuponModel->actualizarEstado($idCupon, 0);
+                        if ($resultado) {
+                            $actualizados++;
+                        }
+                    }
+                }
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'actualizados' => $actualizados,
+                'message' => "Se desactivaron $actualizados cupón(es) expirado(s)"
+            ]);
+            
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al desactivar cupones expirados: ' . $e->getMessage()
             ]);
         }
     }

@@ -1119,17 +1119,20 @@ class RegistrarFinanciamientoController extends Controller
         // Verificar si el usuario puede tener comisión automática
 
         if (!in_array($_SESSION['id_rol'], [1, 2, 3])) {
-            return;  // Solo roles 1 y 3 tienen comisión automática
+            return;  // Solo roles 1, 2 y 3 tienen comisión automática
         }
 
-        // Obtener el financiamiento recién registrado
+        // ✅ CORREGIDO: Usar getFinanciamientoByIdParaAprobacion en lugar de getFinanciamientoById
+        // Esto permite obtener financiamientos incluso cuando aprobado = 0 (pendientes de aprobación)
         $financiamientoModel = new Financiamiento();
-        $financiamiento = $financiamientoModel->getFinanciamientoById($idFinanciamiento);
+        $financiamiento = $financiamientoModel->getFinanciamientoByIdParaAprobacion($idFinanciamiento);
 
         if ($financiamiento) {
             // REUTILIZAR la misma lógica de comisiones que ya existe
             $financiamientoController = new FinanciamientoController();
             $financiamientoController->registrarComisionFinanciamiento($financiamiento);
+        } else {
+            error_log("⚠️ No se pudo obtener financiamiento ID $idFinanciamiento para registrar comisión");
         }
     }
 
