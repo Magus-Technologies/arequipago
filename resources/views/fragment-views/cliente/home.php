@@ -1,4 +1,7 @@
 <?php
+// Configurar idioma español para fechas
+setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'spanish');
+
 $empresa = $_SESSION['id_empresa'];
 $sucursal = $_SESSION['sucursal'];
 
@@ -454,12 +457,11 @@ function obtenerConductoresYClientesConCuotasVencidas()
             conductor_regfinanciamiento crf ON cc.idconductor_Financiamiento = crf.idconductor_regfinanciamiento
         INNER JOIN 
             conductores c ON crf.id_conductor = c.id_conductor
-        WHERE 
-            cc.fecha_vencimiento < '$fecha_actual' 
+        WHERE
+            cc.fecha_vencimiento < '$fecha_actual'
             AND cc.estado_cuota != 'pagado'
             AND crf.incobrable = 0
-            AND c.desvinculado = 0
-        GROUP BY 
+        GROUP BY
             c.id_conductor
     ";
 
@@ -498,13 +500,13 @@ function obtenerConductoresYClientesConCuotasVencidas()
             conductores c ON f.id_conductor = c.id_conductor
         INNER JOIN 
             productosv2 p ON f.idproductosv2 = p.idproductosv2
-        WHERE 
-            cf.fecha_vencimiento < '$fecha_actual' 
+        WHERE
+            cf.fecha_vencimiento < '$fecha_actual'
             AND cf.estado = 'En Progreso'
             AND f.incobrable = 0
-             AND f.estado_eliminado = 0
-            AND c.desvinculado = 0
-        GROUP BY 
+            AND f.estado_eliminado = 0
+            AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
+        GROUP BY
             c.id_conductor, p.nombre, f.moneda  /* MODIFICADO: Agrupamos también por moneda */
     ";
 
@@ -543,12 +545,13 @@ function obtenerConductoresYClientesConCuotasVencidas()
                 clientes_financiar cf ON f.id_cliente = cf.id
             INNER JOIN 
                 productosv2 p ON f.idproductosv2 = p.idproductosv2
-            WHERE 
-                cfc.fecha_vencimiento < '$fecha_actual' 
+            WHERE
+                cfc.fecha_vencimiento < '$fecha_actual'
                 AND cfc.estado = 'En Progreso'
                 AND f.incobrable = 0
                 AND f.estado_eliminado = 0
-            GROUP BY 
+                AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
+            GROUP BY
                 cf.id, p.nombre, f.moneda  
         ";
 
@@ -628,7 +631,67 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <!-- llamamos al css de home -->
-<link rel="stylesheet" href="public/css/home.css?v=2.1">
+<link rel="stylesheet" href="public/css/home.css?v=2.2">
+
+<style>
+.welcome-banner {
+    background: #2e217a;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.welcome-content {
+    position: relative;
+    z-index: 1;
+}
+
+.welcome-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.welcome-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.user-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: bold;
+}
+</style>
+
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -637,6 +700,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                 <li class="breadcrumb-item active">Bienvenido al Sistema de <strong>AREQUIPAGO ERP</strong></li>
             </ol>
         </div>
+        <?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
         <!-- Modificar la sección del filtro de calendario -->
         <div class="col-md-4">
             <!-- Filtro de calendario -->
@@ -684,9 +748,98 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </div>
 </div>
 <!-- end page title -->
+
+<?php if ($_SESSION['id_rol'] == 2): // SOLO para ASESORES ?>
+<!-- Banner de Bienvenida para Asesores -->
+<?php
+    // DEBUG: Verificar qué hay en la sesión
+    error_log('DEBUG HOME - SESSION NOMBRES: ' . (isset($_SESSION['nombres']) ? $_SESSION['nombres'] : 'NO EXISTE'));
+    error_log('DEBUG HOME - SESSION APELLIDOS: ' . (isset($_SESSION['apellidos']) ? $_SESSION['apellidos'] : 'NO EXISTE'));
+    error_log('DEBUG HOME - SESSION USUARIO_ID: ' . (isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : 'NO EXISTE'));
+
+    // Si no hay nombres en sesión, obtenerlos de la base de datos
+    if (!isset($_SESSION['nombres']) || empty($_SESSION['nombres'])) {
+        try {
+            $conectar = (new Conexion())->getConexion();
+            $usuario_id = $_SESSION['usuario_id'];
+
+            $sql = 'SELECT nombres, apellidos FROM usuarios WHERE usuario_id = ?';
+            $stmt = $conectar->prepare($sql);
+            $stmt->bind_param('i', $usuario_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($row = $result->fetch_assoc()) {
+                $_SESSION['nombres'] = $row['nombres'];
+                $_SESSION['apellidos'] = $row['apellidos'];
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            error_log('Error al obtener datos de usuario: ' . $e->getMessage());
+        }
+    }
+
+    // Obtener el nombre completo del usuario desde la sesión
+    $nombre_usuario = isset($_SESSION['nombres']) ? $_SESSION['nombres'] : 'Usuario';
+    $apellido_usuario = isset($_SESSION['apellidos']) ? $_SESSION['apellidos'] : '';
+
+    // Si hay apellido, agregarlo al nombre
+    if (!empty($apellido_usuario)) {
+        $nombre_completo_usuario = $nombre_usuario . ' ' . $apellido_usuario;
+    } else {
+        $nombre_completo_usuario = $nombre_usuario;
+    }
+
+    // Obtener iniciales para el avatar
+    $iniciales = mb_substr($nombre_usuario, 0, 1);
+    if (!empty($apellido_usuario)) {
+        $iniciales .= mb_substr($apellido_usuario, 0, 1);
+    }
+    $iniciales = strtoupper($iniciales);
+
+    // Formatear fecha en español
+    if (class_exists('IntlDateFormatter')) {
+        try {
+            $formatter = new IntlDateFormatter('es_ES', IntlDateFormatter::FULL, IntlDateFormatter::NONE);
+            $fecha_formateada = ucfirst($formatter->format(new DateTime()));
+        } catch (Exception $e) {
+            // Fallback si hay error al formatear
+            $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            $fecha_formateada = ucfirst($dias[date('w')]) . ', ' . date('j') . ' de ' . $meses[date('n') - 1] . ' de ' . date('Y');
+        }
+    } else {
+        // Fallback si IntlDateFormatter no está disponible
+        $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        $fecha_formateada = ucfirst($dias[date('w')]) . ', ' . date('j') . ' de ' . $meses[date('n') - 1] . ' de ' . date('Y');
+    }
+?>
+<div class="welcome-banner">
+    <div class="welcome-content">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <div class="user-avatar">
+                    <?= $iniciales ?>
+                </div>
+            </div>
+            <div class="col">
+                <h1 class="welcome-title">¡Bienvenido, <?= htmlspecialchars($nombre_completo_usuario) ?>! 👋</h1>
+                <p class="welcome-subtitle mb-0">
+                    <i class="fas fa-calendar-day me-2"></i><?= $fecha_formateada ?>
+                    <span class="ms-3"><i class="fas fa-clock me-2"></i><?= date('h:i A') ?></span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
 
 <!-- Indicador de período filtrado -->
 <div class="alert alert-info mb-4">
@@ -695,6 +848,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
         <i class="mdi mdi-refresh"></i> Restablecer
     </button>
 </div>
+<?php endif; ?>
 
 <!-- Notificación de ventas -->
 <?php if ($totales_ventas['cantidad_ventas'] == 0): ?>
@@ -713,6 +867,8 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 <?php endif; ?>
 
 <div class="row">
+     <?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
+
     <div class="col-xl-3 col-md-6">
         <div class="card mini-stat bg-white text-dark"
             style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06)">
@@ -739,6 +895,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
             </div>
         </div>
     </div>
+     
 
     <div class="col-xl-3 col-md-6">
         <div class="card mini-stat bg-white text-dark"
@@ -820,6 +977,7 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Reemplazar el componente de Cumpleaños de la Semana actual con este nuevo diseño -->
     <!-- Eliminar el código actual de Cumpleaños de la Semana que está en un solo div col-xl-3 col-md-6 -->
@@ -1055,12 +1213,12 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 
     </div>
 
-    <div class="col-xl-6 col-md-6">
+    <div class="col-xl-6 col-md-12">
 
         <!-- Conductores con Cuotas Vencidas -->
         <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); max-height: 400px; overflow: hidden;">
                 <div class="card-body d-flex flex-column" style="height: 100%; padding-bottom: 20px;">
-                    <!-- Header con icono izquierda, título centro, contador derecha -->
+                    <!-- Header con icono izquierda, título centro, contador y botón derecha -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <!-- Icono a la izquierda -->
                         <div style="width: 50px; height: 50px; border-radius: 15px; background-color: #eed8fc; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -1074,16 +1232,17 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                             </h5>
                         </div>
                         
-                        <!-- Contador a la derecha -->
-                        <div style="flex-shrink: 0;">
+                        <!-- Contador y botón a la derecha -->
+                        <div class="d-flex align-items-center gap-2" style="flex-shrink: 0;">
                             <span class="badge rounded-pill px-3 py-2" style="background-color: #eed8fc; color: #5e3d82; font-weight: bold; font-size: 0.95rem;">
                                 <?= $total_registros ?> registros
                             </span>
+                            <button id="vencidos-ver-todos" class="btn" onclick="allConductoresCuotasVencidas()" style="background-color: #f7d54a; color: #333; font-weight: 500; padding: 8px 20px; border-radius: 8px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease; white-space: nowrap;">Ver Todos</button>
                         </div>
                     </div>
                     
                     <!-- Lista de conductores con cuotas vencidas -->
-                    <div id="vencidos-lista" class="flex-grow-1 cumpleanos-lista" style="max-height: 240px; overflow-y: auto; overflow-x: hidden; margin-bottom: 12px;">
+                    <div id="vencidos-lista" class="flex-grow-1 cumpleanos-lista" style="max-height: 280px; overflow-y: auto; overflow-x: hidden;">
                         <?= $html_registros ?>
 
                         <?php if (empty($registros_vencidos)): ?>
@@ -1093,11 +1252,6 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
                         <?php endif; ?>
 
                     </div>
-                    
-                    <!-- Botón Ver Todos -->
-                    <div class="text-center mt-2">
-                        <button id="vencidos-ver-todos" class="btn" onclick="allConductoresCuotasVencidas()" style="background-color: #f7d54a; color: #333; font-weight: 500; padding: 8px 20px; border-radius: 8px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease;">Ver Todos</button>
-                    </div>
                 </div>
             </div>
 
@@ -1106,10 +1260,11 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 </div>
 
 <!-- Nueva fila para los 3 cards de pagos -->
-<div class="row">
+<div class="row mt-4">
 <!-- Pagos Inscripción -->
+ <?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
 <div class="col-xl-3 col-md-6">
-    <div class="card mini-stat bg-white text-dark" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+    <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
         <div class="card-body">
             <div class="mb-4">
                 <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
@@ -1126,7 +1281,8 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
         </div>
     </div>
 </div>
-
+<?php endif; ?>
+<?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
 <!-- Pagos Financiamiento -->
 <div class="col-xl-3 col-md-6">
     <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
@@ -1146,35 +1302,33 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <?php if ($_SESSION['id_rol'] == 3): // Solo para Director ?>
 <!-- Card Descuentos por Cuota -->
 <div class="col-xl-3 col-md-6">
     <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
         <div class="card-body">
-            <div class="mb-4">
+            <div class="mb-2">
                 <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #eed8fc;">
                     <i class="fas fa-percentage" style="font-size: 2rem; margin: 20px 0 0 18px; color: #667eea;"></i>
                 </div>
                 <h5 class="fw-light text-uppercase text-black text-end">Descuentos por Cuota</h5>
-                <h1 class="fw-bolder text-end" id="total-productos-descuento">
+                <h4 class="fw-bolder text-end mb-0" id="total-productos-descuento" style="font-size: 1.5rem;">
                     <span class="spinner-border spinner-border-sm" role="status"></span>
-                </h1>
+                </h4>
             </div>
-            <div class="pt-2">
-                <p class="text-dark-50 mb-2 mt-1 text-end">
-                    <span class="text-muted small d-block">
-                        <i class="fas fa-coins text-warning"></i> 
-                        <span id="total-subsidiado-soles">S/ 0.00</span>
-                    </span>
-                    <span class="text-muted small d-block">
-                        <i class="fas fa-dollar-sign text-success"></i> 
-                        <span id="total-subsidiado-dolares">$ 0.00</span>
-                    </span>
+            <div class="pt-1">
+                <p class="text-dark-50 mb-2 text-end" style="font-size: 0.8rem; line-height: 1.4;">
+                    <i class="fas fa-coins text-warning"></i>
+                    <span id="total-subsidiado-soles">S/ 0.00</span>
+                    <br>
+                    <i class="fas fa-dollar-sign text-success"></i>
+                    <span id="total-subsidiado-dolares">$ 0.00</span>
                 </p>
-                <div class="d-grid gap-2 mt-2">
-                    <button class="btn btn-primary btn-sm" onclick="abrirGestionDescuentos()">
-                        <i class="fas fa-cog me-1"></i> Gestionar Descuentos
+                <div class="text-center">
+                    <button class="btn btn-primary btn-sm" onclick="abrirGestionDescuentos()" style="font-size: 0.75rem; padding: 4px 12px;">
+                        <i class="fas fa-cog me-1"></i> Ver Todos
                     </button>
                 </div>
             </div>
@@ -1183,8 +1337,121 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
 </div>
 <?php endif; ?>
 
+<?php if (in_array($_SESSION['id_rol'], [1, 3,2])): // Admin, Asesor y Director ?>
+<!-- Card Constataciones Domiciliarias -->
+<div class="col-xl-3 col-md-6">
+    <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+        <div class="card-body">
+            <div class="mb-2">
+                <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #d4f5e9;">
+                    <i class="fas fa-home" style="font-size: 2rem; margin: 20px 0 0 18px; color: #28a745;"></i>
+                </div>
+                <h5 class="fw-light text-uppercase text-black text-end">Constataciones</h5>
+                <h4 class="fw-bolder text-end mb-0" id="total-vehiculos-entregados" style="font-size: 1.5rem;">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                </h4>
+            </div>
+            <div class="pt-1">
+                <p class="text-dark-50 mb-2 text-end" style="font-size: 0.8rem; line-height: 1.4;">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <span id="constataciones-realizadas">0</span> verificados
+                    <br>
+                    <i class="fas fa-clock text-warning"></i>
+                    <span id="constataciones-pendientes">0</span> pendientes
+                </p>
+                <div class="text-center">
+                    <button class="btn btn-success btn-sm" onclick="irAConstataciones()" style="font-size: 0.75rem; padding: 4px 12px;">
+                        <i class="fas fa-map-marker-alt me-1"></i> Ver Todos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if ($_SESSION['id_rol'] == 3): // Solo para Director ?>
+<!-- Card Recaudaciones Caja Arequipa -->
+<div class="col-xl-3 col-md-6">
+    <div class="card mini-stat bg-white text-dark card-pagos-height" style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);">
+        <div class="card-body">
+            <div class="mb-2">
+                <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50" style="border-radius: 20px; background-color: #fef3c7;">
+                    <i class="fas fa-money-bill-wave" style="font-size: 2rem; margin: 20px 0 0 18px; color: #f59e0b;"></i>
+                </div>
+                <h5 class="fw-light text-uppercase text-black text-end">Recaudaciones</h5>
+                <h4 class="fw-bolder text-end mb-0" style="font-size: 1.5rem;">
+                    Caja Arequipa
+                </h4>
+            </div>
+            <div class="pt-1">
+                <p class="text-dark-50 mb-2 text-end" style="font-size: 0.8rem; line-height: 1.4;">
+                    <i class="fas fa-university text-warning"></i> Pagos recibidos
+                    <br>
+                    <i class="fas fa-chart-line text-info"></i> Ver estadísticas
+                </p>
+                <div class="text-center">
+                    <button class="btn btn-warning btn-sm" onclick="irARecaudaciones()" style="font-size: 0.75rem; padding: 4px 12px;">
+                        <i class="fas fa-eye me-1"></i> Ver Recaudaciones
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+    <!-- Tarjeta de Total de Conductores -->
+    <div class="col-xl-3 col-md-6">
+        <a href="<?= URL::to('/conductores') ?>" style="text-decoration: none; color: inherit;">
+            <div class="card mini-stat bg-white text-dark card-pagos-height"
+                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                            style="border-radius: 20px; background-color: #eed8fc;">
+                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/173-512.png') ?>" alt="">
+                        </div>
+                        <h5 class="fw-light text-uppercase text-black text-end">Total de Conductores</h5>
+                        <h1 class="fw-bolder text-end"><?= $cantidad_conductores ?></h1>
+                    </div>
+                    <div class="pt-2">
+                        <p class="text-dark-50 mb-0 mt-1 text-end"></p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Tarjeta de Total de Clientes -->
+    <div class="col-xl-3 col-md-6">
+        <a href="<?= URL::to('/ver-clientes') ?>" style="text-decoration: none; color: inherit;">
+            <div class="card mini-stat bg-white text-dark card-pagos-height"
+                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
+                             style="border-radius: 20px; background-color: #eed8fc;">
+                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/user-icon.png') ?>" alt="">
+                        </div>
+                        <h5 class="fw-light text-uppercase text-black text-end">Total de Clientes</h5>
+                        <h1 class="fw-bolder text-end"><?= $cantidad_clientes ?></h1>
+                    </div>
+                    <div class="pt-2">
+                        <p class="text-dark-50 mb-0 mt-1 text-end"></p>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
 </div>
 
+<?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
 <!-- ========== SECCIÓN DASHBOARD CREDIGO ========== -->
 <div class="row mt-4">
     <div class="col-12">
@@ -1287,63 +1554,9 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
     </div>
 </div>
 <!-- ========== FIN SECCIÓN CREDIGO ========== -->
+<?php endif; ?>
 
-<div class="row">
-    <!-- Tarjeta de Total de Conductores -->
-    <div class="col-xl-3 col-md-12">
-        <a href="<?= URL::to('/conductores') ?>" style="text-decoration: none; color: inherit;">
-            <div class="card mini-stat bg-white text-dark" 
-                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
-                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
-                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
-                <div class="card-body">
-                    <div class="mb-4">
-                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
-                            style="border-radius: 20px; background-color: #eed8fc;">
-                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/173-512.png') ?>" alt="">
-                        </div>
-                        <h5 class="fw-light text-uppercase text-black text-end cantidad-conductores" style="font-size: 15px;">Total de Conductores</h5>
-                        <h1 class="fw-bolder text-end"><?= $cantidad_conductores ?></h1>
-                    </div>
-                    <div class="pt-2">
-                        <div class="float-end">
-                            <a href="javascript:void(0)" class="text-white-50"><i class="mdi mdi-arrow-right h5"></i></a>
-                        </div>
-                        <p class="text-white-50 mb-0 mt-1"></p>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <!-- Tarjeta de Total de Clientes -->
-    <div class="col-xl-3 col-md-12">
-        <a href="<?= URL::to('/ver-clientes') ?>" style="text-decoration: none; color: inherit;">
-            <div class="card mini-stat bg-white text-dark" 
-                 style="border-radius:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
-                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 12px -2px rgba(0,0,0,.2)';"
-                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,.1)';">
-                <div class="card-body">
-                    <div class="mb-4">
-                        <div class="position-absolute top-0 start-15 translate-middle border-radius-xl mini-stat-img mt-3 w-25 h-50"
-                             style="border-radius: 20px; background-color: #eed8fc;">
-                            <img class="mt-3 mr-5" src="<?= URL::to('public/assets/images/services-icon/user-icon.png') ?>" alt="">
-                        </div>
-                        <h5 class="fw-light text-uppercase text-black text-end cantidad-conductores" style="font-size: 15px;">Total de Clientes</h5>
-                        <h1 class="fw-bolder text-end"><?= $cantidad_clientes ?></h1>
-                    </div>
-                    <div class="pt-2">
-                        <div class="float-end">
-                            <a href="javascript:void(0)" class="text-white-50"><i class="mdi mdi-arrow-right h5"></i></a>
-                        </div>
-                        <p class="text-white-50 mb-0 mt-1"></p>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>  
-
+<?php if ($_SESSION['id_rol'] != 2): // Ocultar para ASESORES ?>
 <!-- end row -->
 <div class="row">
     <div class="col-xl-12">
@@ -1408,6 +1621,8 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
         <!-- end card -->
     </div>
 </div>
+ <?php endif; ?>
+
 <!-- end row -->
 
 <textarea style="display: none" id="listatempdata"><?= json_encode($dataListVen) ?></textarea>
@@ -2001,4 +2216,45 @@ $html_registros = generarListaRegistrosVencidos($registros_vencidos);
     function abrirGestionDescuentos() {
         window.location.href = '<?= URL::to('/gestion-descuentos') ?>';
     }
+
+    // Función para cargar estadísticas de constataciones domiciliarias
+    <?php if (in_array($_SESSION['id_rol'], [1, 3, 2])): ?>
+    function cargarConstatacionesStats() {
+        $.ajax({
+            url: _URL + '/ajs/constataciones/contador',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#total-vehiculos-entregados').html(
+                        '<i class="fas fa-car text-success"></i> ' +
+                        response.total + ' vehículos'
+                    );
+                    $('#constataciones-realizadas').text(response.realizadas);
+                    $('#constataciones-pendientes').text(response.pendientes);
+                } else {
+                    $('#total-vehiculos-entregados').html('<span class="text-muted">Sin datos</span>');
+                }
+            },
+            error: function() {
+                $('#total-vehiculos-entregados').html('<span class="text-danger">Error</span>');
+            }
+        });
+    }
+
+    // Función para ir a constataciones domiciliarias
+    function irAConstataciones() {
+        window.location.href = '<?= URL::to('/constataciones-domiciliarias') ?>';
+    }
+
+    // Función para ir a recaudaciones
+    function irARecaudaciones() {
+        window.location.href = '<?= URL::to('/recaudaciones') ?>';
+    }
+
+    // Cargar al iniciar
+    $(document).ready(function() {
+        cargarConstatacionesStats();
+    });
+    <?php endif; ?>
 </script>

@@ -59,6 +59,8 @@ Route::get('/buscarConductor', 'RegistrarFinanciamientoController@buscarConducto
 Route::post('/guardarFinanciamiento', 'RegistrarFinanciamientoController@guardarFinanciamiento');
 Route::post('/obtenerFinanciamientosPorFecha', 'GenerarContratosController@obtenerFinanciamientosPorFecha');
 Route::post('/generarContratos', 'GenerarContratosController@generar');
+Route::post('/api/contratos/hardcoded-preview', 'GenerarContratosController@generarContratoHardcodeadoPreview');
+Route::get('/api/contratos/hardcoded-preview', 'GenerarContratosController@generarContratoHardcodeadoPreview');
 
 Route::get('/venta/comprobante/pdf/ma4/:venta', 'ReportesVentaController@comprobanteVentaMa4');
 Route::get('/venta/comprobante/pdf/ma4/:venta/:nombre', 'ReportesVentaController@comprobanteVentaMa4');
@@ -334,6 +336,7 @@ Route::post('/simularPagoCuota', 'PuntajeCrediticioController@simularPagoCuota')
 Route::get('/obtenerLogs', 'PuntajeCrediticioController@obtenerLogs');
 
 Route::postBase('/cupones', 'FragmentController@cuponesDrivers');
+Route::postBase('/cliente/cupones/conductores-clientes', 'FragmentController@clientesConductoresConCupon');
 
 // OBTENER PUNTAJES POR ID �NICO
 Route::get('/obtenerPuntajeYDatos', 'PuntajeCrediticioController@obtenerPuntajeYDatos');
@@ -427,6 +430,8 @@ Route::post('/config/departamentos/habilitar-multiples', 'DepartamentosConfigCon
 Route::PostBase('vehiculos', 'FragmentController@viewVehiculos');
 
 Route::postBase('/resumen-financiamientos', 'FragmentController@resumenFinanciamientos');
+Route::get('/obtenerVehiculosEntregados', 'FinanciamientoController@obtenerVehiculosEntregados');
+Route::get('/ajs/exportarVehiculosEntregados', 'ReportesResumenFinanciamientoController@exportarVehiculosEntregados');
 
 // ============ RUTAS DEL EDITOR DE CONTRATOS ============
 // Gestión de plantillas de contratos
@@ -461,3 +466,5 @@ Route::post('/api/contratos/hardcoded-preview', 'EditorContratosController@hardc
 Route::postBase('/adjudicaciones', 'FragmentController@adjudicaciones');
 
 Route::postBase('/gestion-descuentos', 'FragmentController@gestionDescuentos');
+Route::postBase('/constataciones-domiciliarias', 'FragmentController@constatacionesDomiciliarias');
+Route::postBase('/recaudaciones', 'FragmentController@recaudaciones');

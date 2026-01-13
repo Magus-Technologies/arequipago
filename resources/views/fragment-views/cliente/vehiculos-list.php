@@ -114,6 +114,7 @@
                     <select class="form-select" id="filtroOficinaVehiculo" onchange="cambiarOficinaVehiculo()">
                         <option value="1" selected>Oficina 1</option>
                         <option value="2">Oficina 2</option>
+                        <option value="3">Oficina Lima</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -339,6 +340,7 @@
                                 <select id="oficina_vehiculo" class="form-select" required>
                                     <option value="1" selected>Oficina 1</option>
                                     <option value="2">Oficina 2</option>
+                                    <option value="3">Oficina Lima</option>
                                 </select>
                             </div>
                             <div class="col-md-4">

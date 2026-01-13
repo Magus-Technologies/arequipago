@@ -832,16 +832,16 @@ public function actualizarCliente($datos)
           emergencia_telefono = ?, emergencia_parentesco = ?, 
           laboral_nombre = ?, laboral_telefono = ?, 
           laboral_puesto = ?, laboral_empresa = ?, 
-          recibo_servicios = ?, doc_identidad = ?, 
+          recibo_servicios = ?, selfie = ?, doc_identidad = ?, 
           otro_doc_1 = ?, otro_doc_2 = ?, otro_doc_3 = ?, 
           comentarios = ?, verificacion_domiciliaria = ?, fecha_actualizacion = NOW() 
           WHERE id = ?";
               
     $stmt = $this->conectar->prepare($query);
     
-    // Corregido: la cadena de tipos tenía menos tipos que variables a vincular
+    // Agregado el campo selfie en la posición correcta
     $stmt->bind_param(
-        "ssssssssssssssssssssssssssii", // <- Corregido: Se añadió un 's' adicional para distrito y se verificó el total
+        "sssssssssssssssssssssssssssii", // Agregado un 's' más para selfie
         $datos['tipo_doc'],
         $datos['n_documento'],
         $datos['nombres'],
@@ -863,6 +863,7 @@ public function actualizarCliente($datos)
         $datos['laboral_puesto'],
         $datos['laboral_empresa'],
         $datos['recibo_servicios'],
+        $datos['selfie'], // AGREGADO: Campo selfie
         $datos['doc_identidad'],
         $datos['otro_doc_1'],
         $datos['otro_doc_2'],
@@ -906,7 +907,7 @@ public function eliminarCliente($id)
  */
 private function eliminarArchivosCliente($cliente)
 {
-    $campos = ['recibo_servicios', 'doc_identidad', 'otro_doc_1', 'otro_doc_2', 'otro_doc_3'];
+    $campos = ['recibo_servicios', 'selfie', 'doc_identidad', 'otro_doc_1', 'otro_doc_2', 'otro_doc_3'];
     
     foreach ($campos as $campo) {
         if (!empty($cliente[$campo])) {
@@ -1632,6 +1633,57 @@ public function obtenerDepartamentos()
         } catch (Exception $e) {
             error_log("Error en Cliente::filtrarClientesPorFechaRegistro(): " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Obtiene la foto de perfil del cliente con prioridad desde datos_usuarios
+     * 
+     * @param int $id_usuario ID del usuario/cliente
+     * @param int $tipo_usuario Tipo de usuario (2 para clientes)
+     * @return string|null URL de la foto o null si no existe
+     */
+    public function obtenerFotoPerfil($id_usuario, $tipo_usuario = 2)
+    {
+        try {
+            // Primero consultar en datos_usuarios
+            $sql = "SELECT foto FROM datos_usuarios WHERE id_usuario = ? AND tipo_usuario = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("ii", $id_usuario, $tipo_usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                if (!empty($row['foto'])) {
+                    // Si existe foto en datos_usuarios, retornarla con URL completa externa
+                    $stmt->close();
+                    return 'https://magusemail.com/arequipago-api/public/storage/' . $row['foto'];
+                }
+            }
+            $stmt->close();
+
+            // Si no existe en datos_usuarios, consultar en clientes_financiar
+            $sql = "SELECT selfie FROM clientes_financiar WHERE id = ?";
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("i", $id_usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                if (!empty($row['selfie'])) {
+                    $stmt->close();
+                    return '/arequipago/' . $row['selfie'];
+                }
+            }
+            $stmt->close();
+
+            return null;
+
+        } catch (Exception $e) {
+            error_log("Error in Cliente::obtenerFotoPerfil(): " . $e->getMessage());
+            return null;
         }
     }
 

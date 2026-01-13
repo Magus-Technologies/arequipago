@@ -46,6 +46,13 @@
         p {
             font-size: 13px;
         }
+        .estado-pagado {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .estado-pendiente {
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -74,10 +81,11 @@
                     <th>Nº de cuota</th>
                     <th>Cuota</th>
                     <th>Fecha de vencimiento</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody id="tabla_semanal">
-                
+
             </tbody>
         </table>
     </div>
@@ -90,11 +98,12 @@
                     <th>Mes</th>
                     <th>Cuota</th>
                     <th>Fecha de vencimiento</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody id="tabla_mensual">
                 <!-- Filas dinámicas -->
-                
+
             </tbody>
         </table>
     </div>

@@ -780,10 +780,16 @@ class FinanciamientoController extends Controller
                     $fechaFormateada = $cuota['vencimiento']; // Si la fecha no se puede convertir, dejamos la original
                 }
 
+                // ✅ NUEVO: Obtener estado de la cuota (PAGADO o PENDIENTE)
+                $estado = isset($cuota['estado']) ? $cuota['estado'] : 'PENDIENTE';
+                $claseEstado = ($estado === 'PAGADO') ? 'estado-pagado' : 'estado-pendiente';
+                $textoEstado = ($estado === 'PAGADO') ? 'PAGADO ✅' : 'PENDIENTE';
+
                 $tablaSemanal .= "<tr>\n";
                 $tablaSemanal .= "<td>{$cuota['cuota']}</td>\n"; // Número de cuota
                 $tablaSemanal .= "<td>{$datos['tipoMoneda']} " . number_format($cuota['valor'], 2) . "</td>\n"; // Modificado para usar el tipo de moneda dinámico
                 $tablaSemanal .= "<td>{$fechaFormateada}</td>\n"; // Fecha de vencimiento con formato
+                $tablaSemanal .= "<td class=\"{$claseEstado}\">{$textoEstado}</td>\n"; // ✅ NUEVO: Columna de estado
                 $tablaSemanal .= "</tr>\n";
             }
 
@@ -884,10 +890,17 @@ class FinanciamientoController extends Controller
                     foreach ($cuotas as $cuota) {
                         $fechaVencimiento = $cuota['vencimiento']; // Ya está en formato dd/mm/yyyy
                         $valorFormateado = number_format($cuota['valor'], 2, '.', ',');
+
+                        // ✅ NUEVO: Obtener estado de la cuota (PAGADO o PENDIENTE)
+                        $estado = isset($cuota['estado']) ? $cuota['estado'] : 'PENDIENTE';
+                        $claseEstado = ($estado === 'PAGADO') ? 'estado-pagado' : 'estado-pendiente';
+                        $textoEstado = ($estado === 'PAGADO') ? 'PAGADO ✅' : 'PENDIENTE';
+
                         $tablaMensual .= "<tr>\n" .
                             "<td>{$mesAnio}</td>\n" .
                             "<td>Cuota {$cuota['cuota']}: {$datos['tipoMoneda']} {$valorFormateado}</td>\n" . // Aquí se arregló la concatenación
                             "<td>{$fechaVencimiento}</td>\n" .
+                            "<td class=\"{$claseEstado}\">{$textoEstado}</td>\n" . // ✅ NUEVO: Columna de estado
                             "</tr>\n";
                     }
                 }
@@ -1892,7 +1905,7 @@ class FinanciamientoController extends Controller
         }
 
         // Obtener información del financiamiento antes de eliminarlo (para restaurar stock)
-        $queryInfo = "SELECT idproductosv2, cantidad FROM financiamiento WHERE idfinanciamiento = ?";
+        $queryInfo = "SELECT idproductosv2, cantidad_producto FROM financiamiento WHERE idfinanciamiento = ?";
         $stmtInfo = $this->conexion->prepare($queryInfo);
         if ($stmtInfo) {
             $stmtInfo->bind_param("i", $id);
@@ -1902,7 +1915,7 @@ class FinanciamientoController extends Controller
             if ($resultInfo->num_rows > 0) {
                 $financiamiento = $resultInfo->fetch_assoc();
                 $idProducto = $financiamiento['idproductosv2'];
-                $cantidad = $financiamiento['cantidad'];
+                $cantidad = $financiamiento['cantidad_producto'];
 
                 // Restaurar el stock del producto
                 if ($idProducto && $cantidad > 0) {
@@ -2149,7 +2162,7 @@ class FinanciamientoController extends Controller
 
                         // Consulta para productos de conductores
                         $query2 = "
-                            SELECT 
+                            SELECT
                                 DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
                                 MONTHNAME(cf.fecha_vencimiento) as mes_nombre,
                                 YEAR(cf.fecha_vencimiento) as anio,
@@ -2162,14 +2175,16 @@ class FinanciamientoController extends Controller
                             FROM cuotas_financiamiento cf
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                             INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
-                            WHERE f.id_conductor = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso' $incobrable_condition
+                            WHERE f.id_conductor = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso'
+                            AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
+                            $incobrable_condition
                             ORDER BY cf.fecha_vencimiento ASC
                         ";
                     } else {
                         // Consulta para clientes - debe incluir campos individuales de cuotas
                         $incobrable_condition = $filtro == 'incobrables' ? 'AND f.incobrable = 1' : 'AND f.incobrable = 0';
                         $query2 = "
-                            SELECT 
+                            SELECT
                                 DATE_FORMAT(cf.fecha_vencimiento, '%Y-%m') as mes_anio,
                                 MONTHNAME(cf.fecha_vencimiento) as mes_nombre,
                                 YEAR(cf.fecha_vencimiento) as anio,
@@ -2182,7 +2197,9 @@ class FinanciamientoController extends Controller
                             FROM cuotas_financiamiento cf
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                             INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
-                            WHERE f.id_cliente = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso' $incobrable_condition
+                            WHERE f.id_cliente = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso'
+                            AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
+                            $incobrable_condition
                             ORDER BY cf.fecha_vencimiento ASC
                         ";
                     }
@@ -2330,6 +2347,7 @@ class FinanciamientoController extends Controller
                             CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
                             COUNT(cc.id_conductorcuota) AS num_cuotas,
                             SUM(cc.monto_cuota) AS deuda_total,
+                            0 AS total_moras,
                             'Financiamiento de Inscripción' AS tipo_financiamiento,
                             c.numUnidad,
                             c.desvinculado,
@@ -2356,6 +2374,7 @@ class FinanciamientoController extends Controller
                             CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_completo,
                             COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
                             SUM(cf.monto) AS deuda_total,
+                            COALESCE(SUM(cf.mora), 0) AS total_moras,
                             p.nombre AS tipo_financiamiento,
                             c.numUnidad,
                             c.desvinculado,
@@ -2374,17 +2393,19 @@ class FinanciamientoController extends Controller
                             cf.fecha_vencimiento < '$fecha_actual'
                             AND cf.estado = 'En Progreso'
                              AND f.estado_eliminado = 0
+                            AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                         GROUP BY
                             c.id_conductor, p.nombre, f.moneda, c.numUnidad, c.desvinculado, c.telefono, c.nombres, c.apellido_paterno, c.apellido_materno
 
                         UNION
-                    
+
                         SELECT
                             cl.id AS id_conductor,
                             CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) AS nombre_completo,
                             COUNT(cf.idcuotas_financiamiento) AS num_cuotas,
                             SUM(cf.monto) AS deuda_total,
+                            COALESCE(SUM(cf.mora), 0) AS total_moras,
                             p.nombre AS tipo_financiamiento,
                             NULL AS numUnidad,
                             0 AS desvinculado,
@@ -2404,6 +2425,7 @@ class FinanciamientoController extends Controller
                             AND cf.estado = 'En Progreso'
                             AND f.id_cliente IS NOT NULL
                              AND f.estado_eliminado = 0
+                            AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                         GROUP BY
                             cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno 
@@ -2918,12 +2940,23 @@ class FinanciamientoController extends Controller
                 dp.iddetalle_pago_financiamiento,
                 CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) as cliente_nombre,
                 CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) as cliente_financiar_nombre,
-                p.nombre as producto_nombre,
+                prod.nombre as producto_nombre,
                 cuota.numero_cuota,
                 -- Calcular mora dinámicamente si monto_mora_original es 0
                 CASE
                     WHEN dp.monto_mora_original > 0 THEN dp.monto_mora_original
-                    WHEN f.idproductosv2 = 37 THEN 0
+                    WHEN f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente' THEN 0
+                    -- NUEVO: Si el plan tiene cobrar_mora = 0, no cobrar mora
+                    WHEN COALESCE(pf.cobrar_mora, 1) = 0 THEN 0
+                    -- NUEVO: Si el financiamiento tiene cobrar_mora = 0, no cobrar mora
+                    WHEN f.cobrar_mora = 0 THEN 0
+                    -- NUEVA LÓGICA: Mora para vehículos en dólares según frecuencia
+                    WHEN (LOWER(prod.categoria) LIKE '%vehiculo%' OR LOWER(prod.categoria) LIKE '%vehículo%') AND f.moneda = '$' THEN
+                        CASE
+                            WHEN LOWER(f.frecuencia) = 'semanal' THEN 5
+                            WHEN LOWER(f.frecuencia) = 'mensual' THEN 20
+                            ELSE 5
+                        END
                     WHEN f.moneda = 'S/.' THEN
                         CASE
                             WHEN cuota.monto >= 100 THEN 10
@@ -2934,13 +2967,19 @@ class FinanciamientoController extends Controller
                 END as monto_mora,
                 cuota.fecha_vencimiento,
                 f.moneda,
-                f.idfinanciamiento
+                f.idfinanciamiento,
+                f.estado_entrega,
+                f.frecuencia,
+                f.cobrar_mora,
+                prod.categoria,
+                COALESCE(pf.cobrar_mora, 1) as plan_cobrar_mora
             FROM detalle_pago_financiamiento dp
             JOIN cuotas_financiamiento cuota ON dp.id_cuota = cuota.idcuotas_financiamiento
             JOIN financiamiento f ON cuota.id_financiamiento = f.idfinanciamiento
             LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
             LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
-            JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+            JOIN productosv2 prod ON f.idproductosv2 = prod.idproductosv2
+            LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
             WHERE dp.estado_mora = 'pendiente'
             ORDER BY cuota.fecha_vencimiento ASC";
             
@@ -3274,6 +3313,497 @@ class FinanciamientoController extends Controller
             echo json_encode([
                 'success' => false,
                 'error' => 'Error al obtener detalle: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener todos los vehículos entregados con sus montos
+     * Incluye financiamientos con estado_entrega='entregado' Y productos con categoría 'Vehículo'
+     */
+    public function obtenerVehiculosEntregados()
+    {
+        try {
+            $query = "SELECT 
+                f.idfinanciamiento,
+                f.id_conductor,
+                f.id_cliente,
+                f.monto_total,
+                f.monto_sin_interes,
+                f.fecha_entrega,
+                f.fecha_creacion,
+                f.estado,
+                f.estado_entrega,
+                f.moneda,
+                p.idproductosv2,
+                p.nombre AS producto_nombre,
+                p.categoria AS producto_categoria,
+                p.marca,
+                p.modelo,
+                p.precio_venta,
+                CASE 
+                    WHEN f.id_conductor IS NOT NULL THEN CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno)
+                    WHEN f.id_cliente IS NOT NULL THEN CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno)
+                    ELSE 'Sin nombre'
+                END AS nombre_completo,
+                CASE 
+                    WHEN f.id_conductor IS NOT NULL THEN c.nro_documento
+                    WHEN f.id_cliente IS NOT NULL THEN cl.n_documento
+                    ELSE NULL
+                END AS numero_documento,
+                CASE 
+                    WHEN f.id_conductor IS NOT NULL THEN 'Conductor'
+                    WHEN f.id_cliente IS NOT NULL THEN 'Cliente'
+                    ELSE 'Desconocido'
+                END AS tipo_persona,
+                c.numUnidad AS numero_unidad,
+                pl.nombre_plan
+            FROM financiamiento f
+            LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+            LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+            LEFT JOIN clientes_financiar cl ON f.id_cliente = cl.id
+            LEFT JOIN planes_financiamiento pl ON f.grupo_financiamiento = pl.idplan_financiamiento
+            WHERE f.estado_eliminado = 0
+            AND f.estado_entrega = 'entregado'  -- ✅ SOLO vehículos con estado_entrega = 'entregado'
+            AND f.idproductosv2 NOT IN (37, 312)  -- ✅ Excluir productos pendientes (37: Vehículo no entregado, 312: kia soluto pendiente)
+            AND (
+                -- Vehículos entregados con estado_entrega o por categoría
+                f.estado_entrega = 'entregado'
+                OR
+                (
+                    p.categoria IS NOT NULL 
+                    AND (
+                        LOWER(p.categoria) LIKE '%vehiculo%' 
+                        OR LOWER(p.categoria) LIKE '%vehículo%'
+                        OR LOWER(p.categoria) = 'moto lineal'
+                        OR LOWER(p.categoria) LIKE '%moto%'
+                    )
+                )
+            )
+            ORDER BY f.fecha_entrega DESC, f.fecha_creacion DESC";
+
+            $stmt = $this->conexion->prepare($query);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $vehiculos = [];
+            $montoTotalGeneral = 0;
+            $montoTotalSoles = 0;
+            $montoTotalDolares = 0;
+
+            while ($row = $result->fetch_assoc()) {
+                $vehiculos[] = $row;
+                
+                // Sumar al total general
+                $monto = floatval($row['monto_sin_interes'] ?? $row['monto_total']);
+                $montoTotalGeneral += $monto;
+
+                // Sumar por moneda
+                if ($row['moneda'] === 'S/.') {
+                    $montoTotalSoles += $monto;
+                } else {
+                    $montoTotalDolares += $monto;
+                }
+            }
+
+            $stmt->close();
+
+            echo json_encode([
+                'success' => true,
+                'vehiculos' => $vehiculos,
+                'total_vehiculos' => count($vehiculos),
+                'monto_total_general' => $montoTotalGeneral,
+                'monto_total_soles' => $montoTotalSoles,
+                'monto_total_dolares' => $montoTotalDolares
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener vehículos entregados: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener historial de cuotas pagadas de un conductor
+     * Muestra TODAS las cuotas pagadas (tanto las registradas manualmente como las pagadas por app)
+     * Busca por DNI o nombre del conductor/cliente
+     */
+    public function getHistorialCuotasPagadas()
+    {
+        try {
+            $busqueda = $_GET['busqueda'] ?? '';
+
+            if (empty($busqueda)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Debe ingresar un DNI o nombre para buscar'
+                ]);
+                return;
+            }
+
+            // Primero buscar el conductor/cliente
+            $queryPersona = "
+                SELECT
+                    id_conductor as id,
+                    CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) as nombre_completo,
+                    nro_documento as dni,
+                    'conductor' as tipo
+                FROM conductores
+                WHERE nro_documento = ? OR CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) LIKE ?
+                UNION
+                SELECT
+                    id,
+                    CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) as nombre_completo,
+                    n_documento as dni,
+                    'cliente' as tipo
+                FROM clientes_financiar
+                WHERE n_documento = ? OR CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) LIKE ?
+                LIMIT 1
+            ";
+
+            $busquedaLike = "%{$busqueda}%";
+            $stmt = $this->conexion->prepare($queryPersona);
+            $stmt->bind_param("ssss", $busqueda, $busquedaLike, $busqueda, $busquedaLike);
+            $stmt->execute();
+            $resultPersona = $stmt->get_result();
+
+            if ($resultPersona->num_rows === 0) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'No se encontró ningún conductor o cliente con ese DNI o nombre'
+                ]);
+                return;
+            }
+
+            $persona = $resultPersona->fetch_assoc();
+            $stmt->close();
+
+            // Ahora buscar todas las cuotas pagadas de esa persona
+            $queryCuotas = "
+                SELECT
+                    cf.idcuotas_financiamiento,
+                    cf.numero_cuota,
+                    cf.monto,
+                    cf.fecha_pago,
+                    cf.fecha_vencimiento,
+                    cf.mora,
+                    f.moneda as moneda_cuota,
+                    pl.nombre_plan,
+                    p.nombre as producto_nombre,
+                    f.idfinanciamiento
+                FROM cuotas_financiamiento cf
+                INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                LEFT JOIN planes_financiamiento pl ON f.grupo_financiamiento = pl.idplan_financiamiento
+                LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                WHERE cf.estado = 'pagado'
+                AND f.estado_eliminado = 0
+                AND (
+                    (f.id_conductor = ? AND ? = 'conductor')
+                    OR
+                    (f.id_cliente = ? AND ? = 'cliente')
+                )
+                ORDER BY cf.fecha_pago DESC, f.idfinanciamiento, cf.numero_cuota ASC
+            ";
+
+            $stmt = $this->conexion->prepare($queryCuotas);
+            $stmt->bind_param(
+                "isis",
+                $persona['id'],
+                $persona['tipo'],
+                $persona['id'],
+                $persona['tipo']
+            );
+            $stmt->execute();
+            $resultCuotas = $stmt->get_result();
+
+            $cuotas = [];
+            while ($row = $resultCuotas->fetch_assoc()) {
+                $cuotas[] = $row;
+            }
+
+            $stmt->close();
+
+            echo json_encode([
+                'success' => true,
+                'conductor' => [
+                    'nombre' => $persona['nombre_completo'],
+                    'dni' => $persona['dni']
+                ],
+                'cuotas' => $cuotas
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en getHistorialCuotasPagadas: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al obtener historial de cuotas: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Buscar sugerencias de conductores para autocompletado
+     * Devuelve una lista de conductores/clientes que coincidan con la búsqueda
+     */
+    public function buscarSugerenciasConductores()
+    {
+        try {
+            $busqueda = $_GET['busqueda'] ?? '';
+
+            if (empty($busqueda)) {
+                echo json_encode([
+                    'success' => true,
+                    'sugerencias' => []
+                ]);
+                return;
+            }
+
+            $busquedaLike = "%{$busqueda}%";
+
+            // Buscar en conductores y clientes (LIMIT 10)
+            $query = "
+                (SELECT
+                    nro_documento as dni,
+                    CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) as nombre,
+                    'Conductor' as tipo
+                FROM conductores
+                WHERE nro_documento LIKE ? OR CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) LIKE ?
+                LIMIT 5)
+                UNION ALL
+                (SELECT
+                    n_documento as dni,
+                    CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) as nombre,
+                    'Cliente' as tipo
+                FROM clientes_financiar
+                WHERE n_documento LIKE ? OR CONCAT(nombres, ' ', apellido_paterno, ' ', apellido_materno) LIKE ?
+                LIMIT 5)
+                LIMIT 10
+            ";
+
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bind_param("ssss", $busquedaLike, $busquedaLike, $busquedaLike, $busquedaLike);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $sugerencias = [];
+            while ($row = $result->fetch_assoc()) {
+                $sugerencias[] = $row;
+            }
+
+            $stmt->close();
+
+            echo json_encode([
+                'success' => true,
+                'sugerencias' => $sugerencias
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en buscarSugerenciasConductores: " . $e->getMessage());
+
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al buscar sugerencias: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Generar boleta de cuota pagada (app o registrado)
+     * Primero busca si existe pago registrado, si no existe construye la boleta con datos de cuotas_financiamiento
+     */
+    public function generarBoletaCuota()
+    {
+        try {
+            $idCuota = $_POST['id_cuota'] ?? null;
+
+            if (!$idCuota) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'ID de cuota requerido'
+                ]);
+                return;
+            }
+
+            // PASO 1: Buscar si existe un pago registrado para esta cuota
+            $queryPagoRegistrado = "
+                SELECT dpf.idfinanciamiento as id_pago
+                FROM detalle_pago_financiamiento dpf
+                WHERE dpf.id_cuota = ?
+                LIMIT 1
+            ";
+
+            $stmtPago = $this->conexion->prepare($queryPagoRegistrado);
+            $stmtPago->bind_param("i", $idCuota);
+            $stmtPago->execute();
+            $resultPago = $stmtPago->get_result();
+
+            if ($resultPago->num_rows > 0) {
+                // EXISTE PAGO REGISTRADO - Usar el mismo método que la tabla de reportes
+                $pagoData = $resultPago->fetch_assoc();
+                $idPago = $pagoData['id_pago'];
+                $stmtPago->close();
+
+                // Usar ReportFinanciamientoController para generar el PDF
+                $reportController = new \ReportFinanciamientoController();
+                $financiamientoModel = new \Financiamiento();
+                $datosPago = $financiamientoModel->getDataPago($idPago);
+
+                if ($datosPago) {
+                    $idConductor = (int)$datosPago['id_conductor'];
+                    $idAsesor = (string)$datosPago['id_asesor'];
+                    $monedaEfectivo = $datosPago['moneda'];
+
+                    $cuotasSeleccionadas = [];
+                    foreach ($datosPago['cuotas'] as $cuota) {
+                        $cuotasSeleccionadas[] = [
+                            'idCuota' => $cuota['id_cuota'],
+                            'monto' => $cuota['monto'],
+                            'mora' => $cuota['mora'],
+                        ];
+                    }
+
+                    $pdfBase64 = $reportController->generateNotaVenta($idConductor, $idAsesor, $cuotasSeleccionadas, $idPago, $monedaEfectivo);
+
+                    echo json_encode([
+                        'success' => true,
+                        'pdf_base64' => $pdfBase64,
+                        'message' => 'Boleta generada desde pago registrado'
+                    ]);
+                    return;
+                } else {
+                    throw new Exception("No se encontraron datos del pago");
+                }
+            }
+
+            $stmtPago->close();
+
+            // PASO 2: NO EXISTE PAGO REGISTRADO - Crear pago temporal y usar el mismo diseño
+            // Buscar información de la cuota y financiamiento
+            $queryCuota = "
+                SELECT
+                    cf.idcuotas_financiamiento,
+                    cf.numero_cuota,
+                    cf.monto,
+                    cf.fecha_pago,
+                    cf.mora,
+                    cf.id_financiamiento,
+                    f.moneda,
+                    f.id_conductor,
+                    f.id_cliente
+                FROM cuotas_financiamiento cf
+                INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
+                WHERE cf.idcuotas_financiamiento = ?
+            ";
+
+            $stmt = $this->conexion->prepare($queryCuota);
+            $stmt->bind_param("i", $idCuota);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows === 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Cuota no encontrada'
+                ]);
+                return;
+            }
+
+            $cuota = $result->fetch_assoc();
+            $stmt->close();
+
+            // CREAR REGISTRO TEMPORAL en pagos_financiamiento para generar el PDF
+            $idConductor = $cuota['id_conductor'];
+            $idCliente = $cuota['id_cliente'];
+            $montoTotal = floatval($cuota['monto']) + floatval($cuota['mora'] ?? 0);
+            $monedaEfectivo = $cuota['moneda'] ?? 'S/.';
+            $idFinanciamiento = $cuota['id_financiamiento'];
+            $fechaPago = $cuota['fecha_pago'];
+
+            // Insertar pago temporal
+            $queryInsertPago = "
+                INSERT INTO pagos_financiamiento
+                (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, fecha_pago, moneda, concepto, estado)
+                VALUES (?, ?, ?, 0, ?, 'Pago por App', ?, ?, 'Pago de cuota por aplicación móvil', 1)
+            ";
+
+            $stmtInsert = $this->conexion->prepare($queryInsertPago);
+            $stmtInsert->bind_param("iiidss",
+                $idFinanciamiento,
+                $idConductor,
+                $idCliente,
+                $montoTotal,
+                $fechaPago,
+                $monedaEfectivo
+            );
+            $stmtInsert->execute();
+            $idPagoTemporal = $this->conexion->insert_id;
+            $stmtInsert->close();
+
+            // Insertar detalle temporal
+            $queryInsertDetalle = "
+                INSERT INTO detalle_pago_financiamiento (idfinanciamiento, id_cuota, mora)
+                VALUES (?, ?, ?)
+            ";
+
+            $stmtDetalle = $this->conexion->prepare($queryInsertDetalle);
+            $mora = floatval($cuota['mora'] ?? 0);
+            $stmtDetalle->bind_param("iid", $idPagoTemporal, $idCuota, $mora);
+            $stmtDetalle->execute();
+            $stmtDetalle->close();
+
+            // Generar PDF usando el mismo método que los pagos registrados
+            $reportController = new \ReportFinanciamientoController();
+            $financiamientoModel = new \Financiamiento();
+            $datosPago = $financiamientoModel->getDataPago($idPagoTemporal);
+
+            if ($datosPago) {
+                $idConductorInt = (int)$datosPago['id_conductor'];
+                $idAsesor = '0'; // Sistema
+
+                $cuotasSeleccionadas = [];
+                foreach ($datosPago['cuotas'] as $cuotaData) {
+                    $cuotasSeleccionadas[] = [
+                        'idCuota' => $cuotaData['id_cuota'],
+                        'monto' => $cuotaData['monto'],
+                        'mora' => $cuotaData['mora'],
+                    ];
+                }
+
+                $pdfBase64 = $reportController->generateNotaVenta($idConductorInt, $idAsesor, $cuotasSeleccionadas, $idPagoTemporal, $monedaEfectivo);
+
+                // ELIMINAR registros temporales
+                $queryDeleteDetalle = "DELETE FROM detalle_pago_financiamiento WHERE idfinanciamiento = ?";
+                $stmtDelDetalle = $this->conexion->prepare($queryDeleteDetalle);
+                $stmtDelDetalle->bind_param("i", $idPagoTemporal);
+                $stmtDelDetalle->execute();
+                $stmtDelDetalle->close();
+
+                $queryDeletePago = "DELETE FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+                $stmtDelPago = $this->conexion->prepare($queryDeletePago);
+                $stmtDelPago->bind_param("i", $idPagoTemporal);
+                $stmtDelPago->execute();
+                $stmtDelPago->close();
+
+                echo json_encode([
+                    'success' => true,
+                    'pdf_base64' => $pdfBase64,
+                    'message' => 'Boleta generada para pago por app'
+                ]);
+            } else {
+                throw new Exception("No se pudieron obtener datos del pago temporal");
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en generarBoletaCuota: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al generar boleta: ' . $e->getMessage()
             ]);
         }
     }

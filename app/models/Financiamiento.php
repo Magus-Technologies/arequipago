@@ -131,6 +131,11 @@ class Financiamiento
             ? strtoupper(trim($datos['placa_vehiculo']))
             : null;
 
+        // ✅ NUEVO: Número corporativo (CORPORATIVO CLARO - Plan 36)
+        $numeroCorporativo = isset($datos['numero_corporativo']) && $datos['numero_corporativo'] !== ''
+            ? trim($datos['numero_corporativo'])
+            : null;
+
         // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado y campos CrediYango
         $query = 'INSERT INTO financiamiento (
                 id_conductor,
@@ -162,8 +167,9 @@ class Financiamiento
                 es_entrega_especial,  -- ✅ NUEVO: Flag de entrega especial (plan 42)
                 fecha_entrega,        -- NUEVO: Campo para CrediYango
                 fecha_inicio_pagos_calculada,  -- NUEVO: Campo para CrediYango
-                placa_vehiculo        -- ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                placa_vehiculo,       -- ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
+                numero_corporativo    -- ✅ NUEVO: Número corporativo (CORPORATIVO CLARO - Plan 36)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -200,7 +206,14 @@ class Financiamiento
                 error_log("⚠️ FORZANDO estado_entrega='pendiente' para CrediYango");
             }
         }
-        
+
+        // ✅ NUEVO: Para CORPORATIVO CLARO (Plan 36), estado_entrega SIEMPRE debe ser NULL
+        // Ya que es financiamiento de chips, no de vehículos
+        if ($datos['grupo_financiamiento'] == '36' || $datos['grupo_financiamiento'] == 36) {
+            $estadoEntrega = null;
+            error_log("📱 Modelo - CORPORATIVO CLARO detectado - FORZANDO estado_entrega=NULL");
+        }
+
         // ✅ CORREGIDO: Tipos de bind_param
         // i=integer, d=double, s=string
         // Posición 17: second_product = 's' (string)
@@ -213,8 +226,9 @@ class Financiamiento
         // Posición 28: fecha_entrega = 's' (string/date) ✅
         // Posición 29: fecha_inicio_pagos_calculada = 's' (string/date) ✅
         // Posición 30: placa_vehiculo = 's' (string) ✅ NUEVO
+        // Posición 31: numero_corporativo = 's' (string) ✅ NUEVO
         $stmt->bind_param(
-            'iiiiissddiissssssdsdddiiisisss',
+            'iiiiissddiissssssdsdddiiisisss' . 's',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
@@ -244,7 +258,8 @@ class Financiamiento
             $esEntregaEspecial,
             $fechaEntrega,
             $fechaInicioPagosCalculada,
-            $placaVehiculo
+            $placaVehiculo,
+            $numeroCorporativo
         );
 
         error_log("🔍 DESPUÉS DE BIND_PARAM - Ejecutando query...");
@@ -796,7 +811,7 @@ class Financiamiento
         return $resultadoPlan->fetch_assoc() ?: null;
     }
 
-    public function actualizarCuotas($cuotasSeleccionadas, $fechaPagoReal = null)
+    public function actualizarCuotas($cuotasSeleccionadas, $fechaPagoReal = null, $esRegistroAutomatico = false)
     {
         $startTime = microtime(true);
         $idFinanciamiento = null;
@@ -842,8 +857,9 @@ class Financiamiento
             if ($categoria) {
                 $categoriaNormalizada = trim(strtolower(str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $categoria)));
 
-                // Verificar si la categoría es "celular" o "vehículo" y el rol del usuario es 2
-                if (($categoriaNormalizada === 'celular' || $categoriaNormalizada === 'celulares' || $categoriaNormalizada === 'vehiculo' || $categoriaNormalizada === 'vehiculos') && $rol_usuario == 2) {
+                // ✅ MODIFICADO: Verificar si la categoría es "celular" o "vehículo" y el rol del usuario es 2
+                // EXCEPCIÓN: Permitir si es un registro automático de cuotas adelantadas
+                if (($categoriaNormalizada === 'celular' || $categoriaNormalizada === 'celulares' || $categoriaNormalizada === 'vehiculo' || $categoriaNormalizada === 'vehiculos') && $rol_usuario == 2 && !$esRegistroAutomatico) {
                     return ['success' => false, 'message' => 'No está autorizado para esta operación'];
                 }
             }
@@ -903,8 +919,31 @@ class Financiamiento
 
         $cuotasPagadas = $stmt->affected_rows;
         $stmt->close();
-        
-        error_log("Cuotas actualizadas: {$cuotasPagadas}");
+
+        error_log("✅ Cuotas actualizadas exitosamente: {$cuotasPagadas} de " . count($ids) . " esperadas");
+        error_log("   IDs procesados: " . implode(', ', $ids));
+
+        // Si no se afectaron filas, investigar por qué
+        if ($cuotasPagadas === 0) {
+            error_log("⚠️ ADVERTENCIA: No se actualizó ninguna fila. Verificando estado actual de las cuotas...");
+            $placeholdersVerif = implode(',', array_fill(0, count($ids), '?'));
+            $sqlVerif = "SELECT idcuotas_financiamiento, estado, fecha_pago FROM cuotas_financiamiento WHERE idcuotas_financiamiento IN ({$placeholdersVerif})";
+            $stmtVerif = $this->conectar->prepare($sqlVerif);
+
+            $typesVerif = str_repeat('i', count($ids));
+            $bindParamsVerif = [$typesVerif];
+            foreach ($ids as $key => $value) {
+                $bindParamsVerif[] = &$ids[$key];
+            }
+            call_user_func_array([$stmtVerif, 'bind_param'], $bindParamsVerif);
+            $stmtVerif->execute();
+            $resultVerif = $stmtVerif->get_result();
+
+            while ($row = $resultVerif->fetch_assoc()) {
+                error_log("   Cuota ID {$row['idcuotas_financiamiento']}: estado='{$row['estado']}', fecha_pago='{$row['fecha_pago']}'");
+            }
+            $stmtVerif->close();
+        }
 
         // Verificar si todas las cuotas del financiamiento están pagadas
         if ($idFinanciamiento) {

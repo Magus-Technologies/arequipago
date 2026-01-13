@@ -1,10 +1,12 @@
 // Variables globales
 let datosResumen = null;
 let planSeleccionado = null;
+let datosVehiculosEntregados = null;
 
 // Cargar datos al iniciar la página
 $(document).ready(function() {
     cargarResumenFinanciamientos();
+    cargarContadorVehiculos(); // ✅ NUEVO: Cargar contador de vehículos
 });
 
 // Función para cargar el resumen
@@ -236,5 +238,163 @@ function exportarDetallePlan() {
 // Función para volver a financiamiento
 function volverAFinanciamiento() {
     window.location.href = _URL + '/module-financiamiento';
+}
+
+// ✅ NUEVO: Cargar contador de vehículos entregados
+function cargarContadorVehiculos() {
+    fetch(_URL + '/obtenerVehiculosEntregados')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('badgeTotalVehiculos').textContent = data.total_vehiculos;
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar contador de vehículos:', error);
+        });
+}
+
+// ✅ NUEVO: Ver todos los vehículos entregados
+function verVehiculosEntregados() {
+    Swal.fire({
+        title: 'Cargando...',
+        text: 'Obteniendo vehículos entregados',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(_URL + '/obtenerVehiculosEntregados')
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
+            
+            if (data.success) {
+                datosVehiculosEntregados = data;
+                mostrarModalVehiculosEntregados(data);
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al cargar vehículos entregados'
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al cargar vehículos: ' + error.message
+            });
+        });
+}
+
+// ✅ NUEVO: Mostrar modal con vehículos entregados
+function mostrarModalVehiculosEntregados(data) {
+    // Actualizar resumen de montos
+    document.getElementById('totalVehiculosModal').textContent = data.total_vehiculos;
+    document.getElementById('montoTotalSoles').textContent = 'S/ ' + parseFloat(data.monto_total_soles).toLocaleString('es-PE', {minimumFractionDigits: 2});
+    document.getElementById('montoTotalDolares').textContent = '$ ' + parseFloat(data.monto_total_dolares).toLocaleString('es-PE', {minimumFractionDigits: 2});
+
+    // Destruir DataTable si ya existe
+    if ($.fn.DataTable.isDataTable('#tablaVehiculosEntregados')) {
+        $('#tablaVehiculosEntregados').DataTable().destroy();
+    }
+
+    const tbody = document.querySelector('#tablaVehiculosEntregados tbody');
+    tbody.innerHTML = '';
+
+    data.vehiculos.forEach(vehiculo => {
+        // Formatear fecha de entrega
+        let fechaEntrega = 'Sin fecha';
+        if (vehiculo.fecha_entrega) {
+            const fecha = vehiculo.fecha_entrega.split(' ')[0];
+            const [year, month, day] = fecha.split('-');
+            if (year && month && day) {
+                fechaEntrega = `${day}/${month}/${year}`;
+            }
+        }
+
+        // Determinar monto a mostrar
+        const monto = vehiculo.monto_sin_interes || vehiculo.monto_total;
+        const moneda = vehiculo.moneda || 'S/.';
+
+        // Marca y modelo
+        const marcaModelo = (vehiculo.marca || vehiculo.modelo) 
+            ? `${vehiculo.marca || ''} ${vehiculo.modelo || ''}`.trim() 
+            : 'N/A';
+
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td><strong>${vehiculo.idfinanciamiento}</strong></td>
+            <td><span class="badge ${vehiculo.tipo_persona === 'Conductor' ? 'bg-primary' : 'bg-info'}">${vehiculo.tipo_persona}</span></td>
+            <td>${vehiculo.nombre_completo}</td>
+            <td>${vehiculo.numero_documento || 'N/A'}</td>
+            <td>${vehiculo.numero_unidad || 'N/A'}</td>
+            <td><strong>${vehiculo.producto_nombre || 'N/A'}</strong></td>
+            <td>${marcaModelo}</td>
+            <td><strong>${moneda} ${parseFloat(monto).toLocaleString('es-PE', {minimumFractionDigits: 2})}</strong></td>
+            <td><small>${vehiculo.nombre_plan || 'N/A'}</small></td>
+            <td>${fechaEntrega}</td>
+            <td><span class="badge ${vehiculo.estado_entrega === 'entregado' ? 'bg-success' : 'bg-warning'}">${vehiculo.estado_entrega || vehiculo.estado}</span></td>
+        `;
+    });
+
+    // Inicializar DataTable
+    $('#tablaVehiculosEntregados').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+        },
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+        order: [[9, 'desc']], // Ordenar por fecha de entrega descendente
+        responsive: true,
+        dom: 'Bfrtip',
+        buttons: []
+    });
+
+    // Mostrar modal
+    $('#modalVehiculosEntregados').modal('show');
+}
+
+// ✅ NUEVO: Exportar vehículos entregados a Excel (usando el controlador PHP)
+function exportarVehiculosEntregados() {
+    if (!datosVehiculosEntregados || !datosVehiculosEntregados.vehiculos || datosVehiculosEntregados.vehiculos.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Atención',
+            text: 'No hay datos para exportar'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Exportando...',
+        text: 'Generando archivo Excel con diseño profesional',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Crear URL para descargar (igual que el modal de detalle de plan)
+    const url = `${_URL}/ajs/exportarVehiculosEntregados`;
+
+    // Descargar archivo
+    window.location.href = url;
+
+    // Cerrar loading después de un momento
+    setTimeout(() => {
+        Swal.close();
+        Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Archivo Excel descargado correctamente',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }, 1500);
 }
 

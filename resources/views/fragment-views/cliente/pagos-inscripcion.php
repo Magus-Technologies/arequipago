@@ -358,6 +358,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                             </div>
                         `;
                         $("#lista_cuotas").html(html);
+                        // Establecer el total a pagar para clientes
+                        $("#total_a_pagar").val("100.00");
                         // Mostrar el botón de registrar pago
                         $("#btnRegistrarPago").show();
                         return;
@@ -510,27 +512,47 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         let vuelto = document.getElementById("vuelto").value;
         let dni = document.getElementById("buscar_dni").value; // Se obtiene del input de búsqueda
 
-        // 🔹 Si el método de pago es "Efectivo", validar todos los campos
+        // Validar que se haya buscado un conductor/cliente
+        if (!dni || dni.trim() === "") {
+            Swal.fire({
+                icon: "warning",
+                title: "Búsqueda requerida",
+                text: "Por favor, busque un conductor o cliente primero."
+            });
+            return;
+        }
+
+        // Validar que se haya seleccionado un método de pago
+        if (!metodoPago || metodoPago === "") {
+            Swal.fire({
+                icon: "warning",
+                title: "Método de pago requerido",
+                text: "Por favor, seleccione un método de pago."
+            });
+            return;
+        }
+
+        // Validar que haya un monto a pagar
+        if (!monto || monto === "" || parseFloat(monto) <= 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Monto inválido",
+                text: "No hay un monto válido a pagar. Por favor, seleccione las cuotas o verifique el cliente."
+            });
+            return;
+        }
+
+        // 🔹 Si el método de pago es "Efectivo", validar campos adicionales
         if (metodoPago === "Efectivo") {  
-            if (!dni || !metodoPago || !monto || efectivoRecibido === "") { // 🔹 Se mantiene la validación original solo para "Efectivo"
+            if (efectivoRecibido === "" || parseFloat(efectivoRecibido) < parseFloat(monto)) {
                 Swal.fire({
                     icon: "warning",
-                    title: "Campos incompletos",
-                    text: "Por favor, complete todos los campos obligatorios."
+                    title: "Efectivo insuficiente",
+                    text: "El efectivo recibido debe ser mayor o igual al monto total a pagar."
                 });
                 return;
             }
         } else {
-            // 🔹 Nueva validación: Si el método de pago NO es "Efectivo", asegurarse de que el método de pago no esté vacío
-            if (!metodoPago) { 
-                Swal.fire({
-                    icon: "warning",
-                    title: "Método de pago requerido",
-                    text: "Por favor, seleccione un método de pago válido."
-                });
-                return;
-            }
-
             // 🔹 Si el método de pago NO es "Efectivo", forzar efectivo_recibido y vuelto a "0.00"
             efectivoRecibido = "0.00";  
             vuelto = "0.00";  

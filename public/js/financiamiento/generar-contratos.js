@@ -296,9 +296,11 @@ function GenerarContratos() {
           );
         }
       } else {
+        // Mostrar mensaje específico del backend si existe
+        const mensajeError = data.mensaje || (data.errores && data.errores.length > 0 ? `Estos contratos no se generaron: ${data.errores.join(", ")}` : "No se pudieron generar los contratos.");
         Swal.fire(
           "Atención",
-          `Estos contratos no se generaron: ${data.errores.join(", ")}`,
+          mensajeError,
           "warning"
         );
       }

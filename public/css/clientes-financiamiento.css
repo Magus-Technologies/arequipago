@@ -1,0 +1,475 @@
+
+        /* Estilos para botones de acciones - similar a conductores-cuotas-vencidas */
+        .btn-group .btn {
+            margin: 0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        /* Estilos para clientes que ya pagaron - fondo verde profesional */
+        #tablaConductoresInicial tbody tr.cliente-pagado td {
+            background-color: #d4edda !important; /* Verde suave profesional */
+            border-color: #c3e6cb !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover td {
+            background-color: #c3e6cb !important; /* Verde más oscuro al hover */
+            border-color: #b8dabd !important;
+        }
+
+        /* Asegurar que funcione con las clases de DataTables */
+        #tablaConductoresInicial tbody tr.cliente-pagado.odd td,
+        #tablaConductoresInicial tbody tr.cliente-pagado.even td {
+            background-color: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado.odd:hover td,
+        #tablaConductoresInicial tbody tr.cliente-pagado.even:hover td {
+            background-color: #c3e6cb !important;
+        }
+
+        /* Estilos para badges de estado de pago */
+        .badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge.bg-success {
+            background-color: #28a745 !important;
+            color: white;
+        }
+
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #212529;
+        }
+
+        .badge i {
+            font-size: 10px;
+        }
+
+        /* Aplica estilos solo a la tabla con el ID "tablaConductoresInicial" */
+        #tablaConductoresInicial {
+            border-collapse: collapse;
+            /* Asegura que los bordes de la tabla colapsen */
+            width: 100%;
+            /* La tabla ocupa todo el ancho del contenedor */
+        }
+
+
+        /* Hace que la última columna (Acciones) se mantenga fija */
+        #tablaConductoresInicial th:last-child,
+        #tablaConductoresInicial td:last-child {
+            position: sticky;
+            /* Hace que la columna se mantenga fija */
+            right: 0;
+            /* La fija al lado derecho */
+            background-color: white;
+            /* Fondo blanco para que no se superponga */
+            z-index: 2;
+            /* Coloca la columna por encima de las demás */
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+            /* Agrega una sombra para diferenciarla */
+        }
+
+        /* Asegurar que el texto del encabezado de la columna Acciones sea visible */
+        #tablaConductoresInicial th:last-child {
+            position: sticky;
+            right: 0;
+            background-color: white; /* Cambiar a fondo blanco */
+            color: #333 !important; /* Color de texto oscuro */
+            z-index: 3; /* Mayor que las celdas normales */
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilos para la tabla */
+        .table-responsive {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            /* Evitar que las columnas se rompan en varias líneas */
+            /* NUEVO CAMBIO */
+            width: 100%;
+        }
+
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            /* Espaciado entre los botones */
+            align-items: center;
+            /* Alinear verticalmente */
+        }
+
+        .button-group>button {
+            height: 100%;
+            /* Asegurar que los botones tengan la misma altura */
+            /* NUEVO CAMBIO */
+        }
+
+        /* Ajustes para evitar que el scroll aparezca más abajo del texto de paginación */
+        .dataTables_wrapper .dataTables_info {
+            margin-top: 10px;
+            /* Separación entre el texto de info y la tabla */
+            /* CAMBIO */
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 10px;
+            /* Separación entre la paginación y el texto de info */
+            /* CAMBIO */
+        }
+
+        .custom-file-input:lang(es)~.custom-file-label::after {
+            content: "Buscar";
+        }
+
+        /* Solución definitiva: sobrescribir las variables CSS de Bootstrap */
+        #tablaConductoresInicial tbody tr.cliente-pagado td:not(:last-child) {
+            --bs-table-accent-bg: #d4edda !important;
+            background-color: #d4edda !important;
+            background: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover td:not(:last-child) {
+            --bs-table-accent-bg: #c3e6cb !important;
+            --bs-table-hover-bg: #c3e6cb !important;
+            background-color: #c3e6cb !important;
+            background: #c3e6cb !important;
+        }
+
+        /* Asegurar que funcione también sin hover */
+        #tablaConductoresInicial tbody tr.cliente-pagado {
+            --bs-table-accent-bg: #d4edda !important;
+            --bs-table-striped-bg: #d4edda !important;
+        }
+
+        #tablaConductoresInicial tbody tr.cliente-pagado:hover {
+            --bs-table-accent-bg: #c3e6cb !important;
+            --bs-table-hover-bg: #c3e6cb !important;
+        }
+
+        /* Estilos para badges de verificación de clientes */
+        .client-verification-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: -5px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .client-verification-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .client-verification-item .icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .client-verification-item .label {
+            font-weight: 500;
+            min-width: 180px;
+        }
+
+        .client-verification-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-verification-status.verified {
+            background-color: #02a499;
+            color: white;
+        }
+
+        .client-verification-status.not-verified {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .client-verification-status.pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        /* ========== ESTILOS PARA BÚSQUEDA DE CONTRATOS - DISEÑO PROFESIONAL ========== */
+
+        /* Contenedor de resultados con animación suave */
+        #resultadosBusqueda {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Título de resultados elegante */
+        .resultados-titulo {
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+            display: inline-block;
+            font-size: 18px;
+        }
+
+        /* Card de cliente - Diseño corporativo */
+        .cliente-card {
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .cliente-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            transform: translateX(4px);
+            border-left-color: #1d4ed8;
+        }
+
+        /* Contenido dentro del card */
+        .cliente-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .cliente-datos {
+            flex: 1;
+        }
+
+        .cliente-dni {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .cliente-dni i {
+            color: #2563eb;
+            font-size: 16px;
+        }
+
+        .cliente-dni span {
+            color: #1a1a1a;
+        }
+
+        .cliente-nombre {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .cliente-telefono {
+            font-size: 14px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cliente-telefono i {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        /* Botón de acción elegante */
+        .cliente-accion {
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-generar-contrato {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .btn-generar-contrato:hover {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-generar-contrato:active {
+            transform: scale(0.98);
+        }
+
+        .btn-generar-contrato i {
+            font-size: 16px;
+        }
+
+        /* Indicador de carga profesional */
+        .loading-search {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .loading-search i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            color: #2563eb;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-search p {
+            font-size: 15px;
+            color: #6b7280;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Sin resultados - mensaje profesional */
+        .sin-resultados-box {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f9fafb;
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .sin-resultados-box i {
+            font-size: 56px;
+            color: #9ca3af;
+            margin-bottom: 20px;
+        }
+
+        .sin-resultados-box h5 {
+            color: #1a1a1a;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .sin-resultados-box p {
+            color: #6b7280;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Variantes sutiles de colores (borde izquierdo) */
+        .cliente-card.variant-1 {
+            border-left-color: #2563eb;
+        }
+
+        .cliente-card.variant-2 {
+            border-left-color: #7c3aed;
+        }
+
+        .cliente-card.variant-3 {
+            border-left-color: #0891b2;
+        }
+
+        .cliente-card.variant-4 {
+            border-left-color: #059669;
+        }
+
+        .cliente-card.variant-5 {
+            border-left-color: #dc2626;
+        }
+
+        /* Hover para cada variante */
+        .cliente-card.variant-1:hover { border-left-color: #1d4ed8; }
+        .cliente-card.variant-2:hover { border-left-color: #6d28d9; }
+        .cliente-card.variant-3:hover { border-left-color: #0e7490; }
+        .cliente-card.variant-4:hover { border-left-color: #047857; }
+        .cliente-card.variant-5:hover { border-left-color: #b91c1c; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .cliente-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .cliente-accion {
+                width: 100%;
+            }
+
+            .btn-generar-contrato {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .cliente-nombre {
+                font-size: 16px;
+            }
+
+            .cliente-dni {
+                font-size: 13px;
+            }
+
+            .cliente-card {
+                padding: 20px;
+            }
+        }
+
+  

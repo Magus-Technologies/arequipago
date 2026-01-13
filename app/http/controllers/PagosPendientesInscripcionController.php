@@ -152,6 +152,9 @@ class PagosPendientesInscripcionController extends Controller
         $monto_pago = $observaciones['monto_pago'];
         $fecha_actual = date('Y-m-d');
 
+        // ✅ CORRECCIÓN: Obtener el usuario que REGISTRÓ el pago (asesor), no el que lo aprueba (director)
+        $id_usuario_registro = $pagoPendiente['id_usuario_registro'] ?? $id_usuario_aprobacion;
+
         // 1. Registrar en conductor_pago
         $conductorPagoModel = new ConductorPagoModel();
         $id_tipopago = ($tipo_pago === 'contado') ? 1 : 2;
@@ -161,17 +164,19 @@ class PagosPendientesInscripcionController extends Controller
             throw new Exception('Error al registrar el pago del conductor');
         }
 
-        // Registrar comisión
+        // Registrar comisión - ✅ USAR EL USUARIO QUE REGISTRÓ, NO EL QUE APRUEBA
         $vehiculoModel = new Vehiculo();
         $vehiculo = $vehiculoModel->obtenerPlacaPorConductor($id_conductor);
         $tipo_vehiculo = $vehiculo ? $vehiculo['tipo_vehiculo'] : 'auto';
 
         $comisionModel = new Comision();
-        $monto_comision = $comisionModel->obtenerMontoComision('inscripcion', $tipo_vehiculo, $id_usuario_aprobacion);
+        // ✅ CORRECCIÓN: Obtener monto de comisión para el ASESOR que registró
+        $monto_comision = $comisionModel->obtenerMontoComision('inscripcion', $tipo_vehiculo, $id_usuario_registro);
 
         if ($monto_comision > 0) {
+            // ✅ CORRECCIÓN: Registrar comisión al ASESOR que registró el pago
             $comisionModel->registrarComision(
-                $id_usuario_aprobacion,
+                $id_usuario_registro,  // ✅ El asesor que registró, NO el director que aprueba
                 'inscripcion',
                 $id_pago,
                 $monto_comision,

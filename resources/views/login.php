@@ -214,6 +214,7 @@
                         <option value="3">Director</option>
                         <option value="1">Administrador</option>
                         <option value="2">Asesor</option>
+                        <option value="4">contador</option>
                     </select>
                     <span class="focus-input100" data-symbol="&#xf190;"></span>
                 </div>

@@ -169,7 +169,9 @@ class GruposFinanciamientoController extends Controller
                             // Actualizar variante existente
                             $modelo->actualizarVariante(
                                 $variante['idgrupos_variantes'], $id, $variante['nombre_variante'],
-                                $variante['cuota_inicial'], $variante['monto_cuota'], $variante['cantidad_cuotas'],
+                                $variante['cuota_inicial'], 
+                                isset($variante['monto_inscripcion']) ? $variante['monto_inscripcion'] : null,
+                                $variante['monto_cuota'], $variante['cantidad_cuotas'],
                                 $variante['frecuencia_pago'], $variante['moneda'], $variante['monto'],
                                 $variante['monto_sin_interes'], $variante['tasa_interes'],
                                 $variante['fecha_inicio'], $variante['fecha_fin']
@@ -266,6 +268,7 @@ class GruposFinanciamientoController extends Controller
 
             // Obtener resto de campos
             $cuotaInicial = isset($_POST['cuota_inicial']) ? $_POST['cuota_inicial'] : null;
+            $montoInscripcion = isset($_POST['monto_inscripcion']) ? $_POST['monto_inscripcion'] : null;
             $montoCuota = isset($_POST['monto_cuota']) ? $_POST['monto_cuota'] : null;
             $cantidadCuotas = isset($_POST['cantidad_cuotas']) ? $_POST['cantidad_cuotas'] : null;
             $frecuenciaPago = isset($_POST['frecuencia_pago']) ? $_POST['frecuencia_pago'] : null;
@@ -278,8 +281,8 @@ class GruposFinanciamientoController extends Controller
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $modelo->actualizarVariante(
-                    $id, $idPlanFinanciamiento, $nombreVariante, $cuotaInicial, $montoCuota,
-                    $cantidadCuotas, $frecuenciaPago, $moneda, $monto, $montoSinInteres,
+                    $id, $idPlanFinanciamiento, $nombreVariante, $cuotaInicial, $montoInscripcion,
+                    $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $monto, $montoSinInteres,
                     $tasaInteres, $fechaInicio, $fechaFin
                 );
 

@@ -7,6 +7,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="financingDetailsModalLabel">
                     <i class="fas fa-info-circle me-2"></i>Detalles del Cliente y Financiamiento
+
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                     aria-label="Close"></button>
@@ -116,6 +117,11 @@
             <h5><i class="fas fa-file-invoice-dollar me-2"></i>Financiamiento</h5>
         </div>
         <div class="card-body">
+            <!-- ID del Financiamiento -->
+            <p><i class="fas fa-fingerprint me-2"></i><strong>ID Financiamiento: </strong>
+                <span id="modalFinanciamientoID" class="badge bg-primary" style="font-size: 0.9em;">N/A</span>
+            </p>
+
             <!-- NUEVO: Campo inteligente según tipo de plan -->
             <div id="campoCapacidadCompra" style="display: none;">
                 <p><i class="fas fa-car me-2"></i><strong>Capacidad de Compra Actual:</strong>

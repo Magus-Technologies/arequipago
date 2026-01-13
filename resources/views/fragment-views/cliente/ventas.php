@@ -118,9 +118,8 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date("Y");
+                                $anio = date('Y');
                                 for ($i = 0; $i < 10; $i++) {
-
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
                                 }
@@ -134,7 +133,7 @@
                                 $contador = 0;
                                 $meses = array('TODOS', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
                                 foreach ($meses as $mes) {
-                                    echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -172,9 +171,8 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date("Y");
+                                $anio = date('Y');
                                 for ($i = 0; $i < 10; $i++) {
-
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
                                 }
@@ -188,7 +186,7 @@
                                 $contador = 0;
                                 $meses = array('TODOS', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
                                 foreach ($meses as $mes) {
-                                    echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -239,7 +237,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fecha Desde</label>
-                        <input required value="<?= date("Y-m-d") ?>" type="date" name="fecha1" class="form-control">
+                        <input required value="<?= date('Y-m-d') ?>" type="date" name="fecha1" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fecha Hasta</label>
@@ -270,7 +268,7 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date("Y");
+                                $anio = date('Y');
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -285,7 +283,7 @@
                                 $contador = 1;
                                 $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
                                 foreach ($meses as $mes) {
-                                    echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -317,7 +315,7 @@
                             <label class="form-label">Año</label>
                             <select name="anioExcel" id='anioExcel' class="form-control">
                                 <?php
-                                $anio = date("Y");
+                                $anio = date('Y');
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -332,7 +330,7 @@
                                 $contador = 1;
                                 $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
                                 foreach ($meses as $mes) {
-                                    echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -366,7 +364,7 @@
                             <label class="form-label">Año</label>
                             <select name="anioExcel" id='anioExcel22' class="form-control">
                                 <?php
-                                $anio = date("Y");
+                                $anio = date('Y');
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -381,7 +379,7 @@
                                 $contador = 1;
                                 $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
                                 foreach ($meses as $mes) {
-                                    echo "<option  " . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -807,12 +805,12 @@ tabla = $("#datatable").DataTable({
                                 <i class="fas fa-location-arrow text-primary"></i> Enviar
                             </a>
                             ${desData[1] != "-" ? `
-                                <a href="${_URL}/files/facturacion/xml/20602281761/${desData[1]}.xml" target="_blank">
+                                <a href="${_URL}/files/facturacion/xml/20612112763/${desData[1]}.xml" target="_blank">
                                     <i class="fas fa-file-code text-info"></i> XML
                                 </a>
                             ` : ""}
                             ${estadoSunat != "0" ? `
-                                <a href="${_URL}/files/facturacion/cdr/20602281761/R-${desData[1]}.zip" target="_blank">
+                                <a href="${_URL}/files/facturacion/cdr/20612112763/R-${desData[1]}.zip" target="_blank">
                                     <i class="fa fa-file-zip text-success"></i> CDR
                                 </a>
                             ` : ""}

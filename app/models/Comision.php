@@ -227,7 +227,8 @@ class Comision
                 LEFT JOIN usuarios u ON c.usuario_id = u.usuario_id
                 LEFT JOIN conductor_pago cp ON (c.tipo_comision = 'inscripcion' AND c.referencia_id = cp.id_conductorpago)
                 LEFT JOIN financiamiento f ON (c.tipo_comision = 'financiamiento' AND c.referencia_id = f.idfinanciamiento)
-                WHERE 1=1";
+                WHERE 1=1
+                AND (c.tipo_comision = 'inscripcion' OR (c.tipo_comision = 'financiamiento' AND COALESCE(f.estado_eliminado, 0) = 0 AND f.aprobado != 2))";
 
         $params = [];
         $types = '';
@@ -286,16 +287,18 @@ class Comision
      */
     public function obtenerEstadisticasComisiones($usuario_id = null)
     {
-        $sql = "SELECT 
+        $sql = "SELECT
                     COUNT(*) as total,
-                    SUM(CASE WHEN estado_comision = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
-                    SUM(CASE WHEN estado_comision = 'pagada' THEN 1 ELSE 0 END) as pagadas,
-                    SUM(CASE WHEN estado_comision = 'cancelada' THEN 1 ELSE 0 END) as canceladas
-                FROM comisiones 
-                WHERE 1=1";
+                    SUM(CASE WHEN c.estado_comision = 'pendiente' THEN 1 ELSE 0 END) as pendientes,
+                    SUM(CASE WHEN c.estado_comision = 'pagada' THEN 1 ELSE 0 END) as pagadas,
+                    SUM(CASE WHEN c.estado_comision = 'cancelada' THEN 1 ELSE 0 END) as canceladas
+                FROM comisiones c
+                LEFT JOIN financiamiento f ON (c.tipo_comision = 'financiamiento' AND c.referencia_id = f.idfinanciamiento)
+                WHERE 1=1
+                AND (c.tipo_comision = 'inscripcion' OR (c.tipo_comision = 'financiamiento' AND COALESCE(f.estado_eliminado, 0) = 0 AND f.aprobado != 2))";
 
         if ($usuario_id !== null) {
-            $sql .= ' AND usuario_id = ?';
+            $sql .= ' AND c.usuario_id = ?';
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param('i', $usuario_id);
         } else {
@@ -374,7 +377,8 @@ class Comision
             LEFT JOIN clientes_financiar cli ON f.id_cliente = cli.id
             LEFT JOIN grupos_variantes gv ON f.id_variante = gv.idgrupos_variantes
             LEFT JOIN planes_financiamiento pf ON gv.idplan_financiamiento = pf.idplan_financiamiento
-            WHERE c.id_comision = ?";
+            WHERE c.id_comision = ?
+            AND (c.tipo_comision = 'inscripcion' OR (c.tipo_comision = 'financiamiento' AND COALESCE(f.estado_eliminado, 0) = 0 AND f.aprobado != 2))";
 
         // Si no es director, solo puede ver sus propias comisiones
         if ($rol_usuario != 3) {

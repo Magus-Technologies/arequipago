@@ -125,7 +125,11 @@ function saveFinanciamiento(event) {
     tipoMoneda = "$";
   }
 
-  const cuotaInicial = $("#cuotaInicial").val();
+  // ✅ CORREGIDO: Usar obtenerMontoCuotaInicial() para Plan 22 (cuotas adelantadas)
+  const cuotaInicial = typeof obtenerMontoCuotaInicial === 'function'
+    ? obtenerMontoCuotaInicial()
+    : parseFloat($("#cuotaInicial").val() || 0);
+
   const cuotas = $("#cuotas").val();
 
   let valorCuota = $("#valorCuota").val(); // Obtenemos el valor del monto total
@@ -176,21 +180,25 @@ function saveFinanciamiento(event) {
   $("#contenedorFechas span").each(function () {
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento
     if (textoFecha) {
+      // ✅ CORREGIDO: Limpiar el texto de "PAGADO ✅" u otros elementos
+      const soloFecha = textoFecha.trim().split(" ")[0]; // Tomar solo "DD/MM/YYYY" antes del primer espacio
+
       // Convertir la fecha a formato 'YYYY-MM-DD' para evitar problemas en el servidor
-      const partesFecha = textoFecha.split("/");
+      const partesFecha = soloFecha.split("/");
       const fechaVencimiento = `${partesFecha[2]}-${partesFecha[1]}-${partesFecha[0]}`;
       fechasVencimiento.push(fechaVencimiento); // Agregar la fecha formateada al arreglo
     }
   });
 
-  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42) o CrediYango (ID 45)
+  // 🔹 NUEVO: Verificar primero si es plan personalizado (ID 42), CrediYango (ID 45) o Revisión Técnica (ID 47)
   const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
   const esCrediYango = (grupoFinanciamiento === '45' || grupoFinanciamiento === 45);
+  const esPlanRevisionTecnica = (grupoFinanciamiento === '47' || grupoFinanciamiento === 47);
 
   const idProducto = productoSeleccionado?.id;
 
-  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado ni CrediYango
-  if (!esPlanPersonalizado && !esCrediYango && !idProducto) {
+  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado, CrediYango o Revisión Técnica
+  if (!esPlanPersonalizado && !esCrediYango && !esPlanRevisionTecnica && !idProducto) {
     Swal.fire("Error", "Debe seleccionar un producto.", "error");
     return;
   }
@@ -272,11 +280,11 @@ function saveFinanciamiento(event) {
     }
   } else if (esPlanPersonalizado) {
     // 🔹 Para planes personalizados, validar campos específicos (SIN cantidad de producto)
+    // ✅ MODIFICADO: Cuota inicial es OPCIONAL para plan 42
     const camposPersonalizados = {
       'Grupo de financiamiento': grupoFinanciamiento,
       'Monto total': montoTotal,
       'Monto sin intereses': montoSinIntereses,
-      'Cuota inicial': cuotaInicial,
       'Cantidad de cuotas': cuotas,
       'Estado': estado,
       'Fecha de inicio': fechaInicio,
@@ -306,6 +314,46 @@ function saveFinanciamiento(event) {
     if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
       cantidadProducto = '1';
       console.log('🎨 Plan personalizado - Cantidad de producto establecida en 1');
+    }
+    
+    // ✅ NUEVO: Si cuota inicial está vacía o es 0, establecer en 0 por defecto
+    if (!cuotaInicial || cuotaInicial === '' || cuotaInicial === '0' || cuotaInicial === 0) {
+      console.log('🎨 Plan personalizado (ID 42) - Cuota inicial establecida en 0 (opcional)');
+    }
+  } else if (esPlanRevisionTecnica) {
+    // 🔧 Para Plan 47 (Revisión Técnica), validar campos específicos SIN cuota inicial
+    const camposRevisionTecnica = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Cantidad de producto': cantidadProducto,
+      'Monto total': montoTotal,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposRevisionTecnica)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Revisión Técnica - Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // 🔧 NUEVO: Para Revisión Técnica, cuota inicial siempre es 0
+    if (!cuotaInicial || cuotaInicial === '' || cuotaInicial === '0' || cuotaInicial === 0) {
+      console.log('🔧 Plan 47 (Revisión Técnica) - Cuota inicial establecida en 0 (sin inicial)');
     }
   } else {
     // ✅ MEJORADO: Validaciones detalladas para otros planes
@@ -342,7 +390,9 @@ function saveFinanciamiento(event) {
   }
 
   // Validar que la cuota inicial no supere el monto total
-  if (parseFloat(cuotaInicial) > parseFloat(montoTotal)) {
+  // ✅ MODIFICADO: Permitir cuota inicial 0 para plan personalizado (ID 42)
+  const cuotaInicialNum = parseFloat(cuotaInicial) || 0;
+  if (cuotaInicialNum > parseFloat(montoTotal)) {
     Swal.fire(
       "Error",
       "La cuota inicial no puede ser mayor al monto total.",
@@ -362,6 +412,12 @@ function saveFinanciamiento(event) {
 
   const procesarGuardadoFinanciamiento = function (idConductor, idCliente) {
     // Modificado: Función expresada para acceder a las variables del ámbito
+
+    // 🔍 DEBUG: Verificar número corporativo antes de enviar
+    const numeroCorporativoCapturado = typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null;
+    console.log("📤 Preparando envío - Número corporativo:", numeroCorporativoCapturado);
+    console.log("📤 Grupo financiamiento:", grupoFinanciamiento);
+
     // Enviar los datos al controlador para guardar el financiamiento
     $.ajax({
       url: _URL + "/guardarFinanciamiento",
@@ -399,6 +455,25 @@ function saveFinanciamiento(event) {
         fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
         fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
         placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+        numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+        // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas
+        cantidad_cuotas_adelantadas: (function() {
+          const input = document.getElementById("cuotaInicial");
+          const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+          const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+          console.log("🔍 DEBUG JS - Input cuotaInicial existe:", !!input);
+          console.log("🔍 DEBUG JS - Modo adelantadas:", modoAdelantadas);
+          console.log("🔍 DEBUG JS - Valor input:", input ? input.value : 'N/A');
+          console.log("🔍 DEBUG JS - Cantidad a enviar:", cantidad);
+
+          if (input && modoAdelantadas === 'true') {
+            console.log("✅ DEBUG JS - Enviando cantidad de cuotas adelantadas:", cantidad);
+            return cantidad;
+          }
+          console.log("⚠️ DEBUG JS - NO es modo cuotas adelantadas, enviando 0");
+          return 0;
+        })(),
       },
       success: function (response) {
         // El resto del código de procesamiento del éxito se mantiene igual
@@ -406,7 +481,7 @@ function saveFinanciamiento(event) {
          // Preparar array de pagos a generar
           const pagos = [];
           const metodoPago = $("#metodoPago").val() || "Efectivo"; // Valor por defecto
-          
+
           // CORREGIDO: Priorizar Cuota Inicial sobre Monto de Inscripción
           if (cuotaInicial > 0) {
             pagos.push({
@@ -418,6 +493,14 @@ function saveFinanciamiento(event) {
             pagos.push({
               monto: montoInscrip,
               tipo: "Monto de Inscripción",
+            });
+          }
+          // ✅ NUEVO: Para Plan 47 generar nota de venta mostrando PENDIENTE DE PAGO
+          else if ((grupoFinanciamiento === "47" || grupoFinanciamiento === 47) && (parseFloat(montoTotal) > 0 || parseFloat(valorCuota) > 0)) {
+            const montoProducto = parseFloat(montoTotal) || parseFloat(valorCuota) || 0;
+            pagos.push({
+              monto: montoProducto,
+              tipo: "Producto Financiado",
             });
           }
           // Solo hacer la llamada si hay pagos para generar
@@ -497,6 +580,25 @@ function saveFinanciamiento(event) {
             fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
             fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
             placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+            numero_corporativo: typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+            // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas (SEGUNDA LLAMADA AJAX)
+            cantidad_cuotas_adelantadas: (function() {
+              const input = document.getElementById("cuotaInicial");
+              const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+              const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+              console.log("🔍 DEBUG JS (2da llamada) - Input cuotaInicial existe:", !!input);
+              console.log("🔍 DEBUG JS (2da llamada) - Modo adelantadas:", modoAdelantadas);
+              console.log("🔍 DEBUG JS (2da llamada) - Valor input:", input ? input.value : 'N/A');
+              console.log("🔍 DEBUG JS (2da llamada) - Cantidad a enviar:", cantidad);
+
+              if (input && modoAdelantadas === 'true') {
+                console.log("✅ DEBUG JS (2da llamada) - Enviando cantidad de cuotas adelantadas:", cantidad);
+                return cantidad;
+              }
+              console.log("⚠️ DEBUG JS (2da llamada) - NO es modo cuotas adelantadas, enviando 0");
+              return 0;
+            })(),
           },
           success: function (response) {
             if (response.success) {
@@ -514,6 +616,14 @@ function saveFinanciamiento(event) {
                 pagos.push({
                   monto: montoInscrip,
                   tipo: "Monto de Inscripción",
+                });
+              }
+              // ✅ NUEVO: Para Plan 47 u otros planes sin cuota inicial - generar nota de venta con monto total
+              else if ((grupoFinanciamiento === "47" || grupoFinanciamiento === 47) && (parseFloat(montoTotal) > 0 || parseFloat(valorCuota) > 0)) {
+                const montoProducto = parseFloat(montoTotal) || parseFloat(valorCuota) || 0;
+                pagos.push({
+                  monto: montoProducto,
+                  tipo: "Producto Financiado",
                 });
               }
               // Solo hacer la llamada si hay pagos para generar
@@ -649,18 +759,19 @@ function saveFinanciamientoVehicular() {
       verificacionDomiciliaria = parseInt(verificacionDomiciliariaElement.value);
   }
 
-  // 🔹 NUEVO: Verificar si es plan personalizado
+  // 🔹 NUEVO: Verificar si es plan personalizado o Revisión Técnica
   const grupoFinanciamientoActual = document.getElementById("grupo").value;
   const esPlanPersonalizado = (grupoFinanciamientoActual === '42' || grupoFinanciamientoActual === 42);
-  
+  const esPlanRevisionTecnica = (grupoFinanciamientoActual === '47' || grupoFinanciamientoActual === 47);
+
   // 🔹 Declarar entregarSiElement ANTES para que esté disponible en todo el scope
   const entregarSiElement = document.getElementById("entregarSi");
   const entregarNoElement = document.getElementById("entregarNo");
-  
+
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  // 🔹 MODIFICADO: Si es plan personalizado, no requerir producto
-  if (esPlanPersonalizado) {
+  // 🔹 MODIFICADO: Si es plan personalizado o Revisión Técnica, no requerir producto vehicular
+  if (esPlanPersonalizado || esPlanRevisionTecnica) {
     idProducto = 37; // ID genérico para planes personalizados (ajustar según necesidad)
   } else {
     // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
@@ -698,9 +809,10 @@ function saveFinanciamientoVehicular() {
   const grupoFinanciamiento = document.getElementById("grupo").value;
 
   // Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
-  // Y NO es plan personalizado
+  // Y NO es plan personalizado NI Revisión Técnica
   if (
     !esPlanPersonalizado &&
+    !esPlanRevisionTecnica &&
     entregarSiElement && entregarNoElement &&
     grupoFinanciamiento !== "33" &&
     !entregarSiElement.checked &&
@@ -725,17 +837,36 @@ function saveFinanciamientoVehicular() {
   // Obtener el monto total
   const monto_total = document.getElementById("monto").value.trim(); // ✅ Trim para eliminar espacios adicionales
 
-  // Obtener la cuota inicial desde el objeto planGlobal
-  const cuota_inicial = planGlobal?.cuota_inicial; // ✅ Obteniendo la cuota inicial del objeto global
+  // ✅ CORREGIDO: Usar obtenerMontoCuotaInicial() para planes con cuotas adelantadas (Plan 38)
+  const cuota_inicial = typeof obtenerMontoCuotaInicial === 'function'
+    ? obtenerMontoCuotaInicial()
+    : (planGlobal?.cuota_inicial || 0);
 
   // Obtener las cuotas y eliminar decimales, puntos, y comas
   let cuotas = document.getElementById("cuotas").value;
   cuotas = parseInt(cuotas, 10); // ✅ Eliminar decimales
 
   // Obtener el valor de la cuota del input y convertirlo a número con decimales
-  const valor_cuota = parseFloat(
-    document.getElementById("valorCuota").value.replace(/,/g, "")
-  ); // ✅ Obtener y tratar los decimales correctamente
+  const valorCuotaInput = document.getElementById("valorCuota").value;
+  // ✅ CORREGIDO: Eliminar prefijos de moneda (US$, S/., $) y comas antes de parsear
+  const valorCuotaLimpio = valorCuotaInput.replace(/US\$|S\/\.|[$,\s]/g, "").trim();
+  const valor_cuota = parseFloat(valorCuotaLimpio) || 0;
+  
+  // 🔍 DEBUG: Verificar valor de cuota antes de enviar
+  console.log("🔍 [GUARDAR] Grupo financiamiento:", grupo_financiamiento);
+  console.log("🔍 [GUARDAR] Valor cuota del input:", valorCuotaInput);
+  console.log("🔍 [GUARDAR] Valor cuota limpio:", valorCuotaLimpio);
+  console.log("🔍 [GUARDAR] Valor cuota parseado:", valor_cuota);
+  
+  // ⚠️ VALIDACIÓN: Si el valor de cuota es 0 o inválido, mostrar error
+  if (!valor_cuota || valor_cuota <= 0) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "El valor de la cuota no puede ser 0. Por favor, verifica el cronograma de pagos."
+    });
+    return;
+  }
 
   // Obtener el estado del select
   const estado = document.getElementById("estado").value; // ✅ Obtener value del select
@@ -792,7 +923,10 @@ function saveFinanciamientoVehicular() {
     // Iterar sobre cada span dentro del contenedor ✅
     const textoFecha = $(this).text().split("Vencimiento: ")[1]; // Extraer la fecha de vencimiento ✅
     if (textoFecha) {
-      const partesFecha = textoFecha.split("/"); // Dividir la fecha en día/mes/año ✅
+      // ✅ CORREGIDO: Limpiar el texto de "PAGADO ✅" u otros elementos
+      const soloFecha = textoFecha.trim().split(" ")[0]; // Tomar solo "DD/MM/YYYY" antes del primer espacio
+
+      const partesFecha = soloFecha.split("/"); // Dividir la fecha en día/mes/año ✅
       const fechaVencimiento = `${partesFecha[2]}-${partesFecha[1]}-${partesFecha[0]}`; // Convertir al formato 'YYYY-MM-DD' ✅
       fechasVencimiento.push(fechaVencimiento); // Agregar la fecha formateada al arreglo ✅
     }
@@ -832,6 +966,12 @@ function saveFinanciamientoVehicular() {
     idCliente
   ) {
     // Añadido: Nueva función para procesar con conductor o cliente
+
+    // 🔍 DEBUG: Capturar numero_corporativo antes de enviar
+    const numeroCorporativoCapturado = typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null;
+    console.log("📤 [VEHICULAR] Preparando envío - Número corporativo:", numeroCorporativoCapturado);
+    console.log("📤 [VEHICULAR] Grupo financiamiento:", grupo_financiamiento);
+
     // Datos a enviar
     const data = {
       cliente,
@@ -864,6 +1004,26 @@ function saveFinanciamientoVehicular() {
       id_variante: idVariante,
       cobrar_mora: cobrarMora,
       verificacion_domiciliaria: verificacionDomiciliaria,
+      placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
+      numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO (Plan 36)
+      // ✅ NUEVO: Para Plan 38 (CrediGo Autos Grupo 4), enviar la cantidad de cuotas adelantadas
+      cantidad_cuotas_adelantadas: (function() {
+        const input = document.getElementById("cuotaInicial");
+        const modoAdelantadas = input ? input.getAttribute('data-modo-cuotas-adelantadas') : null;
+        const cantidad = input ? parseInt(input.value) || 0 : 0;
+
+        console.log("🔍 DEBUG JS VEHICULAR - Input cuotaInicial existe:", !!input);
+        console.log("🔍 DEBUG JS VEHICULAR - Modo adelantadas:", modoAdelantadas);
+        console.log("🔍 DEBUG JS VEHICULAR - Valor input:", input ? input.value : 'N/A');
+        console.log("🔍 DEBUG JS VEHICULAR - Cantidad a enviar:", cantidad);
+
+        if (input && modoAdelantadas === 'true') {
+          console.log("✅ DEBUG JS VEHICULAR - Enviando cantidad de cuotas adelantadas:", cantidad);
+          return cantidad;
+        }
+        console.log("⚠️ DEBUG JS VEHICULAR - NO es modo cuotas adelantadas, enviando 0");
+        return 0;
+      })(),
     };
 
     $.ajax({

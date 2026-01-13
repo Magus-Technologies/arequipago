@@ -134,6 +134,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             <select id="filtroOficina" class="form-select form-select-sm" onchange="cambiarOficina();">
                                 <option value="1" selected>Oficina 1</option>
                                 <option value="2">Oficina 2</option>
+                                <option value="3">Oficina Lima</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -743,6 +744,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 <select name="oficina" id="oficina_producto" class="form-select" required>
                                     <option value="1" selected>Oficina 1</option>
                                     <option value="2">Oficina 2</option>
+                                    <option value="3">Oficina Lima</option>
                                 </select>
                             </div>
                         </div>

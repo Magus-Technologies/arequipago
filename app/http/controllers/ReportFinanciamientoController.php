@@ -329,8 +329,13 @@ class ReportFinanciamientoController extends Controller
             }
             
             // Nombre completo del asesor
-            $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
-            
+            // $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
+            // VALIDACIÓN: Si no hay datos del asesor (por ejemplo, cuando es un pago desde la app), usar "Sistema"
+            if ($datosAsesor && isset($datosAsesor['nombres']) && isset($datosAsesor['apellidos'])) {
+                $nombreAsesor = $datosAsesor['nombres'] . ' ' . $datosAsesor['apellidos'];
+            } else {
+                $nombreAsesor = '';
+            }
             $html = '
             <!DOCTYPE html>
             <html lang="es">
@@ -879,15 +884,46 @@ class ReportFinanciamientoController extends Controller
             
             $html .= '     <p>Cliente: ' . $nombreCompleto . '</p>
                     <p>Documento: ' . $tipoDoc . ' N° ' . $nroDocumento . '</p>
-                    <p>Método de Pago: ' . $metodoPago . '</p> 
-                    <p>Concepto: ' . $concepto . '</p> 
+                    <p>Método de Pago: ' . $metodoPago . '</p>
+                    <p>Concepto: ' . $concepto . '</p>
                     ' . $certificadoHtml . '
-                </div>
+                </div>';
 
+            // ✅ NUEVO: Si es "Producto Financiado" Y Plan 47 (Revisión Técnica), mostrar detalle de cuota inicial 0 y monto a pagar
+            if ($concepto === 'Producto Financiado' && $financiamiento['grupo_financiamiento'] == 47) {
+                $html .= '
+                <div class="detalle-section" style="margin-top: 10px; padding: 8px; background-color: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                    <h6 style="margin: 0 0 8px 0; color: #856404; font-size: 13px;"><strong>📋 Detalle del Financiamiento:</strong></h6>
+                    <div class="cuota-item" style="border-bottom: 1px solid #e0a800;">
+                        <span><strong>Cuota Inicial:</strong></span>
+                        <span>' . $monedaFinanciamiento . ' 0.00</span>
+                    </div>
+                    <div class="cuota-item" style="border-bottom: 1px solid #e0a800;">
+                        <span><strong>Monto a Pagar (Financiado):</strong></span>
+                        <span>' . $monedaFinanciamiento . ' ' . number_format($pago['monto'], 2) . '</span>
+                    </div>
+                </div>';
+            } else {
+                $html .= '
                 <div class="detalle-section">
                       ' . $metodoPago . ': ' . $monedaEfectivo . ' ' . $pago['monto']. '
+                </div>';
+            }
+
+            // ✅ NUEVO: Si es Plan 47, mostrar PENDIENTE DE PAGO en lugar de efectivo recibido
+            if ($concepto === 'Producto Financiado' && $financiamiento['grupo_financiamiento'] == 47) {
+                $html .= '
+                <div class="totales-section">
+                    <p><strong>Total a Pagar:</strong> ' . $monedaFinanciamiento . ' ' . number_format($pago['monto'], 2) . '</p>
+                    <p style="color: #ff9800; font-weight: bold; font-size: 13px; margin-top: 8px; padding: 8px; background-color: #fff3e0; border-radius: 4px; text-align: center;">
+                        ⏳ PENDIENTE DE PAGO - Vence en 7 días
+                    </p>
                 </div>
 
+                <p class="resumen" style="color: #ff9800;">Estado: PENDIENTE DE PAGO</p>
+                <p><strong>Asesor de Cobro:</strong> ' . $nombreAsesor . '</p>';
+            } else {
+                $html .= '
                 <div class="totales-section">
                     <p><strong>Total a Pagar:</strong> ' . $monedaFinanciamiento . ' ' . number_format($pago['monto'], 2) . '</p>  <!-- MODIFICADO: Usar moneda del financiamiento -->
                     <p><strong>Efectivo recibido:</strong> ' . $monedaPago . ' ' . number_format($pago['efectivo_recibido'], 2) . '</p>  <!-- MODIFICADO: Usar moneda del pago -->
@@ -895,7 +931,10 @@ class ReportFinanciamientoController extends Controller
                 </div>
 
                 <p class="resumen">Total Ingresado: ' . $monedaFinanciamiento . ' ' . number_format($pago['monto'], 2) . '</p>  <!-- MODIFICADO: Usar moneda del financiamiento -->
-                <p><strong>Asesor de Cobro:</strong> ' . $nombreAsesor . '</p>
+                <p><strong>Asesor de Cobro:</strong> ' . $nombreAsesor . '</p>';
+            }
+
+            $html .= '
             </body>
             </html>';
 
@@ -963,11 +1002,12 @@ class ReportFinanciamientoController extends Controller
             }
 
             // Obtener pagos iniciales registrados
+            // ✅ MODIFICADO: Agregado 'Producto Financiado' para Plan 47 (Revisión Técnica)
             $stmt = $this->conexion->prepare("
                 SELECT idpagos_financiamiento, monto, metodo_pago, fecha_pago, moneda, concepto
                 FROM pagos_financiamiento
                 WHERE id_financiamiento = ?
-                AND concepto IN ('Cuota Inicial', 'Monto de Inscripción', 'Monto Recalculado')
+                AND concepto IN ('Cuota Inicial', 'Monto de Inscripción', 'Monto Recalculado', 'Producto Financiado')
                 ORDER BY fecha_pago DESC
             ");
             $stmt->bind_param("i", $idFinanciamiento);

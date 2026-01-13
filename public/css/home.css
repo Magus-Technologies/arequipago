@@ -207,7 +207,15 @@ canvas#chart-estadisticas {
 
 /* Igualar altura de los cards de pagos */
 .card-pagos-height {
-    min-height: 220px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-pagos-height .card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 /* Scroll personalizado para lista de vencidos (igual que cumpleaños) */

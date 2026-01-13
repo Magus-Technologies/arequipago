@@ -312,8 +312,9 @@ class Beneficio
             if (!isset($datos['plan_financiamiento_id']) || $datos['plan_financiamiento_id'] <= 0) {
                 throw new Exception('El plan de financiamiento es obligatorio');
             }
-            if (!isset($datos['cuota_inicial']) || $datos['cuota_inicial'] <= 0) {
-                throw new Exception('La cuota inicial es obligatoria');
+            // Cuota inicial es opcional, validar solo que no sea negativa
+            if (isset($datos['cuota_inicial']) && $datos['cuota_inicial'] < 0) {
+                throw new Exception('La cuota inicial no puede ser negativa');
             }
             if (!isset($datos['cantidad_cuotas']) || $datos['cantidad_cuotas'] <= 0) {
                 throw new Exception('La cantidad de cuotas es obligatoria');
@@ -389,6 +390,7 @@ class Beneficio
         try {
             $sql = 'SELECT b.*,
                     COALESCE(b.moneda, p.moneda) as moneda,
+                    COALESCE(b.frecuencia_pago, p.frecuencia_pago) as frecuencia_pago,
                     COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display,
                     d.nombre as departamento_nombre
                     FROM beneficios b

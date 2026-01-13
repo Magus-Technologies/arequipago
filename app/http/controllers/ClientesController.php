@@ -299,7 +299,8 @@ class ClientesController extends Controller
                     
                     // Mover archivo a carpeta destino
                     if (move_uploaded_file($_FILES[$archivo]['tmp_name'], $rutaDestino)) {
-                        $rutasArchivos[$archivo] = $rutaDestino;
+                        // Normalizar la ruta para usar forward slashes (/) en lugar de backslashes (\)
+                        $rutasArchivos[$archivo] = str_replace('\\', '/', $rutaDestino);
                     } else {
                         // Error al mover el archivo
                         echo json_encode(['success' => false, 'message' => 'Error al subir el archivo ' . $nombreOriginal]);
@@ -366,6 +367,12 @@ class ClientesController extends Controller
             $totalClientes = $clienteModel->totalClientes($busqueda);
             $totalPaginas = ceil($totalClientes / $registrosPorPagina);
 
+            // Procesar la foto de cada cliente con prioridad desde datos_usuarios
+            foreach ($clientes as &$cliente) {
+                $cliente['selfie'] = $clienteModel->obtenerFotoPerfil($cliente['id'], 2);
+            }
+            unset($cliente); // Romper la referencia
+
             // Debug temporal - puedes remover esta línea después
             error_log("DEBUG: Total clientes: $totalClientes, Clientes array count: " . count($clientes) . ", Inicio: $inicio, RegistrosPorPagina: $registrosPorPagina");
 
@@ -399,6 +406,9 @@ class ClientesController extends Controller
             $cliente = $clienteModel->obtenerCliente($id);
             
             if ($cliente) {
+                // Procesar la foto con prioridad desde datos_usuarios
+                $cliente['selfie'] = $clienteModel->obtenerFotoPerfil($id, 2);
+                
                 // Preparar la dirección completa
                 $cliente['direccion_completa'] = "";
                 if (!empty($cliente['departamento_nombre'])) {
@@ -440,7 +450,12 @@ class ClientesController extends Controller
          */
         public function editarCliente() {
 
-            
+            // Debug: Ver qué archivos están llegando
+            error_log("========================================");
+            error_log("📝 EDITANDO CLIENTE - Archivos recibidos:");
+            error_log(print_r(array_keys($_FILES), true));
+            error_log("========================================");
+
             $clienteModel = new Cliente();
 
             // Reemplázala por:
@@ -535,19 +550,40 @@ class ClientesController extends Controller
             }
             
             foreach ($campos_archivos as $campo_bd => $campo_file) {
+                // Debug: Log para ver qué archivos se están procesando
+                error_log("🔍 Procesando archivo: $campo_file (campo BD: $campo_bd)");
+
+                if (isset($_FILES[$campo_file])) {
+                    error_log("  ✓ Archivo presente en \$_FILES");
+                    error_log("  - Error code: " . $_FILES[$campo_file]['error']);
+                    error_log("  - Nombre: " . $_FILES[$campo_file]['name']);
+                    error_log("  - Tamaño: " . $_FILES[$campo_file]['size']);
+                } else {
+                    error_log("  ✗ Archivo NO presente en \$_FILES");
+                }
+
                 if (isset($_FILES[$campo_file]) && $_FILES[$campo_file]['error'] == 0) {
+                    error_log("  ✓ Archivo válido, procediendo a subir");
+
                     // Si hay un archivo nuevo, eliminamos el anterior
                     if (!empty($clienteActual[$campo_bd]) && file_exists($clienteActual[$campo_bd])) {
+                        error_log("  - Eliminando archivo anterior: " . $clienteActual[$campo_bd]);
                         unlink($clienteActual[$campo_bd]);
                     }
-                    
+
                     // Subimos el nuevo archivo
                     $extension = pathinfo($_FILES[$campo_file]['name'], PATHINFO_EXTENSION);
                     $nombre_archivo = uniqid() . '_' . $id . '.' . $extension;
                     $ruta_completa = $directorio . $nombre_archivo;
-                    
+
+                    error_log("  - Intentando guardar en: $ruta_completa");
+
                     if (move_uploaded_file($_FILES[$campo_file]['tmp_name'], $ruta_completa)) {
-                        $datos[$campo_bd] = $ruta_completa;
+                        // Normalizar la ruta para usar forward slashes (/) en lugar de backslashes (\)
+                        $datos[$campo_bd] = str_replace('\\', '/', $ruta_completa);
+                        error_log("  ✓ Archivo guardado exitosamente: " . $datos[$campo_bd]);
+                    } else {
+                        error_log("  ✗ ERROR al guardar archivo");
                     }
                 }
             }
@@ -650,6 +686,9 @@ class ClientesController extends Controller
                 $tieneFinanciamientoVehicular = $clienteModel->tieneFinanciamientoVehicular($id);
                 
                 if ($cliente) {
+                    // Procesar la foto con prioridad desde datos_usuarios
+                    $cliente['selfie'] = $clienteModel->obtenerFotoPerfil($id, 2);
+                    
                     // Agregar la dirección completa para mostrarla
                     echo json_encode([
                         'success' => true,

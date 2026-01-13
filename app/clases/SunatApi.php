@@ -511,19 +511,48 @@ class SunatApi
         $nombre_archivo = $nom_XML;
         $xml_ruta = "files/facturacion/xml/".$empresa["ruc"].'/'.$nombre_archivo.".xml";
         $contenido =  file_get_contents($xml_ruta);
+        
+        // LOG: Inicio de envío
+        error_log("[CDR DEBUG] Iniciando envío a SUNAT (PorEmpresa): {$nombre_archivo}");
+        
         $res = $see->sendXml(Invoice::class, $nombre_archivo,$contenido );
         if ($res->isSuccess()) {
+            error_log("[CDR DEBUG] SUNAT aceptó el documento: {$nombre_archivo}");
+            
             $nombreCDR='R-'.$nombre_archivo.'.zip';
             $cdr = $res->getCdrZip();
             $fileDir =  'files/facturacion/cdr/'.$empresa['ruc'];
+            
+            // LOG: Verificar carpeta
+            error_log("[CDR DEBUG] Carpeta CDR: {$fileDir}");
+            error_log("[CDR DEBUG] Carpeta existe: " . (file_exists($fileDir) ? 'SI' : 'NO'));
+            
             if (!file_exists($fileDir)) {
-                mkdir($fileDir, 0777, true);
+                $created = mkdir($fileDir, 0777, true);
+                error_log("[CDR DEBUG] Carpeta creada: " . ($created ? 'SI' : 'NO'));
+                if (!$created) {
+                    error_log("[CDR ERROR] No se pudo crear la carpeta: {$fileDir}");
+                }
             }
-            file_put_contents($fileDir.DIRECTORY_SEPARATOR.$nombreCDR,$cdr);
+            
+            // LOG: Intentar guardar CDR
+            $cdr_path = $fileDir.DIRECTORY_SEPARATOR.$nombreCDR;
+            error_log("[CDR DEBUG] Ruta completa CDR: {$cdr_path}");
+            error_log("[CDR DEBUG] Tamaño CDR: " . strlen($cdr) . " bytes");
+            
+            $saved = file_put_contents($cdr_path, $cdr);
+            if ($saved !== false) {
+                error_log("[CDR DEBUG] ✅ CDR guardado exitosamente: {$cdr_path} ({$saved} bytes)");
+            } else {
+                error_log("[CDR ERROR] ❌ No se pudo guardar el CDR: {$cdr_path}");
+                error_log("[CDR ERROR] Error PHP: " . error_get_last()['message']);
+            }
+            
             return true;
         }else{
             $mensaje = $util->getErrorResponse2($res->getError());
             $this->mensaje = $mensaje;
+            error_log("[CDR ERROR] SUNAT rechazó el documento: {$nombre_archivo} - {$mensaje}");
             return false;
         }
 
@@ -554,19 +583,48 @@ class SunatApi
         $nombre_archivo = $nom_XML;
         $xml_ruta = "files/facturacion/xml/".$empresa["ruc"].'/'.$nombre_archivo.".xml";
         $contenido =  file_get_contents($xml_ruta);
+        
+        // LOG: Inicio de envío
+        error_log("[CDR DEBUG] Iniciando envío a SUNAT: {$nombre_archivo}");
+        
         $res = $see->sendXml(Invoice::class, $nombre_archivo,$contenido );
         if ($res->isSuccess()) {
+            error_log("[CDR DEBUG] SUNAT aceptó el documento: {$nombre_archivo}");
+            
             $nombreCDR='R-'.$nombre_archivo.'.zip';
             $cdr = $res->getCdrZip();
             $fileDir =  'files/facturacion/cdr/'.$empresa['ruc'];
+            
+            // LOG: Verificar carpeta
+            error_log("[CDR DEBUG] Carpeta CDR: {$fileDir}");
+            error_log("[CDR DEBUG] Carpeta existe: " . (file_exists($fileDir) ? 'SI' : 'NO'));
+            
             if (!file_exists($fileDir)) {
-                mkdir($fileDir, 0777, true);
+                $created = mkdir($fileDir, 0777, true);
+                error_log("[CDR DEBUG] Carpeta creada: " . ($created ? 'SI' : 'NO'));
+                if (!$created) {
+                    error_log("[CDR ERROR] No se pudo crear la carpeta: {$fileDir}");
+                }
             }
-            file_put_contents($fileDir.DIRECTORY_SEPARATOR.$nombreCDR,$cdr);
+            
+            // LOG: Intentar guardar CDR
+            $cdr_path = $fileDir.DIRECTORY_SEPARATOR.$nombreCDR;
+            error_log("[CDR DEBUG] Ruta completa CDR: {$cdr_path}");
+            error_log("[CDR DEBUG] Tamaño CDR: " . strlen($cdr) . " bytes");
+            
+            $saved = file_put_contents($cdr_path, $cdr);
+            if ($saved !== false) {
+                error_log("[CDR DEBUG] ✅ CDR guardado exitosamente: {$cdr_path} ({$saved} bytes)");
+            } else {
+                error_log("[CDR ERROR] ❌ No se pudo guardar el CDR: {$cdr_path}");
+                error_log("[CDR ERROR] Error PHP: " . error_get_last()['message']);
+            }
+            
            return true;
         }else{
             $mensaje = $util->getErrorResponse2($res->getError());
             $this->mensaje = $mensaje;
+            error_log("[CDR ERROR] SUNAT rechazó el documento: {$nombre_archivo} - {$mensaje}");
             return false;
         }
 

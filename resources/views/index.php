@@ -1,8 +1,8 @@
-<?php include('fragment/head.php') ?>
+<?php include ('fragment/head.php') ?>
 </head>
 
 <body data-sidebar="dark">
-<!-- <input value="<?=$device_app?>" id="device-app"> -->
+<!-- <input value="<?= $device_app ?>" id="device-app"> -->
 <div  id="loader-init">
     <div class="loadingio-spinner-double-ring-8kmkrab6ncg">
         <div class="ldio-407auvblvok">
@@ -27,17 +27,17 @@
 <div id="layout-wrapper">
 
 
-    <?php include('fragment/header.php')?>
+    <?php include ('fragment/header.php') ?>
 
     <!-- ========== Left Sidebar Start ========== -->
-    <?php include('fragment/nav-bar.php')?>
+    <?php include ('fragment/nav-bar.php') ?>
     <!-- Left Sidebar End -->
 
 
     <!-- ============================================================== -->
     <!-- Start right Content here -->
     <!-- ============================================================== -->
-    <div id="contenedor-app" class="container" style="padding-bottom: 4rem; min-height: calc(100vh - 120px);"> <!-- cambiar a container-fluid si es necesario -->
+    <div id="contenedor-app" class="container-fluid" style="padding-left: 3%; padding-right: 3%; max-width: 95%; margin: 0 auto;"> <!-- cambiar a container-fluid si es necesario -->
 
      
              
@@ -108,7 +108,7 @@
 
 <!-- JAVASCRIPT-->
 
-<?php include("fragment/footer.php")?>
+<?php include ('fragment/footer.php') ?>
 
 <script>
     $(document).ready(function (){

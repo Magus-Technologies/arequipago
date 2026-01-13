@@ -92,7 +92,8 @@ class GrupoFinanciamientoModel
         $sql = 'INSERT INTO grupos_variantes (
             idplan_financiamiento, 
             nombre_variante, 
-            cuota_inicial, 
+            cuota_inicial,
+            monto_inscripcion,
             monto_cuota, 
             cantidad_cuotas,
             penalizacion_mora,
@@ -103,7 +104,7 @@ class GrupoFinanciamientoModel
             monto_sin_interes, 
             fecha_inicio, 
             fecha_fin
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -115,20 +116,22 @@ class GrupoFinanciamientoModel
         foreach ($variantes as $variante) {
             // Convertir valores vacíos a null
             $cuotaInicial = $variante['cuota_inicial'] !== '' ? $variante['cuota_inicial'] : null;
+            $montoInscripcion = isset($variante['monto_inscripcion']) && $variante['monto_inscripcion'] !== '' ? $variante['monto_inscripcion'] : null;
             $montoCuota = $variante['monto_cuota'] !== '' ? $variante['monto_cuota'] : null;
             $cantidadCuotas = $variante['cantidad_cuotas'] !== '' ? $variante['cantidad_cuotas'] : null;
-            $penalizacionMora = isset($variante['penalizacion_mora']) ? $variante['penalizacion_mora'] : null;  // Aquí aseguramos que sea null si no existe
+            $penalizacionMora = isset($variante['penalizacion_mora']) ? $variante['penalizacion_mora'] : null;
             $tasaInteres = $variante['tasa_interes'] !== '' ? $variante['tasa_interes'] : null;
             $monto = $variante['monto'] !== '' ? $variante['monto'] : null;
             $montoSinInteres = $variante['monto_sin_interes'] !== '' ? $variante['monto_sin_interes'] : null;
             $fechaInicio = $variante['fecha_inicio'] !== '' ? $variante['fecha_inicio'] : null;
             $fechaFin = $variante['fecha_fin'] !== '' ? $variante['fecha_fin'] : null;
 
-            // CORREGIDO: 13 variables, 13 tipos
-            $stmt->bind_param('isdddsssdddss',  // EDITADO: era isddddssdddsss (14 caracteres), ahora son 13
+            // 14 variables, 14 tipos (agregado monto_inscripcion)
+            $stmt->bind_param('isddddsssdddss',
                 $idPlan,
                 $variante['nombre_variante'],
                 $cuotaInicial,
+                $montoInscripcion,
                 $montoCuota,
                 $cantidadCuotas,
                 $penalizacionMora,
@@ -184,7 +187,7 @@ class GrupoFinanciamientoModel
 
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas,
         $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres,
-        $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0, 
+        $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0,
         $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.')
     {
         // CORREGIDO: Validar y limpiar tipoVehicular
@@ -297,13 +300,14 @@ class GrupoFinanciamientoModel
 
     // Modificación para variantes: Método para actualizar una variante
     public function actualizarVariante($id, $idPlanFinanciamiento, $nombreVariante, $cuotaInicial,
-        $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda,
+        $montoInscripcion, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda,
         $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin)
     {
         $sql = 'UPDATE grupos_variantes SET 
                 idplan_financiamiento = ?,
                 nombre_variante = ?,
                 cuota_inicial = ?,
+                monto_inscripcion = ?,
                 monto_cuota = ?,
                 cantidad_cuotas = ?,
                 frecuencia_pago = ?,
@@ -323,6 +327,7 @@ class GrupoFinanciamientoModel
 
         // Convertir valores vacíos a NULL
         $cuotaInicial = ($cuotaInicial !== null && $cuotaInicial !== '') ? $cuotaInicial : null;
+        $montoInscripcion = ($montoInscripcion !== null && $montoInscripcion !== '') ? $montoInscripcion : null;
         $montoCuota = ($montoCuota !== null && $montoCuota !== '') ? $montoCuota : null;
         $cantidadCuotas = ($cantidadCuotas !== null && $cantidadCuotas !== '') ? $cantidadCuotas : null;
         $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
@@ -332,10 +337,11 @@ class GrupoFinanciamientoModel
         $fechaInicio = ($fechaInicio !== null && $fechaInicio !== '') ? $fechaInicio : null;
         $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
 
-        $stmt->bind_param('isddissddsssi',
+        $stmt->bind_param('isdddissddsssi',
             $idPlanFinanciamiento,
             $nombreVariante,
             $cuotaInicial,
+            $montoInscripcion,
             $montoCuota,
             $cantidadCuotas,
             $frecuenciaPago,
@@ -380,11 +386,20 @@ class GrupoFinanciamientoModel
             'moneda' => ''
         ];
 
+        // 🔍 DEBUG: Ver qué datos tiene el financiamiento
+        error_log('🔍 [MODELO] Financiamiento recibido - grupo_financiamiento: ' . ($financiamiento['grupo_financiamiento'] ?? 'NULL'));
+        error_log('🔍 [MODELO] Financiamiento recibido - id_variante: ' . ($financiamiento['id_variante'] ?? 'NULL'));
+        error_log('🔍 [MODELO] Financiamiento recibido - nombre_personalizado: ' . ($financiamiento['nombre_personalizado'] ?? 'NULL'));
+
         // Primero intentamos con id_variante
         if (!empty($financiamiento['id_variante'])) {
-            $sql = 'SELECT nombre_variante, fecha_inicio, fecha_fin, frecuencia_pago, monto_sin_interes, moneda 
-                   FROM grupos_variantes 
-                   WHERE idgrupos_variantes = ?';
+            error_log('🔍 [MODELO] Entrando por rama de ID_VARIANTE');
+            $sql = 'SELECT gv.nombre_variante, gv.fecha_inicio, gv.fecha_fin, gv.frecuencia_pago, 
+                           gv.monto_sin_interes, gv.moneda, gv.idplan_financiamiento,
+                           pf.nombre_plan
+                   FROM grupos_variantes gv
+                   INNER JOIN planes_financiamiento pf ON gv.idplan_financiamiento = pf.idplan_financiamiento
+                   WHERE gv.idgrupos_variantes = ?';
 
             $stmt = $this->conectar->prepare($sql);
             if ($stmt) {
@@ -393,19 +408,29 @@ class GrupoFinanciamientoModel
                 $result = $stmt->get_result()->fetch_assoc();
 
                 if ($result) {
-                    $resultado['nombre'] = $result['nombre_variante'];
+                    error_log('🔍 [MODELO] Variante encontrada - nombre_variante: ' . ($result['nombre_variante'] ?? 'NULL'));
+                    error_log('🔍 [MODELO] Variante encontrada - nombre_plan: ' . ($result['nombre_plan'] ?? 'NULL'));
+
+                    // ✅ CORREGIDO: Usar nombre_plan del plan base, no nombre_variante
+                    $resultado['nombre'] = $result['nombre_plan'];
                     $resultado['fecha_inicio'] = $result['fecha_inicio'];
                     $resultado['fecha_fin'] = $result['fecha_fin'];
                     $resultado['frecuencia'] = $result['frecuencia_pago'];
                     $resultado['monto_sin_interes'] = $result['monto_sin_interes'];
                     $resultado['moneda'] = $result['moneda'];
                     $resultado['duracion'] = $this->calcularDuracion($result['fecha_inicio'], $result['fecha_fin']);
+                } else {
+                    error_log('🔍 [MODELO] No se encontró variante con id: ' . $financiamiento['id_variante']);
                 }
             }
         }
         // Si no hay id_variante o no se encontró, buscamos por grupo_financiamiento
         elseif (!empty($financiamiento['grupo_financiamiento'])) {
+            error_log('🔍 [MODELO] Entrando por rama de GRUPO_FINANCIAMIENTO');
             $grupo = $this->getGroupById($financiamiento['grupo_financiamiento']);
+
+            // 🔍 DEBUG: Ver qué devuelve getGroupById
+            error_log('🔍 [MODELO] getGroupById para plan ' . $financiamiento['grupo_financiamiento'] . ': ' . print_r($grupo, true));
 
             if ($grupo) {
                 $resultado['nombre'] = $grupo['nombre_plan'];
@@ -415,6 +440,10 @@ class GrupoFinanciamientoModel
                 $resultado['monto_sin_interes'] = $grupo['monto_sin_interes'];
                 $resultado['moneda'] = $grupo['moneda'];
                 $resultado['duracion'] = $this->calcularDuracion($grupo['fecha_inicio'], $grupo['fecha_fin']);
+
+                // 🔍 DEBUG: Ver qué se asigna a resultado['nombre']
+                error_log("🔍 [MODELO] nombre_plan del grupo: '" . ($grupo['nombre_plan'] ?? 'NULL') . "'");
+                error_log("🔍 [MODELO] resultado['nombre'] asignado: '" . $resultado['nombre'] . "'");
             }
         }
 

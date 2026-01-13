@@ -227,6 +227,9 @@ class FragmentController extends Controller
     public function cuponesDrivers(){
         return $this->view("fragment-views/cliente/cupones-drivers");
     }
+    public function clientesConductoresConCupon(){
+        return $this->view("fragment-views/cliente/clientesConductoresConCupon");
+    }
        public function beneficiosUsuarios(){
         return $this->view("fragment-views/cliente/beneficios");
     }
@@ -254,6 +257,9 @@ class FragmentController extends Controller
     public function adjudicaciones(){
         return $this->view("fragment-views/cliente/adjudicaciones");
     }
+    public function contacionDomiciliaria(){
+        return $this->view("fragment-views/cliente/constataciones-domiciliarias");
+    }
 
     public function gestionDescuentos(){
         // Verificar que solo el Director pueda acceder
@@ -262,5 +268,22 @@ class FragmentController extends Controller
             exit;
         }
         return $this->view("fragment-views/cliente/gestion-descuentos");
+    }
+
+    public function constatacionesDomiciliarias(){
+        // Verificar que solo Admin (1) y Director (3) puedan acceder
+        if (!isset($_SESSION['id_rol']) || !in_array($_SESSION['id_rol'], [1, 3,2])) {
+            header('Location: ' . URL::to('/'));
+            exit;
+        }
+        return $this->view("fragment-views/cliente/constataciones-domiciliarias");
+    }
+    public function recaudaciones(){
+        // Verificar que solo Admin (1) y Director (3) puedan acceder
+        if (!isset($_SESSION['id_rol']) || !in_array($_SESSION['id_rol'], [3,4])) {
+            header('Location: ' . URL::to('/'));
+            exit;
+        }
+        return $this->view("fragment-views/cliente/recaudaciones");
     }
 }

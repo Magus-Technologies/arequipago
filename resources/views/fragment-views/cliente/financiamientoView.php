@@ -571,6 +571,26 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         </small>
                                                     </div>
 
+                                                    <!-- ✅ NUEVO: Campo Número Corporativo para CORPORATIVO CLARO (Plan 36) -->
+                                                    <div class="d-none" id="numeroCorporativoContainer">
+                                                        <label for="numeroCorporativo" class="form-label">
+                                                            <i class="fas fa-phone me-2"></i>Número Corporativo
+                                                            <span class="text-danger">*</span>
+                                                        </label>
+                                                        <div class="input-group mb-3">
+                                                            <span class="input-group-text">
+                                                                <i class="fas fa-mobile-alt"></i>
+                                                            </span>
+                                                            <input type="text" class="form-control" id="numeroCorporativo"
+                                                                placeholder="Ej: 987654321" maxlength="20"
+                                                                pattern="[0-9]*" inputmode="numeric">
+                                                        </div>
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            Ingrese el número corporativo asignado por CLARO
+                                                        </small>
+                                                    </div>
+
                                                     <div class="d-none" id="FotoDinamica">
                                                         <img src="https://pics.clipartpng.com/Tires_PNG_ClipArt-1164.png"
                                                             alt="Foto dinámica" class="img-fluid rounded"
@@ -784,6 +804,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                                 class="fas fa-calendar-alt"></i></span>
                                                         <select class="form-select" id="frecuenciaPago">
                                                             <option value="mensual">Mensual</option>
+                                                            <option value="quincenal">Quincenal</option>
                                                             <option value="semanal">Semanal</option>
                                                         </select>
                                                     </div>
@@ -795,7 +816,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
-                                                        <input type="date" class="form-control" id="fechaInicio" required>
+                                                        <input type="date" class="form-control" id="fechaInicio" required <?php if ($id_rol == 2): ?>readonly<?php endif; ?>>
                                                     </div>
                                                     <?php if ($id_rol == 3): ?>
                                                     <small class="text-muted">
@@ -811,7 +832,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                         <span class="input-group-text"><i
                                                                 class="fas fa-calendar-check"></i></span>
                                                         <input type="date" class="form-control" id="fechaFin"
-                                                            placeholder="Fecha de fin" required readonly>
+                                                            placeholder="Fecha de fin" required readonly <?php if ($id_rol == 2): ?>style="background-color: #e9ecef; cursor: not-allowed;"<?php endif; ?>>
                                                     </div>
                                                 </div>
 
@@ -1787,8 +1808,16 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
     <script src="<?= URL::to('public/js/financiamiento/productosManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCalculator.js') ?>?v=<?= time() ?>"></script>
+
+    <!-- Pasar el rol del usuario de PHP a JavaScript -->
+    <script>
+        const ROL_USUARIO = <?= $id_rol ?? 0 ?>;
+    </script>
+
     <script src="<?= URL::to('public/js/financiamiento/planesManager.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/cuotasAdelantadasCrediMotos.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/placaManager.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/numeroCorporativoManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCRUD.js') ?>?v=<?= time() ?>"></script>
 
     <!-- Script para actualizar badge de pendientes (solo para directores) -->

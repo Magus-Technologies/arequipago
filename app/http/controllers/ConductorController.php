@@ -1,5 +1,6 @@
 <?php
 require_once "app/models/Conductor.php";
+require_once "app/models/Cliente.php";
 require_once "app/models/DireccionConductor.php";
 require_once "app/models/ContactoEmergencia.php";
 require_once "app/models/PagoInscripcion.php";
@@ -1038,7 +1039,7 @@ class ConductorController extends Controller
             $monto = $_POST['monto'];
             $efectivoRecibido = $_POST['efectivo_recibido'];
             $vuelto = $_POST['vuelto'];
-            $cuotas = $_POST['cuotas'];
+            $cuotas = isset($_POST['cuotas']) ? $_POST['cuotas'] : []; // Validar si existen cuotas
             $idAsesor = $_SESSION['usuario_id'];
             $fechaPago = date("Y-m-d H:i:s");
 
