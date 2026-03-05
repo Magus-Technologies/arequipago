@@ -1414,10 +1414,11 @@ class Cupon
     public function obtenerDepartamentosHabilitados()
     {
         try {
+            // ✅ MODIFICADO: Excluir CALLAO (id 13) solo para cupones
             $sql = 'SELECT d.iddepast, d.nombre
                     FROM departamentos_habilitados dh
                     INNER JOIN depast d ON dh.iddepast = d.iddepast
-                    WHERE dh.habilitado = 1
+                    WHERE dh.habilitado = 1 AND d.iddepast != 13
                     ORDER BY d.nombre ASC';
 
             $result = $this->conectar->query($sql);

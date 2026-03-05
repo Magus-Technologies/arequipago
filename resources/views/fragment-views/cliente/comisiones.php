@@ -9,16 +9,16 @@ $conexion = (new Conexion())->getConexion();
 // Verificar si el usuario está logueado
 
 // Verificar si el usuario está logueado
-if (!isset($_SESSION['usuario_id'])) {
+if (!isset($_SESSION["usuario_id"])) {
     header("Location: login.php");
     exit();
 }
 
-$usuario_id = $_SESSION['usuario_id'];
-$rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
+$usuario_id = $_SESSION["usuario_id"];
+$rol_usuario = isset($_SESSION["id_rol"]) ? $_SESSION["id_rol"] : null;
 
-$empresa = $_SESSION['id_empresa'] ?? null;
-$sucursal = $_SESSION['sucursal'] ?? null;
+$empresa = $_SESSION["id_empresa"] ?? null;
+$sucursal = $_SESSION["sucursal"] ?? null;
 ?>
 
 <!DOCTYPE html>
@@ -32,16 +32,16 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             background-color: #f8f8fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         /* REEMPLAZAR CON ESTO: */
         .header-section {
             background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
             color: white;
             padding: 0.75rem 1.5rem; /* Mucho más compacto */
             margin: 0 -15px 1rem -15px; /* Margen reducido */
-            
+
             border-radius: 0 0 8px 8px; /* Bordes más sutiles */
-            
+
             width: 100vw;
             position: relative;
             left: 50%;
@@ -50,7 +50,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             margin-right: -50vw;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Sombra muy sutil */
         }
-        
+
         .stats-card {
             background: white;
             border-radius: 15px;
@@ -59,11 +59,11 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             border: none;
             transition: transform 0.3s ease;
         }
-        
+
         .stats-card:hover {
             transform: translateY(-5px);
         }
-        
+
         .stats-icon {
             width: 60px;
             height: 60px;
@@ -74,7 +74,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             font-size: 1.5rem;
             color: white;
         }
-        
+
         .table-container {
             background: white;
             border-radius: 15px;
@@ -82,7 +82,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             margin-top: 2rem;
         }
-        
+
         .table th {
             background-color: #3c4759;
             color: white;
@@ -90,28 +90,28 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             font-weight: 600;
             padding: 1rem;
         }
-        
+
         .table td {
             padding: 1rem;
             vertical-align: middle;
             border-bottom: 1px solid #eee;
         }
-        
+
         .badge-pendiente {
             background-color: #fcf34b;
             color: #333;
         }
-        
+
         .badge-pagada {
             background-color: #02a499;
             color: white;
         }
-        
+
         .badge-cancelada {
             background-color: #ec4561;
             color: white;
         }
-        
+
         .filter-section {
             background: white;
             border-radius: 15px;
@@ -119,7 +119,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             margin-bottom: 2rem;
         }
-        
+
         .btn-filter {
             background: #626ed4;
             border: none;
@@ -129,12 +129,12 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             font-weight: 500;
             transition: all 0.3s ease;
         }
-        
+
         .btn-filter:hover {
             background: #4a56c4;
             transform: translateY(-2px);
         }
-       
+
 
         .btn-action {
             background: #000;
@@ -152,8 +152,8 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             transform: skewX(-20deg);
             transition: left 0.5s ease;
             pointer-events: none;
-        } 
-        
+        }
+
         .btn-action:hover {
             background: #333;
             color: white;
@@ -163,24 +163,24 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         .btn-action:hover::before {
             left: 130%;
         }
-        
+
         .loading-spinner {
             display: none;
             text-align: center;
             padding: 2rem;
         }
-        
+
         .no-data {
             text-align: center;
             padding: 3rem;
             color: #666;
         }
-        
+
         .currency-sol {
             color: #02a499;
             font-weight: bold;
         }
-        
+
         .currency-dollar {
             color: #38a4f8;
             font-weight: bold;
@@ -191,7 +191,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         .table td:nth-child(4) {
             font-size: 0.85rem;
         }
-        
+
         /* Columna Descripción - letra más grande */
         .table td:nth-child(5) {
             font-size: 1.05rem;
@@ -199,92 +199,92 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         /* Media Queries para dispositivos móviles */
         @media (max-width: 768px) {
-            
-            
+
+
             .header-section .col-md-4 {
                 margin-top: 1rem;
             }
-            
+
             .stats-card {
                 margin-bottom: 1rem;
                 padding: 1rem;
             }
-            
+
             .stats-icon {
                 width: 45px;
                 height: 45px;
                 font-size: 1.2rem;
             }
-            
+
             .filter-section {
                 padding: 1rem;
             }
-            
+
             .filter-section .row > div {
                 margin-bottom: 1rem;
             }
-            
+
             .btn-filter {
                 width: 100%;
                 margin-top: 0.5rem;
             }
-            
+
             .table-container {
                 padding: 0.5rem;
                 overflow-x: auto;
             }
-            
+
             .table {
                 font-size: 0.8rem;
                 min-width: 600px;
             }
-            
+
             .table th,
             .table td {
                 padding: 0.5rem;
                 white-space: nowrap;
             }
-            
+
             .btn-action {
                 padding: 0.25rem 0.5rem;
                 font-size: 0.75rem;
             }
-            
+
             .modal-dialog {
                 margin: 0.5rem;
                 max-width: calc(100% - 1rem);
             }
-            
+
             .modal-body {
                 padding: 1rem;
             }
-            
+
             .card-body table {
                 font-size: 0.85rem;
             }
-            
+
             /* Ocultar columnas menos importantes en móvil */
             .table th:nth-child(8),
             .table td:nth-child(8) {
                 display: none;
             }
         }
-        
+
         @media (max-width: 480px) {
-           
-            
+
+
             .stats-card h4 {
                 font-size: 1.2rem;
             }
-            
+
             .stats-card h6 {
                 font-size: 0.8rem;
             }
-            
+
             .table {
                 font-size: 0.7rem;
             }
-            
+
             /* En pantallas muy pequeñas, ocultar más columnas */
             .table th:nth-child(7),
             .table td:nth-child(7),
@@ -302,10 +302,15 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 <div class="col-md-8">
                     <h1 class="mb-0">
                         <i class="fas fa-wallet me-3"></i>
-                        <?php echo ($rol_usuario == 3) ? 'Todas las Comisiones' : 'Mis Comisiones'; ?>
+                        <!-- rol e y rol 4 -->
+                        <?php echo $rol_usuario == 3 || $rol_usuario == 4
+                            ? "Todas las Comisiones"
+                            : "Mis Comisiones"; ?>
                     </h1>
                     <p class="mb-0 mt-2 opacity-75">
-                        <?php echo ($rol_usuario == 3) ? 'Vista completa de todas las comisiones del sistema' : 'Gestiona y revisa tus comisiones generadas'; ?>
+                        <?php echo $rol_usuario == 3 || $rol_usuario == 4
+                            ? "Vista completa de todas las comisiones del sistema"
+                            : "Gestiona y revisa tus comisiones generadas"; ?>
                     </p>
                 </div>
                 <div class="col-md-4 text-end">
@@ -384,6 +389,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                         <option value="">Todos los tipos</option>
                         <option value="inscripcion">Inscripción</option>
                         <option value="financiamiento">Financiamiento</option>
+                        <option value="venta">Ventas (Notas de Venta)</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -422,7 +428,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         <!-- Tabla de Comisiones -->
         <div class="table-container">
             <!-- Botones de acción masiva (solo para directores) -->
-            <?php if ($rol_usuario == 3): ?>
+            <?php if ($rol_usuario == 3 || $rol_usuario == 4): ?>
             <div class="mb-3" id="acciones-masivas" style="display: none;">
                 <div class="alert alert-info d-flex align-items-center justify-content-between">
                     <span>
@@ -455,7 +461,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 <table class="table table-hover" id="tabla-comisiones">
                     <thead>
                         <tr>
-                            <?php if ($rol_usuario == 3): ?>
+                            <?php if ($rol_usuario == 3 || $rol_usuario == 4): ?>
                             <th style="width: 40px;">
                                 <input type="checkbox" id="seleccionar-todos" onchange="toggleSeleccionarTodos()">
                             </th>
@@ -464,7 +470,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                             <th>Fecha</th>
                             <th>Tipo</th>
                             <th>Descripción</th>
-                            <?php if ($rol_usuario == 3): ?>
+                            <?php if ($rol_usuario == 3 || $rol_usuario == 4): ?> 
                             <th>Usuario</th>
                             <?php endif; ?>
                             <th>Monto</th>
@@ -520,7 +526,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             </div>
         </div>
     </div>
-    
+
     <script>
         // Variables globales
         const rolUsuario = <?php echo $rol_usuario; ?>;
@@ -532,9 +538,11 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         $(document).ready(function () {
             inicializarVista();
-            var rolUsuario = <?php echo isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : 0; ?>;
-    
-            if (rolUsuario == 3) {
+            var rolUsuario = <?php echo isset($_SESSION["id_rol"])
+                ? $_SESSION["id_rol"]
+                : 0; ?>;
+
+            if (rolUsuario == 3 || rolUsuario == 4) {
                 $('#filtro-usuario-container').show();
                 cargarUsuarios();
             }
@@ -591,9 +599,9 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         function cargarComisiones() {
             mostrarCargando(true);
             comisionesSeleccionadas = [];
-            
+
             const filtros = obtenerFiltros();
-            
+
             $.ajax({
                 url: '/arequipago/cargarComisiones',
                 type: 'POST',
@@ -622,7 +630,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             const inicio = (paginaActual - 1) * registrosPorPagina;
             const fin = inicio + registrosPorPagina;
             const comisionesPagina = comisionesGlobales.slice(inicio, fin);
-            
+
             mostrarComisiones(comisionesPagina);
             actualizarPaginador();
             actualizarInfoPaginacion(inicio, fin);
@@ -630,21 +638,21 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         function actualizarPaginador() {
             const totalPaginas = Math.ceil(comisionesGlobales.length / registrosPorPagina);
-            
+
             if (totalPaginas <= 1) {
                 document.getElementById('paginador-container').style.display = 'none';
                 return;
             }
-            
+
             document.getElementById('paginador-container').style.display = 'flex';
-            
+
             let html = '';
-            
+
             // Botón anterior
             html += `<li class="page-item ${paginaActual === 1 ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual - 1}); return false;">Anterior</a>
                     </li>`;
-            
+
             // Páginas
             for (let i = 1; i <= totalPaginas; i++) {
                 if (i === 1 || i === totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2)) {
@@ -655,19 +663,19 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                 }
             }
-            
+
             // Botón siguiente
             html += `<li class="page-item ${paginaActual === totalPaginas ? 'disabled' : ''}">
                         <a class="page-link" href="#" onclick="cambiarPagina(${paginaActual + 1}); return false;">Siguiente</a>
                     </li>`;
-            
+
             document.getElementById('paginador').innerHTML = html;
         }
 
         function cambiarPagina(pagina) {
             const totalPaginas = Math.ceil(comisionesGlobales.length / registrosPorPagina);
             if (pagina < 1 || pagina > totalPaginas) return;
-            
+
             paginaActual = pagina;
             mostrarComisionesPaginadas();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -686,7 +694,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 estado: document.getElementById('filtro-estado').value,
                 fecha_desde: document.getElementById('filtro-fecha-desde').value,
                 fecha_hasta: document.getElementById('filtro-fecha-hasta').value,
-                usuario_id: rolUsuario == 3 ? null : usuarioId,
+                usuario_id: rolUsuario == 3 || rolUsuario == 4 ? null : usuarioId,
                 usuario_filtro: $('#usuario_filtro').val()
             };
         }
@@ -712,19 +720,19 @@ $sucursal = $_SESSION['sucursal'] ?? null;
 
         function crearFilaComision(comision) {
             const row = document.createElement('tr');
-            
+
             const montoClass = comision.moneda === '$' ? 'currency-dollar' : 'currency-sol';
             const estadoBadge = obtenerBadgeEstado(comision.estado_comision);
             const tipoIcon = comision.tipo_comision === 'inscripcion' ? 'fa-user-plus' : 'fa-credit-card';
-            
+
             let html = '';
-            
+
             // Checkbox de selección (solo para directores)
-            if (rolUsuario == 3) {
+            if (rolUsuario == 3 || rolUsuario == 4) {
                 const checked = comisionesSeleccionadas.includes(comision.id_comision) ? 'checked' : '';
                 html += `<td><input type="checkbox" class="checkbox-comision" value="${comision.id_comision}" ${checked} onchange="toggleSeleccion(${comision.id_comision})"></td>`;
             }
-            
+
             html += `
                 <td><strong>#${comision.id_comision}</strong></td>
                 <td>${formatearFecha(comision.fecha_comision)}</td>
@@ -736,11 +744,11 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     <small class="text-muted">${comision.observaciones || 'Sin descripción'}</small>
                 </td>
             `;
-            
-            if (rolUsuario == 3) {
+
+            if (rolUsuario == 3 || rolUsuario == 4) {
                 html += `<td><strong>${comision.nombre_usuario || 'N/A'}</strong></td>`;
             }
-            
+
             html += `
                 <td>
                     <span class="${montoClass}">
@@ -753,11 +761,11 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                         <button class="btn btn-action btn-sm" onclick="verDetalleComision(${comision.id_comision})" title="Ver detalle">
                             <i class="fas fa-eye"></i>
                         </button>
-                        ${rolUsuario == 3 ? generarBotonesAdicionales(comision) : ''}
+                        ${rolUsuario == 3 || rolUsuario == 4 ? generarBotonesAdicionales(comision) : ''}
                     </div>
                 </td>
             `;
-            
+
             row.innerHTML = html;
             return row;
         }
@@ -776,7 +784,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         function toggleSeleccionarTodos() {
             const checkbox = document.getElementById('seleccionar-todos');
             const checkboxes = document.querySelectorAll('.checkbox-comision');
-            
+
             if (checkbox.checked) {
                 // Seleccionar todas las comisiones de la página actual
                 checkboxes.forEach(cb => {
@@ -797,7 +805,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     cb.checked = false;
                 });
             }
-            
+
             actualizarUISeleccion();
         }
 
@@ -805,12 +813,12 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             const contador = comisionesSeleccionadas.length;
             document.getElementById('contador-seleccionados').textContent = contador;
             document.getElementById('acciones-masivas').style.display = contador > 0 ? 'block' : 'none';
-            
+
             // Actualizar estado del checkbox "seleccionar todos"
             const checkboxes = document.querySelectorAll('.checkbox-comision');
             const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
             const algunoSeleccionado = Array.from(checkboxes).some(cb => cb.checked);
-            
+
             const checkboxTodos = document.getElementById('seleccionar-todos');
             if (checkboxTodos) {
                 checkboxTodos.checked = todosSeleccionados;
@@ -823,9 +831,9 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 Swal.fire('Atención', 'Debe seleccionar al menos una comisión', 'warning');
                 return;
             }
-            
+
             let titulo, texto, confirmText, color;
-            
+
             switch (accion) {
                 case 'pagada':
                     titulo = '¿Marcar como pagadas?';
@@ -846,7 +854,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     color = '#ec4561';
                     break;
             }
-            
+
             Swal.fire({
                 title: titulo,
                 text: texto,
@@ -971,7 +979,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                             <p class="mt-2">Cargando detalles...</p>
                         </div>
                     `);
-                    
+
                     let modal = new bootstrap.Modal(document.getElementById('modalDetalleComision'));
                     modal.show();
                 },
@@ -1002,7 +1010,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
             const montoClass = detalle.moneda === '$' ? 'currency-dollar' : 'currency-sol';
             const estadoBadge = obtenerBadgeEstado(detalle.estado_comision);
             const tipoIcon = detalle.tipo_comision === 'inscripcion' ? 'fa-user-plus' : 'fa-credit-card';
-            
+
             const html = `
                 <div class="row">
                     <div class="col-md-6">
@@ -1065,7 +1073,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0"><i class="fas fa-user me-2"></i>Información del Usuario</h6>
@@ -1085,7 +1093,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                         </table>
                     </div>
                 </div>
-                
+
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Descripción Detallada</h6>
@@ -1102,7 +1110,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     </div>
                 </div>
             `;
-            
+
             $('#contenido-detalle-comision').html(html);
         }
 
@@ -1113,22 +1121,22 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                 fecha_desde: document.getElementById('filtro-fecha-desde').value,
                 fecha_hasta: document.getElementById('filtro-fecha-hasta').value
             };
-            
+
             // Solo agregar usuario_filtro si es director
-            if (rolUsuario == 3) {
+            if (rolUsuario == 3 || rolUsuario == 4) {
                 const usuarioFiltro = $('#usuario_filtro').val();
                 if (usuarioFiltro) {
                     filtros.usuario_filtro = usuarioFiltro;
                 }
             }
-            
+
             // Crear formulario temporal para POST
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/arequipago/exportarComisiones';
             form.target = '_blank';
             form.style.display = 'none';
-            
+
             // Agregar campos del formulario
             Object.keys(filtros).forEach(key => {
                 if (filtros[key] && filtros[key] !== '') {
@@ -1139,7 +1147,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     form.appendChild(input);
                 }
             });
-            
+
             // Enviar formulario (sin CSRF token)
             document.body.appendChild(form);
             form.submit();
@@ -1153,43 +1161,43 @@ $sucursal = $_SESSION['sucursal'] ?? null;
         // Renombrar generarBotonesDirector() a generarBotonesAdicionales()
         function generarBotonesAdicionales(comision) {
             let botones = '';
-            
+
             if (comision.estado_comision === 'pendiente') {
                 botones = `
-                    <button class="btn btn-action btn-sm" 
-                            style="background: #02a499; border: none; color: white;" 
-                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pagada')" 
+                    <button class="btn btn-action btn-sm"
+                            style="background: #02a499; border: none; color: white;"
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pagada')"
                             title="Marcar como pagada">
                         <i class="fas fa-dollar-sign"></i>
                     </button>
-                    <button class="btn btn-action btn-sm" 
-                            style="background: #ec4561; border: none; color: white;" 
-                            onclick="cambiarEstadoComision(${comision.id_comision}, 'cancelada')" 
+                    <button class="btn btn-action btn-sm"
+                            style="background: #ec4561; border: none; color: white;"
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'cancelada')"
                             title="Cancelar comisión">
                         <i class="fas fa-times"></i>
                     </button>`;
             } else if (comision.estado_comision === 'cancelada') {
                 botones = `
-                    <button class="btn btn-action btn-sm" 
-                            style="background: #38a4f8; border: none; color: white;" 
-                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pendiente')" 
+                    <button class="btn btn-action btn-sm"
+                            style="background: #38a4f8; border: none; color: white;"
+                            onclick="cambiarEstadoComision(${comision.id_comision}, 'pendiente')"
                             title="Reactivar comisión">
                         <i class="fas fa-redo"></i>
                     </button>
-                    <button class="btn btn-action btn-sm" 
-                            style="background: #6c757d; border: none; color: white;" 
-                            onclick="eliminarComision(${comision.id_comision})" 
+                    <button class="btn btn-action btn-sm"
+                            style="background: #6c757d; border: none; color: white;"
+                            onclick="eliminarComision(${comision.id_comision})"
                             title="Eliminar definitivamente">
                         <i class="fas fa-trash"></i>
                     </button>`;
             }
-            
+
             return botones;
         }
 
         function cambiarEstadoComision(idComision, nuevoEstado) {
             let titulo, texto, textoConfirm;
-            
+
             switch (nuevoEstado) {
                 case 'pagada':
                     titulo = '¿Marcar como pagada?';
@@ -1207,7 +1215,7 @@ $sucursal = $_SESSION['sucursal'] ?? null;
                     textoConfirm = 'Sí, reactivar';
                     break;
             }
-            
+
             Swal.fire({
                 title: titulo,
                 text: texto,

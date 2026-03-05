@@ -53,16 +53,16 @@ class Productov2
 
     public function insertar(
         $nombre,
-        $marca = null,
-        $modelo = null,
         $codigo,
         $cantidad,
         $categoria,
         $ruc,
         $razon_social,
+        $tipo_producto,
+        $marca = null,
+        $modelo = null,
         $fecha_vencimiento = null,
         $fecha_registro = null,
-        $tipo_producto,
         $cantidad_unidad = null,
         $unidad_medida = null,
         $precio = null,
@@ -189,7 +189,7 @@ class Productov2
         return $row['total'] > 0;
     }
 
-    public function obtenerProductos($pagina = 1, $productosPorPagina = 5, $categoria = null)
+    public function obtenerProductos($pagina = 1, $productosPorPagina = 5, $categoria = null, $idPlan = null)
     {
         try {
             // Calcular el offset para la paginación
@@ -226,6 +226,12 @@ class Productov2
                 }
             }
 
+            // ✅ NUEVO: Construir filtro por id_plan (para SOAT, etc.)
+            $filtroPlan = '';
+            if ($idPlan !== null && $idPlan > 0) {
+                $filtroPlan = "AND id_plan = " . (int)$idPlan;
+            }
+
             // Consulta SQL para obtener los productos y excluir los que tienen estado 0
             // ✅ MODIFICADO: Agregado campo 'categoria' para verificación de placa (Plan IncaMotors)
             $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, categoria
@@ -233,6 +239,7 @@ class Productov2
                 WHERE categoria != 'Chip (Linea corporativa)'
                 AND estado != '0'  -- Modificado: Se excluyen productos con estado 0
                 $filtroCategoria
+                $filtroPlan
                 LIMIT $productosPorPagina OFFSET $offset";  // Se mantiene la paginación
 
             $result = $this->conectar->query($sql);
@@ -289,8 +296,8 @@ class Productov2
         try {
             $productos = [];
 
-            // ✅ MODIFICADO: Agregado campo 'oficina' para mostrar de qué oficina es el producto
-            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina
+            // ✅ MODIFICADO: Agregado campos 'oficina', 'tipo_producto', 'id_plan' para SOAT y otros productos especiales
+            $sql = "SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina, tipo_producto, id_plan
                     FROM productosv2
                     WHERE (nombre LIKE ? OR codigo LIKE ? OR codigo_barra LIKE ?)
                     AND estado != '0'";
@@ -320,8 +327,8 @@ class Productov2
                 $idProducto = $rowIMEI['idproductosv2'];
 
                 // Obtener el producto con el ID encontrado
-                // ✅ MODIFICADO: Agregado campo 'oficina' para mostrar de qué oficina es el producto
-                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina 
+                // ✅ MODIFICADO: Agregado campos 'oficina', 'tipo_producto', 'id_plan' para SOAT y otros productos especiales
+                $sqlProducto = 'SELECT idproductosv2, nombre, codigo, cantidad, unidad_medida, precio_venta, codigo_barra, categoria, oficina, tipo_producto, id_plan 
                                 FROM productosv2 WHERE idproductosv2 = ?';
 
                 $stmtProducto = $this->conectar->prepare($sqlProducto);
@@ -536,29 +543,78 @@ class Productov2
         return $codigo;
     }
 
-    public function reporteProducts()
+    public function reporteProducts($oficina = null, $filtroStock = 'todos', $filtroTipo = 'todos', $categorias = [], $busqueda = '')
     {
-        // Preparar la consulta SQL para obtener todos los datos de la tabla productosv2
-        $sql = "SELECT 
-                        idproductosv2, 
-                        nombre, 
-                        codigo, 
-                        cantidad, 
-                        cantidad_unidad, 
-                        unidad_medida, 
-                        tipo_producto, 
-                        categoria, 
-                        fecha_vencimiento, 
-                        ruc, 
-                        razon_social, 
-                        precio, 
+        $sql = "SELECT
+                        idproductosv2,
+                        nombre,
+                        codigo,
+                        cantidad,
+                        cantidad_unidad,
+                        unidad_medida,
+                        tipo_producto,
+                        categoria,
+                        fecha_vencimiento,
+                        ruc,
+                        razon_social,
+                        precio,
                         precio_venta,
-                        fecha_registro, 
-                        guia_remision
+                        fecha_registro,
+                        guia_remision,
+                        marca,
+                        modelo
                     FROM productosv2
                     WHERE estado != '0'";
 
-        $resultado = $this->conectar->query($sql);
+        $params = [];
+        $types = '';
+
+        if ($oficina) {
+            $sql .= " AND oficina = ?";
+            $params[] = $oficina;
+            $types .= 'i';
+        }
+
+        if ($filtroStock === 'con_stock') {
+            $sql .= " AND cantidad > 0";
+        } elseif ($filtroStock === 'sin_stock') {
+            $sql .= " AND cantidad = 0";
+        } elseif ($filtroStock === 'stock_bajo') {
+            $sql .= " AND cantidad > 0 AND cantidad < 10";
+        }
+
+        if ($filtroTipo !== 'todos' && !empty($filtroTipo)) {
+            $sql .= " AND tipo_producto = ?";
+            $params[] = $filtroTipo;
+            $types .= 's';
+        }
+
+        if (!empty($categorias)) {
+            $placeholders = implode(',', array_fill(0, count($categorias), '?'));
+            $sql .= " AND categoria IN ($placeholders)";
+            foreach ($categorias as $cat) {
+                $params[] = $cat;
+                $types .= 's';
+            }
+        }
+
+        if (!empty($busqueda)) {
+            $sql .= " AND (nombre LIKE ? OR codigo LIKE ? OR razon_social LIKE ? OR categoria LIKE ? OR tipo_producto LIKE ?)";
+            $busquedaLike = "%" . str_replace(' ', '%', trim($busqueda)) . "%";
+            for ($i = 0; $i < 5; $i++) {
+                $params[] = $busquedaLike;
+                $types .= 's';
+            }
+        }
+
+        if (!empty($params)) {
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $resultado = $stmt->get_result();
+        } else {
+            $resultado = $this->conectar->query($sql);
+        }
 
         // Verificar si la consulta fue exitosa
         if ($resultado === false) {
@@ -570,9 +626,8 @@ class Productov2
 
         // Recorrer los resultados y calcular el precio total
         while ($fila = $resultado->fetch_assoc()) {
-            $fila['precio_total'] = $fila['precio'] * $fila['cantidad'];  // Calcular el precio total
-            $fila['texto_cabecera'] = '';  // Dejar "Texto de Cabecera" vacío
-            $productos[] = $fila;  // Agregar al arreglo de productos
+            $fila['precio_total'] = $fila['precio'] * $fila['cantidad'];
+            $productos[] = $fila;
         }
 
         // Liberar el resultado
@@ -736,19 +791,28 @@ class Productov2
 
     public function actualizarStock($idProducto, $cantidadReducir)
     {
-        // Obtener la cantidad actual del producto
-        $sqlSelect = 'SELECT cantidad FROM productosv2 WHERE idproductosv2 = ?';  // 🔹 Consulta para obtener la cantidad actual del producto
-        $stmtSelect = $this->conectar->prepare($sqlSelect);
-        $stmtSelect->bind_param('i', $idProducto);
-        $stmtSelect->execute();
-        $resultado = $stmtSelect->get_result();
+        // 🔹 NUEVO: Verificar si es producto Intangible antes de actualizar stock
+        $sqlCheckTipo = 'SELECT cantidad, tipo_producto FROM productosv2 WHERE idproductosv2 = ?';
+        $stmtCheckTipo = $this->conectar->prepare($sqlCheckTipo);
+        $stmtCheckTipo->bind_param('i', $idProducto);
+        $stmtCheckTipo->execute();
+        $resultadoTipo = $stmtCheckTipo->get_result();
 
-        if ($resultado->num_rows === 0) {
-            throw new Exception('Producto no encontrado.');  // 🔹 Si el producto no existe, lanzamos una excepción
+        if ($resultadoTipo->num_rows === 0) {
+            throw new Exception('Producto no encontrado.');
         }
 
-        $fila = $resultado->fetch_assoc();
-        $cantidadActual = intval($fila['cantidad']);
+        $filaTipo = $resultadoTipo->fetch_assoc();
+        
+        // 🔹 NUEVO: Si es producto Intangible, NO actualizar stock
+        if ($filaTipo['tipo_producto'] === 'Intangible') {
+            // Productos Intangibles (ej: SOAT) no tienen stock físico
+            error_log("✅ Producto Intangible (ID: {$idProducto}) - Stock NO actualizado");
+            return; // Salir sin actualizar
+        }
+
+        // Obtener la cantidad actual del producto
+        $cantidadActual = intval($filaTipo['cantidad']);
 
         // Calcular la nueva cantidad
         $nuevaCantidad = $cantidadActual - intval($cantidadReducir);  // 🔹 Restamos la cantidad enviada

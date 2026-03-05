@@ -1,6 +1,6 @@
 <!-- start page title -->
- 
-<link rel="stylesheet" href="<?= URL::to('public/css/factura.css') ?>">
+
+<link rel="stylesheet" href="<?= URL::to("public/css/factura.css") ?>">
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -56,6 +56,30 @@
                                 class="fa fa-plus"></i> Facturar Servicios</a>
                         <a href="/nota/electronica" class="btn btn-success button-link"><i class="fa fa-plus"></i>
                             Agregar Nota Electronica</a>
+
+                        <?php if ($_SESSION["id_rol"] == 3 || $_SESSION["id_rol"] == 4):// DIRECTOR O CONTADOR
+                            
+                                ?>
+                            <button data-bs-toggle="modal" data-bs-target="#modal-configurar-comisiones"
+                                class="btn btn-warning">
+                                <i class="fa fa-cog"></i> Configurar Comisiones de Ventas
+                            </button>
+                        <?php endif; ?>
+
+                        <?php if ($_SESSION["id_rol"] == 3 || $_SESSION["id_rol"] == 4):// DIRECTOR O CONTADOR
+                                ?>
+                            <!-- COMENTADO: Botón para actualizar fechas (puede romper XMLs existentes)
+                            <button data-bs-toggle="modal" data-bs-target="#modal-actualizar-fechas"
+                                class="btn btn-warning">
+                                <i class="fa fa-calendar"></i> Actualizar Fechas de Emisión
+                            </button>
+                            -->
+                            <button data-bs-toggle="modal" data-bs-target="#modal-envio-masivo-sunat"
+                                class="btn btn-danger">
+                                <i class="fa fa-send"></i> Enviar Lote a SUNAT
+                            </button>
+                        <?php endif; ?>
+
                         <button data-bs-toggle="modal" data-bs-target="#ventas-pdf-reporte" class="btn btn-info"><i
                                 class="fa fa-file-pdf-o"></i> Exportar a PDF Reporte de Venta</button>
                         <button data-bs-toggle="modal" data-bs-target="#ventas-pdf-reporteganancia"
@@ -82,7 +106,7 @@
                                 <th>Sub. Total</th>
                                 <th>IGV</th>
                                 <th>Total</th>
-                                <th>Vendedor</th> 
+                                <th>Vendedor</th>
                                 <th>Sunat</th>
                                 <th>Estado</th>
                                 <th>Acción</th>
@@ -118,7 +142,7 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date('Y');
+                                $anio = date("Y");
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -131,9 +155,31 @@
                             <select name="mes" class="form-control">
                                 <?php
                                 $contador = 0;
-                                $meses = array('TODOS', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
+                                $meses = [
+                                    "TODOS",
+                                    "ENERO",
+                                    "FEBRERO",
+                                    "MARZO",
+                                    "ABRIL",
+                                    "MAYO",
+                                    "JUNIO",
+                                    "JULIO",
+                                    "AGOSTO",
+                                    "SEPTIEMBRE",
+                                    "OCTUBRE",
+                                    "NOVIEMBRE",
+                                    "DICIEMBRE",
+                                ];
                                 foreach ($meses as $mes) {
-                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo "<option  " .
+                                        ($contador == date("m")
+                                            ? "selected"
+                                            : "") .
+                                        " value='" .
+                                        ($contador < 10
+                                            ? "0" . $contador
+                                            : $contador) .
+                                        "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -171,7 +217,7 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date('Y');
+                                $anio = date("Y");
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -184,9 +230,31 @@
                             <select name="mes" class="form-control">
                                 <?php
                                 $contador = 0;
-                                $meses = array('TODOS', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
+                                $meses = [
+                                    "TODOS",
+                                    "ENERO",
+                                    "FEBRERO",
+                                    "MARZO",
+                                    "ABRIL",
+                                    "MAYO",
+                                    "JUNIO",
+                                    "JULIO",
+                                    "AGOSTO",
+                                    "SEPTIEMBRE",
+                                    "OCTUBRE",
+                                    "NOVIEMBRE",
+                                    "DICIEMBRE",
+                                ];
                                 foreach ($meses as $mes) {
-                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo "<option  " .
+                                        ($contador == date("m")
+                                            ? "selected"
+                                            : "") .
+                                        " value='" .
+                                        ($contador < 10
+                                            ? "0" . $contador
+                                            : $contador) .
+                                        "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -225,7 +293,9 @@
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form target="_blank" action="<?= URL::to('/reporte/ventas/producto/lista/pdf/') ?>" method="get">
+            <form target="_blank" action="<?= URL::to(
+                "/reporte/ventas/producto/lista/pdf/",
+            ) ?>" method="get">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Reporte por Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -237,7 +307,9 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fecha Desde</label>
-                        <input required value="<?= date('Y-m-d') ?>" type="date" name="fecha1" class="form-control">
+                        <input required value="<?= date(
+                            "Y-m-d",
+                        ) ?>" type="date" name="fecha1" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fecha Hasta</label>
@@ -268,7 +340,7 @@
                             <label class="form-label">Año</label>
                             <select name="anio" class="form-control">
                                 <?php
-                                $anio = date('Y');
+                                $anio = date("Y");
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -281,9 +353,30 @@
                             <select name="mes" class="form-control">
                                 <?php
                                 $contador = 1;
-                                $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
+                                $meses = [
+                                    "ENERO",
+                                    "FEBRERO",
+                                    "MARZO",
+                                    "ABRIL",
+                                    "MAYO",
+                                    "JUNIO",
+                                    "JULIO",
+                                    "AGOSTO",
+                                    "SEPTIEMBRE",
+                                    "OCTUBRE",
+                                    "NOVIEMBRE",
+                                    "DICIEMBRE",
+                                ];
                                 foreach ($meses as $mes) {
-                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo "<option  " .
+                                        ($contador == date("m")
+                                            ? "selected"
+                                            : "") .
+                                        " value='" .
+                                        ($contador < 10
+                                            ? "0" . $contador
+                                            : $contador) .
+                                        "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -315,7 +408,7 @@
                             <label class="form-label">Año</label>
                             <select name="anioExcel" id='anioExcel' class="form-control">
                                 <?php
-                                $anio = date('Y');
+                                $anio = date("Y");
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -328,9 +421,30 @@
                             <select name="mesExcel" id='mesExcel' class="form-control">
                                 <?php
                                 $contador = 1;
-                                $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
+                                $meses = [
+                                    "ENERO",
+                                    "FEBRERO",
+                                    "MARZO",
+                                    "ABRIL",
+                                    "MAYO",
+                                    "JUNIO",
+                                    "JULIO",
+                                    "AGOSTO",
+                                    "SEPTIEMBRE",
+                                    "OCTUBRE",
+                                    "NOVIEMBRE",
+                                    "DICIEMBRE",
+                                ];
                                 foreach ($meses as $mes) {
-                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo "<option  " .
+                                        ($contador == date("m")
+                                            ? "selected"
+                                            : "") .
+                                        " value='" .
+                                        ($contador < 10
+                                            ? "0" . $contador
+                                            : $contador) .
+                                        "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -364,7 +478,7 @@
                             <label class="form-label">Año</label>
                             <select name="anioExcel" id='anioExcel22' class="form-control">
                                 <?php
-                                $anio = date('Y');
+                                $anio = date("Y");
                                 for ($i = 0; $i < 10; $i++) {
                                     echo "<option value='$anio'>$anio</option>";
                                     $anio--;
@@ -377,9 +491,30 @@
                             <select name="mesExcel" id='mesExcel22' class="form-control">
                                 <?php
                                 $contador = 1;
-                                $meses = array('ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE');
+                                $meses = [
+                                    "ENERO",
+                                    "FEBRERO",
+                                    "MARZO",
+                                    "ABRIL",
+                                    "MAYO",
+                                    "JUNIO",
+                                    "JULIO",
+                                    "AGOSTO",
+                                    "SEPTIEMBRE",
+                                    "OCTUBRE",
+                                    "NOVIEMBRE",
+                                    "DICIEMBRE",
+                                ];
                                 foreach ($meses as $mes) {
-                                    echo '<option  ' . ($contador == date('m') ? 'selected' : '') . " value='" . ($contador < 10 ? '0' . $contador : $contador) . "'>$mes</option>";
+                                    echo "<option  " .
+                                        ($contador == date("m")
+                                            ? "selected"
+                                            : "") .
+                                        " value='" .
+                                        ($contador < 10
+                                            ? "0" . $contador
+                                            : $contador) .
+                                        "'>$mes</option>";
                                     $contador++;
                                 }
                                 ?>
@@ -654,145 +789,186 @@
 
         $("#datatable").on("click", ".btn-send-sunat", function (evt) {
             const cod = ($(evt.currentTarget).attr('data-venta'));
-            $("#loader-menor").show()
+            
+            if (!cod) {
+                Swal.fire({
+                    icon: 'error',
+                    title: "Error",
+                    text: "No se pudo obtener el ID del comprobante"
+                });
+                return;
+            }
+            
+            $("#loader-menor").show();
+            
             _ajax("/ajs/send/sunat/venta", "POST", {
-                cod
+                cod: cod
             },
                 function (resp) {
-                    console.log(resp);
+                    $("#loader-menor").hide();
+                    console.log("Respuesta SUNAT:", resp);
+                    
                     if (resp.res) {
-                        alertExito("Enviado a la sunat")
-                        tes();
+                        Swal.fire({
+                            icon: 'success',
+                            title: "Éxito",
+                            text: resp.msg || "Enviado a SUNAT correctamente"
+                        });
+                        tes(); // Recargar tabla
                     } else {
                         Swal.fire({
                             icon: 'warning',
-                            title: "Alerta",
-                            html: resp.msg,
-                        })
+                            title: "Error al enviar",
+                            html: resp.msg || "Error desconocido",
+                        });
                     }
+                },
+                function(error) {
+                    $("#loader-menor").hide();
+                    console.error("Error en petición:", error);
+                    
+                    let mensajeError = "Error al comunicarse con el servidor";
+                    
+                    if (error.status === 400) {
+                        mensajeError = "Petición incorrecta (Bad Request). Verifique que el comprobante tenga XML generado.";
+                    } else if (error.status === 401) {
+                        mensajeError = "Sesión expirada. Por favor, recargue la página e intente nuevamente.";
+                    } else if (error.status === 403) {
+                        mensajeError = "No tiene permisos para realizar esta acción.";
+                    } else if (error.status === 500) {
+                        mensajeError = "Error interno del servidor. Contacte al administrador.";
+                    } else if (error.statusText) {
+                        mensajeError = error.statusText;
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: "Error de Conexión",
+                        html: `<p>${mensajeError}</p><small>Código: ${error.status || 'desconocido'}</small>`,
+                    });
                 }
-            )
+            );
         })
 
-      // Función de ejemplo para mostrar alertas de error (reemplaza con tu implementación)
-function alertError(message) {
-  console.error(message)
-  alert(message) // Esto es solo un ejemplo, usa una librería de alertas más sofisticada
-}
+        // Función de ejemplo para mostrar alertas de error (reemplaza con tu implementación)
+        function alertError(message) {
+            console.error(message)
+            alert(message) // Esto es solo un ejemplo, usa una librería de alertas más sofisticada
+        }
 
-// Inicialización de DataTables
-tabla = $("#datatable").DataTable({
-  processing: true,
-  serverSide: true,
-  ajax: {
-    url: _URL + "/ajs/ventas",
-    type: "GET",
-    // CORREGIDO: Añadir función para depurar los parámetros enviados
-    dataSrc: (json) => {
-      console.log("Datos recibidos:", json)
-      // Si la respuesta tiene aaData (formato antiguo), usarlo
-      if (json.aaData && Array.isArray(json.aaData)) {
-        return json.aaData
-      }
-      // Si no, usar data (formato nuevo)
-      return json.data || []
-    },
-    error: (xhr, error, thrown) => {
-      console.error("Error en la solicitud AJAX:", error, thrown)
-      console.log("Respuesta del servidor:", xhr.responseText)
-      alertError("Error al cargar los datos de ventas")
-    },
-  },
-  order: [[0, "desc"]],
-  language: {
-    processing: "Procesando...",
-    lengthMenu: "Mostrar _MENU_ registros",
-    zeroRecords: "No se encontraron resultados",
-    emptyTable: "Ningún dato disponible en esta tabla",
-    info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-    infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
-    infoFiltered: "(filtrado de un total de _MAX_ registros)",
-    search: "Buscar:",
-    paginate: {
-      first: "Primero",
-      last: "Último",
-      next: "Siguiente",
-      previous: "Anterior",
-    },
-  },
-  columnDefs: [{
-        targets: 0,
-        render: function(data, type, row) {
-            return data ? "<span >" + data + "</span>" : "";
-        }
-    },
-    {
-        targets: 1,
-        render: function(data, type, row) {
-            if (!row[0]) return '';
-            return '<a class="btn-info-vent" target="_blank" href="' + row[0] + '">' + (data || '') + '</a>';
-        }
-    },
-    {
-        targets: 7, // Vendedor (ahora en índice 7)
-        render: function(data, type, row) {
-            return data ? '<span >' + data + '</span>' : 'No identificado';
-        }
-    },
-    {
-        targets: 8, // Sunat (ahora en índice 8)
-        render: function(data, type, row) {
-            if (!data) return '';
-            
-            try {
-                const dataParts = data.split("-");
-                if (!row[10]) return ''; // ACTUALIZADO: Ahora el campo de acción está en el índice 10
-                
-                const desData = row[10].split('--');
-                
-                if (!(desData[1] == '-')) {
-                    if (dataParts[0] == '1') {
-                        return '<span class="badge bg-success">Enviado</span>';
-                    } else {
-                        let bntSend = '';
-                        if (dataParts[1] == '2' || dataParts[1] == '1') {
-                            bntSend = '<i data-venta="' + desData[0] + '" class="btn-send-sunat btn-sm btn btn-info fas fa-location-arrow"></i>';
-                        }
-                        return '<span class="badge bg-warning">Pendiente</span> ' + bntSend;
+        // Inicialización de DataTables
+        tabla = $("#datatable").DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: _URL + "/ajs/ventas",
+                type: "GET",
+                // CORREGIDO: Añadir función para depurar los parámetros enviados
+                dataSrc: (json) => {
+                    console.log("Datos recibidos:", json)
+                    // Si la respuesta tiene aaData (formato antiguo), usarlo
+                    if (json.aaData && Array.isArray(json.aaData)) {
+                        return json.aaData
                     }
+                    // Si no, usar data (formato nuevo)
+                    return json.data || []
+                },
+                error: (xhr, error, thrown) => {
+                    console.error("Error en la solicitud AJAX:", error, thrown)
+                    console.log("Respuesta del servidor:", xhr.responseText)
+                    alertError("Error al cargar los datos de ventas")
+                },
+            },
+            order: [[0, "desc"]],
+            language: {
+                processing: "Procesando...",
+                lengthMenu: "Mostrar _MENU_ registros",
+                zeroRecords: "No se encontraron resultados",
+                emptyTable: "Ningún dato disponible en esta tabla",
+                info: "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                infoEmpty: "Mostrando registros del 0 al 0 de un total de 0 registros",
+                infoFiltered: "(filtrado de un total de _MAX_ registros)",
+                search: "Buscar:",
+                paginate: {
+                    first: "Primero",
+                    last: "Último",
+                    next: "Siguiente",
+                    previous: "Anterior",
+                },
+            },
+            columnDefs: [{
+                targets: 0,
+                render: function (data, type, row) {
+                    return data ? "<span >" + data + "</span>" : "";
                 }
-            } catch (e) {
-                console.error('Error procesando datos:', e);
-                return '';
-            }
-            return '';
-        }
-    },
-    {
-        targets: 9, // Estado (ahora en índice 9)
-        render: function(data, type, row) {
-            if (data == 1) {
-                return '<span class="badge bg-success">Normal</span>';
-            } else if (data == 2) {
-                return '<span class="badge bg-danger">Anulado</span>';
-            }
-            return data || '';
-        }
-    },
-    {
-        targets: 10, // Acción (ahora en índice 10)
-        render: function(data, type, row) {
-            if (!row[9] || row[9] != 1) return ""; // ACTUALIZADO: El estado ahora está en índice 9
-            
-            try {
-                if (!row[8]) return ""; // ACTUALIZADO: El campo Sunat ahora está en índice 8
-                const estadoSunat = row[8].split("-")[0];
-                if (!data) return "";
-                const desData = data.split("--");
-                
-                const stpan = '<span id="' + (row[0] || '') + '-nom-xml" style="display: none">' + desData[1] + "</span>";
+            },
+            {
+                targets: 1,
+                render: function (data, type, row) {
+                    if (!row[0]) return '';
+                    return '<a class="btn-info-vent" target="_blank" href="' + row[0] + '">' + (data || '') + '</a>';
+                }
+            },
+            {
+                targets: 7, // Vendedor (ahora en índice 7)
+                render: function (data, type, row) {
+                    return data ? '<span >' + data + '</span>' : 'No identificado';
+                }
+            },
+            {
+                targets: 8, // Sunat (ahora en índice 8)
+                render: function (data, type, row) {
+                    if (!data) return '';
 
-                return stpan + `
+                    try {
+                        const dataParts = data.split("-");
+                        if (!row[10]) return ''; // ACTUALIZADO: Ahora el campo de acción está en el índice 10
+
+                        const desData = row[10].split('--');
+
+                        if (!(desData[1] == '-')) {
+                            if (dataParts[0] == '1') {
+                                return '<span class="badge bg-success">Enviado</span>';
+                            } else {
+                                let bntSend = '';
+                                if (dataParts[1] == '2' || dataParts[1] == '1') {
+                                    bntSend = '<i data-venta="' + desData[0] + '" class="btn-send-sunat btn-sm btn btn-info fas fa-location-arrow"></i>';
+                                }
+                                return '<span class="badge bg-warning">Pendiente</span> ' + bntSend;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error procesando datos:', e);
+                        return '';
+                    }
+                    return '';
+                }
+            },
+            {
+                targets: 9, // Estado (ahora en índice 9)
+                render: function (data, type, row) {
+                    if (data == 1) {
+                        return '<span class="badge bg-success">Normal</span>';
+                    } else if (data == 2) {
+                        return '<span class="badge bg-danger">Anulado</span>';
+                    }
+                    return data || '';
+                }
+            },
+            {
+                targets: 10, // Acción (ahora en índice 10)
+                render: function (data, type, row) {
+                    if (!row[9] || row[9] != 1) return ""; // ACTUALIZADO: El estado ahora está en índice 9
+
+                    try {
+                        if (!row[8]) return ""; // ACTUALIZADO: El campo Sunat ahora está en índice 8
+                        const estadoSunat = row[8].split("-")[0];
+                        if (!data) return "";
+                        const desData = data.split("--");
+
+                        const stpan = '<span id="' + (row[0] || '') + '-nom-xml" style="display: none">' + desData[1] + "</span>";
+
+                        return stpan + `
                     <div class="action-menu">
                         <button type="button" class="action-button">
                             <i class="fas fa-bars"></i>
@@ -827,24 +1003,24 @@ tabla = $("#datatable").DataTable({
                         </div>
                     </div>
                 `;
-            } catch (e) {
-                console.error('Error en render de acciones:', e);
-                return '';
-            }
-        }
-    }],
-    // CORREGIDO: Añadir manejo de errores global
-  error: (xhr, error, thrown) => {
-    console.error("Error en DataTables:", error)
-    console.log("Respuesta del servidor:", xhr.responseText)
-    alertError("Error al cargar los datos de ventas")
-  },
-})
+                    } catch (e) {
+                        console.error('Error en render de acciones:', e);
+                        return '';
+                    }
+                }
+            }],
+            // CORREGIDO: Añadir manejo de errores global
+            error: (xhr, error, thrown) => {
+                console.error("Error en DataTables:", error)
+                console.log("Respuesta del servidor:", xhr.responseText)
+                alertError("Error al cargar los datos de ventas")
+            },
+        })
 
-// AÑADIDO: Depuración para el campo de búsqueda
-$("#datatable_filter input").on("keyup", function () {
-  console.log("Término de búsqueda:", $(this).val())
-})
+        // AÑADIDO: Depuración para el campo de búsqueda
+        $("#datatable_filter input").on("keyup", function () {
+            console.log("Término de búsqueda:", $(this).val())
+        })
 
         tes()
 
@@ -972,7 +1148,7 @@ $("#datatable_filter input").on("keyup", function () {
                     document.body.removeChild(iframe)
                     console.log('asd');
                 });
-   
+
                 console.log(printA4);
             } else {
                 window.open(printA4)
@@ -988,7 +1164,7 @@ $("#datatable_filter input").on("keyup", function () {
 
 
 
-        /* 
+        /*
                 $("#ce-t-a4-m").click(function() {
                     let printA4 = $(this).attr('href')
                     if ($("#device-app").val() == 'desktop') {
@@ -1057,9 +1233,9 @@ $("#datatable_filter input").on("keyup", function () {
             $(this).closest(".action-menu").removeClass("show")
         })
 
-        
+
         $("#datatable").on("click", ".btn-info-vent", function (evt) {
-           
+
             evt.preventDefault();
             const iventa = $(evt.currentTarget).attr('href');
             $("#modalImprimirComprobante").modal("show");
@@ -1071,16 +1247,16 @@ $("#datatable_filter input").on("keyup", function () {
         // anular venta sin refresacar
         $("#datatable").on("click", ".btn-anular-vent", function (evt) {
             const iventa = $(evt.currentTarget).attr('data-venta');
-            
+
             // CORREGIDO: Validar que iventa no esté vacío
             if (!iventa || iventa === '' || iventa === 'undefined') {
                 alertError("Error: No se pudo obtener el ID de la venta");
                 console.error("ID de venta vacío o inválido:", iventa);
                 return;
             }
-            
+
             console.log("ID de venta a anular:", iventa);
-            
+
             Swal.fire({
                 title: 'Anular Venta',
                 text: "¿Esta seguro de ANULAR este documento?",
@@ -1182,3 +1358,913 @@ $("#datatable_filter input").on("keyup", function () {
         });
     })
 </script>
+
+<!-- Modal Configurar Comisiones de Ventas -->
+<div class="modal fade" id="modal-configurar-comisiones" tabindex="-1" aria-labelledby="modalConfigComisionesLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="modalConfigComisionesLabel">
+                    <i class="fa fa-cog"></i> Configurar Comisiones de Ventas (Notas de Venta)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> Esta configuración se aplica automáticamente cuando un
+                    <strong>Asesor</strong> registra una <strong>Nota de Venta</strong>.
+                </div>
+
+                <!-- Configuración de Comisión Fija -->
+                <div id="config-fijo">
+                    <h6 class="fw-bold mb-3">Configuración de Comisión para Ventas:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Porcentaje Fijo (%)</label>
+                            <input type="number" id="porcentaje_fijo_comision" class="form-control" step="0.01" min="0"
+                                max="100" placeholder="Ej: 5.00">
+                            <small class="text-muted">Se calculará como % del total de la venta</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">O Monto Fijo (S/.)</label>
+                            <input type="number" id="monto_fijo_comision" class="form-control" step="0.01" min="0"
+                                placeholder="Ej: 50.00">
+                            <small class="text-muted">Monto fijo por cada nota de venta</small>
+                        </div>
+                    </div>
+                    <div class="alert alert-success mt-3">
+                        <strong>Ejemplos:</strong><br>
+                        - Si configuras <strong>2%</strong>: Venta de S/. 1,000 → Comisión: S/. 20<br>
+                        - Si configuras <strong>50 soles</strong>: Por cada venta → Comisión: S/. 50<br>
+                        <small class="text-muted"><i class="fa fa-info-circle"></i> Si configuras ambos, se usará el
+                            Porcentaje.</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="guardarConfiguracionComisiones()">
+                    <i class="fa fa-save"></i> Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        < script >
+        // Variables globales para configuración de comisiones
+        let configComisionActual = null;
+
+    // Cargar configuración cuando se abre el modal
+    $('#modal-configurar-comisiones').on('show.bs.modal', function () {
+        cargarConfiguracionComisiones();
+    });
+
+    // Cargar configuración actual
+    function cargarConfiguracionComisiones() {
+        $.ajax({
+            url: _URL + '/ajs/comisiones/config/obtener',
+            type: 'POST',
+            dataType: 'json',
+            success: function (response) {
+                if (response.res && response.data) {
+                    configComisionActual = response.data;
+                    // Establecer valores (pueden ser null si no hay configuración)
+                    $('#porcentaje_fijo_comision').val(configComisionActual.porcentaje_fijo || '');
+                    $('#monto_fijo_comision').val(configComisionActual.monto_comision || '');
+                    
+                    // Mostrar mensaje si no hay configuración
+                    if (response.mensaje) {
+                        console.log(response.mensaje);
+                    }
+                } else {
+                    // Si hay error, mostrar valores vacíos
+                    $('#porcentaje_fijo_comision').val('');
+                    $('#monto_fijo_comision').val('');
+                }
+            },
+            error: function () {
+                // En caso de error, permitir configurar desde cero
+                $('#porcentaje_fijo_comision').val('');
+                $('#monto_fijo_comision').val('');
+                console.log('No se pudo cargar configuración, puede crear una nueva');
+            }
+        });
+    }
+
+    // Guardar configuración
+    function guardarConfiguracionComisiones() {
+        const porcentajeFijo = $('#porcentaje_fijo_comision').val();
+        const montoFijo = $('#monto_fijo_comision').val();
+
+        // Validación
+        if (!porcentajeFijo && !montoFijo) {
+            Swal.fire('Atención', 'Debes configurar un porcentaje fijo o un monto fijo', 'warning');
+            return;
+        }
+
+        $.ajax({
+            url: _URL + '/ajs/comisiones/config/guardar',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                modo_calculo: 'fijo',
+                porcentaje_fijo: porcentajeFijo || null,
+                monto_comision: montoFijo || null
+            },
+            success: function (response) {
+                if (response.res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Configuración Guardada',
+                        text: 'La configuración de comisiones se aplicará automáticamente a las nuevas ventas',
+                        confirmButtonText: 'Entendido'
+                    });
+                    $('#modal-configurar-comisiones').modal('hide');
+                } else {
+                    Swal.fire('Error', response.mensaje || 'No se pudo guardar la configuración', 'error');
+                }
+            },
+            error: function () {
+                Swal.fire('Error', 'Error al guardar la configuración', 'error');
+            }
+        });
+    }
+</script>
+
+
+<!-- Modal Envío Masivo a SUNAT -->
+<div class="modal fade" id="modal-envio-masivo-sunat" tabindex="-1" aria-labelledby="modalEnvioMasivoLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalEnvioMasivoLabel">
+                    <i class="fa fa-send"></i> Envío Masivo de Comprobantes a SUNAT
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Estadísticas -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h6>Pendientes de Envío</h6>
+                                <h3 id="stat-pendientes">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6>Enviados Hoy</h6>
+                                <h3 id="stat-enviados-hoy">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h6>Enviados Este Mes</h6>
+                                <h3 id="stat-enviados-mes">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">Filtros</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>Fecha Desde</label>
+                                <input type="date" id="filtro-fecha-desde" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label>Fecha Hasta</label>
+                                <input type="date" id="filtro-fecha-hasta" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label>Tipo Documento</label>
+                                <select id="filtro-tipo-doc" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="1">Boleta</option>
+                                    <option value="2">Factura</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-primary w-100"
+                                    onclick="cargarComprobantesPendientes()">
+                                    <i class="fa fa-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de comprobantes pendientes -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Comprobantes Pendientes</h6>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-hover" id="tabla-pendientes-sunat">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th width="40">
+                                            <input type="checkbox" id="check-all-pendientes"
+                                                onclick="toggleAllPendientes()">
+                                        </th>
+                                        <th>Fecha</th>
+                                        <th>Tipo</th>
+                                        <th>Comprobante</th>
+                                        <th>Cliente</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-pendientes-sunat">
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            <i class="fa fa-spinner fa-spin"></i> Cargando...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div id="progress-container" class="mt-3" style="display: none;">
+                    <h6>Procesando envío...</h6>
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                            role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <div id="progress-text" class="mt-2 text-center"></div>
+                </div>
+
+                <!-- Resultados -->
+                <div id="resultados-container" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6><i class="fa fa-check-circle"></i> Proceso Completado</h6>
+                        <p id="resultados-resumen"></p>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Comprobante</th>
+                                    <th>Estado</th>
+                                    <th>Mensaje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-resultados"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" id="btn-procesar-lote" onclick="procesarLoteSunat()">
+                    <i class="fa fa-send"></i> Procesar Lote Seleccionado
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globales para envío masivo SUNAT
+    let comprobantesPendientes = [];
+    let comprobantesSeleccionados = [];
+
+    // Cargar estadísticas y comprobantes al abrir el modal
+    $('#modal-envio-masivo-sunat').on('show.bs.modal', function () {
+        cargarEstadisticasSunat();
+        cargarComprobantesPendientes();
+    });
+
+    // Cargar estadísticas
+    function cargarEstadisticasSunat() {
+        $.ajax({
+            url: _URL + '/ajs/sunat/lote/estadisticas',
+            type: 'POST',
+            dataType: 'json',
+            success: function (response) {
+                if (response.res) {
+                    $('#stat-pendientes').text(response.estadisticas.pendientes);
+                    $('#stat-enviados-hoy').text(response.estadisticas.enviados_hoy);
+                    $('#stat-enviados-mes').text(response.estadisticas.enviados_mes);
+                }
+            },
+            error: function () {
+                console.error('Error al cargar estadísticas');
+            }
+        });
+    }
+
+    // Cargar comprobantes pendientes
+    function cargarComprobantesPendientes() {
+        const filtros = {
+            fecha_desde: $('#filtro-fecha-desde').val(),
+            fecha_hasta: $('#filtro-fecha-hasta').val(),
+            tipo_doc: $('#filtro-tipo-doc').val()
+        };
+
+        $('#tbody-pendientes-sunat').html('<tr><td colspan="6" class="text-center"><i class="fa fa-spinner fa-spin"></i> Cargando...</td></tr>');
+
+        $.ajax({
+            url: _URL + '/ajs/sunat/lote/pendientes',
+            type: 'POST',
+            data: filtros,
+            dataType: 'json',
+            success: function (response) {
+                if (response.res) {
+                    comprobantesPendientes = response.data;
+                    mostrarComprobantesPendientes(response.data);
+                } else {
+                    Swal.fire('Error', response.mensaje, 'error');
+                }
+            },
+            error: function () {
+                Swal.fire('Error', 'Error al cargar comprobantes pendientes', 'error');
+            }
+        });
+    }
+
+    // Mostrar comprobantes en la tabla
+    function mostrarComprobantesPendientes(comprobantes) {
+        const tbody = $('#tbody-pendientes-sunat');
+        tbody.empty();
+
+        if (comprobantes.length === 0) {
+            tbody.html('<tr><td colspan="6" class="text-center">No hay comprobantes pendientes de envío</td></tr>');
+            $('#btn-procesar-lote').prop('disabled', true);
+            return;
+        }
+
+        $('#btn-procesar-lote').prop('disabled', false);
+
+        comprobantes.forEach(function (comp) {
+            const row = `
+            <tr>
+                <td>
+                    <input type="checkbox" class="check-pendiente" value="${comp.id_venta}" 
+                           data-comprobante='${JSON.stringify(comp)}'>
+                </td>
+                <td>${comp.fecha_emision}</td>
+                <td><span class="badge bg-primary">${comp.tipo_doc}</span></td>
+                <td>${comp.comprobante}</td>
+                <td>${comp.nombre_cliente}</td>
+                <td class="text-end">S/ ${parseFloat(comp.total).toFixed(2)}</td>
+            </tr>
+        `;
+            tbody.append(row);
+        });
+    }
+
+    // Toggle todos los checkboxes
+    function toggleAllPendientes() {
+        const checked = $('#check-all-pendientes').is(':checked');
+        $('.check-pendiente').prop('checked', checked);
+    }
+
+    // Procesar lote seleccionado
+    function procesarLoteSunat() {
+        // Obtener comprobantes seleccionados
+        comprobantesSeleccionados = [];
+        $('.check-pendiente:checked').each(function () {
+            const data = $(this).data('comprobante');
+            comprobantesSeleccionados.push(data);
+        });
+
+        if (comprobantesSeleccionados.length === 0) {
+            Swal.fire('Atención', 'Debe seleccionar al menos un comprobante', 'warning');
+            return;
+        }
+
+        // Primera confirmación
+        Swal.fire({
+            title: '¿Confirmar envío a SUNAT?',
+            html: `
+            <p>Se enviarán <strong>${comprobantesSeleccionados.length}</strong> comprobante(s) a SUNAT.</p>
+            <p class="text-warning"><i class="fa fa-exclamation-triangle"></i> Esta acción no se puede deshacer.</p>
+        `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Segunda confirmación
+                Swal.fire({
+                    title: '¿Está completamente seguro?',
+                    html: `
+                    <p>Los comprobantes se enviarán a SUNAT <strong>AHORA</strong>.</p>
+                    <p>Una vez enviados, quedarán registrados en SUNAT.</p>
+                `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, enviar ahora',
+                    cancelButtonText: 'No, cancelar',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d'
+                }).then((result2) => {
+                    if (result2.isConfirmed) {
+                        enviarLoteASunat();
+                    }
+                });
+            }
+        });
+    }
+
+    // Enviar lote a SUNAT
+    function enviarLoteASunat() {
+        // Ocultar tabla y mostrar progreso
+        $('#tabla-pendientes-sunat').parent().hide();
+        $('#resultados-container').hide();
+        $('#progress-container').show();
+        $('#btn-procesar-lote').prop('disabled', true);
+
+        const total = comprobantesSeleccionados.length;
+        let procesados = 0;
+
+        // Actualizar progreso
+        function actualizarProgreso() {
+            const porcentaje = Math.round((procesados / total) * 100);
+            $('#progress-bar').css('width', porcentaje + '%').text(porcentaje + '%');
+            $('#progress-text').text(`Procesando ${procesados} de ${total} comprobantes...`);
+        }
+
+        actualizarProgreso();
+
+        // Enviar a servidor
+        $.ajax({
+            url: _URL + '/ajs/sunat/lote/procesar',
+            type: 'POST',
+            data: {
+                comprobantes: JSON.stringify(comprobantesSeleccionados)
+            },
+            dataType: 'json',
+            timeout: 120000, // 2 minutos de timeout
+            success: function (response) {
+                $('#progress-container').hide();
+
+                if (response.res) {
+                    mostrarResultados(response.resultados);
+                    cargarEstadisticasSunat();
+
+                    // Recargar tabla de ventas principal
+                    if (typeof table !== 'undefined') {
+                        table.ajax.reload();
+                    }
+                } else {
+                    Swal.fire('Error', response.mensaje, 'error');
+                    $('#tabla-pendientes-sunat').parent().show();
+                }
+
+                $('#btn-procesar-lote').prop('disabled', false);
+            },
+            error: function (xhr, status, error) {
+                $('#progress-container').hide();
+                $('#tabla-pendientes-sunat').parent().show();
+                $('#btn-procesar-lote').prop('disabled', false);
+
+                Swal.fire('Error', 'Error al procesar el lote: ' + error, 'error');
+            }
+        });
+    }
+
+    // Mostrar resultados del proceso
+    function mostrarResultados(resultados) {
+        $('#resultados-container').show();
+
+        const resumen = `
+        <strong>Exitosos:</strong> ${resultados.exitosos} | 
+        <strong>Fallidos:</strong> ${resultados.fallidos}
+    `;
+        $('#resultados-resumen').html(resumen);
+
+        const tbody = $('#tbody-resultados');
+        tbody.empty();
+
+        resultados.detalles.forEach(function (detalle) {
+            const badgeClass = detalle.estado === 'exitoso' ? 'bg-success' : 'bg-danger';
+            const icon = detalle.estado === 'exitoso' ? 'fa-check' : 'fa-times';
+
+            const row = `
+            <tr>
+                <td>${detalle.comprobante}</td>
+                <td><span class="badge ${badgeClass}"><i class="fa ${icon}"></i> ${detalle.estado}</span></td>
+                <td>${detalle.mensaje}</td>
+            </tr>
+        `;
+            tbody.append(row);
+        });
+
+        // Recargar comprobantes pendientes
+        setTimeout(function () {
+            cargarComprobantesPendientes();
+        }, 2000);
+    }
+</script>
+
+<!-- 
+COMENTADO: Modal y funcionalidad de actualización de fechas
+Razón: Puede causar problemas con XMLs existentes y firmados digitalmente
+Si se necesita en el futuro, descomentar con precaución
+-->
+
+<!-- Modal Actualizar Fechas de Emisión (COMENTADO) -->
+<div class="modal fade" id="modal-actualizar-fechas" tabindex="-1" aria-labelledby="modalActualizarFechasLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalActualizarFechasLabel">
+                    <i class="fa fa-calendar"></i> Actualizar Fechas de Emisión
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Información importante -->
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i>
+                    <strong>Información:</strong> Esta función actualiza la fecha de emisión y regenera el XML de los comprobantes seleccionados. 
+                    <strong>NO los envía a SUNAT</strong>. Después de actualizar, podrás revisarlos y enviarlos usando el botón "Enviar Lote a SUNAT".
+                </div>
+
+                <!-- Nueva Fecha de Emisión -->
+                <div class="card mb-3 border-warning">
+                    <div class="card-body">
+                        <h6 class="card-title text-warning">
+                            <i class="fa fa-calendar-check-o"></i> Nueva Fecha de Emisión
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Seleccionar Nueva Fecha <span class="text-danger">*</span></label>
+                                <input type="date" id="fecha-actualizacion" class="form-control" required>
+                                <small class="text-muted">Hasta 5 días atrás permitido</small>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="alert alert-warning mb-0 py-2">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    <strong>Importante:</strong> La fecha seleccionada se aplicará a TODOS los comprobantes que selecciones. 
+                                    Se regenerará el XML completo con la nueva fecha.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">Filtros</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label>Fecha Desde</label>
+                                <input type="date" id="filtro-fecha-desde-act" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label>Fecha Hasta</label>
+                                <input type="date" id="filtro-fecha-hasta-act" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label>Tipo Documento</label>
+                                <select id="filtro-tipo-doc-act" class="form-control">
+                                    <option value="">Todos</option>
+                                    <option value="1">Boleta</option>
+                                    <option value="2">Factura</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-primary w-100"
+                                    onclick="cargarComprobantesParaActualizar()">
+                                    <i class="fa fa-search"></i> Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de comprobantes -->
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Comprobantes para Actualizar</h6>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-hover" id="tabla-actualizar-fechas">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th width="40">
+                                            <input type="checkbox" id="check-all-actualizar"
+                                                onclick="toggleAllActualizar()">
+                                        </th>
+                                        <th>Fecha Actual</th>
+                                        <th>Tipo</th>
+                                        <th>Comprobante</th>
+                                        <th>Cliente</th>
+                                        <th>Total</th>
+                                        <th>Estado SUNAT</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-actualizar-fechas">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <i class="fa fa-spinner fa-spin"></i> Cargando...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div id="progress-container-act" class="mt-3" style="display: none;">
+                    <h6>Actualizando fechas y regenerando XMLs...</h6>
+                    <div class="progress">
+                        <div id="progress-bar-act" class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                            role="progressbar" style="width: 0%">0%</div>
+                    </div>
+                    <div id="progress-text-act" class="mt-2 text-center"></div>
+                </div>
+
+                <!-- Resultados -->
+                <div id="resultados-container-act" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6><i class="fa fa-check-circle"></i> Actualización Completada</h6>
+                        <p id="resultados-resumen-act"></p>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Comprobante</th>
+                                    <th>Estado</th>
+                                    <th>Mensaje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-resultados-act"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-warning" id="btn-actualizar-fechas" onclick="procesarActualizacionFechas()">
+                    <i class="fa fa-calendar-check-o"></i> Actualizar Fechas Seleccionadas
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globales para actualización de fechas
+    let comprobantesParaActualizar = [];
+    let comprobantesSeleccionadosAct = [];
+
+    // Cargar comprobantes al abrir el modal
+    $('#modal-actualizar-fechas').on('show.bs.modal', function () {
+        // Configurar límites de fecha (hasta 5 días atrás)
+        const hoy = new Date();
+        const fechaMinima = new Date();
+        fechaMinima.setDate(fechaMinima.getDate() - 5);
+        
+        $('#fecha-actualizacion').attr('min', fechaMinima.toISOString().split('T')[0]);
+        $('#fecha-actualizacion').attr('max', hoy.toISOString().split('T')[0]);
+        $('#fecha-actualizacion').val(''); // Dejar vacío por defecto
+        
+        cargarComprobantesParaActualizar();
+    });
+
+    // Cargar comprobantes para actualizar
+    function cargarComprobantesParaActualizar() {
+        const filtros = {
+            fecha_desde: $('#filtro-fecha-desde-act').val(),
+            fecha_hasta: $('#filtro-fecha-hasta-act').val(),
+            tipo_doc: $('#filtro-tipo-doc-act').val()
+        };
+
+        $('#tbody-actualizar-fechas').html('<tr><td colspan="7" class="text-center"><i class="fa fa-spinner fa-spin"></i> Cargando...</td></tr>');
+
+        $.ajax({
+            url: _URL + '/ajs/sunat/lote/pendientes',
+            type: 'POST',
+            data: filtros,
+            dataType: 'json',
+            success: function (response) {
+                if (response.res) {
+                    comprobantesParaActualizar = response.data;
+                    mostrarComprobantesParaActualizar(response.data);
+                } else {
+                    Swal.fire('Error', response.mensaje, 'error');
+                }
+            },
+            error: function () {
+                Swal.fire('Error', 'Error al cargar comprobantes', 'error');
+            }
+        });
+    }
+
+    // Mostrar comprobantes en la tabla
+    function mostrarComprobantesParaActualizar(comprobantes) {
+        const tbody = $('#tbody-actualizar-fechas');
+        tbody.empty();
+
+        if (comprobantes.length === 0) {
+            tbody.html('<tr><td colspan="7" class="text-center">No hay comprobantes disponibles</td></tr>');
+            $('#btn-actualizar-fechas').prop('disabled', true);
+            return;
+        }
+
+        $('#btn-actualizar-fechas').prop('disabled', false);
+
+        comprobantes.forEach(function (comp) {
+            const estadoSunat = comp.enviado_sunat == 1 
+                ? '<span class="badge bg-success">Enviado</span>' 
+                : '<span class="badge bg-warning">Pendiente</span>';
+
+            const row = `
+            <tr>
+                <td>
+                    <input type="checkbox" class="check-actualizar" value="${comp.id_venta}" 
+                           data-comprobante='${JSON.stringify(comp)}'>
+                </td>
+                <td>${comp.fecha_emision}</td>
+                <td><span class="badge bg-primary">${comp.tipo_doc}</span></td>
+                <td>${comp.comprobante}</td>
+                <td>${comp.nombre_cliente}</td>
+                <td class="text-end">S/ ${parseFloat(comp.total).toFixed(2)}</td>
+                <td>${estadoSunat}</td>
+            </tr>
+        `;
+            tbody.append(row);
+        });
+    }
+
+    // Toggle todos los checkboxes
+    function toggleAllActualizar() {
+        const checked = $('#check-all-actualizar').is(':checked');
+        $('.check-actualizar').prop('checked', checked);
+    }
+
+    // Procesar actualización de fechas
+    function procesarActualizacionFechas() {
+        // Validar que se haya seleccionado una fecha
+        const nuevaFecha = $('#fecha-actualizacion').val();
+        if (!nuevaFecha) {
+            Swal.fire('Atención', 'Debe seleccionar una nueva fecha de emisión', 'warning');
+            return;
+        }
+
+        // Obtener comprobantes seleccionados
+        comprobantesSeleccionadosAct = [];
+        $('.check-actualizar:checked').each(function () {
+            const data = $(this).data('comprobante');
+            comprobantesSeleccionadosAct.push(data);
+        });
+
+        if (comprobantesSeleccionadosAct.length === 0) {
+            Swal.fire('Atención', 'Debe seleccionar al menos un comprobante', 'warning');
+            return;
+        }
+
+        // Primera confirmación
+        Swal.fire({
+            title: '¿Confirmar actualización de fechas?',
+            html: `
+            <p>Se actualizará la fecha de emisión de <strong>${comprobantesSeleccionadosAct.length}</strong> comprobante(s) a:</p>
+            <p class="text-primary"><strong>${nuevaFecha}</strong></p>
+            <p class="text-warning"><i class="fa fa-exclamation-triangle"></i> Se regenerará el XML completo de cada comprobante.</p>
+            <p class="text-info"><i class="fa fa-info-circle"></i> Los comprobantes NO se enviarán a SUNAT en este proceso.</p>
+        `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, actualizar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ffc107'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Segunda confirmación
+                Swal.fire({
+                    title: '¿Está completamente seguro?',
+                    html: `
+                    <p>Esta acción modificará la fecha de emisión en la base de datos.</p>
+                    <p>El XML anterior será reemplazado por uno nuevo con la fecha actualizada.</p>
+                `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, proceder',
+                    cancelButtonText: 'No, cancelar',
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d'
+                }).then((result2) => {
+                    if (result2.isConfirmed) {
+                        ejecutarActualizacionFechas(nuevaFecha);
+                    }
+                });
+            }
+        });
+    }
+
+    // Ejecutar actualización de fechas
+    function ejecutarActualizacionFechas(nuevaFecha) {
+        // Ocultar tabla y mostrar progreso
+        $('#tabla-actualizar-fechas').parent().hide();
+        $('#resultados-container-act').hide();
+        $('#progress-container-act').show();
+        $('#btn-actualizar-fechas').prop('disabled', true);
+
+        const total = comprobantesSeleccionadosAct.length;
+        let procesados = 0;
+
+        // Actualizar progreso
+        function actualizarProgreso() {
+            const porcentaje = Math.round((procesados / total) * 100);
+            $('#progress-bar-act').css('width', porcentaje + '%').text(porcentaje + '%');
+            $('#progress-text-act').text(`Procesando ${procesados} de ${total} comprobantes...`);
+        }
+
+        actualizarProgreso();
+
+        // Enviar a servidor
+        $.ajax({
+            url: _URL + '/ajs/sunat/actualizar-fechas',
+            type: 'POST',
+            data: {
+                comprobantes: JSON.stringify(comprobantesSeleccionadosAct),
+                nueva_fecha: nuevaFecha
+            },
+            dataType: 'json',
+            timeout: 120000, // 2 minutos de timeout
+            success: function (response) {
+                $('#progress-container-act').hide();
+
+                if (response.res) {
+                    mostrarResultadosActualizacion(response.resultados);
+
+                    // Recargar tabla de ventas principal
+                    if (typeof table !== 'undefined') {
+                        table.ajax.reload();
+                    }
+                } else {
+                    Swal.fire('Error', response.mensaje, 'error');
+                    $('#tabla-actualizar-fechas').parent().show();
+                }
+
+                $('#btn-actualizar-fechas').prop('disabled', false);
+            },
+            error: function (xhr, status, error) {
+                $('#progress-container-act').hide();
+                $('#tabla-actualizar-fechas').parent().show();
+                $('#btn-actualizar-fechas').prop('disabled', false);
+
+                Swal.fire('Error', 'Error al procesar la actualización: ' + error, 'error');
+            }
+        });
+    }
+
+    // Mostrar resultados de la actualización
+    function mostrarResultadosActualizacion(resultados) {
+        $('#resultados-container-act').show();
+
+        const resumen = `
+        <strong>Exitosos:</strong> ${resultados.exitosos} | 
+        <strong>Fallidos:</strong> ${resultados.fallidos}
+    `;
+        $('#resultados-resumen-act').html(resumen);
+
+        const tbody = $('#tbody-resultados-act');
+        tbody.empty();
+
+        resultados.detalles.forEach(function (detalle) {
+            const badgeClass = detalle.estado === 'exitoso' ? 'bg-success' : 'bg-danger';
+            const icon = detalle.estado === 'exitoso' ? 'fa-check' : 'fa-times';
+
+            const row = `
+            <tr>
+                <td>${detalle.comprobante}</td>
+                <td><span class="badge ${badgeClass}"><i class="fa ${icon}"></i> ${detalle.estado}</span></td>
+                <td>${detalle.mensaje}</td>
+            </tr>
+        `;
+            tbody.append(row);
+        });
+
+        // Recargar comprobantes
+        setTimeout(function () {
+            cargarComprobantesParaActualizar();
+        }, 2000);
+    }
+</script>
+FIN DEL CÓDIGO COMENTADO - Modal Actualizar Fechas
+-->

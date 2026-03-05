@@ -265,8 +265,17 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
             $idBeneficio = $this->beneficioModel->crear($datos);
 
             if ($idBeneficio) {
+                // ✅ NUEVO: Guardar departamentos seleccionados
+                $departamentosSeleccionados = isset($_POST['departamentos']) && is_array($_POST['departamentos'])
+                    ? $_POST['departamentos']
+                    : [];
+
+                if (!empty($departamentosSeleccionados)) {
+                    $this->beneficioModel->guardarDepartamentosBeneficio($idBeneficio, $departamentosSeleccionados);
+                }
+
                 $beneficioCreado = $this->beneficioModel->obtenerPorId($idBeneficio);
-                
+
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => true,
@@ -448,8 +457,17 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
             $actualizado = $this->beneficioModel->actualizar((int)$id, $datos);
 
             if ($actualizado) {
+                // ✅ NUEVO: Actualizar departamentos seleccionados
+                $departamentosSeleccionados = isset($_POST['departamentos']) && is_array($_POST['departamentos'])
+                    ? $_POST['departamentos']
+                    : [];
+
+                if (!empty($departamentosSeleccionados)) {
+                    $this->beneficioModel->guardarDepartamentosBeneficio((int)$id, $departamentosSeleccionados);
+                }
+
                 $beneficioActualizado = $this->beneficioModel->obtenerPorId((int)$id);
-                
+
                 header('Content-Type: application/json');
                 echo json_encode([
                     'success' => true,

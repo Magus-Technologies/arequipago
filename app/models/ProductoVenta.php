@@ -240,7 +240,22 @@ class ProductoVenta
         
         error_log("INSERT exitoso");
     
-        // Actualizar el stock usando el ID correcto
+        // 🔹 NUEVO: Verificar si es producto Intangible antes de actualizar stock
+        $sqlCheckTipo = "SELECT tipo_producto FROM productosv2 WHERE idproductosv2 = {$idProductoReal}";
+        $resultTipo = $this->conectar->query($sqlCheckTipo);
+        
+        if ($resultTipo && $resultTipo->num_rows > 0) {
+            $rowTipo = $resultTipo->fetch_assoc();
+            
+            // Si es producto Intangible, NO actualizar stock
+            if ($rowTipo['tipo_producto'] === 'Intangible') {
+                error_log("✅ Producto Intangible (ID: {$idProductoReal}) - Stock NO actualizado en ProductoVenta");
+                error_log("=== Fin insertar() ProductoVenta ===");
+                return true; // Salir sin actualizar stock
+            }
+        }
+        
+        // Actualizar el stock usando el ID correcto (solo para productos normales)
         $sql = "UPDATE productosv2 
                 SET cantidad = cantidad - {$this->cantidad} 
                 WHERE idproductosv2 = {$idProductoReal}";

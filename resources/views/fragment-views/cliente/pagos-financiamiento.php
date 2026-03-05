@@ -278,6 +278,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
                                     <th>N° Unid</th>
                                     <th>Asesor</th>
                                     <th>Monto</th>
+                                    <th>Concepto</th>
                                     <th>Fecha Emisión</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -3202,7 +3203,7 @@ function eliminarPago(idPago) {
             ordering: true,
             searching: true,
             destroy: true,
-            order: [[5, 'desc']],
+            order: [[7, 'desc']],
             ajax: {
                 url: '/arequipago/getReportFinance',
                 method: "POST",
@@ -3223,7 +3224,7 @@ function eliminarPago(idPago) {
                 url: "ServerSide/Spanish.json",
             },
             columnDefs: [
-                { orderable: false, targets: [0, 7] }
+                { orderable: false, targets: [0, 9] }
             ],
             columns: [
                 {
@@ -3260,6 +3261,22 @@ function eliminarPago(idPago) {
                     class: "text-center",
                     render: function(data, type, row) {
                         return (row.moneda || '') + ' ' + row.monto;
+                    }
+                },
+                {
+                    data: "concepto",
+                    class: "text-center",
+                    render: function(data) {
+                        if (!data || data.trim() === '') return '<span class="badge bg-secondary">Cuota</span>';
+                        var d = data.toLowerCase();
+                        if (d.includes('inscripci')) return '<span class="badge" style="background:#6f42c1;">Inscripción</span>';
+                        if (d.includes('cuota inicial') || d.includes('inicial')) return '<span class="badge" style="background:#e67e22;">Inicial</span>';
+                        if (d.includes('recalculado')) return '<span class="badge" style="background:#17a2b8;">Recalculado</span>';
+                        if (d.includes('adelantada')) return '<span class="badge" style="background:#20c997;">Adelantado</span>';
+                        if (d.includes('excedente')) return '<span class="badge" style="background:#fd7e14;">Excedente</span>';
+                        if (d.includes('producto')) return '<span class="badge" style="background:#007bff;">Producto</span>';
+                        if (d.includes('mora')) return '<span class="badge bg-danger">Mora</span>';
+                        return '<span class="badge bg-secondary">' + data + '</span>';
                     }
                 },
                 {

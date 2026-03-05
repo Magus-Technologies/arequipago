@@ -33,6 +33,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
         #estadoCuotasModal .modal-body {
             padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         #estadoCuotasModal .modal-footer {
@@ -41,7 +43,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         }
 
         #estadoCuotasModal .table thead th {
-            background-color: #343a40;
+            background-color: #38a4f8;
             color: white;
             font-weight: 500;
             text-transform: uppercase;
@@ -181,6 +183,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         .vehicle-badge.moto {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
+        }
+        .vehicle-badge.tuktuk {
+            background: linear-gradient(135deg, #ffd93d 0%, #f6b93b 100%);
+            color: #2c3e50;
+            font-weight: 600;
         }
 
         .vehicle-badge .icon {
@@ -600,6 +607,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 transform: translateX(100%);
                 opacity: 0;
             }
+
             to {
                 transform: translateX(0);
                 opacity: 1;
@@ -643,11 +651,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             letter-spacing: 0.5px;
         }
 
-         .verification-status.verified {
+        .verification-status.verified {
             background-color: #02a499;
             color: white;
         }
-        
+
         .verification-status.not-verified {
             background-color: #dc3545;
             color: white;
@@ -657,7 +665,6 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             background-color: #ffc107;
             color: #212529;
         }
-
     </style>
 </head>
 
@@ -697,6 +704,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 <option value="todos">Todos</option>
                 <option value="auto">Auto</option>
                 <option value="moto">Moto</option>
+                <option value="tuktuk">Tuktuk</option>
             </select>
 
             <!-- NUEVO: Filtro por departamento Lima -->
@@ -807,20 +815,21 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                                 <div class="mb-3">
                                     <div
                                         style="width: 120px; height: 150px; border: 2px solid black; border-radius: 8px; overflow: hidden;">
-                                        <img src="ruta/a/tu/foto.jpg" alt="Foto Carnet" class="img-fluid"
+                                        <img id="modal-foto-conductor" src="ruta/a/tu/foto.jpg" alt="Foto Carnet" class="img-fluid"
                                             style="width: 100%; height: 100%; object-fit: cover;">
                                     </div>
                                 </div>
-                                <p><strong>Licencia:</strong> </p>
-                                <p><strong>Nº de licencia:</strong> </p>
+                                <p><strong>Licencia:</strong> <span id="modal-licencia-categoria"></span></p>
+                                <p><strong>Nº de licencia:</strong> <span id="modal-nro-licencia"></span></p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Nombre y Apellido:</strong> </p>
-                                <p><strong id="tipo-documento-label">DNI:</strong> <span id="nro-documento-value"></span></p>
-                                <p><strong>Fecha de Nacimiento:</strong> </p>
-                                <p><strong>Teléfono:</strong> </p>
-                                <p><strong>Correo:</strong> </p>
-                                <p><strong>Dirección:</strong> </p>
+                                <p><strong>Nombre y Apellido:</strong> <span id="modal-nombre-completo"></span></p>
+                                <p><strong id="tipo-documento-label">DNI:</strong> <span
+                                        id="nro-documento-value"></span></p>
+                                <p><strong>Fecha de Nacimiento:</strong> <span id="modal-fecha-nacimiento"></span></p>
+                                <p><strong>Teléfono:</strong> <span id="modal-telefono"></span></p>
+                                <p><strong>Correo:</strong> <span id="modal-correo"></span></p>
+                                <p><strong>Dirección:</strong> <span id="modal-direccion"></span></p>
                             </div>
                         </div>
 
@@ -829,12 +838,14 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                             <div class="verification-item">
                                 <span class="icon">📋</span>
                                 <span class="label">Verificación Documentaria</span>
-                                <span>Estado: <span class="verification-status pending" id="status-documentacion">Pendiente</span></span>
+                                <span>Estado: <span class="verification-status pending"
+                                        id="status-documentacion">Pendiente</span></span>
                             </div>
                             <div class="verification-item">
                                 <span class="icon">🏠</span>
                                 <span class="label">Verificación Domiciliaria</span>
-                                <span>Estado: <span class="verification-status pending" id="status-domiciliaria">No verificado</span></span>
+                                <span>Estado: <span class="verification-status pending" id="status-domiciliaria">No
+                                        verificado</span></span>
                             </div>
                         </div>
                     </section>
@@ -902,6 +913,14 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                         </div>
                     </section>
 
+                    <!-- Estado de Pago de Inscripción -->
+                    <section class="mb-4">
+                        <h6 class="text-primary">Estado de Pago de Inscripción</h6>
+                        <div id="estado-pago-inscripcion">
+                            <div class="text-muted">Cargando información de pago...</div>
+                        </div>
+                    </section>
+
                     <!-- Después de la sección de Datos de Inscripción -->
                     <section class="mb-4">
                         <h6 class="text-primary">Kit Entregado</h6>
@@ -957,7 +976,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-     
+
         var rolUsuario = <?php echo json_encode($rol_usuario); ?>; // Pasar el rol de PHP a JS
         let tabla;
 
@@ -1211,13 +1230,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 window.location.href = '/arequipago/editar-conductor-asesor?id=' + id_conductor;
             }
         }
-        
+
         function verEstadoCuotas() {
             let modalHtml = `
                 <div class="modal fade" id="estadoCuotasModal" tabindex="-1" aria-labelledby="estadoCuotasLabel" aria-hidden="true">
                     <div class="modal-dialog modal-xl modal-dialog-centered"> <!-- Cambiado a modal-xl para más espacio -->
                         <div class="modal-content">
-                            <div class="modal-header" style="background: linear-gradient(135deg, #343a40 0%, #1a1e21 100%); color: white; border: none;">
+                            <div class="modal-header" style="background: linear-gradient(135deg, #38a4f8 0%, #2980b9 100%); color: white; border: none;">
                                 <h5 class="modal-title" id="estadoCuotasLabel" style="font-weight: 600; font-size: 1.25rem;">
                                     <i class="fas fa-calendar-check me-2"></i>Estado de Cuotas
                                 </h5>
@@ -1225,63 +1244,22 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                             </div>
                             <div class="modal-body p-0">
 
-                                <!-- Nuevo: Selector de tipo de cronograma -->
-                                <div class="p-3 bg-light border-bottom">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="tipoCronograma" id="cronogramaInscripcion" value="inscripcion" checked>
-                                            <label class="form-check-label" for="cronogramaInscripcion">Cronograma de Inscripción</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="tipoCronograma" id="cronogramaProducto" value="producto">
-                                            <label class="form-check-label" for="cronogramaProducto">Cronograma de Producto</label>
-                                        </div>
-                                        <button id="btnDescargarPDF" class="btn btn-primary" onclick="descargarCronogramaPDF()">
-                                            <i class="fas fa-download me-2"></i>Descargar PDF
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
-                                        <thead>
-                                            <tr style="background: linear-gradient(135deg, #343a40 0%, #1a1e21 100%); color: white;">
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">N° CUOTA</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">FECHA DE VENCIMIENTO</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">MONTO CUOTA</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">MONTO PAGADO</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">MORA</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">FECHA DE PAGO</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">MÉTODO DE PAGO</th>
-                                                <th style="padding: 15px; font-weight: 500; text-align: center;">ESTADO CUOTA</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tablaCuotasBody">
-                                            <!-- Se llenará dinámicamente -->
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <!-- NUEVO: Inicio del selector de financiamiento -->
-                                <div class="mt-4 px-4">
+                                <!-- Selector de financiamiento (visible al abrir) -->
+                                <div class="px-4 pt-4">
                                     <div class="mb-3">
-                                        <div id="selectBox" onclick="toggleDropdown()" 
-                                            class="form-select d-flex justify-content-between align-items-center"
-                                            style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); cursor: pointer;">
-                                            <span>Seleccionar un financiamiento</span>
-                                            <i class="fas fa-chevron-down"></i>
-                                        </div>
+                                        <h6 style="color: #38a4f8; font-weight: 600;"><i class="fas fa-list me-2"></i>Seleccione un financiamiento</h6>
                                     </div>
 
                                     <div class="table-responsive mb-4">
-                                        <table id="cronogramaSelect" class="table table-hover" style="display: none; border-collapse: separate; border-spacing: 0;">
+                                        <table id="cronogramaSelect" class="table table-hover" style="display: table; border-collapse: separate; border-spacing: 0;">
                                             <thead>
-                                                <tr style="background: linear-gradient(135deg, #343a40 0%, #1a1e21 100%); color: white;">
+                                                <tr style="background: linear-gradient(135deg, #38a4f8 0%, #2980b9 100%); color: white;">
                                                     <th style="padding: 15px; font-weight: 500;">Producto</th>
                                                     <th style="padding: 15px; font-weight: 500;">Grupo</th>
                                                     <th style="padding: 15px; font-weight: 500;">Cantidad</th>
                                                     <th style="padding: 15px; font-weight: 500;">Monto</th>
                                                     <th style="padding: 15px; font-weight: 500;">Categoría</th>
+                                                    <th style="padding: 15px; font-weight: 500;">Estado Contrato</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1294,12 +1272,62 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                                             No hay financiamientos disponibles.
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- NUEVO: Tabla de cuotas del financiamiento -->
+                                <!-- Selector de tipo de cronograma (oculto hasta seleccionar financiamiento) -->
+                                <div id="seccionRadios" class="p-3 bg-light border-bottom border-top" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div id="selectBox" class="fw-bold text-primary" style="font-size: 0.95rem;">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                <span>Seleccionar un financiamiento</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="tipoCronograma" id="cronogramaInscripcion" value="inscripcion">
+                                                <label class="form-check-label" for="cronogramaInscripcion">Cronograma de Inscripción</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="tipoCronograma" id="cronogramaProducto" value="producto" checked>
+                                                <label class="form-check-label" for="cronogramaProducto">Cronograma de Producto</label>
+                                            </div>
+                                        </div>
+                                        <button id="btnDescargarPDF" class="btn btn-primary btn-sm" onclick="descargarCronogramaPDF()">
+                                            <i class="fas fa-download me-2"></i>Descargar PDF
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de inscripción (oculta hasta seleccionar) -->
+                                <div id="seccionInscripcion" style="display: none;">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0" style="border-collapse: separate; border-spacing: 0;">
+                                            <thead>
+                                                <tr style="background: linear-gradient(135deg, #38a4f8 0%, #2980b9 100%); color: white;">
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">N° CUOTA</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">FECHA DE VENCIMIENTO</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">MONTO CUOTA</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">MONTO PAGADO</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">MORA</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">FECHA DE PAGO</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">MÉTODO DE PAGO</th>
+                                                    <th style="padding: 15px; font-weight: 500; text-align: center;">ESTADO CUOTA</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaCuotasBody">
+                                                <!-- Se llenará dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de cuotas del financiamiento (oculta hasta seleccionar) -->
+                                <div class="px-4">
                                     <div class="table-responsive mb-4">
                                         <table id="tablaCuotas" class="table table-hover" style="display: none; border-collapse: separate; border-spacing: 0;">
                                             <thead>
-                                                <tr style="background: linear-gradient(135deg, #343a40 0%, #1a1e21 100%); color: white;">
+                                                <tr style="background: linear-gradient(135deg, #38a4f8 0%, #2980b9 100%); color: white;">
                                                     <th style="padding: 15px; font-weight: 500; text-align: center;">Fecha de Vencimiento</th>
                                                     <th style="padding: 15px; font-weight: 500; text-align: center;">Monto</th>
                                                     <th style="padding: 15px; font-weight: 500; text-align: center;">Estado</th>
@@ -1313,7 +1341,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                                 </div>
                             </div>
                             <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
-                                <button type="button" class="btn" style="background: linear-gradient(135deg, #343a40 0%, #1a1e21 100%); color: white; padding: 8px 20px; font-weight: 500; border-radius: 5px;" data-bs-dismiss="modal">
+                                <button type="button" class="btn" style="background: linear-gradient(135deg, #38a4f8 0%, #2980b9 100%); color: white; padding: 8px 20px; font-weight: 500; border-radius: 5px;" data-bs-dismiss="modal">
                                     <i class="fas fa-times me-2"></i>Cerrar
                                 </button>
                             </div>
@@ -1321,7 +1349,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                     </div>
                 </div>
             `;
-            
+
             // Agregar estilos específicos para este modal
             let modalStyles = `
                 <style>
@@ -1405,94 +1433,106 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
                     /* NUEVO: Estilos para la tabla de detalles */
                     #detallesFinanciamientoTitle {
-                        color: #343a40;
+                        color: #38a4f8;
                         padding: 10px 0;
                         border-bottom: 2px solid #dee2e6;
                         margin-bottom: 1rem;
                     }
                 </style>
             `;
-            
+
             if (!document.getElementById("estadoCuotasModal")) {
                 document.body.insertAdjacentHTML("beforeend", modalHtml + modalStyles);
-        }
+            }
 
-    // NUEVO: Limpiar todas las tablas al inicio
-    let tablaBody = document.getElementById("tablaCuotasBody");
-    let tablaCronograma = document.querySelector("#cronogramaSelect tbody");
-    let tablaCuotas = document.querySelector("#tablaCuotas tbody");
-    
-    tablaBody.innerHTML = "";
-    tablaCronograma.innerHTML = "";
-    tablaCuotas.innerHTML = "";
-    
-    
-    document.getElementById("tablaCuotas").style.display = "none";
-    document.getElementById("noCronogramaMessage").style.display = "none";
-    
-    let idConductor = $('#conductorVehiculoModal').data('conductor-id');
-    
-    document.getElementById("selectBox").innerHTML = `
-        <span>Seleccionar un financiamiento</span>
-        <i class="fas fa-chevron-down"></i>
-    `;
+            // Limpiar todas las tablas al inicio
+            let tablaBody = document.getElementById("tablaCuotasBody");
+            let tablaCronograma = document.querySelector("#cronogramaSelect tbody");
+            let tablaCuotas = document.querySelector("#tablaCuotas tbody");
 
-    // NUEVO: Llamada AJAX para cargar financiamientos
-    $.ajax({
-            url: '/arequipago/obtenerCuotasPorCliente',
-            type: 'GET',
-            data: { id_conductor: idConductor },
-            dataType: 'json',
-            success: function(data) {
-                if (!data.financiamientos || data.financiamientos.length === 0) {
-                    document.getElementById("noCronogramaMessage").style.display = "block";
-                    document.getElementById("cronogramaSelect").style.display = "none";
-                    return;
-                }
+            tablaBody.innerHTML = "";
+            tablaCronograma.innerHTML = "";
+            tablaCuotas.innerHTML = "";
 
-                const tablaFinanciamientos = document.querySelector("#cronogramaSelect tbody");
-                tablaFinanciamientos.innerHTML = "";
+            document.getElementById("tablaCuotas").style.display = "none";
+            document.getElementById("noCronogramaMessage").style.display = "none";
+            document.getElementById("seccionRadios").style.display = "none";
+            document.getElementById("seccionInscripcion").style.display = "none";
+            document.getElementById("cronogramaSelect").style.display = "table";
 
-                data.financiamientos.forEach(financiamiento => {
-                    const fila = document.createElement("tr");
-                    fila.onclick = function() { seleccionarFila(this, financiamiento); };
+            document.getElementById("selectBox").innerHTML = `
+                <i class="fas fa-check-circle me-1"></i>
+                <span>Seleccionar un financiamiento</span>
+            `;
 
-                    fila.innerHTML = `
+            let idConductor = $('#conductorVehiculoModal').data('conductor-id');
+
+            // NUEVO: Llamada AJAX para cargar financiamientos
+            $.ajax({
+                url: '/arequipago/obtenerCuotasPorCliente',
+                type: 'GET',
+                data: { id_conductor: idConductor },
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.financiamientos || data.financiamientos.length === 0) {
+                        document.getElementById("noCronogramaMessage").style.display = "block";
+                        document.getElementById("cronogramaSelect").style.display = "none";
+                        return;
+                    }
+
+                    const tablaFinanciamientos = document.querySelector("#cronogramaSelect tbody");
+                    tablaFinanciamientos.innerHTML = "";
+
+                    data.financiamientos.forEach(financiamiento => {
+                        const fila = document.createElement("tr");
+                        fila.onclick = function () { seleccionarFila(this, financiamiento); };
+
+                        // Determinar el estado del contrato
+                        let estadoContrato = '';
+                        let badgeClass = '';
+                        if (financiamiento.contrato_finalizado == 1) {
+                            estadoContrato = '<span class="badge bg-danger">Finalizado</span>';
+                        } else {
+                            estadoContrato = '<span class="badge bg-success">Activo</span>';
+                        }
+
+                        fila.innerHTML = `
                         <td>${financiamiento.producto.nombre}</td>
                         <td>${financiamiento.nombre_plan ? financiamiento.nombre_plan : (financiamiento.grupo_financiamiento === 'notGrupo' ? 'Sin Grupo' : 'N/A')}</td>
                         <td>${financiamiento.cantidad_producto}</td>
                         <td>${financiamiento.monto_total}</td>
                         <td>${financiamiento.producto.categoria}</td>
+                        <td>${estadoContrato}</td>
                     `;
-                    tablaFinanciamientos.appendChild(fila);
-                });
+                        tablaFinanciamientos.appendChild(fila);
+                    });
 
-               
-            },
-            error: function() {
-                document.getElementById("noCronogramaMessage").style.display = "block";
-                document.getElementById("cronogramaSelect").style.display = "none";
-            }
-        });
+                    document.getElementById("cronogramaSelect").style.display = "table";
+                },
+                error: function () {
+                    document.getElementById("noCronogramaMessage").style.display = "block";
+                    document.getElementById("cronogramaSelect").style.display = "none";
+                }
+            });
 
-    $.ajax({
-        url: "/arequipago/datoPagoConductor",
-        type: "GET",
-        data: { id: idConductor },
-        dataType: "json",
-        success: function(response) {
-            if (response.cuotas && response.cuotas.length > 0) {
-                response.cuotas.forEach(cuota => {
-                    let estadoClass = '';
-                    if (cuota.estado_cuota === 'pendiente') {
-                        estadoClass = 'estado-pendiente';
-                    } else if (cuota.estado_cuota === 'pagado') {
-                        estadoClass = 'estado-pagado';
-                    } else if (cuota.estado_cuota === 'vencido') {
-                        estadoClass = 'estado-vencido';
-                    }
+            $.ajax({
+                url: "/arequipago/datoPagoConductor",
+                type: "GET",
+                data: { id: idConductor },
+                dataType: "json",
+                success: function (response) {
+                    if (response.cuotas && response.cuotas.length > 0) {
+                        response.cuotas.forEach(cuota => {
+                            let estadoClass = '';
+                            if (cuota.estado_cuota === 'pendiente') {
+                                estadoClass = 'estado-pendiente';
+                            } else if (cuota.estado_cuota === 'pagado') {
+                                estadoClass = 'estado-pagado';
+                            } else if (cuota.estado_cuota === 'vencido') {
+                                estadoClass = 'estado-vencido';
+                            }
 
-                    let fila = `
+                            let fila = `
                         <tr>
                             <td style="text-align: center;">${cuota.numero_cuota}</td>
                             <td style="text-align: center;">${cuota.fecha_vencimiento}</td>
@@ -1504,10 +1544,10 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                             <td style="text-align: center;" class="${estadoClass}">${cuota.estado_cuota}</td>
                         </tr>
                     `;
-                    tablaBody.insertAdjacentHTML("beforeend", fila);
-                });
-            } else {
-                tablaBody.innerHTML = `
+                            tablaBody.insertAdjacentHTML("beforeend", fila);
+                        });
+                    } else {
+                        tablaBody.innerHTML = `
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 20px;">
                             <div class="alert alert-info mb-0">
@@ -1517,11 +1557,11 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                         </td>
                     </tr>
                 `;
-            }
-        },
-        error: function(error) {
-            console.error("Error al obtener cuotas:", error);
-            tablaBody.innerHTML = `
+                    }
+                },
+                error: function (error) {
+                    console.error("Error al obtener cuotas:", error);
+                    tablaBody.innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align: center; padding: 20px;">
                         <div class="alert alert-danger mb-0">
@@ -1531,225 +1571,188 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                     </td>
                 </tr>
             `;
-        }
-    });
+                }
+            });
 
-    // Modificamos la función descargarCronogramaPDF
-window.descargarCronogramaPDF = function() {
-    const tipoCronograma = document.querySelector('input[name="tipoCronograma"]:checked').value;
-    
-    if (tipoCronograma === 'inscripcion') {
-        // Para el cronograma de inscripción, enviamos al backend
-        const tabla = document.querySelector('#tablaCuotasBody').closest('table');
-        
-        const filasTabla = document.querySelectorAll('#tablaCuotasBody tr'); // AÑADIDO: Verificar si hay filas en la tabla
-        
-        // AÑADIDO: Verificar si hay filas en la tabla, excluyendo la fila de mensaje "No hay información"
-        if (filasTabla.length === 0 || (filasTabla.length === 1 && filasTabla[0].querySelector('td[colspan="8"]'))) {
-            // AÑADIDO: Mostrar mensaje si no hay datos para imprimir
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sin datos para imprimir',
-                text: 'No hay información de cuotas disponible para generar el PDF.'
-            });
-            return;
-        }
-        
-        const tableHtml = tabla.outerHTML;
-        
-        // Mostrar indicador de carga
-        Swal.fire({
-            title: 'Generando PDF',
-            text: 'Por favor espere...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        
-        // Enviamos la tabla al backend mediante AJAX
-        $.ajax({
-            url: '/arequipago/generatePdf',
-            type: 'POST',
-            data: { 
-                tableHtml: tableHtml,
-                title: 'Cronograma de Inscripción'
-            },
-            xhrFields: {
-                responseType: 'blob' // Para manejar la respuesta como un blob binario
-            },
-            success: function(blob) {
-                // Cerrar el indicador de carga
-                Swal.close();
-                
-                // Crear URL del blob y descargarlo
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'Cronograma_Inscripcion.pdf';
-                document.body.appendChild(a);
-                a.click();
-                
-                // Limpiar
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            },
-            error: function(xhr, status, error) {
-                // Cerrar el indicador de carga
-                Swal.close();
-                
-                // Mostrar mensaje de error
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudo generar el PDF. Por favor intente nuevamente.'
-                });
-                console.error('Error al generar PDF:', error);
-            }
-        });
-    } else {
-        // Mantener la lógica original para el cronograma de productos
-        const productoSeleccionado = document.querySelector('#selectBox span').textContent;
-        
-        if (productoSeleccionado === "Seleccionar un financiamiento") {
-            // AÑADIDO: Mostrar mensaje si no se ha seleccionado un producto
-            Swal.fire({
-                icon: 'warning',
-                title: 'Ningún financiamiento seleccionado',
-                text: 'Por favor seleccione un financiamiento de producto para generar el PDF.'
-            });
-            return;
-        }
-        
-        // Crear un contenedor para el cronograma de producto con título
-        const contenidoPDF = document.createElement('div');
-        contenidoPDF.innerHTML = `
+            // Modificamos la función descargarCronogramaPDF
+            window.descargarCronogramaPDF = function () {
+                const tipoCronograma = document.querySelector('input[name="tipoCronograma"]:checked').value;
+
+                if (tipoCronograma === 'inscripcion') {
+                    // Para el cronograma de inscripción, enviamos al backend
+                    const tabla = document.querySelector('#tablaCuotasBody').closest('table');
+
+                    const filasTabla = document.querySelectorAll('#tablaCuotasBody tr'); // AÑADIDO: Verificar si hay filas en la tabla
+
+                    // AÑADIDO: Verificar si hay filas en la tabla, excluyendo la fila de mensaje "No hay información"
+                    if (filasTabla.length === 0 || (filasTabla.length === 1 && filasTabla[0].querySelector('td[colspan="8"]'))) {
+                        // AÑADIDO: Mostrar mensaje si no hay datos para imprimir
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sin datos para imprimir',
+                            text: 'No hay información de cuotas disponible para generar el PDF.'
+                        });
+                        return;
+                    }
+
+                    const tableHtml = tabla.outerHTML;
+
+                    // Mostrar indicador de carga
+                    Swal.fire({
+                        title: 'Generando PDF',
+                        text: 'Por favor espere...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Enviamos la tabla al backend mediante AJAX
+                    $.ajax({
+                        url: '/arequipago/generatePdf',
+                        type: 'POST',
+                        data: {
+                            tableHtml: tableHtml,
+                            title: 'Cronograma de Inscripción'
+                        },
+                        xhrFields: {
+                            responseType: 'blob' // Para manejar la respuesta como un blob binario
+                        },
+                        success: function (blob) {
+                            // Cerrar el indicador de carga
+                            Swal.close();
+
+                            // Crear URL del blob y descargarlo
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'Cronograma_Inscripcion.pdf';
+                            document.body.appendChild(a);
+                            a.click();
+
+                            // Limpiar
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        },
+                        error: function (xhr, status, error) {
+                            // Cerrar el indicador de carga
+                            Swal.close();
+
+                            // Mostrar mensaje de error
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'No se pudo generar el PDF. Por favor intente nuevamente.'
+                            });
+                            console.error('Error al generar PDF:', error);
+                        }
+                    });
+                } else {
+                    // Mantener la lógica original para el cronograma de productos
+                    const productoSeleccionado = document.querySelector('#selectBox span').textContent;
+
+                    if (productoSeleccionado === "Seleccionar un financiamiento") {
+                        // AÑADIDO: Mostrar mensaje si no se ha seleccionado un producto
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Ningún financiamiento seleccionado',
+                            text: 'Por favor seleccione un financiamiento de producto para generar el PDF.'
+                        });
+                        return;
+                    }
+
+                    // Crear un contenedor para el cronograma de producto con título
+                    const contenidoPDF = document.createElement('div');
+                    contenidoPDF.innerHTML = `
             <h2 style="text-align: center; margin-bottom: 20px;">Cronograma de ${productoSeleccionado}</h2>
             ${document.getElementById('tablaCuotas').outerHTML}
         `;
-        const nombreArchivo = `Cronograma_${productoSeleccionado}.pdf`;
+                    const nombreArchivo = `Cronograma_${productoSeleccionado}.pdf`;
 
-        // Configuración de html2pdf
-        const opt = {
-            margin: 1,
-            filename: nombreArchivo,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
-        };
+                    // Configuración de html2pdf
+                    const opt = {
+                        margin: 1,
+                        filename: nombreArchivo,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+                    };
 
-        // Generar PDF
-        html2pdf().set(opt).from(contenidoPDF).save();
-    }
-};
-
-    // Modificar el comportamiento del radio button
-    document.addEventListener('DOMContentLoaded', function() {
-        const radios = document.querySelectorAll('input[name="tipoCronograma"]');
-        radios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                const tablaInscripcion = document.getElementById('tablaInscripcion');
-                const tablaCuotas = document.getElementById('tablaCuotas');
-                const selectBox = document.getElementById('selectBox');
-
-                if (this.value === 'inscripcion') {
-                    tablaInscripcion.style.display = 'table';
-                    tablaCuotas.style.display = 'none';
-                    selectBox.style.display = 'none';
-                } else {
-                    tablaInscripcion.style.display = 'none';
-                    tablaCuotas.style.display = 'table';
-                    selectBox.style.display = 'block';
+                    // Generar PDF
+                    html2pdf().set(opt).from(contenidoPDF).save();
                 }
+            };
+
+            // Comportamiento del radio button
+            const radios = document.querySelectorAll('input[name="tipoCronograma"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', function () {
+                    const seccionInscripcion = document.getElementById('seccionInscripcion');
+                    const tablaCuotasEl = document.getElementById('tablaCuotas');
+
+                    if (this.value === 'inscripcion') {
+                        seccionInscripcion.style.display = 'block';
+                        tablaCuotasEl.style.display = 'none';
+                    } else {
+                        seccionInscripcion.style.display = 'none';
+                        tablaCuotasEl.style.display = 'table';
+                    }
+                });
             });
-        });
-    });
-    
-    // Mostrar el modal
-    let modal = new bootstrap.Modal(document.getElementById("estadoCuotasModal"));
-    modal.show();
 
-    let cronogramaTable = document.getElementById("cronogramaSelect");
-    let noCronogramaMessage = document.getElementById("noCronogramaMessage");
-
-    console.log("⏳ Ejecutando verEstadoCuotas...");
-
-    if (!cronogramaTable) {
-        console.log("❌ No se encontró el elemento con ID 'cronogramaSelect'");
-        return;
-    }
-
-    if (!noCronogramaMessage) {
-        console.log("❌ No se encontró el elemento con ID 'noCronogramaMessage'");
-        return;
-    }
-
-    console.log("✅ Tabla encontrada:", cronogramaTable);
-    console.log("✅ Mensaje de no cronograma encontrado:", noCronogramaMessage);
-
-    // Comprobar si hay filas dentro del tbody
-    let tbody = cronogramaTable.querySelector("tbody");
-    let tieneFilas = tbody && tbody.children.length > 0;
-
-    console.log("📌 Cantidad de filas en tbody:", tbody ? tbody.children.length : "No encontrado");
-
-    if (tieneFilas) {
-        console.log("📢 Mostrando la tabla, ocultando mensaje");
-        cronogramaTable.style.display = "table";
-        noCronogramaMessage.style.display = "none";
-    } else {
-        console.log("🚫 No hay datos, ocultando tabla y mostrando mensaje");
-        cronogramaTable.style.display = "none";
-        noCronogramaMessage.style.display = "block";
-    }
-
-}
+            // Mostrar el modal
+            let modal = new bootstrap.Modal(document.getElementById("estadoCuotasModal"));
+            modal.show();
+        }
 
 
 
 
-    // NUEVO: Función para manejar el toggle del dropdown
-    function toggleDropdown() {
-        const tabla = document.getElementById("cronogramaSelect");
-        tabla.style.display = tabla.style.display === "none" ? "table" : "none";
-        
-        const selectBox = document.getElementById("selectBox");
-        const icon = selectBox.querySelector("i");
-        icon.classList.toggle("fa-chevron-up");
-        icon.classList.toggle("fa-chevron-down");
-    }
+        // Función para manejar la selección de una fila y llenar la tabla de cuotas
+        function seleccionarFila(fila, financiamiento) {
+            // Actualizar el texto del financiamiento seleccionado
+            const selectBox = document.getElementById("selectBox");
+            selectBox.innerHTML = `
+                <i class="fas fa-check-circle me-1"></i>
+                <span>${financiamiento.producto.nombre} - ${financiamiento.grupo_financiamiento}</span>
+            `;
 
-    // NUEVO: Función para manejar la selección de una fila y llenar la tabla de cuotas
-    function seleccionarFila(fila, financiamiento) {
-        const selectBox = document.getElementById("selectBox");
-        selectBox.innerHTML = `
-            <span>${financiamiento.producto.nombre} - ${financiamiento.grupo_financiamiento}</span>
-            <i class="fas fa-chevron-down"></i>
-        `;
-        
-        llenarTablaCuotas(financiamiento);
-        toggleDropdown();
-    }
+            // Resaltar la fila seleccionada
+            document.querySelectorAll('#cronogramaSelect tbody tr').forEach(tr => {
+                tr.style.backgroundColor = '';
+            });
+            fila.style.backgroundColor = '#d4edfa';
 
-    // NUEVO: Función para llenar la tabla de cuotas
-    function llenarTablaCuotas(financiamiento) {
-        var tablaCuotas = document.querySelector("#tablaCuotas tbody");
-        tablaCuotas.innerHTML = ""; // Limpiar la tabla antes de llenarla
+            // Mostrar secciones de radio buttons
+            document.getElementById("seccionRadios").style.display = "block";
 
-        financiamiento.cuotas.forEach(cuota => {
-            var fila = document.createElement("tr");
-            var moneda = financiamiento.moneda ? financiamiento.moneda : "S/.";
+            // Seleccionar "Cronograma de Producto" por defecto y mostrar tabla
+            document.getElementById("cronogramaProducto").checked = true;
+            document.getElementById("seccionInscripcion").style.display = "none";
 
-            fila.innerHTML = `
+            // Llenar y mostrar tabla de cuotas del producto
+            llenarTablaCuotas(financiamiento);
+        }
+
+        // NUEVO: Función para llenar la tabla de cuotas
+        function llenarTablaCuotas(financiamiento) {
+            var tablaCuotas = document.querySelector("#tablaCuotas tbody");
+            tablaCuotas.innerHTML = ""; // Limpiar la tabla antes de llenarla
+
+            financiamiento.cuotas.forEach(cuota => {
+                var fila = document.createElement("tr");
+                var moneda = financiamiento.moneda ? financiamiento.moneda : "S/.";
+
+                fila.innerHTML = `
                 <td style="text-align: center;">${cuota.fecha_vencimiento}</td>
                 <td style="text-align: center;">${moneda} ${cuota.monto}</td>
                 <td style="text-align: center;">${cuota.estado}</td>
             `;
-            tablaCuotas.appendChild(fila);
-        });
+                tablaCuotas.appendChild(fila);
+            });
 
-        document.getElementById("tablaCuotas").style.display = "table";
-    }
+            document.getElementById("tablaCuotas").style.display = "table";
+        }
 
         function generarContratosDesdeTabla() {
             const tabla = $('#tablaConductoresVisible').DataTable();
@@ -1880,7 +1883,7 @@ window.descargarCronogramaPDF = function() {
                         $('#conductorVehiculoModal .modal-body p:contains("Fecha de Vencimiento de SOAT:")').html(`<strong>Fecha de Vencimiento de SOAT:</strong> ${response.data.vehiculo.fech_soat}`);
                         $('#conductorVehiculoModal .modal-body p:contains("Fecha de Vencimiento de Seguro Vehicular:")').html(`<strong>Fecha de Vencimiento de Seguro Vehicular:</strong> ${response.data.vehiculo.fech_seguro}`);
                         $('#conductorVehiculoModal .modal-body p:contains("Tipo de Vehículo:")').html(`<strong>Tipo de Vehículo:</strong> ${response.data.vehiculo.tipo_vehiculo ? response.data.vehiculo.tipo_vehiculo.charAt(0).toUpperCase() + response.data.vehiculo.tipo_vehiculo.slice(1).toLowerCase() : 'No especificado'}`);
-                        $('#conductorVehiculoModal .modal-body p:contains("Fecha de Inscripción: ")').html(`<strong>Fecha de Inscripción:</strong> ${response.data.inscripcion.fecha_inscripcion}`);
+                        $('#conductorVehiculoModal .modal-body p:contains("Fecha de Inscripción: ")').html(`<strong>Fecha de Inscripción:</strong> ${response.data.inscripcion && response.data.inscripcion.fecha_inscripcion ? response.data.inscripcion.fecha_inscripcion : 'No especificado'}`);
                         if (response.data.contactoEmergencia) {
                             let contacto = response.data.contactoEmergencia;
                             $('#conductorVehiculoModal .modal-body p:contains("Nombres:")').html(`<strong>Nombres:</strong> ${contacto.nombres}`); // Agregado: Nombres
@@ -1895,7 +1898,7 @@ window.descargarCronogramaPDF = function() {
                             "max-height": "150px"
                         });
 
-                         // MODIFICADO: Actualizar asesor usando el mismo enfoque jQuery
+                        // MODIFICADO: Actualizar asesor usando el mismo enfoque jQuery
                         $('#conductorVehiculoModal .modal-body p:contains("Asesor Asignado:")').html(
                             `<strong>Asesor Asignado:</strong> <span id="asesor-asignado">${response.data.conductor.asesor || 'No asignado'}</span>`
                         );
@@ -1992,14 +1995,14 @@ window.descargarCronogramaPDF = function() {
 
                         // Verificar si el conductor es de Lima
                         // Nota: response.data.direccion.departamento devuelve el NOMBRE, no el ID
-                        const esLima = response.data.direccion && 
-                                      response.data.direccion.departamento && 
-                                      response.data.direccion.departamento.toUpperCase() === 'LIMA';
-                        
+                        const esLima = response.data.direccion &&
+                            response.data.direccion.departamento &&
+                            response.data.direccion.departamento.toUpperCase() === 'LIMA';
+
                         // Debug: Ver qué departamento tiene el conductor
                         console.log('Departamento del conductor:', response.data.direccion ? response.data.direccion.departamento : 'No tiene dirección');
                         console.log('¿Es Lima?:', esLima);
-                        
+
                         // Definir nombres de documentos según el departamento
                         const additionalDocuments = esLima ? {
                             // Documentos para Lima
@@ -2033,7 +2036,7 @@ window.descargarCronogramaPDF = function() {
                         // NUEVO: Actualizar badges de verificación - Diseño compacto
                         const statusDocumentacion = document.getElementById('status-documentacion');
                         const statusDomiciliaria = document.getElementById('status-domiciliaria');
-                        
+
                         // Status de documentación completa
                         if (response.data.conductor.documentacion_completa) {
                             statusDocumentacion.className = 'verification-status verified';
@@ -2042,7 +2045,7 @@ window.descargarCronogramaPDF = function() {
                             statusDocumentacion.className = 'verification-status not-verified';
                             statusDocumentacion.textContent = 'No verificado';
                         }
-                        
+
                         // Status de verificación domiciliaria
                         if (response.data.conductor.verificacion_domiciliaria) {
                             statusDomiciliaria.className = 'verification-status verified';
@@ -2085,22 +2088,39 @@ window.descargarCronogramaPDF = function() {
                             }
                         }
 
+                        // INICIO: Actualizar sección de Estado de Pago de Inscripción
+                        actualizarEstadoPagoInscripcion(response.data.financiamientoInscripcion);
+
                         // INICIO: Verificación de cuotas vencidas por financiamiento de inscripción
                         if (response.data.financiamientoInscripcion && response.data.financiamientoInscripcion.tiene_cuotas_vencidas) {
                             const cantidadCuotas = response.data.financiamientoInscripcion.cantidad_cuotas_vencidas;
                             const montoTotal = response.data.financiamientoInscripcion.monto_total_vencido;
-                            
+
                             // Formatear el monto con dos decimales
                             const montoFormateado = parseFloat(montoTotal).toFixed(2);
-                            
+
                             // Mostrar notificación de cuotas vencidas por inscripción
                             mostrarNotificacion(
-                                '🔴 Cuotas Vencidas - Inscripción', 
-                                `El conductor tiene ${cantidadCuotas} cuota(s) vencida(s) por un total de S/. ${montoFormateado}. Financiamiento de Inscripción.`, 
+                                '🔴 Cuotas Vencidas - Inscripción',
+                                `El conductor tiene ${cantidadCuotas} cuota(s) vencida(s) por un total de S/. ${montoFormateado}. Financiamiento de Inscripción.`,
                                 'danger'
                             );
                         }
-                        
+
+                        // Notificación de cuotas por vencer
+                        if (response.data.financiamientoInscripcion && response.data.financiamientoInscripcion.tiene_cuotas_por_vencer) {
+                            const cantidadCuotas = response.data.financiamientoInscripcion.cantidad_cuotas_por_vencer;
+                            const montoTotal = response.data.financiamientoInscripcion.monto_por_vencer;
+                            const montoFormateado = parseFloat(montoTotal).toFixed(2);
+                            const fechaVenc = response.data.financiamientoInscripcion.proxima_fecha_vencimiento;
+
+                            mostrarNotificacion(
+                                '⚠️ Cuotas Por Vencer - Inscripción',
+                                `${cantidadCuotas} cuota(s) por vencer en los próximos 7 días. Monto: S/. ${montoFormateado}. Próximo vencimiento: ${fechaVenc}`,
+                                'warning'
+                            );
+                        }
+
                         // INICIO: Verificación de cuotas vencidas por financiamiento de productos
                         console.log("Verificando si hay datos de financiamiento de productos...");
                         console.log("response.data.financiamientoProductos:", response.data.financiamientoProductos);
@@ -2124,8 +2144,8 @@ window.descargarCronogramaPDF = function() {
 
                                 // Mostrar notificación de cuotas vencidas por producto
                                 mostrarNotificacion(
-                                    '🔴 Cuotas Vencidas - Producto', 
-                                    `El conductor tiene ${cantidadCuotas} cuota(s) vencida(s) del financiamiento: ${nombreProducto} por un total de ${moneda} ${montoTotal}.`, 
+                                    '🔴 Cuotas Vencidas - Producto',
+                                    `El conductor tiene ${cantidadCuotas} cuota(s) vencida(s) del financiamiento: ${nombreProducto} por un total de ${moneda} ${montoTotal}.`,
                                     'danger'
                                 );
                             });
@@ -2181,7 +2201,8 @@ window.descargarCronogramaPDF = function() {
         function mostrarNotificacion(titulo, mensaje, tipo) {
             const colores = {
                 success: '#28a745',
-                danger: '#dc3545'
+                danger: '#dc3545',
+                warning: '#ffc107'
             };
             const contenedor = document.getElementById('modal-notifications');
 
@@ -2208,6 +2229,146 @@ window.descargarCronogramaPDF = function() {
             }, 100);
         }
 
+        // Función para actualizar la sección de Estado de Pago de Inscripción
+        function actualizarEstadoPagoInscripcion(data) {
+            const container = document.getElementById('estado-pago-inscripcion');
+            if (!container) return;
+
+            if (!data || !data.tiene_registro) {
+                container.innerHTML = `
+                    <div class="alert alert-secondary mb-0 py-2">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Sin registro de pago de inscripción</span>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            let badgeClass = '';
+            let badgeIcon = '';
+            let estadoTexto = '';
+
+            switch (data.estado_general) {
+                case 'pagado_contado':
+                    badgeClass = 'bg-success';
+                    badgeIcon = 'fa-check-circle';
+                    estadoTexto = 'Pagado al Contado';
+                    html = `
+                        <div class="alert alert-success mb-0 py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${badgeIcon} me-2 fa-lg"></i>
+                                <div>
+                                    <strong>${estadoTexto}</strong>
+                                    <small class="d-block text-muted">El conductor pagó la inscripción al contado</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'completado':
+                    badgeClass = 'bg-success';
+                    badgeIcon = 'fa-check-double';
+                    estadoTexto = 'Financiamiento Completado';
+                    html = `
+                        <div class="alert alert-success mb-0 py-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas ${badgeIcon} me-2 fa-lg"></i>
+                                <div>
+                                    <strong>${estadoTexto}</strong>
+                                    <small class="d-block text-muted">Todas las cuotas han sido pagadas (${data.cuotas_pagadas}/${data.total_cuotas})</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'al_dia':
+                    badgeClass = 'bg-primary';
+                    badgeIcon = 'fa-calendar-check';
+                    estadoTexto = 'Al Día';
+                    html = `
+                        <div class="alert alert-primary mb-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas ${badgeIcon} me-2 fa-lg"></i>
+                                    <div>
+                                        <strong>${estadoTexto}</strong>
+                                        <small class="d-block">Cuotas: ${data.cuotas_pagadas}/${data.total_cuotas} pagadas</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="d-block">Pendiente: <strong>S/. ${parseFloat(data.monto_total_pendiente).toFixed(2)}</strong></small>
+                                    ${data.proxima_fecha_vencimiento ? `<small class="d-block text-muted">Próx. venc: ${data.proxima_fecha_vencimiento}</small>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'por_vencer':
+                    badgeClass = 'bg-warning';
+                    badgeIcon = 'fa-exclamation-triangle';
+                    estadoTexto = 'Cuotas Por Vencer';
+                    html = `
+                        <div class="alert alert-warning mb-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas ${badgeIcon} me-2 fa-lg text-warning"></i>
+                                    <div>
+                                        <strong>${estadoTexto}</strong>
+                                        <small class="d-block">${data.cantidad_cuotas_por_vencer} cuota(s) por vencer en 7 días</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="d-block">Monto: <strong>S/. ${parseFloat(data.monto_por_vencer).toFixed(2)}</strong></small>
+                                    <small class="d-block text-muted">Vence: ${data.proxima_fecha_vencimiento}</small>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <small>Progreso: ${data.cuotas_pagadas}/${data.total_cuotas} cuotas pagadas | Pendiente total: S/. ${parseFloat(data.monto_total_pendiente).toFixed(2)}</small>
+                        </div>
+                    `;
+                    break;
+
+                case 'vencido':
+                    badgeClass = 'bg-danger';
+                    badgeIcon = 'fa-times-circle';
+                    estadoTexto = 'Con Deuda Vencida';
+                    html = `
+                        <div class="alert alert-danger mb-0 py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas ${badgeIcon} me-2 fa-lg"></i>
+                                    <div>
+                                        <strong>${estadoTexto}</strong>
+                                        <small class="d-block">${data.cantidad_cuotas_vencidas} cuota(s) vencida(s)</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <small class="d-block">Deuda vencida: <strong class="text-danger">S/. ${parseFloat(data.monto_total_vencido).toFixed(2)}</strong></small>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <small>Progreso: ${data.cuotas_pagadas}/${data.total_cuotas} cuotas pagadas | Pendiente total: S/. ${parseFloat(data.monto_total_pendiente).toFixed(2)}</small>
+                            ${data.tiene_cuotas_por_vencer ? `<br><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Además tiene ${data.cantidad_cuotas_por_vencer} cuota(s) por vencer</small>` : ''}
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    html = `
+                        <div class="alert alert-secondary mb-0 py-2">
+                            <i class="fas fa-question-circle me-2"></i>
+                            <span>Estado de pago no determinado</span>
+                        </div>
+                    `;
+            }
+
+            container.innerHTML = html;
+        }
+
         function cleanModal() {
             $('#conductorVehiculoModal .modal-body img').attr(
                 'src',
@@ -2217,14 +2378,14 @@ window.descargarCronogramaPDF = function() {
             // MODIFICADO: Limpiar solo los párrafos que no contienen spans con IDs específicos
             $('#conductorVehiculoModal .modal-body p').each(function () {
                 // No limpiar el párrafo que contiene el número de documento
-                if (!$(this).find('#nro-documento-value').length && 
+                if (!$(this).find('#nro-documento-value').length &&
                     !$(this).find('#tipo-documento-label').length &&
                     !$(this).find('#asesor-asignado').length &&
                     !$(this).find('#kit-logo-yango, #kit-fotocheck, #kit-polo, #kit-talla, #kit-logo-aqpgo, #kit-casquete').length) {
                     $(this).html('<strong>' + $(this).text().split(':')[0] + ':</strong> ');
                 }
             });
-            
+
             let $documentButtonsContainer = $('#conductorVehiculoModal .modal-body .d-flex');
             $documentButtonsContainer.find('a:nth-child(n+5)').remove();
             $documentButtonsContainer.find('a').attr('href', '#');
@@ -2232,15 +2393,21 @@ window.descargarCronogramaPDF = function() {
             // Limpiar el textarea de observaciones // AÑADIDO: Limpiar el campo de observaciones
             $('#conductorVehiculoModal .modal-body textarea').val('');
 
+            // Limpiar la sección de estado de pago de inscripción
+            const estadoPagoContainer = document.getElementById('estado-pago-inscripcion');
+            if (estadoPagoContainer) {
+                estadoPagoContainer.innerHTML = '<div class="text-muted">Cargando información de pago...</div>';
+            }
+
             // NUEVO: Resetear badges de verificación - Diseño compacto
             const statusDocumentacion = document.getElementById('status-documentacion');
             const statusDomiciliaria = document.getElementById('status-domiciliaria');
-            
+
             if (statusDocumentacion) {
                 statusDocumentacion.className = 'verification-status pending';
                 statusDocumentacion.textContent = 'Pendiente';
             }
-            
+
             if (statusDomiciliaria) {
                 statusDomiciliaria.className = 'verification-status pending';
                 statusDomiciliaria.textContent = 'No verificado';
@@ -2287,59 +2454,202 @@ window.descargarCronogramaPDF = function() {
             });
         }
 
-        function toggleDesvincular(idConductor, estado) {
-            const accion = estado === 1 ? 'desvincula' : 'reactiva';
-            const mensaje = estado === 1 ?
-                '¿Está seguro que desea desvincular a este conductor?' :
-                '¿Está seguro que desea reactivar a este conductor?';
+        function toggleDesvincular(idConductor, estado, motivo = '', fechaDesvinculacion = '') {
+            if (estado === 1) {
+                // Si es desvinculación, mostrar modal con campo para motivo
+                Swal.fire({
+                    title: 'Desvincular Conductor',
+                    html: `
+                        <p>¿Está seguro que desea desvincular a este conductor?</p>
+                        <div class="form-group text-left mt-3">
+                            <label for="motivoDesvinculacion" class="font-weight-bold">Motivo de desvinculación: <span class="text-danger">*</span></label>
+                            <textarea id="motivoDesvinculacion" class="form-control mt-2" rows="3"
+                                placeholder="Ingrese el motivo de la desvinculación..." required></textarea>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, desvincular',
+                    cancelButtonText: 'Cancelar',
+                    preConfirm: () => {
+                        const motivoInput = document.getElementById('motivoDesvinculacion').value.trim();
+                        if (!motivoInput) {
+                            Swal.showValidationMessage('Debe ingresar el motivo de desvinculación');
+                            return false;
+                        }
+                        return motivoInput;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        enviarDesvinculacion(idConductor, estado, result.value);
+                    }
+                });
+            } else {
+                // Si es reactivación, mostrar el motivo por el que fue desvinculado y opción de reactivar
+                let fechaFormateada = '';
+                if (fechaDesvinculacion) {
+                    const fecha = new Date(fechaDesvinculacion);
+                    fechaFormateada = fecha.toLocaleDateString('es-PE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
 
-            Swal.fire({
-                title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} conductor?`,
-                text: mensaje,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: estado === 1 ? '#d33' : '#3085d6',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, confirmar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '/arequipago/toggleDesvincularConductor',
-                        type: 'POST',
-                        data: {
-                            id_conductor: idConductor,
-                            estado: estado
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    title: 'Completado',
-                                    text: `Conductor ${accion}do exitosamente`,
-                                    icon: 'success'
-                                }).then(() => {
-                                    // Esperar a que se cierre el modal antes de recargar la tabla
-                                    setTimeout(() => {
-                                        // Usar false como segundo parámetro para mantener la página actual
-                                        tabla.ajax.reload(null, false);
-                                    }, 300);
-                                });
+                if (!motivo) {
+                    // Si no tiene motivo, permitir agregarlo
+                    Swal.fire({
+                        title: '<i class="fas fa-user-slash text-danger"></i> Conductor Desvinculado',
+                        html: `
+                            <div class="text-left">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-circle"></i> Este conductor no tiene motivo de desvinculación registrado.
+                                </div>
+                                <div class="form-group mt-3">
+                                    <label for="motivoDesvinculacionEditar" class="font-weight-bold">Agregar motivo de desvinculación:</label>
+                                    <textarea id="motivoDesvinculacionEditar" class="form-control mt-2" rows="3"
+                                        placeholder="Ingrese el motivo de la desvinculación..."></textarea>
+                                </div>
+                                <hr>
+                                <p class="text-muted small">Puede guardar solo el motivo o reactivar al conductor.</p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        showDenyButton: true,
+                        confirmButtonColor: '#28a745',
+                        denyButtonColor: '#007bff',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fas fa-user-check"></i> Reactivar',
+                        denyButtonText: '<i class="fas fa-save"></i> Solo guardar motivo',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        const motivoNuevo = document.getElementById('motivoDesvinculacionEditar').value.trim();
+                        if (result.isConfirmed) {
+                            // Reactivar conductor
+                            enviarDesvinculacion(idConductor, estado, null);
+                        } else if (result.isDenied) {
+                            // Solo guardar el motivo sin reactivar
+                            if (motivoNuevo) {
+                                guardarSoloMotivo(idConductor, motivoNuevo);
                             } else {
-                                Swal.fire(
-                                    'Error',
-                                    response.message || 'Ocurrió un error al procesar la solicitud',
-                                    'error'
-                                );
+                                Swal.fire('Error', 'Debe ingresar un motivo para guardar', 'error');
                             }
-                        },
-                        error: function () {
-                            Swal.fire(
-                                'Error',
-                                'Ocurrió un error al procesar la solicitud',
-                                'error'
-                            );
                         }
                     });
+                } else {
+                    // Si tiene motivo, mostrar el modal normal
+                    Swal.fire({
+                        title: '<i class="fas fa-user-slash text-danger"></i> Conductor Desvinculado',
+                        html: `
+                            <div class="text-left">
+                                <div class="alert alert-danger">
+                                    <strong><i class="fas fa-exclamation-triangle"></i> Motivo de desvinculación:</strong>
+                                    <p class="mt-2 mb-0">${motivo}</p>
+                                </div>
+                                ${fechaFormateada ? `<p class="text-muted"><i class="fas fa-calendar-alt"></i> Fecha de desvinculación: <strong>${fechaFormateada}</strong></p>` : ''}
+                                <hr>
+                                <p class="text-center"><strong>¿Desea reactivar a este conductor?</strong></p>
+                            </div>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fas fa-user-check"></i> Sí, reactivar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            enviarDesvinculacion(idConductor, estado, null);
+                        }
+                    });
+                }
+            }
+        }
+
+        function guardarSoloMotivo(idConductor, motivo) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Guardando...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '/arequipago/guardarMotivoDesvinculacion',
+                type: 'POST',
+                data: {
+                    id_conductor: idConductor,
+                    motivo: motivo
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Recargar la tabla primero
+                        tabla.ajax.reload(function() {
+                            // Una vez recargada la tabla, mostrar mensaje de éxito
+                            Swal.fire({
+                                title: 'Guardado',
+                                text: 'El motivo se guardó correctamente',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        }, false);
+                    } else {
+                        Swal.fire('Error', response.message || 'No se pudo guardar el motivo', 'error');
+                    }
+                },
+                error: function () {
+                    Swal.fire('Error', 'Ocurrió un error al guardar el motivo', 'error');
+                }
+            });
+        }
+
+        function enviarDesvinculacion(idConductor, estado, motivo) {
+            const accion = estado === 1 ? 'desvincula' : 'reactiva';
+            $.ajax({
+                url: '/arequipago/toggleDesvincularConductor',
+                type: 'POST',
+                data: {
+                    id_conductor: idConductor,
+                    estado: estado,
+                    motivo: motivo
+                },
+                success: function (response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Completado',
+                            text: `Conductor ${accion}do exitosamente`,
+                            icon: 'success'
+                        }).then(() => {
+                            // Esperar a que se cierre el modal antes de recargar la tabla
+                            setTimeout(() => {
+                                // Usar false como segundo parámetro para mantener la página actual
+                                tabla.ajax.reload(null, false);
+                            }, 300);
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error',
+                            response.message || 'Ocurrió un error al procesar la solicitud',
+                            'error'
+                        );
+                    }
+                },
+                error: function () {
+                    Swal.fire(
+                        'Error',
+                        'Ocurrió un error al procesar la solicitud',
+                        'error'
+                    );
                 }
             });
         }
@@ -2449,9 +2759,9 @@ window.descargarCronogramaPDF = function() {
                         }
                     },
                     { data: "nro_documento" },
-                    { 
+                    {
                         data: "nombres",
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             let vehicleBadge = '';
                             if (row.tipo_vehiculo) {
                                 const tipoVehiculo = row.tipo_vehiculo.toLowerCase();
@@ -2459,6 +2769,8 @@ window.descargarCronogramaPDF = function() {
                                     vehicleBadge = '<span class="vehicle-badge auto"><span class="icon">🚕</span>Auto</span>';
                                 } else if (tipoVehiculo === 'moto') {
                                     vehicleBadge = '<span class="vehicle-badge moto"><span class="icon">🏍️</span>Moto</span>';
+                                } else if (tipoVehiculo === 'tuktuk') {
+                                    vehicleBadge = '<span class="vehicle-badge tuktuk"><span class="icon">🛺</span>Tuktuk</span>';
                                 }
                             } else {
                                 vehicleBadge = '<span class="vehicle-badge sin-vehiculo"><span class="icon">❓</span>S/V</span>';
@@ -2510,18 +2822,20 @@ window.descargarCronogramaPDF = function() {
                                 </button>
                                 <button class="acciones-btn editar-btn" onclick="editarConductor(${data})"><i class="fas fa-edit"></i></button>
                             `;
-                            
+
                             if (rolUsuario == 1 || rolUsuario == 3) { // Solo rol 1 y 3 pueden ver estos botones
+                                const motivoEscaped = row.motivo_desvinculacion ? row.motivo_desvinculacion.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
+                                const fechaDesv = row.fecha_desvinculacion || '';
                                 buttons += `
                                     <button class="acciones-btn eliminar-btn" onclick="eliminarConductor(${data})"><i class="fas fa-trash"></i></button>
-                                    <button class="acciones-btn ${row.desvinculado === '1' ? 'btn-warning' : 'btn-secondary'}" 
-                                            onclick="toggleDesvincular(${data}, ${row.desvinculado === '1' ? '0' : '1'})"
+                                    <button class="acciones-btn ${row.desvinculado === '1' ? 'btn-warning' : 'btn-secondary'}"
+                                            onclick="toggleDesvincular(${data}, ${row.desvinculado === '1' ? '0' : '1'}, '${motivoEscaped}', '${fechaDesv}')"
                                             title="${row.desvinculado === '1' ? 'Reactivar conductor' : 'Desvincular conductor'}">
                                         <i class="fas ${row.desvinculado === '1' ? 'fa-user-check' : 'fa-user-slash'}"></i>
                                     </button>
                                 `;
                             } // Fin de la restricción de botones por rol
-                            
+
                             return buttons;
                         }
                     }
@@ -2563,11 +2877,13 @@ window.descargarCronogramaPDF = function() {
                     let pasaFiltroTipoVehiculo = true;
                     if (filtroTipoVehiculo !== 'todos') {
                         const tipoVehiculo = row.tipo_vehiculo ? row.tipo_vehiculo.toLowerCase() : null;
-                        
+
                         if (filtroTipoVehiculo === 'auto') {
                             pasaFiltroTipoVehiculo = tipoVehiculo === 'auto';
                         } else if (filtroTipoVehiculo === 'moto') {
                             pasaFiltroTipoVehiculo = tipoVehiculo === 'moto';
+                        } else if (filtroTipoVehiculo === 'tuktuk') {
+                            pasaFiltroTipoVehiculo = tipoVehiculo === 'tuktuk';
                         } else if (filtroTipoVehiculo === 'sin-vehiculo') {
                             pasaFiltroTipoVehiculo = !tipoVehiculo;
                         }

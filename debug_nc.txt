@@ -1,0 +1,60 @@
+Array
+(
+    [timestamp] => 2026-02-01 21:18:02
+    [serie] => BC01
+    [numero_usado] => 1
+    [numero_nuevo] => 2
+    [id_empresa] => 12
+    [id_tido] => 3
+    [sucursal] => 1
+)
+
+
+Array
+(
+    [timestamp] => 2026-02-02 19:34:39
+    [serie] => BC01
+    [numero_usado] => 1
+    [numero_nuevo] => 2
+    [id_empresa] => 12
+    [id_tido] => 3
+    [sucursal] => 1
+)
+
+
+Array
+(
+    [timestamp] => 2026-02-02 20:04:46
+    [serie] => BC01
+    [numero_usado] => 2
+    [numero_nuevo] => 3
+    [id_empresa] => 12
+    [id_tido] => 3
+    [sucursal] => 1
+)
+
+
+Array
+(
+    [timestamp] => 2026-02-02 20:06:02
+    [serie] => BC01
+    [numero_usado] => 3
+    [numero_nuevo] => 4
+    [id_empresa] => 12
+    [id_tido] => 3
+    [sucursal] => 1
+)
+
+
+Array
+(
+    [timestamp] => 2026-02-02 20:17:10
+    [serie] => BC01
+    [numero_usado] => 4
+    [numero_nuevo] => 5
+    [id_empresa] => 12
+    [id_tido] => 3
+    [sucursal] => 1
+)
+
+

@@ -28,7 +28,7 @@ class GrupoFinanciamientoModel
         }
     }
 
-    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1, $esYango = 0, $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.')
+    public function insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado = 'activo', $cobrarMora = 1, $esYango = 0, $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.', $penalizacionMora = null, $moraSemanal = null, $moraQuincenal = null, $moraMensual = null)
     {
         // 🔹 Convertir valores vacíos a null para evitar errores
         $cuotaInicial = $cuotaInicial !== '' ? $cuotaInicial : null;
@@ -50,8 +50,8 @@ class GrupoFinanciamientoModel
         }
 
         $sql = 'INSERT INTO planes_financiamiento
-        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado, es_yango, aplica_comision, monto_comision, moneda_comision)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        (nombre_plan, cuota_inicial, monto_cuota, cantidad_cuotas, frecuencia_pago, moneda, tasa_interes, monto, monto_sin_interes, fecha_inicio, fecha_fin, tipo_vehicular, cobrar_mora, estado, es_yango, aplica_comision, monto_comision, moneda_comision, penalizacion_mora, mora_semanal, mora_quincenal, mora_mensual)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -59,7 +59,7 @@ class GrupoFinanciamientoModel
             die('Error en la preparación de la consulta: ' . $this->conectar->error);
         }
 
-        $stmt->bind_param('ssssssssssssisiiss',  // ✅ Agregado: aplica_comision (i), monto_comision (s), moneda_comision (s)
+        $stmt->bind_param('ssssssssssssisisssssss',  // 12s i(cobrar) s(estado) i(yango) s(aplica) s(monto_com) s(moneda_com) s(penaliz) s(moraSem) s(moraQuin) s(moraMens) = 22
             $nombrePlan,
             $cuotaInicial,
             $montoCuota,
@@ -77,7 +77,11 @@ class GrupoFinanciamientoModel
             $esYango,  // i - integer
             $aplicaComision,  // i - integer (✅ NUEVO)
             $montoComision,  // s - string/decimal (✅ NUEVO)
-            $monedaComision  // s - string (✅ NUEVO)
+            $monedaComision,  // s - string (✅ NUEVO)
+            $penalizacionMora,  // s - string/decimal
+            $moraSemanal,  // s - string/decimal
+            $moraQuincenal,  // s - string/decimal
+            $moraMensual  // s - string/decimal
         );
 
         // 🔹 Ejecutar la consulta y verificar si fue exitosa
@@ -103,8 +107,10 @@ class GrupoFinanciamientoModel
             monto, 
             monto_sin_interes, 
             fecha_inicio, 
-            fecha_fin
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            fecha_fin,
+            monto_comision,
+            moneda_comision
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($sql);
 
@@ -125,9 +131,13 @@ class GrupoFinanciamientoModel
             $montoSinInteres = $variante['monto_sin_interes'] !== '' ? $variante['monto_sin_interes'] : null;
             $fechaInicio = $variante['fecha_inicio'] !== '' ? $variante['fecha_inicio'] : null;
             $fechaFin = $variante['fecha_fin'] !== '' ? $variante['fecha_fin'] : null;
+            
+            // ✅ NUEVO: Campos de comisión
+            $montoComision = isset($variante['monto_comision']) && $variante['monto_comision'] !== '' ? $variante['monto_comision'] : null;
+            $monedaComision = isset($variante['moneda_comision']) && $variante['moneda_comision'] !== '' ? $variante['moneda_comision'] : 'S/.';
 
-            // 14 variables, 14 tipos (agregado monto_inscripcion)
-            $stmt->bind_param('isddddsssdddss',
+            // 16 variables, 16 tipos (agregado monto_comision y moneda_comision)
+            $stmt->bind_param('isddddsssdddssds',
                 $idPlan,
                 $variante['nombre_variante'],
                 $cuotaInicial,
@@ -141,7 +151,9 @@ class GrupoFinanciamientoModel
                 $monto,
                 $montoSinInteres,
                 $fechaInicio,
-                $fechaFin);
+                $fechaFin,
+                $montoComision,
+                $monedaComision);
 
             if (!$stmt->execute()) {
                 return false;
@@ -153,7 +165,8 @@ class GrupoFinanciamientoModel
 
     public function getAllPlanes()
     {
-        $sql = 'SELECT * FROM planes_financiamiento';
+        // ✅ MODIFICADO: Solo obtener planes activos
+        $sql = 'SELECT * FROM planes_financiamiento WHERE estado = "activo"';
         $result = $this->conectar->query($sql);  // Modificado: Ahora usamos query() en MySQLi en lugar de prepare/execute de PDO
 
         $planes = [];
@@ -188,7 +201,7 @@ class GrupoFinanciamientoModel
     public function editarGrupo($id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas,
         $frecuenciaPago, $moneda, $monto, $montoSinInteres, $tasaInteres,
         $fechaInicio, $fechaFin, $tipoVehicular = null, $estado = 'activo', $cobrarMora = 1, $esYango = 0,
-        $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.')
+        $aplicaComision = 1, $montoComision = null, $monedaComision = 'S/.', $penalizacionMora = null, $moraSemanal = null, $moraQuincenal = null, $moraMensual = null)
     {
         // CORREGIDO: Validar y limpiar tipoVehicular
         if ($tipoVehicular === '' || $tipoVehicular === 'null' || $tipoVehicular === null) {
@@ -219,7 +232,11 @@ class GrupoFinanciamientoModel
             es_yango = ?,
             aplica_comision = ?,
             monto_comision = ?,
-            moneda_comision = ?
+            moneda_comision = ?,
+            penalizacion_mora = ?,
+            mora_semanal = ?,
+            mora_quincenal = ?,
+            mora_mensual = ?
         WHERE idplan_financiamiento = ?';
 
         $stmt = $this->conectar->prepare($sql);
@@ -239,8 +256,12 @@ class GrupoFinanciamientoModel
         $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
         $frecuenciaPago = ($frecuenciaPago !== null && $frecuenciaPago !== '') ? $frecuenciaPago : null;
         $montoComision = ($montoComision !== null && $montoComision !== '') ? $montoComision : null;
+        $penalizacionMora = ($penalizacionMora !== null && $penalizacionMora !== '') ? $penalizacionMora : null;
+        $moraSemanal = ($moraSemanal !== null && $moraSemanal !== '') ? $moraSemanal : null;
+        $moraQuincenal = ($moraQuincenal !== null && $moraQuincenal !== '') ? $moraQuincenal : null;
+        $moraMensual = ($moraMensual !== null && $moraMensual !== '') ? $moraMensual : null;
 
-        $stmt->bind_param('ssssssssssssisiissi',  // ✅ Agregado: aplica_comision (i), monto_comision (s), moneda_comision (s)
+        $stmt->bind_param('ssssssssssssisiissssssi',  // 12s + i(cobrarMora) + s(estado) + i(esYango) + i(aplicaComision) + s(montoComision) + s(monedaComision) + s(penalizacion) + s(moraSem) + s(moraQuin) + s(moraMens) + i(id) = 23
             $nombrePlan,
             $cuotaInicial,
             $montoCuota,
@@ -259,6 +280,10 @@ class GrupoFinanciamientoModel
             $aplicaComision,  // i - integer (✅ NUEVO)
             $montoComision,  // s - string/decimal (✅ NUEVO)
             $monedaComision,  // s - string (✅ NUEVO)
+            $penalizacionMora,  // s - string/decimal
+            $moraSemanal,  // s - string/decimal
+            $moraQuincenal,  // s - string/decimal
+            $moraMensual,  // s - string/decimal
             $id  // i - integer
         );
 
@@ -301,7 +326,7 @@ class GrupoFinanciamientoModel
     // Modificación para variantes: Método para actualizar una variante
     public function actualizarVariante($id, $idPlanFinanciamiento, $nombreVariante, $cuotaInicial,
         $montoInscripcion, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda,
-        $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin)
+        $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $montoComision = null, $monedaComision = 'S/.')
     {
         $sql = 'UPDATE grupos_variantes SET 
                 idplan_financiamiento = ?,
@@ -316,7 +341,9 @@ class GrupoFinanciamientoModel
                 monto_sin_interes = ?,
                 tasa_interes = ?,
                 fecha_inicio = ?,
-                fecha_fin = ?
+                fecha_fin = ?,
+                monto_comision = ?,
+                moneda_comision = ?
             WHERE idgrupos_variantes = ?';
 
         $stmt = $this->conectar->prepare($sql);
@@ -336,8 +363,9 @@ class GrupoFinanciamientoModel
         $tasaInteres = ($tasaInteres !== null && $tasaInteres !== '') ? $tasaInteres : null;
         $fechaInicio = ($fechaInicio !== null && $fechaInicio !== '') ? $fechaInicio : null;
         $fechaFin = ($fechaFin !== null && $fechaFin !== '') ? $fechaFin : null;
+        $montoComision = ($montoComision !== null && $montoComision !== '') ? $montoComision : null;
 
-        $stmt->bind_param('isdddissddsssi',
+        $stmt->bind_param('isdddsssddsssdsi',
             $idPlanFinanciamiento,
             $nombreVariante,
             $cuotaInicial,
@@ -351,6 +379,8 @@ class GrupoFinanciamientoModel
             $tasaInteres,
             $fechaInicio,
             $fechaFin,
+            $montoComision,
+            $monedaComision,
             $id);
 
         if (!$stmt->execute()) {
@@ -371,6 +401,48 @@ class GrupoFinanciamientoModel
         }
         $stmt->bind_param('i', $id);
         return $stmt->execute();
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Cambiar estado de un grupo (soft delete)
+     */
+    public function cambiarEstadoGrupo($id, $estado)
+    {
+        $sql = 'UPDATE planes_financiamiento SET estado = ? WHERE idplan_financiamiento = ?';
+        $stmt = $this->conectar->prepare($sql);
+        if (!$stmt) {
+            error_log('Error en la consulta cambiarEstadoGrupo: ' . $this->conectar->error);
+            return false;
+        }
+        $stmt->bind_param('si', $estado, $id);
+        return $stmt->execute();
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Obtener grupos inactivos (eliminados)
+     */
+    public function obtenerGruposInactivos()
+    {
+        $sql = 'SELECT 
+                    idplan_financiamiento,
+                    nombre_plan,
+                    frecuencia_pago,
+                    cantidad_cuotas,
+                    monto_cuota,
+                    moneda
+                FROM planes_financiamiento 
+                WHERE estado = "inactivo"
+                ORDER BY idplan_financiamiento DESC';
+        
+        $stmt = $this->conectar->prepare($sql);
+        if (!$stmt) {
+            error_log('Error en la consulta obtenerGruposInactivos: ' . $this->conectar->error);
+            return [];
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     // 😊 Nuevo método para obtener datos del grupo de financiamiento
@@ -550,6 +622,21 @@ class GrupoFinanciamientoModel
         $stmt->close();
 
         return $tipoVehicular;
+    }
+
+    public function eliminarVariante($id)
+    {
+        $sql = 'DELETE FROM grupos_variantes WHERE idgrupos_variantes = ?';
+        $stmt = $this->conectar->prepare($sql);
+        if (!$stmt) {
+            throw new Exception('Error en la preparación de la consulta: ' . $this->conectar->error);
+        }
+        $stmt->bind_param('i', $id);
+        if (!$stmt->execute()) {
+            throw new Exception('Error en la ejecución: ' . $stmt->error);
+        }
+        $stmt->close();
+        return true;
     }
 
     public function obtenerEstadoPlan($idPlan)

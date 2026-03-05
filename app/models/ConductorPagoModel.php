@@ -20,12 +20,12 @@ class ConductorPagoModel
         return $row['count'] > 0;
     }
     
-    public function registrarPago($id_conductor, $tipo_pago, $fecha_pago, $monto_pago)
+    public function registrarPago($id_conductor, $tipo_pago, $fecha_pago, $monto_pago, $usuario_registro = null)
     {
         $id_tipopago = ($tipo_pago == 'contado') ? 1 : 2;
         
-        // Obtener el usuario_id de la sesión
-        $usuario_id = isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : null;
+        // Usar el usuario proporcionado o el de la sesión
+        $usuario_id = $usuario_registro ?? (isset($_SESSION['usuario_id']) ? $_SESSION['usuario_id'] : null);
         
         $query = "INSERT INTO conductor_pago (id_conductor, id_tipopago, fecha_pago, monto_pago, usuario_registro) 
                 VALUES (?, ?, ?, ?, ?)";

@@ -505,6 +505,7 @@ function obtenerConductoresYClientesConCuotasVencidas()
             AND cf.estado = 'En Progreso'
             AND f.incobrable = 0
             AND f.estado_eliminado = 0
+            AND (f.aprobado = 1 OR f.aprobado IS NULL)
             AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
         GROUP BY
             c.id_conductor, p.nombre, f.moneda  /* MODIFICADO: Agrupamos también por moneda */
@@ -550,6 +551,7 @@ function obtenerConductoresYClientesConCuotasVencidas()
                 AND cfc.estado = 'En Progreso'
                 AND f.incobrable = 0
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
             GROUP BY
                 cf.id, p.nombre, f.moneda  

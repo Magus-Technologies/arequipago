@@ -42,7 +42,19 @@ function getAllPlanes() {
     },
   });
 }
+// ✅ NUEVA VARIABLE GLOBAL: Bandera para evitar bucle infinito en selectPlan
+let estaProcesandoSelectPlan = false;
+
 function selectPlan(idPlan) {
+  // ✅ CRÍTICO: Evitar bucle infinito
+  if (estaProcesandoSelectPlan) {
+    console.log("⚠️ selectPlan ya está en ejecución, evitando bucle");
+    return;
+  }
+  
+  estaProcesandoSelectPlan = true;
+  console.log("🔒 selectPlan BLOQUEADO - Iniciando procesamiento");
+  
   limpiarVarianteSeleccionada();
 
   // NUEVO: Limpiar valores originales al cambiar de plan
@@ -51,8 +63,8 @@ function selectPlan(idPlan) {
   // NUEVO: Limpiar valores originales al cambiar de plan
   valoresOriginalesPlan = null;
 
-  // ✅ NUEVO: Restaurar campo a "Cuota Inicial" si NO es plan 22 ni 38
-  const planesConCuotasAdelantadas = [22, 38];
+  // ✅ NUEVO: Restaurar campo a "Cuota Inicial" si NO es plan 22, 38 ni 49
+  const planesConCuotasAdelantadas = [22, 38, 49];
   if (!planesConCuotasAdelantadas.includes(parseInt(idPlan)) && typeof restaurarCuotaInicialNormal === 'function') {
     restaurarCuotaInicialNormal();
   }
@@ -114,12 +126,20 @@ function selectPlan(idPlan) {
       nombrePersonalizadoInput.value = '';
     }
 
-    // ✅ NUEVO: Restaurar cuota inicial como OBLIGATORIA para otros planes
+    // ✅ NUEVO: Manejar cuota inicial según el plan
     const cuotaInicialInput = document.getElementById('cuotaInicial');
     if (cuotaInicialInput) {
-      cuotaInicialInput.setAttribute('required', 'required');
-      cuotaInicialInput.placeholder = 'Cuota inicial';
-      console.log("✅ Cuota inicial restaurada como OBLIGATORIA para otros planes");
+      // Plan 48 (SOAT): Cuota inicial OPCIONAL
+      if (idPlan === "48" || idPlan === 48) {
+        cuotaInicialInput.removeAttribute('required');
+        cuotaInicialInput.placeholder = 'Cuota inicial (opcional)';
+        console.log("✅ Cuota inicial configurada como OPCIONAL para plan SOAT (ID 48)");
+      } else {
+        // Otros planes: Cuota inicial OBLIGATORIA
+        cuotaInicialInput.setAttribute('required', 'required');
+        cuotaInicialInput.placeholder = 'Cuota inicial';
+        console.log("✅ Cuota inicial restaurada como OBLIGATORIA para otros planes");
+      }
     }
 
     // ✅ NUEVO: Ocultar checkbox y limpiar estado para otros planes
@@ -333,6 +353,56 @@ function selectPlan(idPlan) {
           }
         }
 
+        // ✅ NUEVO: Lógica específica para Credi Ahorros Autos (ID 49) - 215 semanas desde HOY
+        if (parseInt(plan.idplan_financiamiento) === 49) {
+          // Para Credi Ahorros Autos, establecer fecha de inicio como HOY
+          const hoyCrediAhorros = new Date();
+          const year = hoyCrediAhorros.getFullYear();
+          const month = (hoyCrediAhorros.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const day = hoyCrediAhorros.getDate().toString().padStart(2, "0");
+          const fechaInicioFormateada = `${year}-${month}-${day}`;
+
+          // Asegurar que el input esté habilitado antes de establecer el valor
+          const fechaInicioInput = document.getElementById("fechaInicio");
+          if (fechaInicioInput) {
+            fechaInicioInput.disabled = false;
+            fechaInicioInput.readOnly = false;
+            fechaInicioInput.value = fechaInicioFormateada;
+            fechaInicioInput.disabled = true; // Bloquear después de establecer el valor
+
+            console.log(
+              "🚗 Credi Ahorros Autos detectado - Fecha de inicio establecida a HOY:",
+              fechaInicioFormateada
+            );
+            console.log(
+              "🚗 Valor del input después de setear:",
+              fechaInicioInput.value
+            );
+          }
+
+          // Calcular fecha fin (215 semanas desde hoy)
+          const fechaFinCrediAhorros = new Date(hoyCrediAhorros);
+          fechaFinCrediAhorros.setDate(fechaFinCrediAhorros.getDate() + (215 * 7)); // 215 semanas = 215 * 7 días
+
+          const yearFin = fechaFinCrediAhorros.getFullYear();
+          const monthFin = (fechaFinCrediAhorros.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const dayFin = fechaFinCrediAhorros.getDate().toString().padStart(2, "0");
+          const fechaFinFormateada = `${yearFin}-${monthFin}-${dayFin}`;
+
+          const fechaFinInput = document.getElementById("fechaFin");
+          if (fechaFinInput) {
+            fechaFinInput.value = fechaFinFormateada;
+            console.log(
+              "🚗 Credi Ahorros Autos - Fecha fin calculada (215 semanas):",
+              fechaFinFormateada
+            );
+          }
+        }
+
         // ✅ NUEVO: Lógica específica para CREDI MOTOS (ID 22) - Fecha inicio = HOY
         if (parseInt(plan.idplan_financiamiento) === 22) {
           // Para CREDI MOTOS, establecer fecha de inicio como HOY
@@ -438,13 +508,13 @@ function selectPlan(idPlan) {
         $("#valorCuota").val(""); // Limpiar valor cuota
         $("#cuotas").val(""); // Limpiar cantidad de cuotas
         $("#tasaInteres").val(""); // Limpiar tasa de interés
-        // MODIFICADO: No limpiar fechaInicio si es MotosYa, CREDI MOTOS o CrediGo Autos Grupo 4
-        const planesNoLimpiarFecha = [22, 33, 38];
+        // MODIFICADO: No limpiar fechaInicio si es MotosYa, CREDI MOTOS, CrediGo Autos Grupo 4 o Credi Ahorros Autos
+        const planesNoLimpiarFecha = [22, 33, 38, 49];
         if (!planesNoLimpiarFecha.includes(parseInt(plan.idplan_financiamiento))) {
           $("#fechaInicio").val("");
           // No establecer disabled aquí, se manejará por manejarCambioFechaInicioPorDirector()
         } else {
-          const nombresPlan = {22: "CREDI MOTOS", 33: "MotosYa", 38: "CrediGo Autos Grupo 4"};
+          const nombresPlan = {22: "CREDI MOTOS", 33: "MotosYa", 38: "CrediGo Autos Grupo 4", 49: "Credi Ahorros Autos"};
           const planNombre = nombresPlan[parseInt(plan.idplan_financiamiento)] || "Plan Especial";
           console.log(`🚗 No limpiando fechaInicio para ${planNombre} en selectPlan`);
         }
@@ -502,6 +572,43 @@ function selectPlan(idPlan) {
           }
         }
 
+        // ✅ NUEVO: Aplicar lógica de Credi Ahorros Autos (ID 49) DESPUÉS de limpiar campos
+        if (parseInt(plan.idplan_financiamiento) === 49) {
+          // Para Credi Ahorros Autos, establecer fecha de inicio como HOY
+          const hoyCrediAhorros = new Date();
+          const year = hoyCrediAhorros.getFullYear();
+          const month = (hoyCrediAhorros.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const day = hoyCrediAhorros.getDate().toString().padStart(2, "0");
+          const fechaInicioFormateada = `${year}-${month}-${day}`;
+
+          // Establecer el valor y bloquearlo
+          $("#fechaInicio").val(fechaInicioFormateada).prop("disabled", true);
+
+          console.log(
+            "🚗 Credi Ahorros Autos - Fecha de inicio establecida a HOY después de limpiar:",
+            fechaInicioFormateada
+          );
+
+          // Calcular fecha fin (215 semanas desde hoy)
+          const fechaFinCrediAhorros = new Date(hoyCrediAhorros);
+          fechaFinCrediAhorros.setDate(fechaFinCrediAhorros.getDate() + (215 * 7)); // 215 semanas
+
+          const yearFin = fechaFinCrediAhorros.getFullYear();
+          const monthFin = (fechaFinCrediAhorros.getMonth() + 1)
+            .toString()
+            .padStart(2, "0");
+          const dayFin = fechaFinCrediAhorros.getDate().toString().padStart(2, "0");
+          const fechaFinFormateada = `${yearFin}-${monthFin}-${dayFin}`;
+
+          $("#fechaFin").val(fechaFinFormateada);
+          console.log(
+            "🚗 Credi Ahorros Autos - Fecha fin calculada (215 semanas):",
+            fechaFinFormateada
+          );
+        }
+
         $("#contenedorVehicular").empty();
         $("#contenedorFechas").empty();
         // Limpiar el input "Monto Recalculado" y ocultar su contenedor
@@ -522,7 +629,7 @@ function selectPlan(idPlan) {
         }
 
         // ✅ NUEVO: NO establecer cuota_inicial si es un plan con cuotas adelantadas
-        const planesConCuotasAdelantadas = [22, 38];
+        const planesConCuotasAdelantadas = [22, 38, 49];
         if (!planesConCuotasAdelantadas.includes(parseInt(plan.idplan_financiamiento))) {
           $("#cuotaInicial").val(plan.cuota_inicial);
         } else {
@@ -626,16 +733,18 @@ function selectPlan(idPlan) {
         }
 
         // Verificar si el plan tiene fecha_inicio y fecha_fin definidas // ✅ NUEVO
-        // Verificar si el plan tiene fecha_inicio y fecha_fin definidas O si es MotosYa
+        // Verificar si el plan tiene fecha_inicio y fecha_fin definidas O si es MotosYa O si es Credi Ahorros Autos
         if (
           (plan.fecha_inicio && plan.fecha_fin) ||
-          parseInt(plan.idplan_financiamiento) === 33
+          parseInt(plan.idplan_financiamiento) === 33 ||
+          parseInt(plan.idplan_financiamiento) === 49
         ) {
           // Para planes vehiculares normales, usar sus fechas
           if (
             plan.fecha_inicio &&
             plan.fecha_fin &&
-            parseInt(plan.idplan_financiamiento) !== 33
+            parseInt(plan.idplan_financiamiento) !== 33 &&
+            parseInt(plan.idplan_financiamiento) !== 49
           ) {
             $("#fechaInicio").val(plan.fecha_inicio).prop("disabled", true);
             $("#fechaFin").val(plan.fecha_fin);
@@ -648,7 +757,16 @@ function selectPlan(idPlan) {
           const esVehicular =
             plan.tipo_vehicular !== null && plan.tipo_vehicular !== "";
 
-          if (esVehicular || parseInt(plan.idplan_financiamiento) === 33) {
+          // 🔍 DEBUG: Log para verificar valores del plan 49
+          if (parseInt(plan.idplan_financiamiento) === 49) {
+            console.log("🔍 DEBUG Plan 49 - tipo_vehicular:", plan.tipo_vehicular);
+            console.log("🔍 DEBUG Plan 49 - esVehicular:", esVehicular);
+            console.log("🔍 DEBUG Plan 49 - fecha_inicio:", plan.fecha_inicio);
+            console.log("🔍 DEBUG Plan 49 - fecha_fin:", plan.fecha_fin);
+          }
+
+          // ✅ MODIFICADO: Incluir grupo 49 para mostrar "Vehículo Entregado"
+          if (esVehicular || parseInt(plan.idplan_financiamiento) === 33 || parseInt(plan.idplan_financiamiento) === 38 || parseInt(plan.idplan_financiamiento) === 49) {
             contenedorVehicular.html(`
       <label for="fechaIngreso">Fecha de Ingreso</label>
       <input type="date" class="form-control mb-3" id="fechaIngreso" value="" readonly required>
@@ -717,7 +835,7 @@ function selectPlan(idPlan) {
 
           // ✅ NUEVO: Reconfigurar cuotas adelantadas DESPUÉS de toda la lógica vehicular
           // Esto asegura que el campo mantenga su configuración correcta
-          const planesConCuotasAdelantadas = [22, 38];
+          const planesConCuotasAdelantadas = [22, 38, 49];
           if (planesConCuotasAdelantadas.includes(parseInt(plan.idplan_financiamiento))) {
             setTimeout(() => {
               console.log("🚗 Reconfigurando cuotas adelantadas después de lógica vehicular");
@@ -792,6 +910,14 @@ function selectPlan(idPlan) {
               console.log("bloqueo de inputs");
             }
           });
+
+          // ✅ NUEVO: NO bloquear frecuenciaPago para grupo 49 (Credi Ahorros Autos)
+          if (parseInt(plan.idplan_financiamiento) !== 49) {
+            // Solo bloquear frecuenciaPago si NO es grupo 49
+            // (El bloqueo ya se maneja en configurarFrecuenciaPago)
+          } else {
+            console.log("🚗 Grupo 49 - Manteniendo frecuenciaPago desbloqueada");
+          }
 
           // 👉 Verificar si es plan especial (llantas, aceite o baterías)
           if (esPlanLlantasAceiteBaterias(plan.nombre)) {
@@ -890,13 +1016,19 @@ function selectPlan(idPlan) {
         // Setear el valor de monto si existe, o dejar en blanco si es null
         $("#monto").val(plan.monto ? plan.monto : ""); // NUEVO
 
-        if (plan.frecuencia_pago.toLowerCase() === "mensual") {
+        // ✅ MODIFICADO: Solo calcular fechaFin si el plan tiene cantidad_cuotas definida Y es válida
+        if (plan.frecuencia_pago && plan.frecuencia_pago.toLowerCase() === "mensual" && plan.cantidad_cuotas && !isNaN(parseInt(plan.cantidad_cuotas))) {
           let fechaInicio = new Date(hoy);
           fechaInicio.setMonth(
             fechaInicio.getMonth() + parseInt(plan.cantidad_cuotas)
           );
           let fechaFin = fechaInicio.toISOString().split("T")[0];
           $("#fechaFin").val(fechaFin);
+          console.log("📅 Fecha fin calculada:", fechaFin);
+        } else {
+          // Para planes sin cantidad_cuotas definida (ej: SOAT), dejar fechaFin vacía
+          $("#fechaFin").val("");
+          console.log("📅 Plan sin cantidad_cuotas - Fecha fin vacía (edición manual)");
         }
 
         $("#fechaInicio")
@@ -942,6 +1074,10 @@ function selectPlan(idPlan) {
             // ✅ Para planes con fecha_inicio y fecha_fin definidas, NO recalcular
             // Las fechas ya están establecidas correctamente desde el plan
             console.log("✅ Plan con fechas definidas - NO recalculando cronograma");
+          } else if (parseInt(plan.idplan_financiamiento) === 49) {
+            // ✅ Para plan 49, NO llamar a calcularCronogramaDinamico aquí
+            // Se llamará después cuando el usuario interactúe con los campos
+            console.log("✅ Plan 49 - Esperando interacción del usuario para calcular cronograma");
           } else {
             calcularCronogramaDinamico();
           }
@@ -965,6 +1101,25 @@ function selectPlan(idPlan) {
           if (parseInt(plan.idplan_financiamiento) !== 33) {
             setTimeout(() => {
               verificarInputsVacios(); // Ejecutar la función si alguna fecha no está definida después de 3 segundos
+              
+              // 🚗 CRÍTICO: Para grupo 49, forzar desbloqueo de frecuenciaPago DESPUÉS de verificarInputsVacios
+              if (parseInt(plan.idplan_financiamiento) === 49) {
+                setTimeout(() => {
+                  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+                  if (frecuenciaSelect) {
+                    frecuenciaSelect.disabled = false;
+                    frecuenciaSelect.style.backgroundColor = "#ffffff";
+                    frecuenciaSelect.style.color = "#212529";
+                    frecuenciaSelect.style.cursor = "pointer";
+                    frecuenciaSelect.style.pointerEvents = "auto";
+                    frecuenciaSelect.classList.remove("disabled");
+                    console.log("🚗 FORZADO - Grupo 49 frecuenciaPago desbloqueada después de verificarInputsVacios");
+                  }
+                }, 100);
+                
+                // ❌ ELIMINADO: NO volver a llamar configurarFrecuenciaPago porque ya se llamó en la línea 306
+                // Esto estaba causando el bucle infinito
+              }
             }, 2000); // Retraso de 3 segundos
           } else {
             console.log("🏍️ No ejecutando verificarInputsVacios para MotosYa");
@@ -1370,10 +1525,10 @@ function seleccionarVariante(index) {
   const montoSinInteresesFormateado = variante.monto_sin_interes ? parseFloat(variante.monto_sin_interes).toFixed(2) : "";
   $("#montoSinIntereses").val(montoSinInteresesFormateado);
 
-  // ✅ NUEVO: Si es Plan 22 o 38, reconfigurar modo "Cuotas Adelantadas"
-  const planesConCuotasAdelantadas = [22, 38];
+  // ✅ NUEVO: Si es Plan 22, 38 o 49, reconfigurar modo "Cuotas Adelantadas"
+  const planesConCuotasAdelantadas = [22, 38, 49];
   if (planesConCuotasAdelantadas.includes(parseInt(variante.idplan_financiamiento)) && typeof configurarCuotasAdelantadasCrediMotos === 'function') {
-    const nombrePlan = parseInt(variante.idplan_financiamiento) === 22 ? "Plan 22" : "Plan 38";
+    const nombrePlan = parseInt(variante.idplan_financiamiento) === 22 ? "Plan 22" : parseInt(variante.idplan_financiamiento) === 38 ? "Plan 38" : "Plan 49";
     console.log(`🚗 Reconfigurando modo Cuotas Adelantadas para variante de ${nombrePlan}`);
     // Limpiar el valor antes de reconfigurar
     $("#cuotaInicial").val("");
@@ -1517,7 +1672,48 @@ function seleccionarVariante(index) {
       }
       calcularCronogramaDinamico();
     }, 1500); // Aumentar el delay para asegurar que todo esté listo
-  } else {
+  } 
+  // ✅ NUEVO: Para variantes de Credi Ahorros Autos (Plan 49), calcular fechas dinámicamente
+  else if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 49) {
+    // Asegurar que la fecha de inicio esté establecida
+    const fechaInicioInput = document.getElementById("fechaInicio");
+    const fechaFinInput = document.getElementById("fechaFin");
+    
+    if (!fechaInicioInput.value) {
+      const hoy = new Date();
+      const year = hoy.getFullYear();
+      const month = (hoy.getMonth() + 1).toString().padStart(2, "0");
+      const day = hoy.getDate().toString().padStart(2, "0");
+      const fechaInicioFormateada = `${year}-${month}-${day}`;
+      
+      fechaInicioInput.value = fechaInicioFormateada;
+      fechaInicioInput.disabled = true;
+      
+      console.log("🚗 Fecha inicio establecida:", fechaInicioFormateada);
+    }
+    
+    // Calcular fecha fin (215 semanas desde fecha inicio)
+    if (fechaInicioInput.value && !fechaFinInput.value) {
+      const fechaInicio = new Date(fechaInicioInput.value);
+      const fechaFin = new Date(fechaInicio);
+      fechaFin.setDate(fechaFin.getDate() + (215 * 7)); // 215 semanas
+      
+      const yearFin = fechaFin.getFullYear();
+      const monthFin = (fechaFin.getMonth() + 1).toString().padStart(2, "0");
+      const dayFin = fechaFin.getDate().toString().padStart(2, "0");
+      const fechaFinFormateada = `${yearFin}-${monthFin}-${dayFin}`;
+      
+      fechaFinInput.value = fechaFinFormateada;
+      console.log("🚗 Fecha fin calculada (215 semanas):", fechaFinFormateada);
+    }
+    
+    // ✅ CRÍTICO: Solo llamar a calcularCronogramaDinamico UNA VEZ con un setTimeout
+    setTimeout(() => {
+      console.log("🚗 Recalculando cronograma para variante Credi Ahorros Autos (215 semanas)");
+      calcularCronogramaDinamico();
+    }, 1500);
+  } 
+  else {
     // REEMPLAZAR el setTimeout existente por:
     setTimeout(() => {
       if (planGlobal && parseInt(planGlobal.idplan_financiamiento) === 41) {
@@ -1689,12 +1885,23 @@ function verificarInputsVacios() {
     camposMontoEspeciales.forEach((id) => {
       const input = document.getElementById(id);
       if (input) {
-        // MODIFICADO: Verificar si es CrediGo Autos Grupo 4 (ID 38) o IncaMotos (ID 44) con variante
+        // MODIFICADO: Verificar si es CrediGo Autos Grupo 4 (ID 38), IncaMotos (ID 44), o SOAT (ID 48)
         const esCrediGoGrupo4 = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 38;
         const esIncaMotos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 44;
+        const esSOAT = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 48; // 🔹 NUEVO
         const tieneVarianteSeleccionada = window.varianteSeleccionadaId || planGlobal?.idgrupos_variantes;
         
-        if (id === "montoSinIntereses" && (esCrediGoGrupo4 || esIncaMotos)) {
+        // 🔹 NUEVO: Para SOAT, habilitar el campo "monto" (precio editable)
+        if (id === "monto" && esSOAT) {
+          input.style.backgroundColor = "#ffffff";
+          input.style.color = "#212529";
+          input.style.border = "1px solid #ced4da";
+          input.disabled = false;
+          input.readOnly = false;
+          input.style.pointerEvents = "auto";
+          input.style.cursor = "text";
+          console.log("✅ Campo monto habilitado para plan SOAT (ID 48)");
+        } else if (id === "montoSinIntereses" && (esCrediGoGrupo4 || esIncaMotos)) {
           // ✅ Para montoSinIntereses en planes con variantes (38 o 44), SIEMPRE mantener habilitado
           input.style.backgroundColor = "#ffffff";
           input.style.color = "#212529";
@@ -1723,14 +1930,31 @@ function verificarInputsVacios() {
     if (input) {
       console.log(`🔍 Procesando campo: ${id}`);
 
+      // 🔹 NUEVO: Verificar si es plan SOAT (ID 48)
+      const esSOAT = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 48;
+
       // NUEVO COMPORTAMIENTO:
       // - SIEMPRE bloquear todos los campos por defecto
       // - Solo si es plan especial Y es el campo 'cuotas', entonces habilitarlo
+      // - 🔹 NUEVO: Si es plan SOAT (ID 48), habilitar cuotas y valorCuota
       if (esPlanEspecial && (id === "cuotas" || id === "cuotaInicial")) {
         console.log(
           `🔓 HABILITANDO campo: ${id} (es plan especial y es cuotas)`
         );
         // Habilitar solo el campo cuotas en planes especiales
+        input.style.backgroundColor = "#ffffff";
+        input.style.color = "#333333";
+        input.style.border = "1px solid #ced4da";
+        input.disabled = false;
+        input.readOnly = false;
+        input.classList.remove("disabled-input");
+        input.style.pointerEvents = "auto";
+        input.style.cursor = "text";
+        input.removeAttribute("disabled");
+        input.classList.remove("disabled");
+      } else if (esSOAT && (id === "cuotas" || id === "valorCuota")) {
+        // 🔹 NUEVO: Habilitar cuotas y valorCuota para plan SOAT
+        console.log(`🔓 HABILITANDO campo: ${id} (es plan SOAT - ID 48)`);
         input.style.backgroundColor = "#ffffff";
         input.style.color = "#333333";
         input.style.border = "1px solid #ced4da";
@@ -1841,7 +2065,12 @@ function verificarInputsVacios() {
   }
 
   // Limpiar contenedores extra
-  $("#contenedorVehicular").empty();
+  // ✅ NUEVO: NO limpiar contenedorVehicular para grupo 49 (Credi Ahorros Autos)
+  if (planGlobal && parseInt(planGlobal.idplan_financiamiento) !== 49) {
+    $("#contenedorVehicular").empty();
+  } else {
+    console.log("🚗 Grupo 49 - Manteniendo contenedorVehicular con Vehículo Entregado");
+  }
   $("#contenedorFechas").empty();
 
   // Llamar a la función de cálculo del monto
@@ -1911,13 +2140,22 @@ function checkSelection() {
       camposMontoEspeciales.forEach((id) => {
         const input = document.getElementById(id);
         if (input) {
-          input.style.backgroundColor = "#e9ecef";
-          input.style.color = "#6c757d";
-          input.style.border = "1px solid #ced4da";
-          input.disabled = true;
-          input.readOnly = true;
-          input.style.pointerEvents = "none";
-          input.style.cursor = "not-allowed";
+          // 🔹 NUEVO: No bloquear el campo "monto" si es plan SOAT (ID 48)
+          const esSOAT = parseInt(selectedValue) === 48;
+          
+          if (id === "monto" && esSOAT) {
+            // Para SOAT, mantener el campo monto habilitado
+            console.log("✅ Campo monto NO bloqueado para plan SOAT (ID 48) en checkSelection");
+          } else {
+            // Para otros planes, bloquear normalmente
+            input.style.backgroundColor = "#e9ecef";
+            input.style.color = "#6c757d";
+            input.style.border = "1px solid #ced4da";
+            input.disabled = true;
+            input.readOnly = true;
+            input.style.pointerEvents = "none";
+            input.style.cursor = "not-allowed";
+          }
         }
       });
     }
@@ -2459,25 +2697,46 @@ function configurarFrecuenciaPago(planOVariante) {
 
   // Verificar si es vehicular (tiene tipo_vehicular con valor)
   const esVehicular = planOVariante && planOVariante.tipo_vehicular !== null;
+  
+  // ✅ NUEVO: Verificar si es Credi Ahorros Autos (ID 49) que debe funcionar como grupo 38
+  const esCrediAhorrosAutos = planOVariante && parseInt(planOVariante.idplan_financiamiento) === 49;
 
-  if (esVehicular) {
-    // Es vehicular: desbloquear el select
+  // 🔍 DEBUG: Log para plan 49
+  if (esCrediAhorrosAutos) {
+    console.log("🔍 DEBUG configurarFrecuenciaPago - Plan 49 detectado");
+    console.log("🔍 DEBUG - tipo_vehicular:", planOVariante.tipo_vehicular);
+    console.log("🔍 DEBUG - esVehicular:", esVehicular);
+    console.log("🔍 DEBUG - esCrediAhorrosAutos:", esCrediAhorrosAutos);
+  }
+
+  if (esVehicular || esCrediAhorrosAutos) {
+    // Es vehicular o Credi Ahorros Autos: desbloquear el select
     frecuenciaSelect.disabled = false;
     frecuenciaSelect.style.backgroundColor = "#ffffff";
     frecuenciaSelect.style.color = "#212529";
     frecuenciaSelect.style.cursor = "pointer";
     frecuenciaSelect.style.pointerEvents = "auto";
+    frecuenciaSelect.classList.remove("disabled");
+    
+    // 🔍 DEBUG: Log para confirmar desbloqueo
+    if (esCrediAhorrosAutos) {
+      console.log("✅ DESBLOQUEADO - Frecuencia de pago para plan 49 (Credi Ahorros Autos)");
+    }
 
-    console.log(
-      "🔓 Frecuencia de pago desbloqueada para tipo vehicular:",
-      planOVariante.tipo_vehicular
-    );
+    if (esCrediAhorrosAutos) {
+      console.log("🔓 Frecuencia de pago desbloqueada para Credi Ahorros Autos (ID 49)");
+    } else {
+      console.log(
+        "🔓 Frecuencia de pago desbloqueada para tipo vehicular:",
+        planOVariante.tipo_vehicular
+      );
+    }
 
     // Agregar event listener para recalcular cuando cambie la frecuencia
     frecuenciaSelect.removeEventListener("change", manejarCambioFrecuencia); // Evitar duplicados
     frecuenciaSelect.addEventListener("change", manejarCambioFrecuencia);
   } else {
-    // No es vehicular: mantener bloqueado
+    // No es vehicular ni Credi Ahorros Autos: mantener bloqueado
     frecuenciaSelect.disabled = true;
     frecuenciaSelect.style.backgroundColor = "#e9ecef";
     frecuenciaSelect.style.color = "#6c757d";
@@ -2625,102 +2884,23 @@ function manejarCambioFrecuencia() {
   planGlobal.cantidad_cuotas = nuevasCuotasRestantes;
   planGlobal.monto_cuota = nuevoValorCuota;
 
-  // Recalcular fechas (resto del código igual)
-  const fechaIngresoElement = document.getElementById("fechaIngreso");
-  if (fechaIngresoElement && planGlobal.fecha_inicio) {
-    const fechaIngreso = fechaIngresoElement.value;
-    let fechasVencimiento = [];
-    const fechaIngresoObj = new Date(fechaIngreso + "T00:00:00");
-    let primeraFechaVencimiento = new Date(fechaIngresoObj);
-
-    if (frecuenciaSeleccionada === "semanal") {
-      const fechaOriginalIngreso = new Date(fechaIngresoObj);
-      primeraFechaVencimiento = obtenerProximoLunes(fechaIngresoObj);
-
-      if (
-        primeraFechaVencimiento.getTime() !== fechaOriginalIngreso.getTime()
-      ) {
-        const diasMovidos = Math.floor(
-          (primeraFechaVencimiento - fechaOriginalIngreso) /
-            (1000 * 60 * 60 * 24)
-        );
-        if (diasMovidos > 0) {
-          console.log("📅 Fecha ajustada al lunes, días movidos:", diasMovidos);
-        }
-      }
-    }
-
-    // ✅ ELIMINADO: Ya no forzamos día 30 para plan 41
-    // if (
-    //   planGlobal &&
-    //   parseInt(planGlobal.idplan_financiamiento) === 41 &&
-    //   frecuenciaSeleccionada === "mensual"
-    // ) {
-    //   // Para financiamiento de celulares (ID 41): primera cuota día 30 del mes actual
-    //   const añoActual = primeraFechaVencimiento.getFullYear();
-    //   const mesActual = primeraFechaVencimiento.getMonth();
-    //   primeraFechaVencimiento = new Date(añoActual, mesActual, 30);
-
-    //   // Si es febrero, ajustar al día 28
-    //   if (mesActual === 1) {
-    //     const esBisiesto = new Date(añoActual, 1, 29).getMonth() === 1;
-    //     primeraFechaVencimiento.setDate(esBisiesto ? 29 : 28);
-    //   }
-
-    //   console.log(
-    //     "📱 FINANCIAMIENTO CELULARES - Primera fecha corregida al día 30 del mes actual:",
-    //     primeraFechaVencimiento.toLocaleDateString()
-    //   );
-    // }
-
-    fechasVencimiento.push(primeraFechaVencimiento);
-
-    for (let i = 1; i < nuevasCuotasRestantes; i++) {
-      let fechaAnterior = fechasVencimiento[i - 1];
-      let nuevaFecha = new Date(fechaAnterior);
-
-      if (frecuenciaSeleccionada === "semanal") {
-        nuevaFecha.setDate(nuevaFecha.getDate() + 7);
-      } else {
-        // ✅ Para TODOS los planes mensuales: avanzar 1 mes y mantener el día de la fecha de inicio
-        const diaInicio = fechasVencimiento[0].getDate();
-        nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-        nuevaFecha.setDate(diaInicio);
-
-        // Verificar si el día existe en el mes
-        const mesEsperado = (fechaAnterior.getMonth() + 1) % 12;
-        if (nuevaFecha.getMonth() !== mesEsperado) {
-          // El día no existe, usar el último día del mes
-          nuevaFecha.setDate(0);
-          nuevaFecha.setMonth(nuevaFecha.getMonth() + 1);
-          nuevaFecha.setDate(0);
-          console.log(
-            `⚠️ Día ${diaInicio} no existe en este mes, usando último día`
-          );
-        }
-      } // ← Cierra el else de "no es semanal"
-
-      fechasVencimiento.push(new Date(nuevaFecha));
-    }
-
-    document.getElementById("contenedorFechas").innerHTML = "";
-    mostrarFechasVencimiento(
-      fechasVencimiento,
-      nuevoValorCuota,
-      tipoMoneda,
-      numeroCuotaOriginal
-    );
-
-    console.log(
-      "✅ Cronograma recalculado con número inicial:",
-      numeroCuotaOriginal
-    );
+  // ✅ CRÍTICO: Remover event listener temporalmente para evitar bucle infinito
+  const frecuenciaSelect = document.getElementById("frecuenciaPago");
+  if (frecuenciaSelect) {
+    frecuenciaSelect.removeEventListener("change", manejarCambioFrecuencia);
   }
 
-  // ✅ Desactivar bandera después de un pequeño delay para que calcularFinanciamiento() la detecte
+  // ✅ NUEVO: Recalcular cronograma dinámico para que use la nueva frecuencia
+  console.log("🔄 Recalculando cronograma con nueva frecuencia:", frecuenciaSeleccionada);
+  calcularCronogramaDinamico();
+
+  // ✅ CRÍTICO: Volver a agregar event listener después de un delay
   setTimeout(() => {
+    if (frecuenciaSelect) {
+      frecuenciaSelect.addEventListener("change", manejarCambioFrecuencia);
+    }
     estaProcesandoCambioFrecuencia = false;
-  }, 100);
+  }, 500);
 }
 
 // NUEVA FUNCIÓN: Limpiar valores originales cuando se cambia de plan
@@ -3221,8 +3401,8 @@ function recalcularPorCambioCuotaInicial() {
       return; // Salir después del recálculo específico para Grupo 4
     }
 
-    // ✅ NUEVO: Excepción para Plan 22 (CREDI MOTOS) y Plan 38 (CrediGo Autos Grupo 4) en modo "Cuotas Adelantadas"
-    const planesConCuotasAdelantadas = [22, 38];
+    // ✅ NUEVO: Excepción para Plan 22 (CREDI MOTOS), Plan 38 (CrediGo Autos Grupo 4) y Plan 49 (Credi Ahorros Autos) en modo "Cuotas Adelantadas"
+    const planesConCuotasAdelantadas = [22, 38, 49];
     if (planesConCuotasAdelantadas.includes(idPlanActual)) {
       const cuotaInicialInput = document.getElementById("cuotaInicial");
       const modoAdelantadas = cuotaInicialInput?.getAttribute('data-modo-cuotas-adelantadas');
@@ -3950,10 +4130,10 @@ function recalcularFechaInicioPagosYango() {
     }
     
     try {
-        // Calcular fecha de inicio de pagos: fecha_entrega + 7 días
+        // Calcular fecha de inicio de pagos: fecha_entrega + 15 días
         const fechaEntregaObj = new Date(fechaEntrega + 'T00:00:00');
         const fechaInicioPagos = new Date(fechaEntregaObj);
-        fechaInicioPagos.setDate(fechaInicioPagos.getDate() + 7);
+        fechaInicioPagos.setDate(fechaInicioPagos.getDate() + 15); // ✅ MODIFICADO: Cambiar de 7 a 15 días
         
         // Formatear fecha para el input
         const fechaFormateada = fechaInicioPagos.toISOString().split('T')[0];
@@ -4017,7 +4197,7 @@ function mostrarNotificacionCrediYango(fechaEntrega, fechaInicioPagos) {
                 
                 <div style="background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin-top: 10px;">
                     <small><i class="fas fa-info-circle"></i> 
-                    Los pagos comenzarán automáticamente 7 días después de la entrega del vehículo.</small>
+                    Los pagos comenzarán automáticamente 15 días después de la entrega del vehículo.</small>
                 </div>
             </div>
         `,
@@ -4098,7 +4278,28 @@ function aplicarFiltroCategoriaPorPlan(idPlan) {
         33: 'MOTO LINEAL',          // MotosYa
     };
 
+    // ✅ NUEVO: Mapeo especial para planes que filtran por id_plan en lugar de categoría
+    const MAPEO_PLANES_POR_ID = {
+        48: 48,  // FINANCIAMIENTO SOAT - Filtrar por id_plan
+    };
+
     const idPlanNum = parseInt(idPlan);
+    
+    // ✅ NUEVO: Verificar primero si es un plan que filtra por id_plan
+    if (MAPEO_PLANES_POR_ID[idPlanNum]) {
+        console.log(`🔍 Plan ${idPlanNum} (SOAT) - Aplicando filtro por id_plan: ${MAPEO_PLANES_POR_ID[idPlanNum]}`);
+        currentPage = 1;
+
+        // Verificar si la función existe antes de llamarla
+        if (typeof cargarProductosPorPlan === 'function') {
+            cargarProductosPorPlan(MAPEO_PLANES_POR_ID[idPlanNum]);
+        } else {
+            console.warn('⚠️ Función cargarProductosPorPlan no encontrada');
+        }
+        return; // Salir de la función
+    }
+
+    // Filtro por categoría (lógica existente)
     const categoriaFiltro = MAPEO_PLANES_CATEGORIAS[idPlanNum];
 
     if (categoriaFiltro) {

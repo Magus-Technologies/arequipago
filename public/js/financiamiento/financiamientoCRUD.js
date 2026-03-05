@@ -194,11 +194,13 @@ function saveFinanciamiento(event) {
   const esPlanPersonalizado = (grupoFinanciamiento === '42' || grupoFinanciamiento === 42);
   const esCrediYango = (grupoFinanciamiento === '45' || grupoFinanciamiento === 45);
   const esPlanRevisionTecnica = (grupoFinanciamiento === '47' || grupoFinanciamiento === 47);
+  const esPlanSOAT = (grupoFinanciamiento === '48' || grupoFinanciamiento === 48);
+  const esCrediAhorrosAutos = (grupoFinanciamiento === '49' || grupoFinanciamiento === 49);
 
   const idProducto = productoSeleccionado?.id;
 
-  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado, CrediYango o Revisión Técnica
-  if (!esPlanPersonalizado && !esCrediYango && !esPlanRevisionTecnica && !idProducto) {
+  // 🔹 MODIFICADO: Solo validar producto si NO es plan personalizado, CrediYango, Revisión Técnica, SOAT o Credi Ahorros Autos
+  if (!esPlanPersonalizado && !esCrediYango && !esPlanRevisionTecnica && !esPlanSOAT && !esCrediAhorrosAutos && !idProducto) {
     Swal.fire("Error", "Debe seleccionar un producto.", "error");
     return;
   }
@@ -355,6 +357,83 @@ function saveFinanciamiento(event) {
     if (!cuotaInicial || cuotaInicial === '' || cuotaInicial === '0' || cuotaInicial === 0) {
       console.log('🔧 Plan 47 (Revisión Técnica) - Cuota inicial establecida en 0 (sin inicial)');
     }
+  } else if (esPlanSOAT) {
+    // 🚗 Para Plan 48 (SOAT), validar campos específicos con cuota inicial OPCIONAL
+    const camposSOAT = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Monto total': montoTotal,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposSOAT)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "SOAT - Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // 🚗 NUEVO: Para SOAT, establecer cantidad de producto en 1 por defecto
+    if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
+      cantidadProducto = '1';
+      console.log('🚗 Plan SOAT (ID 48) - Cantidad de producto establecida en 1');
+    }
+
+    // 🚗 NUEVO: Para SOAT, cuota inicial es OPCIONAL (puede ser 0)
+    // No necesitamos reasignar, solo validar que puede estar vacía
+    console.log('🚗 Plan SOAT (ID 48) - Cuota inicial es opcional, valor actual:', cuotaInicial || 0);
+  } else if (esCrediAhorrosAutos) {
+    // 🚗 Para Plan 49 (Credi Ahorros Autos), validar sin exigir cantidad de producto ni cuota inicial
+    const camposCrediAhorros = {
+      'Grupo de financiamiento': grupoFinanciamiento,
+      'Monto total': montoTotal,
+      'Cantidad de cuotas': cuotas,
+      'Estado': estado,
+      'Fecha de inicio': fechaInicio,
+      'Fecha de fin': fechaFin,
+      'Fecha y hora actual': fechaHoraActual,
+      'Número de documento': numeroDocumento
+    };
+
+    const camposFaltantes = [];
+    for (const [nombre, valor] of Object.entries(camposCrediAhorros)) {
+      if (!valor || valor === '' || valor === '0') {
+        camposFaltantes.push(nombre);
+      }
+    }
+
+    if (camposFaltantes.length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Credi Ahorros Autos - Campos obligatorios faltantes",
+        html: `<p>Por favor completa los siguientes campos:</p><ul style="text-align: left;">${camposFaltantes.map(c => `<li>${c}</li>`).join('')}</ul>`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    // Para Credi Ahorros Autos, cantidad de producto en 1 por defecto
+    if (!cantidadProducto || cantidadProducto === '' || cantidadProducto === '0') {
+      cantidadProducto = '1';
+      console.log('🚗 Credi Ahorros Autos - Cantidad de producto establecida en 1');
+    }
+    
+    // 🚗 NUEVO: Para Credi Ahorros Autos, establecer producto ID 37 por defecto (igual que CrediYango)
+    console.log('🚗 Credi Ahorros Autos - Se asignará producto ID 37 por defecto');
   } else {
     // ✅ MEJORADO: Validaciones detalladas para otros planes
     const camposObligatorios = {
@@ -410,6 +489,13 @@ function saveFinanciamiento(event) {
   const fechaLimite = new Date(fechaHoy);
   fechaLimite.setDate(fechaHoy.getDate() - 1); // Restar un día
 
+  // 🚗 CRÍTICO: Para grupo 49, asignar producto ID 37 si no hay producto seleccionado
+  let idProductoFinal = idProducto;
+  if (esCrediAhorrosAutos && !idProductoFinal) {
+    idProductoFinal = 37;
+    console.log("🚗 Grupo 49 - Asignando producto ID 37 por defecto (no hay producto seleccionado)");
+  }
+
   const procesarGuardadoFinanciamiento = function (idConductor, idCliente) {
     // Modificado: Función expresada para acceder a las variables del ámbito
 
@@ -417,6 +503,10 @@ function saveFinanciamiento(event) {
     const numeroCorporativoCapturado = typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null;
     console.log("📤 Preparando envío - Número corporativo:", numeroCorporativoCapturado);
     console.log("📤 Grupo financiamiento:", grupoFinanciamiento);
+    console.log("📤 ID Producto final:", idProductoFinal); // 🚗 NUEVO LOG
+
+    // ✅ CORREGIDO: Definir id_variante desde window.varianteSeleccionadaId
+    const idVariante = window.varianteSeleccionadaId || null;
 
     // Enviar los datos al controlador para guardar el financiamiento
     $.ajax({
@@ -425,7 +515,7 @@ function saveFinanciamiento(event) {
       data: {
         id_conductor: idConductor,
         id_cliente: idCliente, // Nueva propiedad
-        id_producto: idProducto, // Ahora puede acceder a la variable idProducto del ámbito superior
+        id_producto: idProductoFinal, // 🚗 MODIFICADO: Usar idProductoFinal en lugar de idProducto
         valorCuota: valorCuota,
         monto_cuota: valorCuota, // NUEVO: Agregar monto_cuota para planes personalizados
         codigo_asociado: codigoAsociado,
@@ -456,6 +546,20 @@ function saveFinanciamiento(event) {
         fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
         placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
         numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+        id_variante: idVariante, // ✅ CORREGIDO: Enviar id_variante
+        // ✅ NUEVO: Datos para actualizar código de asociado si fue generado automáticamente
+        es_codigo_nuevo: (function() {
+          const inputCodigo = document.getElementById('codigoAsociado');
+          return inputCodigo ? (inputCodigo.dataset.esCodigoNuevo === 'true') : false;
+        })(),
+        tipo_registro_codigo: (function() {
+          const inputCodigo = document.getElementById('codigoAsociado');
+          return inputCodigo ? (inputCodigo.dataset.tipoRegistro || null) : null;
+        })(),
+        id_registro_codigo: (function() {
+          const inputCodigo = document.getElementById('codigoAsociado');
+          return inputCodigo ? (inputCodigo.dataset.idRegistro || null) : null;
+        })(),
         // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas
         cantidad_cuotas_adelantadas: (function() {
           const input = document.getElementById("cuotaInicial");
@@ -547,6 +651,9 @@ function saveFinanciamiento(event) {
       if (response && response.success) {
         const idConductor = response.id_conductor;
 
+        // ✅ CORREGIDO: Definir id_variante desde window.varianteSeleccionadaId
+        const idVariante = window.varianteSeleccionadaId || null;
+
         // Enviar los datos al controlador para guardar el financiamiento
         $.ajax({
           url: _URL + "/guardarFinanciamiento",
@@ -554,7 +661,7 @@ function saveFinanciamiento(event) {
           data: {
             id_conductor: idConductor,
             id_cliente: null, // AGREGADO: Enviar id_cliente como null cuando hay conductor
-            id_producto: idProducto,
+            id_producto: idProductoFinal, // 🚗 MODIFICADO: Usar idProductoFinal
             valorCuota: valorCuota,
             codigo_asociado: codigoAsociado,
             grupo_financiamiento: grupoFinanciamiento,
@@ -581,6 +688,7 @@ function saveFinanciamiento(event) {
             fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
             placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
             numero_corporativo: typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
+            id_variante: idVariante, // ✅ CORREGIDO: Enviar id_variante
             // ✅ NUEVO: Para Plan 22, enviar la cantidad de cuotas adelantadas (SEGUNDA LLAMADA AJAX)
             cantidad_cuotas_adelantadas: (function() {
               const input = document.getElementById("cuotaInicial");
@@ -763,6 +871,7 @@ function saveFinanciamientoVehicular() {
   const grupoFinanciamientoActual = document.getElementById("grupo").value;
   const esPlanPersonalizado = (grupoFinanciamientoActual === '42' || grupoFinanciamientoActual === 42);
   const esPlanRevisionTecnica = (grupoFinanciamientoActual === '47' || grupoFinanciamientoActual === 47);
+  const esCrediAhorrosAutos = (grupoFinanciamientoActual === '49' || grupoFinanciamientoActual === 49);
 
   // 🔹 Declarar entregarSiElement ANTES para que esté disponible en todo el scope
   const entregarSiElement = document.getElementById("entregarSi");
@@ -770,9 +879,10 @@ function saveFinanciamientoVehicular() {
 
   let idProducto = "No disponible"; // ✅ Valor por defecto si el radio "No" está marcado
 
-  // 🔹 MODIFICADO: Si es plan personalizado o Revisión Técnica, no requerir producto vehicular
-  if (esPlanPersonalizado || esPlanRevisionTecnica) {
+  // 🔹 MODIFICADO: Si es plan personalizado, Revisión Técnica o Credi Ahorros Autos, no requerir producto vehicular
+  if (esPlanPersonalizado || esPlanRevisionTecnica || esCrediAhorrosAutos) {
     idProducto = 37; // ID genérico para planes personalizados (ajustar según necesidad)
+    console.log(`🚗 Plan ${grupoFinanciamientoActual} - Asignando producto ID 37 por defecto`);
   } else {
     // Verificar si existen los elementos de vehículo entregado (solo para planes vehiculares)
 
@@ -794,6 +904,10 @@ function saveFinanciamientoVehicular() {
         ); // ✅ Mostrar alerta si el precio es inválido
         return; // ✅ Salir de la función si el precio no es válido
       }
+    } else if (entregarNoElement && entregarNoElement.checked) {
+      // ✅ NUEVO: Si "No" está marcado, asignar producto ID 37 (vehículo no entregado)
+      idProducto = 37;
+      console.log("🚗 Vehículo NO entregado - Asignando producto ID 37");
     } else if (!entregarSiElement) {
       // Para planes no vehiculares (como corporativo), usar producto seleccionado si existe
       if (productoSeleccionado && productoSeleccionado.id) {
@@ -810,11 +924,13 @@ function saveFinanciamientoVehicular() {
 
   // Solo validar vehículo entregado si los elementos existen (es decir, si es un plan vehicular)
   // Y NO es plan personalizado NI Revisión Técnica
+  // Y NO es MotosYa (33) NI Credi Ahorros Autos (49)
+  const planesNoValidarEntrega = ["33", "49"];
   if (
     !esPlanPersonalizado &&
     !esPlanRevisionTecnica &&
     entregarSiElement && entregarNoElement &&
-    grupoFinanciamiento !== "33" &&
+    !planesNoValidarEntrega.includes(grupoFinanciamiento) &&
     !entregarSiElement.checked &&
     !entregarNoElement.checked
   ) {

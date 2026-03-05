@@ -105,6 +105,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                         <th>Recibido</th>
                         <th>Estado</th>
                         <th>Canal</th>
+                        <th>Facturación</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -130,6 +131,87 @@ $id_rol = $_SESSION['id_rol'] ?? null;
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Facturar -->
+<div class="modal fade" id="modalFacturar" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Generar Factura/Boleta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formFacturar">
+                    <input type="hidden" id="facturar_id_pago" name="id_pago">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-user me-2"></i>Datos del Cliente</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">Cliente:</th><td id="facturar_cliente"></td></tr>
+                                <tr><th>DNI/RUC:</th><td id="facturar_dni"></td></tr>
+                                <tr><th>Código:</th><td id="facturar_codigo"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-money-bill me-2"></i>Datos del Pago</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">N° Trace:</th><td id="facturar_trace"></td></tr>
+                                <tr><th>Monto:</th><td id="facturar_monto"></td></tr>
+                                <tr><th>Fecha Pago:</th><td id="facturar_fecha_pago"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-file-alt me-1"></i>Tipo de Documento *</label>
+                            <select class="form-control" name="tipo_doc" id="facturar_tipo_doc" required onchange="actualizarSerieNumero()">
+                                <option value="1">Boleta de Venta</option>
+                                <option value="2">Factura</option>
+                            </select>
+                            <small class="text-muted">Boleta para DNI, Factura para RUC</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-hashtag me-1"></i>Serie - Número</label>
+                            <input type="text" class="form-control" id="facturar_serie_numero" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Serie y número que se generará</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar me-1"></i>Fecha de Emisión *</label>
+                            <input type="date" class="form-control" name="fecha_emision" id="facturar_fecha_emision" required>
+                            <small class="text-muted">Hasta 5 días atrás permitido</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-align-left me-1"></i>Descripción del Servicio *</label>
+                        <textarea class="form-control" name="descripcion" id="facturar_descripcion" rows="3" required></textarea>
+                        <small class="text-muted">Esta descripción aparecerá en el comprobante</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> La factura se generará pero NO se enviará automáticamente a SUNAT. 
+                        Podrás enviarla desde la lista de ventas.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarFacturacion()">
+                    <i class="fas fa-file-invoice me-1"></i> Generar Factura
+                </button>
             </div>
         </div>
     </div>
@@ -383,6 +465,21 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
             const simboloMoneda = rec.moneda === 'PEN' ? 'S/ ' : '$ ';
 
+            // Badge de facturación
+            let facturacionBadge = '';
+            let botonFacturar = '';
+            
+            if (rec.facturado == 1) {
+                facturacionBadge = '<span class="badge bg-success" title="Facturado el ' + formatearFecha(rec.fecha_facturacion) + '"><i class="fas fa-check-circle me-1"></i>Facturado</span>';
+            } else if (rec.estado.toUpperCase() === 'PAGADO') {
+                facturacionBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendiente</span>';
+                botonFacturar = `<button class="btn btn-sm btn-warning" onclick="abrirModalFacturar(${rec.id})" title="Generar Factura">
+                    <i class="fas fa-file-invoice"></i>
+                </button>`;
+            } else {
+                facturacionBadge = '<span class="badge bg-secondary">No aplica</span>';
+            }
+
             const row = `
                 <tr>
                     <td></td>
@@ -398,10 +495,12 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     <td class="text-end text-success"><strong>${simboloMoneda}${formatearMonto(rec.monto_recibido)}</strong></td>
                     <td>${estadoBadge}</td>
                     <td>${canales[rec.canal] || 'Desconocido'}</td>
+                    <td>${facturacionBadge}</td>
                     <td>
-                        <button class="btn btn-sm btn-info" onclick="verDetalle(${rec.id})">
+                        <button class="btn btn-sm btn-info" onclick="verDetalle(${rec.id})" title="Ver Detalle">
                             <i class="fas fa-eye"></i>
                         </button>
+                        ${botonFacturar}
                     </td>
                 </tr>
             `;
@@ -553,6 +652,56 @@ $id_rol = $_SESSION['id_rol'] ?? null;
             ? '<span class="badge bg-success">Pagada</span>'
             : '<span class="badge bg-warning">Pendiente</span>';
 
+        // Información de factura (si existe)
+        let facturaHTML = '';
+        if (detalle.facturado == 1 && detalle.id_venta) {
+            const estadoSunat = detalle.factura_enviado_sunat == 1
+                ? '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Enviado a SUNAT</span>'
+                : '<span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pendiente envío</span>';
+            
+            facturaHTML = `
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6 class="text-success"><i class="fas fa-file-invoice me-2"></i>Información de Facturación</h6>
+                        <div class="alert alert-success mb-0">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr>
+                                    <th width="30%">Comprobante:</th>
+                                    <td><strong>${detalle.factura_tipo_abrev || 'N/A'} ${detalle.factura_serie}-${detalle.factura_numero}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td>${detalle.factura_tipo_nombre || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Emisión:</th>
+                                    <td>${formatearFecha(detalle.factura_fecha)}</td>
+                                </tr>
+                                <tr>
+                                    <th>Monto:</th>
+                                    <td>${simbolo}${formatearMonto(detalle.factura_total || 0)}</td>
+                                </tr>
+                                <tr>
+                                    <th>Estado SUNAT:</th>
+                                    <td>${estadoSunat}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha Facturación:</th>
+                                    <td>${detalle.fecha_facturacion ? formatearHora(detalle.fecha_facturacion) : 'N/A'}</td>
+                                </tr>
+                            </table>
+                            <div class="mt-2">
+                                <a href="${_URL}/ventas" target="_blank" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-external-link-alt me-1"></i>Ver en Módulo de Ventas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         const contenido = `
             <div class="row">
                 <div class="col-md-6">
@@ -625,6 +774,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     </table>
                 </div>
             </div>
+            ${facturaHTML}
         `;
 
         document.getElementById('contenidoDetalle').innerHTML = contenido;
@@ -677,5 +827,177 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
     function formatearMonto(monto) {
         return parseFloat(monto || 0).toFixed(2);
+    }
+
+    // ========== FUNCIONES DE FACTURACIÓN ==========
+
+    // Actualizar serie y número según tipo de documento
+    function actualizarSerieNumero() {
+        const tipoDoc = $('#facturar_tipo_doc').val();
+        
+        $.ajax({
+            url: _URL + '/ajs/recaudaciones/serie-numero',
+            type: 'POST',
+            data: { tipo_doc: tipoDoc },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#facturar_serie_numero').val(response.serie + ' - ' + response.numero);
+                } else {
+                    $('#facturar_serie_numero').val('Error al obtener');
+                }
+            },
+            error: function() {
+                $('#facturar_serie_numero').val('Error al obtener');
+            }
+        });
+    }
+
+    // Abrir modal para facturar un pago
+    function abrirModalFacturar(idPago) {
+        console.log('Abriendo modal de facturación para pago ID:', idPago);
+
+        // Obtener detalle del pago
+        $.ajax({
+            url: _URL + '/ajs/recaudaciones/detalle',
+            type: 'POST',
+            data: { id: idPago },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    const detalle = data.data;
+                    const simbolo = detalle.moneda === 'PEN' ? 'S/ ' : '$ ';
+
+                    // Llenar datos del modal
+                    $('#facturar_id_pago').val(idPago);
+                    $('#facturar_cliente').text(detalle.nombre_cliente);
+                    $('#facturar_dni').text(detalle.dni_cliente);
+                    $('#facturar_codigo').text(detalle.codigo_asociado || 'N/A');
+                    $('#facturar_trace').text(detalle.numero_trace);
+                    $('#facturar_monto').text(simbolo + formatearMonto(detalle.monto_recibido));
+                    $('#facturar_fecha_pago').text(formatearFecha(detalle.fecha_pago));
+
+                    // Configurar tipo de documento según DNI/RUC
+                    const tipoDoc = detalle.dni_cliente && detalle.dni_cliente.length === 11 ? '2' : '1';
+                    $('#facturar_tipo_doc').val(tipoDoc);
+
+                    // Obtener serie y número
+                    actualizarSerieNumero();
+
+                    // Configurar fecha de emisión (por defecto fecha del pago)
+                    $('#facturar_fecha_emision').val(detalle.fecha_pago);
+                    
+                    // Configurar límites de fecha (hasta 5 días atrás)
+                    const fechaPago = new Date(detalle.fecha_pago + 'T00:00:00');
+                    const fechaMinima = new Date(fechaPago);
+                    fechaMinima.setDate(fechaMinima.getDate() - 5);
+                    const hoy = new Date();
+
+                    $('#facturar_fecha_emision').attr('min', fechaMinima.toISOString().split('T')[0]);
+                    $('#facturar_fecha_emision').attr('max', hoy.toISOString().split('T')[0]);
+
+                    // Configurar descripción por defecto
+                    const descripcion = `Pago Cuota N° ${detalle.numero_cuota || 'N/A'} - ${detalle.nombre_plan || 'Financiamiento'} - Código: ${detalle.codigo_asociado || 'N/A'}`;
+                    $('#facturar_descripcion').val(descripcion);
+
+                    // Abrir modal
+                    new bootstrap.Modal(document.getElementById('modalFacturar')).show();
+                } else {
+                    alert('Error al obtener detalle: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error en petición:', error);
+                alert('Error al obtener detalle del pago');
+            }
+        });
+    }
+
+    // Confirmar y generar factura
+    function confirmarFacturacion() {
+        // Validar formulario
+        const form = document.getElementById('formFacturar');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        // Confirmar con el usuario
+        Swal.fire({
+            title: '¿Generar Factura?',
+            text: 'Se generará el comprobante con los datos ingresados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f4f750',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, generar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                generarFactura();
+            }
+        });
+    }
+
+    // Generar factura
+    function generarFactura() {
+        const formData = $('#formFacturar').serialize();
+
+        // Mostrar loading
+        Swal.fire({
+            title: 'Generando factura...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: _URL + '/ajs/recaudaciones/facturar',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Factura Generada!',
+                        html: `
+                            <p><strong>Serie:</strong> ${response.serie}</p>
+                            <p><strong>Número:</strong> ${response.numero}</p>
+                            <p class="text-info mt-3">
+                                <i class="fas fa-info-circle me-1"></i>
+                                La factura NO ha sido enviada a SUNAT aún.<br>
+                                Puede enviarla desde la lista de ventas.
+                            </p>
+                        `,
+                        confirmButtonColor: '#f4f750',
+                        confirmButtonText: 'Entendido'
+                    }).then(() => {
+                        // Cerrar modal
+                        bootstrap.Modal.getInstance(document.getElementById('modalFacturar')).hide();
+                        // Recargar tabla
+                        cargarRecaudaciones();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Error al generar factura',
+                        confirmButtonColor: '#f4f750'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al generar factura: ' + error,
+                    confirmButtonColor: '#f4f750'
+                });
+            }
+        });
     }
 </script>

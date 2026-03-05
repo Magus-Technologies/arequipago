@@ -311,12 +311,12 @@ class ConductorController extends Controller
                     'vehiculo' => $datosVehiculo ?: [], // Asegurar que no sea null
                     'requisitos' => $datosRequisitos ?: [], // Asegurar que no sea null
                     'observacion' => $datoobservacion,
-                    'inscripcion' => $inscripcionData,
+                    'inscripcion' => $inscripcion ?: [], // CORREGIDO: Usar $inscripcion que tiene todos los campos incluyendo fecha_inscripcion
                     'contactoEmergencia' => $contactoEmergenciaArray,
                     'financiamientoInscripcion' => $financiamientoInscripcion, // Nuevo: Añadimos información sobre financiamiento de inscripción
                     'financiamientoProductos' => $financiamientoProductos,
                     'kit' => $kitArray,
-                    'estadosRequisitos' => $estadosRequisitos 
+                    'estadosRequisitos' => $estadosRequisitos
                 ]
             ];
         } catch (Exception $e) {
@@ -333,13 +333,24 @@ class ConductorController extends Controller
 
     private function verificarFinanciamientoInscripcion($idConductor)
     {
-        // Inicializar respuesta
+        // Inicializar respuesta con información completa del estado de pago
         $resultado = [
+            'tiene_registro' => false,
+            'tipo_pago' => null, // 'contado' o 'financiamiento'
+            'estado_general' => 'sin_registro', // 'sin_registro', 'pagado_contado', 'al_dia', 'por_vencer', 'vencido', 'completado'
             'tiene_cuotas_vencidas' => false,
             'cantidad_cuotas_vencidas' => 0,
-            'monto_total_vencido' => 0
+            'monto_total_vencido' => 0,
+            'tiene_cuotas_por_vencer' => false,
+            'cantidad_cuotas_por_vencer' => 0,
+            'monto_por_vencer' => 0,
+            'proxima_fecha_vencimiento' => null,
+            'total_cuotas' => 0,
+            'cuotas_pagadas' => 0,
+            'cuotas_pendientes' => 0,
+            'monto_total_pendiente' => 0
         ];
-        
+
         try {
             // Verificar si el conductor tiene financiamiento por inscripción
             $query = "SELECT id_conductorpago, id_tipopago FROM conductor_pago WHERE id_conductor = ?";
@@ -347,56 +358,125 @@ class ConductorController extends Controller
             $stmt->bind_param("i", $idConductor);
             $stmt->execute();
             $resultPago = $stmt->get_result();
-            
+
             // Si no hay registros, retornar el resultado por defecto
             if ($resultPago->num_rows === 0) {
                 return $resultado;
             }
-            
+
             $datosPago = $resultPago->fetch_assoc();
-            
-            // Si id_tipopago es 1, pagó al contado, no tiene financiamiento
+            $resultado['tiene_registro'] = true;
+
+            // Si id_tipopago es 1, pagó al contado
             if ($datosPago['id_tipopago'] == 1) {
+                $resultado['tipo_pago'] = 'contado';
+                $resultado['estado_general'] = 'pagado_contado';
                 return $resultado;
             }
-            
-            // Si id_tipopago es 2, tiene financiamiento, buscar en conductor_regfinanciamiento
+
+            // Si id_tipopago es 2, tiene financiamiento
+            $resultado['tipo_pago'] = 'financiamiento';
+
             $query = "SELECT idconductor_regfinanciamiento FROM conductor_regfinanciamiento WHERE id_conductor = ?";
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("i", $idConductor);
             $stmt->execute();
             $resultFinanciamiento = $stmt->get_result();
-            
+
             // Si no hay registros de financiamiento, retornar el resultado por defecto
             if ($resultFinanciamiento->num_rows === 0) {
                 return $resultado;
             }
-            
+
             $datosFinanciamiento = $resultFinanciamiento->fetch_assoc();
             $idFinanciamiento = $datosFinanciamiento['idconductor_regfinanciamiento'];
-            
-            // Verificar cuotas vencidas
+
             $fechaActual = date('Y-m-d');
-            $query = "SELECT COUNT(*) as cantidad_cuotas, SUM(monto_cuota) as monto_total 
-                    FROM conductor_cuotas 
-                    WHERE idconductor_Financiamiento = ? 
-                    AND fecha_vencimiento < ? 
+            $fechaProximaSemana = date('Y-m-d', strtotime('+7 days'));
+
+            // Obtener resumen de cuotas
+            $query = "SELECT
+                        COUNT(*) as total_cuotas,
+                        SUM(CASE WHEN estado_cuota = 'pagado' THEN 1 ELSE 0 END) as cuotas_pagadas,
+                        SUM(CASE WHEN estado_cuota = 'pendiente' THEN 1 ELSE 0 END) as cuotas_pendientes,
+                        SUM(CASE WHEN estado_cuota = 'pendiente' THEN monto_cuota ELSE 0 END) as monto_pendiente
+                    FROM conductor_cuotas
+                    WHERE idconductor_Financiamiento = ?";
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bind_param("i", $idFinanciamiento);
+            $stmt->execute();
+            $resumen = $stmt->get_result()->fetch_assoc();
+
+            $resultado['total_cuotas'] = (int)$resumen['total_cuotas'];
+            $resultado['cuotas_pagadas'] = (int)$resumen['cuotas_pagadas'];
+            $resultado['cuotas_pendientes'] = (int)$resumen['cuotas_pendientes'];
+            $resultado['monto_total_pendiente'] = (float)$resumen['monto_pendiente'];
+
+            // Si no hay cuotas pendientes, está completado
+            if ($resultado['cuotas_pendientes'] == 0) {
+                $resultado['estado_general'] = 'completado';
+                return $resultado;
+            }
+
+            // Verificar cuotas vencidas
+            $query = "SELECT COUNT(*) as cantidad, SUM(monto_cuota) as monto_total
+                    FROM conductor_cuotas
+                    WHERE idconductor_Financiamiento = ?
+                    AND fecha_vencimiento < ?
                     AND estado_cuota = 'pendiente'";
             $stmt = $this->conexion->prepare($query);
             $stmt->bind_param("is", $idFinanciamiento, $fechaActual);
             $stmt->execute();
-            $resultCuotas = $stmt->get_result();
-            $datosCuotas = $resultCuotas->fetch_assoc();
-            
-            // Si hay cuotas vencidas, actualizar el resultado
-            if ($datosCuotas['cantidad_cuotas'] > 0) {
+            $cuotasVencidas = $stmt->get_result()->fetch_assoc();
+
+            if ($cuotasVencidas['cantidad'] > 0) {
                 $resultado['tiene_cuotas_vencidas'] = true;
-                $resultado['cantidad_cuotas_vencidas'] = $datosCuotas['cantidad_cuotas'];
-                $resultado['monto_total_vencido'] = $datosCuotas['monto_total'];
+                $resultado['cantidad_cuotas_vencidas'] = (int)$cuotasVencidas['cantidad'];
+                $resultado['monto_total_vencido'] = (float)$cuotasVencidas['monto_total'];
+                $resultado['estado_general'] = 'vencido';
             }
-            
+
+            // Verificar cuotas por vencer (próximos 7 días)
+            $query = "SELECT COUNT(*) as cantidad, SUM(monto_cuota) as monto_total, MIN(fecha_vencimiento) as proxima_fecha
+                    FROM conductor_cuotas
+                    WHERE idconductor_Financiamiento = ?
+                    AND fecha_vencimiento >= ?
+                    AND fecha_vencimiento <= ?
+                    AND estado_cuota = 'pendiente'";
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bind_param("iss", $idFinanciamiento, $fechaActual, $fechaProximaSemana);
+            $stmt->execute();
+            $cuotasPorVencer = $stmt->get_result()->fetch_assoc();
+
+            if ($cuotasPorVencer['cantidad'] > 0) {
+                $resultado['tiene_cuotas_por_vencer'] = true;
+                $resultado['cantidad_cuotas_por_vencer'] = (int)$cuotasPorVencer['cantidad'];
+                $resultado['monto_por_vencer'] = (float)$cuotasPorVencer['monto_total'];
+                $resultado['proxima_fecha_vencimiento'] = $cuotasPorVencer['proxima_fecha'];
+
+                if ($resultado['estado_general'] !== 'vencido') {
+                    $resultado['estado_general'] = 'por_vencer';
+                }
+            }
+
+            // Si no hay vencidas ni por vencer, está al día
+            if ($resultado['estado_general'] !== 'vencido' && $resultado['estado_general'] !== 'por_vencer') {
+                $resultado['estado_general'] = 'al_dia';
+
+                // Obtener próxima fecha de vencimiento
+                $query = "SELECT MIN(fecha_vencimiento) as proxima_fecha
+                        FROM conductor_cuotas
+                        WHERE idconductor_Financiamiento = ?
+                        AND estado_cuota = 'pendiente'";
+                $stmt = $this->conexion->prepare($query);
+                $stmt->bind_param("i", $idFinanciamiento);
+                $stmt->execute();
+                $proxima = $stmt->get_result()->fetch_assoc();
+                $resultado['proxima_fecha_vencimiento'] = $proxima['proxima_fecha'];
+            }
+
             return $resultado;
-            
+
         } catch (Exception $e) {
             // En caso de error, retornar el resultado por defecto
             return $resultado;
@@ -1263,37 +1343,60 @@ class ConductorController extends Controller
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_conductor = $_POST['id_conductor'] ?? null;
             $estado = $_POST['estado'] ?? null;
-    
+            $motivo = $_POST['motivo'] ?? null;
+
             if ($id_conductor === null || $estado === null) {
                 echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
                 exit;
             }
-    
+
+            // Si es desvinculación, el motivo es obligatorio
+            if ($estado == 1 && empty($motivo)) {
+                echo json_encode(['success' => false, 'message' => 'El motivo de desvinculación es obligatorio']);
+                exit;
+            }
+
             try {
-                $sql = "UPDATE conductores SET desvinculado = ? WHERE id_conductor = ?";
-                $stmt = $this->conexion->prepare($sql);
-                
-                if (!$stmt) {
-                    throw new Exception("Error preparando la consulta");
+                if ($estado == 1) {
+                    // Desvinculación: guardar motivo y fecha
+                    $fecha_desvinculacion = date('Y-m-d H:i:s');
+                    $sql = "UPDATE conductores SET desvinculado = ?, motivo_desvinculacion = ?, fecha_desvinculacion = ? WHERE id_conductor = ?";
+                    $stmt = $this->conexion->prepare($sql);
+
+                    if (!$stmt) {
+                        throw new Exception("Error preparando la consulta");
+                    }
+
+                    if (!$stmt->bind_param("issi", $estado, $motivo, $fecha_desvinculacion, $id_conductor)) {
+                        throw new Exception("Error vinculando parámetros");
+                    }
+                } else {
+                    // Reactivación: limpiar motivo y fecha
+                    $sql = "UPDATE conductores SET desvinculado = ?, motivo_desvinculacion = NULL, fecha_desvinculacion = NULL WHERE id_conductor = ?";
+                    $stmt = $this->conexion->prepare($sql);
+
+                    if (!$stmt) {
+                        throw new Exception("Error preparando la consulta");
+                    }
+
+                    if (!$stmt->bind_param("ii", $estado, $id_conductor)) {
+                        throw new Exception("Error vinculando parámetros");
+                    }
                 }
-    
-                if (!$stmt->bind_param("ii", $estado, $id_conductor)) {
-                    throw new Exception("Error vinculando parámetros");
-                }
-    
+
                 if (!$stmt->execute()) {
                     throw new Exception("Error ejecutando la consulta");
                 }
-    
+
                 // Verificar si se actualizó alguna fila
                 if ($stmt->affected_rows > 0) {
                     echo json_encode(['success' => true, 'message' => 'Estado actualizado correctamente']);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'No se pudo actualizar el estado del conductor']);
                 }
-                
+
                 $stmt->close();
-                
+
             } catch (Exception $e) {
                 echo json_encode(['success' => false, 'message' => 'Error en la base de datos: ' . $e->getMessage()]);
             }
@@ -1303,6 +1406,64 @@ class ConductorController extends Controller
             exit;
         }
     }
+
+    public function guardarMotivoDesvinculacion() {
+        header('Content-Type: application/json');
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Verificar si el usuario es administrador
+        if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
+            echo json_encode(['success' => false, 'message' => 'No tiene permisos para realizar esta acción']);
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id_conductor = $_POST['id_conductor'] ?? null;
+            $motivo = $_POST['motivo'] ?? null;
+
+            if ($id_conductor === null || empty($motivo)) {
+                echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
+                exit;
+            }
+
+            try {
+                $fecha_desvinculacion = date('Y-m-d H:i:s');
+                $sql = "UPDATE conductores SET motivo_desvinculacion = ?, fecha_desvinculacion = ? WHERE id_conductor = ? AND desvinculado = 1";
+                $stmt = $this->conexion->prepare($sql);
+
+                if (!$stmt) {
+                    throw new Exception("Error preparando la consulta");
+                }
+
+                if (!$stmt->bind_param("ssi", $motivo, $fecha_desvinculacion, $id_conductor)) {
+                    throw new Exception("Error vinculando parámetros");
+                }
+
+                if (!$stmt->execute()) {
+                    throw new Exception("Error ejecutando la consulta");
+                }
+
+                if ($stmt->affected_rows > 0) {
+                    echo json_encode(['success' => true, 'message' => 'Motivo guardado correctamente']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No se pudo guardar el motivo']);
+                }
+
+                $stmt->close();
+
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error en la base de datos: ' . $e->getMessage()]);
+            }
+            exit;
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+    }
+
     public function obtenerReportesPagos() {
         header('Content-Type: application/json');
         
@@ -1315,12 +1476,41 @@ class ConductorController extends Controller
                     nv.ruta,
                     nv.id_asesor,
                     CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_persona,
+                    c.nro_documento AS nro_identidad,
                     c.numUnidad AS num_unidad,
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
-                    'conductor' AS tipo_persona
+                    'conductor' AS tipo_persona,
+                    CASE WHEN cp.id_tipopago = 1 THEN 'contado' ELSE 'cuotas' END AS tipo_pago,
+                    NULL AS estado_contrato
                     FROM notas_venta_inscripcion nv
                     INNER JOIN conductores c ON nv.id_conductor = c.id_conductor
-                    LEFT JOIN usuarios u ON nv.id_asesor = u.usuario_id";
+                    LEFT JOIN usuarios u ON nv.id_asesor = u.usuario_id
+                    LEFT JOIN pagos_inscripcion pi ON nv.id_pagosinscripcion = pi.id_pago
+                    LEFT JOIN conductor_pago cp ON pi.id_inscripcion = cp.id_conductorpago AND cp.id_conductor = c.id_conductor";
+            
+            // NUEVO: Consulta para pagos al contado de conductores (conductor_pago con tipo_pago = 1)
+            // Excluir los que ya tienen nota de venta (para evitar duplicados con el primer query)
+            $sqlConductoresContado = "SELECT 
+                    cp.id_conductorpago AS id_pago,
+                    cp.monto_pago AS monto,
+                    cp.fecha_pago AS fecha_emision,
+                    NULL AS ruta,
+                    cp.usuario_registro AS id_asesor,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_persona,
+                    c.nro_documento AS nro_identidad,
+                    c.numUnidad AS num_unidad,
+                    CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
+                    'conductor' AS tipo_persona,
+                    'contado' AS tipo_pago,
+                    NULL AS estado_contrato
+                    FROM conductor_pago cp
+                    INNER JOIN conductores c ON cp.id_conductor = c.id_conductor
+                    LEFT JOIN usuarios u ON cp.usuario_registro = u.usuario_id
+                    WHERE cp.id_tipopago = 1
+                    AND NOT EXISTS (
+                        SELECT 1 FROM pagos_inscripcion pi 
+                        WHERE pi.id_inscripcion = cp.id_conductorpago
+                    )";
             
             // Consulta para pagos de clientes (cliente_pago)
             $sqlClientes = "SELECT 
@@ -1330,17 +1520,20 @@ class ConductorController extends Controller
                     '' AS ruta,
                     cp.usuario_id AS id_asesor,
                     CONCAT(clf.nombres, ' ', clf.apellido_paterno, ' ', clf.apellido_materno) AS nombre_persona,
+                    clf.n_documento AS nro_identidad,
                     NULL AS num_unidad,
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
-                    'cliente' AS tipo_persona
+                    'cliente' AS tipo_persona,
+                    'contado' AS tipo_pago,
+                    NULL AS estado_contrato
                     FROM cliente_pago cp
                     INNER JOIN clientes_financiar clf ON cp.cliente_id = clf.id
                     LEFT JOIN usuarios u ON cp.usuario_id = u.usuario_id";
             
-            // Combinar ambas consultas ordenadas por fecha
-            $sqlCombinada = "($sqlConductores) UNION ALL ($sqlClientes) ORDER BY fecha_emision DESC";
+            // Combinar las tres consultas ordenadas por fecha
+            $sqlCombinada = "($sqlConductores) UNION ALL ($sqlConductoresContado) UNION ALL ($sqlClientes) ORDER BY fecha_emision DESC";
             
-            error_log("SQL Query: " . $sqlCombinada);
+            // error_log("SQL Query: " . $sqlCombinada);
             
             $result = $this->conexion->query($sqlCombinada);
             
@@ -1444,6 +1637,190 @@ class ConductorController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+        }
+    }
+
+    public function verComprobanteContado($id) {
+        try {
+            // Primero intentar buscar el PDF existente en notas_venta_inscripcion
+            $sql = "SELECT nv.ruta, nv.idnotas_venta_inscripcion
+                    FROM notas_venta_inscripcion nv
+                    INNER JOIN conductor_pago cp ON nv.id_conductor = cp.id_conductor
+                    WHERE cp.id_conductorpago = ? AND cp.id_tipopago = 1
+                    ORDER BY nv.fecha_emision DESC
+                    LIMIT 1";
+            
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($row = $result->fetch_assoc()) {
+                $pdfPath = $row['ruta'];
+                
+                // Verificar si el archivo existe físicamente
+                if ($pdfPath && file_exists($pdfPath)) {
+                    header('Content-Type: application/pdf');
+                    header('Content-Disposition: inline; filename="comprobante_contado_' . $id . '.pdf"');
+                    header('Content-Length: ' . filesize($pdfPath));
+                    readfile($pdfPath);
+                    exit;
+                }
+            }
+            
+            // Si llegamos aquí, el PDF no existe o no se encontró, regenerarlo
+            $this->regenerarComprobanteContado($id);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo "Error al obtener el comprobante: " . $e->getMessage();
+        }
+    }
+
+    private function regenerarComprobanteContado($idConductorPago) {
+        // Obtener datos del pago
+        $sql = "SELECT cp.*, c.*, u.nombres as asesor_nombres, u.apellidos as asesor_apellidos
+                FROM conductor_pago cp
+                INNER JOIN conductores c ON cp.id_conductor = c.id_conductor
+                LEFT JOIN usuarios u ON cp.usuario_registro = u.usuario_id
+                WHERE cp.id_conductorpago = ? AND cp.id_tipopago = 1";
+        
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->bind_param("i", $idConductorPago);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($pago = $result->fetch_assoc()) {
+            $nombreCompleto = $pago['nombres'] . ' ' . $pago['apellido_paterno'] . ' ' . $pago['apellido_materno'];
+            $nombreAsesor = ($pago['asesor_nombres'] ?? 'Sin') . ' ' . ($pago['asesor_apellidos'] ?? 'asignar');
+            
+            // Para pagos antiguos sin estos datos, usar valores por defecto
+            $metodoPago = 'Efectivo';
+            $efectivoRecibido = number_format($pago['monto_pago'], 2);
+            $vuelto = "0.00";
+            
+            // Cargar plantilla HTML
+            $rutaBase = "app" . DIRECTORY_SEPARATOR . "contratos" . DIRECTORY_SEPARATOR . "nota_venta_inscripcion.html";
+            
+            if (!file_exists($rutaBase)) {
+                http_response_code(500);
+                echo "Error: No se encontró la plantilla del comprobante";
+                exit;
+            }
+            
+            $html = file_get_contents($rutaBase);
+            
+            $rutaLogo = 'public' . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo-ticket.png';
+            $html = str_replace('{LOGO}', $rutaLogo, $html);
+            
+            // Reemplazar etiquetas con datos reales de la base de datos
+            $html = str_replace([
+                '<span id="fecha"></span>',
+                '<span id="nombre_conductor"></span>',
+                '<span id="documento"></span>',
+                '<span id="nro_documento"></span>',
+                '<span id="monto_pagado"></span>',
+                '<span id="total_pagar"></span>',
+                '<span id="vuelto"></span>',
+                '<span id="total_ingresado"></span>',
+                '<span id="metodo_pago"></span>',
+                '<span id="asesor"></span>',
+                '<div id="detalle_cuotas"></div>'
+            ], [
+                $pago['fecha_pago'],
+                $nombreCompleto,
+                $pago['tipo_doc'],
+                $pago['nro_documento'],
+                $efectivoRecibido,
+                number_format($pago['monto_pago'], 2),
+                $vuelto,
+                number_format($pago['monto_pago'], 2),
+                $metodoPago,
+                $nombreAsesor,
+                "Pago al contado: S/. " . number_format($pago['monto_pago'], 2)
+            ], $html);
+            
+            // Guardar directorio para PDF
+            $uploadDir = "files" . DIRECTORY_SEPARATOR . "notasPagoInscripcion" . DIRECTORY_SEPARATOR;
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            
+            $pdfPath = $uploadDir . "nota_venta_contado_" . $idConductorPago . ".pdf";
+            
+            // Generar PDF y guardarlo
+            require_once "utils/lib/mpdf/vendor/autoload.php";
+            $mpdf = new \Mpdf\Mpdf([
+                'format' => [132, 210],
+                'default_font_size' => 9
+            ]);
+            $mpdf->WriteHTML("<style> body { font-size: 11px; } </style>" . $html);
+            
+            // Guardar el PDF en el servidor
+            $pdfContent = $mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN);
+            file_put_contents($pdfPath, $pdfContent);
+            
+            // Buscar registro existente en notas_venta_inscripcion de forma más flexible
+            $sqlCheck = "SELECT idnotas_venta_inscripcion FROM notas_venta_inscripcion 
+                        WHERE id_conductor = ? 
+                        AND (ruta IS NULL OR ruta = '' OR ruta LIKE CONCAT('%', ?))
+                        ORDER BY fecha_emision DESC
+                        LIMIT 1";
+            $stmtCheck = $this->conexion->prepare($sqlCheck);
+            $nombreArchivo = "nota_venta_contado_" . $idConductorPago . ".pdf";
+            $stmtCheck->bind_param("is", $pago['id_conductor'], $nombreArchivo);
+            $stmtCheck->execute();
+            $resultCheck = $stmtCheck->get_result();
+            
+            if ($resultCheck->num_rows == 0) {
+                // Insertar nuevo registro
+                $sqlInsert = "INSERT INTO notas_venta_inscripcion (id_conductor, id_asesor, monto, fecha_emision, ruta)
+                             VALUES (?, ?, ?, ?, ?)";
+                $stmtInsert = $this->conexion->prepare($sqlInsert);
+                $idAsesor = $pago['usuario_registro'] ?? null;
+                $stmtInsert->bind_param("iidss", 
+                    $pago['id_conductor'], 
+                    $idAsesor, 
+                    $pago['monto_pago'], 
+                    $pago['fecha_pago'], 
+                    $pdfPath
+                );
+                
+                if ($stmtInsert->execute()) {
+                    // Registro insertado exitosamente
+                } else {
+                    error_log("Error al insertar en notas_venta_inscripcion: " . $stmtInsert->error);
+                }
+            } else {
+                // Actualizar el registro existente con la nueva ruta
+                $row = $resultCheck->fetch_assoc();
+                $sqlUpdate = "UPDATE notas_venta_inscripcion 
+                             SET ruta = ? 
+                             WHERE idnotas_venta_inscripcion = ?";
+                $stmtUpdate = $this->conexion->prepare($sqlUpdate);
+                $stmtUpdate->bind_param("si", $pdfPath, $row['idnotas_venta_inscripcion']);
+                
+                if (!$stmtUpdate->execute()) {
+                    error_log("Error al actualizar notas_venta_inscripcion: " . $stmtUpdate->error);
+                }
+            }
+            
+            // Mostrar el PDF al navegador
+            if (file_exists($pdfPath)) {
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: inline; filename="comprobante_contado_' . $idConductorPago . '.pdf"');
+                header('Content-Length: ' . filesize($pdfPath));
+                readfile($pdfPath);
+                exit;
+            } else {
+                http_response_code(500);
+                echo "Error: No se pudo generar el PDF";
+                exit;
+            }
+        } else {
+            http_response_code(404);
+            echo "No se encontró el pago con ID: " . $idConductorPago;
+            exit;
         }
     }
 

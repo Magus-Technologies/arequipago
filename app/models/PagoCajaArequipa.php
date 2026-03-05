@@ -34,6 +34,9 @@ class PagoCajaArequipa
                         pca.numero_documento,
                         pca.periodo,
                         pca.estado,
+                        pca.id_venta,
+                        pca.facturado,
+                        pca.fecha_facturacion,
                         pca.created_at,
                         pca.updated_at,
                         CASE
@@ -241,13 +244,24 @@ class PagoCajaArequipa
                         cuota.numero_cuota,
                         cuota.monto as monto_cuota,
                         cuota.fecha_vencimiento as fecha_vencimiento_cuota,
-                        cuota.estado as estado_cuota
+                        cuota.estado as estado_cuota,
+                        -- Información de la factura (si existe)
+                        v.id_venta,
+                        v.serie as factura_serie,
+                        v.numero as factura_numero,
+                        v.fecha_emision as factura_fecha,
+                        v.total as factura_total,
+                        v.enviado_sunat as factura_enviado_sunat,
+                        ds.nombre as factura_tipo_nombre,
+                        ds.abreviatura as factura_tipo_abrev
                     FROM pagos_caja_arequipa pca
                     LEFT JOIN financiamiento f ON pca.id_financiamiento = f.idfinanciamiento
                     LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
                     LEFT JOIN conductores cond ON f.id_conductor = cond.id_conductor
                     LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
                     LEFT JOIN cuotas_financiamiento cuota ON pca.id_cuota = cuota.idcuotas_financiamiento
+                    LEFT JOIN ventas v ON pca.id_venta = v.id_venta
+                    LEFT JOIN documentos_sunat ds ON v.id_tido = ds.id_tido
                     WHERE pca.id = '$id'";
 
             $result = mysqli_query($this->conectar, $sql);
@@ -261,6 +275,92 @@ class PagoCajaArequipa
         } catch (Exception $e) {
             error_log("Error en obtenerDetallePorId: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Marcar pago como facturado
+     * @param int $id - ID del pago
+     * @param int $id_venta - ID de la venta generada
+     * @return bool
+     */
+    public function marcarComoFacturado($id, $id_venta)
+    {
+        try {
+            $id = $this->conectar->real_escape_string($id);
+            $id_venta = $this->conectar->real_escape_string($id_venta);
+            
+            $sql = "UPDATE pagos_caja_arequipa 
+                    SET id_venta = '$id_venta',
+                        facturado = 1,
+                        fecha_facturacion = NOW()
+                    WHERE id = '$id'";
+            
+            $result = mysqli_query($this->conectar, $sql);
+            
+            if (!$result) {
+                error_log("Error al marcar como facturado: " . mysqli_error($this->conectar));
+                return false;
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Error en marcarComoFacturado: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Desmarcar pago como facturado (en caso de anulación)
+     * @param int $id - ID del pago
+     * @return bool
+     */
+    public function desmarcarFacturado($id)
+    {
+        try {
+            $id = $this->conectar->real_escape_string($id);
+            
+            $sql = "UPDATE pagos_caja_arequipa 
+                    SET id_venta = NULL,
+                        facturado = 0,
+                        fecha_facturacion = NULL
+                    WHERE id = '$id'";
+            
+            $result = mysqli_query($this->conectar, $sql);
+            
+            if (!$result) {
+                error_log("Error al desmarcar facturado: " . mysqli_error($this->conectar));
+                return false;
+            }
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Error en desmarcarFacturado: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Verificar si un pago ya está facturado
+     * @param int $id - ID del pago
+     * @return bool
+     */
+    public function estaFacturado($id)
+    {
+        try {
+            $id = $this->conectar->real_escape_string($id);
+            
+            $sql = "SELECT facturado FROM pagos_caja_arequipa WHERE id = '$id'";
+            $result = mysqli_query($this->conectar, $sql);
+            
+            if ($result && $row = mysqli_fetch_assoc($result)) {
+                return (bool)$row['facturado'];
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            error_log("Error en estaFacturado: " . $e->getMessage());
+            return false;
         }
     }
 }

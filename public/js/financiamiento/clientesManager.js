@@ -165,7 +165,21 @@ function setearLinkActive(liElement) {
 
             // Poner el número de documento en el input correspondiente
             document.getElementById('numeroDocumento').value = conductor.nro_documento;
-            document.getElementById('codigoAsociado').value = conductor.codigo_asociado; // Setea `numeroCodFi` en el input correspondiente // <--- NUEVO CAMBIO
+
+            // ✅ MODIFICADO: Verificar si tiene código de asociado, si no, generar uno nuevo
+            let codigoExistente = conductor.codigo_asociado || conductor.numeroCodFi || '';
+            
+            if (!codigoExistente || codigoExistente === '0' || codigoExistente.trim() === '') {
+                // Generar nuevo código automáticamente
+                generarNuevoCodigoAsociado({
+                    tipo_registro: conductor.tipo_registro || 'conductor',
+                    id_conductor: conductor.id_conductor,
+                    id: conductor.id_conductor
+                });
+            } else {
+                document.getElementById('codigoAsociado').value = codigoExistente;
+                document.getElementById('codigoAsociado').dataset.esCodigoNuevo = 'false';
+            }
 
             // Opcional: puedes almacenar el id del cliente en otro campo oculto si es necesario
             document.getElementById('cliente').dataset.id = conductor.id_conductor;
@@ -265,11 +279,72 @@ function setearLinkActive(liElement) {
                 document.getElementById('cliente').value = nombreCompleto;
             }
             
-            // Llenar código de asociado
-            document.getElementById('codigoAsociado').value = registro.numeroCodFi || registro.codigo_asociado || '';
+            // ✅ MODIFICADO: Verificar si tiene código de asociado, si no, generar uno nuevo
+            let codigoExistente = registro.numeroCodFi || registro.codigo_asociado || '';
+            
+            // Verificar si el código está vacío o es "0"
+            if (!codigoExistente || codigoExistente === '0' || codigoExistente.trim() === '') {
+                // Generar nuevo código automáticamente
+                generarNuevoCodigoAsociado(registro);
+            } else {
+                // Usar el código existente
+                document.getElementById('codigoAsociado').value = codigoExistente;
+                // Marcar que NO es código nuevo generado
+                document.getElementById('codigoAsociado').dataset.esCodigoNuevo = 'false';
+            }
             
             // Ocultar lista
             document.getElementById('listaNumDoc').style.display = 'none';
+        }
+
+        /**
+         * Genera un nuevo código de asociado correlativo cuando el conductor/cliente no tiene uno
+         */
+        function generarNuevoCodigoAsociado(registro) {
+            const inputCodigo = document.getElementById('codigoAsociado');
+            const spinnerCodigo = document.getElementById('spinnerCodigoAsociado');
+            
+            // Mostrar spinner mientras se genera
+            if (spinnerCodigo) spinnerCodigo.style.display = 'inline-block';
+            inputCodigo.value = '';
+            inputCodigo.placeholder = 'Generando código...';
+            
+            $.ajax({
+                url: '/arequipago/obtenerSiguienteCodigoAsociado',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (spinnerCodigo) spinnerCodigo.style.display = 'none';
+                    
+                    if (response.success && response.siguiente_codigo) {
+                        inputCodigo.value = response.siguiente_codigo;
+                        inputCodigo.placeholder = 'Código de asociado';
+                        
+                        // Marcar que es un código nuevo generado (para actualizarlo al guardar)
+                        inputCodigo.dataset.esCodigoNuevo = 'true';
+                        inputCodigo.dataset.tipoRegistro = registro.tipo_registro;
+                        inputCodigo.dataset.idRegistro = registro.id_conductor || registro.id;
+                        
+                        // Mostrar mensaje informativo
+                        const mensajeCodigo = document.getElementById('mensajeCodigoAsociado');
+                        if (mensajeCodigo) {
+                            mensajeCodigo.style.display = 'block';
+                            mensajeCodigo.className = 'text-success small mt-1';
+                            mensajeCodigo.innerHTML = '<i class="fas fa-check-circle me-1"></i>Código generado automáticamente (se guardará con el financiamiento)';
+                        }
+                        
+                        console.log("✅ Código de asociado generado:", response.siguiente_codigo);
+                    } else {
+                        inputCodigo.placeholder = 'Error al generar';
+                        console.error("Error al generar código:", response.error);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (spinnerCodigo) spinnerCodigo.style.display = 'none';
+                    inputCodigo.placeholder = 'Error al generar';
+                    console.error("Error AJAX al generar código:", error);
+                }
+            });
         }
 
         function getDataCliente() {

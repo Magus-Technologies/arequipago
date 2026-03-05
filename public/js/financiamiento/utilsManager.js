@@ -51,6 +51,23 @@ function revertirEstilosInputs() {
       return;
     }
 
+    // 🚗 NUEVO: No bloquear frecuenciaPago si es plan vehicular o Credi Ahorros Autos (ID 49)
+    const esVehicular = planGlobal && planGlobal.tipo_vehicular !== null;
+    const esCrediAhorrosAutos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 49;
+    if (id === "frecuenciaPago" && (esVehicular || esCrediAhorrosAutos)) {
+      input.style.backgroundColor = "#ffffff";
+      input.style.color = "#212529";
+      input.style.border = "1px solid #ced4da";
+      input.style.pointerEvents = "auto";
+      input.style.cursor = "pointer";
+      input.disabled = false;
+      input.classList.remove("disabled");
+      console.log(
+        "🔓 Frecuencia de pago desbloqueada en revertirEstilosInputs para plan vehicular o Credi Ahorros Autos"
+      );
+      return;
+    }
+
     input.style.backgroundColor = "#e9ecef"; // Fondo gris claro deshabilitado
     input.style.color = "#6c757d"; // Texto gris deshabilitado
     input.style.border = "1px solid #ced4da"; // Borde ligero
@@ -478,7 +495,7 @@ function clearTable() {
 } */
 
 // ✅ Nueva función para generar y descargar contrato instantáneamente
-function generarContratoInstant(idFinanciamiento, soloExcel = false) {
+function generarContratoInstant(idFinanciamiento, soloExcel = false, soloActa = false) {
   // 水 Mostrar mensaje de carga
   Swal.fire({
     title: "Generando contrato",
@@ -494,9 +511,10 @@ function generarContratoInstant(idFinanciamiento, soloExcel = false) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       ids: [idFinanciamiento],
-      soloExcel: soloExcel  // ✅ Nuevo parámetro para indicar si solo se quiere Excel
+      soloExcel: soloExcel,
+      soloActa: soloActa
     }),
   })
     .then((response) => response.json()) // ✅ Cambiado a json() para manejar la respuesta JSON

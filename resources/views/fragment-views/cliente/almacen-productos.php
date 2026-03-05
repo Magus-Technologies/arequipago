@@ -132,7 +132,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                         <div class="col-md-2">
                             <label for="filtroOficina" class="form-label">Filtrar por Oficina</label>
                             <select id="filtroOficina" class="form-select form-select-sm" onchange="cambiarOficina();">
-                                <option value="1" selected>Oficina 1</option>
+                                <option value="" selected>Todas las oficinas</option>
+                                <option value="1">Oficina 1</option>
                                 <option value="2">Oficina 2</option>
                                 <option value="3">Oficina Lima</option>
                             </select>
@@ -901,7 +902,16 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 </div>
                             </div>
 
-                            <!-- Fila 5: Fechas de Vencimiento -->
+                            <!-- Fila 5: Kilometraje -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="kilometraje" class="form-label">Kilometraje</label>
+                                    <input id="kilometraje" name="kilometraje" type="number" min="0" class="form-control" placeholder="Ej: 15000">
+                                    <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+
+                            <!-- Fila 6: Fechas de Vencimiento -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="fecha_venc_soat" class="form-label">Fecha Vencimiento SOAT</label>
@@ -1075,7 +1085,9 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         var chipPlanMovilWrapper = document.getElementById('chip_plan_movil_wrapper');
         var vehiculoWrapper = document.getElementById('vehiculo_wrapper');
 
-        if (select.value === 'soat' || select.value === 'seguro') {
+        const selectedTextRaw = select.options[select.selectedIndex].text.toLowerCase().trim();
+
+        if (selectedTextRaw === 'soat' || selectedTextRaw === 'seguro') {
             label.style.display = 'block';
             dateInput.style.display = 'block';
         } else {
@@ -1083,14 +1095,13 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             dateInput.style.display = 'none';
         }
 
-        const categoriaSelect = document.getElementById("categoria_producto");
         const llantasWrapper = document.getElementById("llantas_wrapper");
 
-        // Verificar la opción seleccionada
-        if (categoriaSelect.value === "llantas") {
-            llantasWrapper.style.display = "block"; // Mostrar el div
+        // Verificar la opción seleccionada usando el TEXTO, no el value (que es un ID numérico)
+        if (selectedTextRaw === "llantas") {
+            llantasWrapper.style.display = "block";
         } else {
-            llantasWrapper.style.display = "none"; // Ocultar el div
+            llantasWrapper.style.display = "none";
         }
 
         // Mostrar/ocultar campos para Celular
@@ -1773,6 +1784,9 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             formData.append('vin', vin);
             formData.append('color', document.getElementById('color').value);  // Color añadido
             formData.append('anio', document.getElementById('anio').value);    // Año añadido
+            formData.append('placa_vehiculo', document.getElementById('placa_vehiculo').value);  // Placa añadido
+            formData.append('transmision_vehiculo', document.getElementById('transmision_vehiculo').value);  // Transmisión añadido
+            formData.append('kilometraje', document.getElementById('kilometraje').value);  // Kilometraje añadido
         }
 
         $.ajax({
@@ -2089,12 +2103,15 @@ function mostrarDetallesProducto(idProducto) {
                     
                     // Ordenar características
                     const ordenCaracteristicas = {
-                        'anio': 1,
-                        'color': 2,
-                        'fecha_venc_soat': 3,
-                        'fecha_venc_seguro': 4,
-                        'chasis': 5,
-                        'vin': 6
+                        'placa': 1,
+                        'transmision': 2,
+                        'kilometraje': 3,
+                        'anio': 4,
+                        'color': 5,
+                        'fecha_venc_soat': 6,
+                        'fecha_venc_seguro': 7,
+                        'chasis': 8,
+                        'vin': 9
                     };
                     
                     producto.caracteristicas.sort(function(a, b) {
@@ -2114,10 +2131,13 @@ function mostrarDetallesProducto(idProducto) {
                         
                         // Nombres más amigables
                         const nombresAmigables = {
+                            'placa': 'Placa',
+                            'transmision': 'Transmisión',
+                            'kilometraje': 'Kilometraje',
                             'fecha_venc_soat': 'Vencimiento SOAT',
                             'fecha_venc_seguro': 'Vencimiento Seguro',
                             'anio': 'Año',
-                            'chasis': 'Chasis',
+                            'chasis': 'Nº de Motor',
                             'vin': 'VIN',
                             'color': 'Color'
                         };
@@ -2385,10 +2405,24 @@ function cargarCategoriaProductos() {
     }    
 
     function downloadReport() {
-        fetch('/arequipago/downloadReport', { // URL del controlador y función
-            method: 'GET', // Método GET para solicitar el archivo
+        // Recopilar filtros activos
+        var params = new URLSearchParams();
+        var oficina = $('#filtroOficina').val() || 1;
+        params.set('oficina', oficina);
+        params.set('filtroStock', filtroStockActual || 'todos');
+        params.set('filtroTipo', $('#filtroTipoProducto').val() || 'todos');
+        if (categoriasSeleccionadas.length > 0) {
+            params.set('categorias', categoriasSeleccionadas.join(','));
+        }
+        var busqueda = $('#buscadorProductos').val().trim();
+        if (busqueda) {
+            params.set('busqueda', busqueda);
+        }
+
+        fetch('/arequipago/downloadReport?' + params.toString(), {
+            method: 'GET',
             headers: {
-                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Indicar que se espera un archivo Excel
+                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             },
         })
         .then(response => {

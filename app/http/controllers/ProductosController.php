@@ -195,6 +195,7 @@ class ProductosController extends Controller
         $anio = $_POST['anio_vehiculo'] ?? $_POST['anio'] ?? null;
         $placa = $_POST['placa_vehiculo'] ?? null;
         $transmision = $_POST['transmision_vehiculo'] ?? null;
+        $kilometraje = $_POST['kilometraje'] ?? null;
 
         // Generar código de barras automáticamente si no se proporciona uno (Nuevo cambio)
         $codigo_barra = null;
@@ -238,16 +239,16 @@ class ProductosController extends Controller
         // Ajustar para pasar datos en el orden correcto según el modelo
         $idProducto = $productoModel->insertar( // Cambiado para capturar el ID del producto insertado
             $productoData['nombre'],
-            $productoData['marca'],
-            $productoData['modelo'],
             $productoData['codigo'],
             $productoData['cantidad'],
             $productoData['categoria'],
             $productoData['ruc'],
             $productoData['razon_social'],
+            $productoData['tipo_producto'],
+            $productoData['marca'],
+            $productoData['modelo'],
             $productoData['fecha_vencimiento'],
             $productoData['fecha_registro'],
-            $productoData['tipo_producto'],
             $productoData['cantidad_unidad'],
             $productoData['unidad_medida'],
             $productoData['precio'],
@@ -318,6 +319,7 @@ class ProductosController extends Controller
                 $anio = $_POST['anio'] ?? null;
                 $placa = $_POST['placa_vehiculo'] ?? null; // Agregado: Placa del vehículo
                 $transmision = $_POST['transmision_vehiculo'] ?? null; // Agregado: Transmisión del vehículo
+                $kilometraje = $_POST['kilometraje'] ?? null; // Agregado: Kilometraje del vehículo
 
                 if ($fecha_venc_soat) {
                     $caracteristicas[] = ['nombre_caracteristica' => 'fecha_venc_soat', 'valor_caracteristica' => $fecha_venc_soat];
@@ -342,6 +344,9 @@ class ProductosController extends Controller
                 }
                 if ($transmision) {
                     $caracteristicas[] = ['nombre_caracteristica' => 'transmision', 'valor_caracteristica' => $transmision]; // Agregado: Guardar transmisión
+                }
+                if ($kilometraje) {
+                    $caracteristicas[] = ['nombre_caracteristica' => 'kilometraje', 'valor_caracteristica' => $kilometraje]; // Agregado: Guardar kilometraje
                 }
             }
         
@@ -373,25 +378,28 @@ class ProductosController extends Controller
 
         
         
-        $reportesModel->registrarMovimiento(
-            $usuario_id,
-            $idProducto, // ID del producto insertado
-            $codigo_producto,
-            $nombre, // Nombre del producto
-            $tipo_movimiento,
-            $subtipo_movimiento,
-            $cantidad, // Cantidad de productos
-            $razon_social // Proveedor (RUC)
-        );
+        try {
+            $reportesModel->registrarMovimiento(
+                $usuario_id,
+                $idProducto,
+                $codigo_producto,
+                $nombre,
+                $tipo_movimiento,
+                $subtipo_movimiento,
+                $cantidad,
+                $razon_social
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar movimiento: " . $e->getMessage());
+        }
 
         if ($idProducto) { 
-            // Enviar respuesta exitosa con tipo de contenido json
-            header('Content-Type: application/json'); // Asegurarse de que el tipo de contenido es JSON
+            header('Content-Type: application/json');
             echo json_encode(['status' => 'success', 'message' => 'Producto guardado exitosamente.']); 
-            exit;// Enviar respuesta de éxito
+            exit;
         } else {
-            header('Content-Type: application/json'); // Asegurarse de que el tipo de contenido es JSON
-            echo json_encode(['status' => 'error', 'message' => 'Error al guardar el producto.']); // Enviar respuesta de error
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Error al guardar el producto.']);
             exit;
         }
 
@@ -641,13 +649,20 @@ class ProductosController extends Controller
                 $producto['categoria'],
                 $producto['ruc'],
                 $producto['razon_social'],
-                $producto['fecha_vencimiento'],
                 $producto['tipo_producto'],
+                null, // marca
+                null, // modelo
+                $producto['fecha_vencimiento'],
+                null, // fecha_registro
                 $producto['cantidad_unidad'],
                 $producto['unidad_medida'],
-                $producto['perfil'],  // Nuevo campo
-                $producto['aro'],      // Nuevo campo
-                $producto['precio']
+                $producto['precio'],
+                null, // guia_remision
+                null, // codigo_barra
+                null, // precio_venta
+                'S/.', // moneda
+                null, // descuento_cuota
+                1 // oficina
             );
         }
     }
@@ -1496,84 +1511,207 @@ private function esCategoríaCelular($categoriaNormalizada) {
     {
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-     
+
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Definir las cabeceras del archivo Excel
-        $headers = [
-            'ID Producto', 'Nombre', 'Código', 'Cantidad', 'Cantidad Unidad', 
-            'Unidad de Medida', 'Tipo de Producto', 'Categoría', 'Fecha de Vencimiento',
-            'RUC', 'Razón Social', 'Precio', 'Precio Total', 'Fecha de Registro', 
-            'Guía de Remisión', 'Texto de Cabecera'
-        ];
+        // Recibir filtros del frontend
+        $oficina = isset($_GET['oficina']) ? (int)$_GET['oficina'] : null;
+        $filtroStock = isset($_GET['filtroStock']) ? $_GET['filtroStock'] : 'todos';
+        $filtroTipo = isset($_GET['filtroTipo']) ? $_GET['filtroTipo'] : 'todos';
+        $categorias = isset($_GET['categorias']) && !empty($_GET['categorias']) ? explode(',', $_GET['categorias']) : [];
+        $busqueda = isset($_GET['busqueda']) ? $_GET['busqueda'] : '';
 
-        // Escribir las cabeceras en la primera fila
+        // ✅ NUEVO: Detectar si es reporte de vehículos
+        $esReporteVehiculos = in_array('Vehículo', $categorias) || in_array('Vehiculo', $categorias);
+
+        // Definir las cabeceras del archivo Excel según el tipo de reporte
+        if ($esReporteVehiculos) {
+            // ✅ Cabeceras extendidas para vehículos
+            $headers = [
+                'ID Producto', 'Nombre', 'Código', 'Cantidad', 'Categoría',
+                'Marca', 'Modelo', 'Año', 'Placa', 'Chasis', 'VIN',
+                'Color', 'Transmisión', 'Kilometraje', 'Fecha Venc. SOAT', 'Fecha Venc. Seguro',
+                'RUC', 'Razón Social', 'Precio', 'Precio Venta', 'Fecha de Registro'
+            ];
+            
+            // Configurar anchos de columna para vehículos
+            $sheet->getColumnDimension('A')->setWidth(15); // ID Producto
+            $sheet->getColumnDimension('B')->setWidth(30); // Nombre
+            $sheet->getColumnDimension('C')->setWidth(20); // Código
+            $sheet->getColumnDimension('D')->setWidth(15); // Cantidad
+            $sheet->getColumnDimension('E')->setWidth(20); // Categoría
+            $sheet->getColumnDimension('F')->setWidth(20); // Marca
+            $sheet->getColumnDimension('G')->setWidth(20); // Modelo
+            $sheet->getColumnDimension('H')->setWidth(15); // Año
+            $sheet->getColumnDimension('I')->setWidth(15); // Placa
+            $sheet->getColumnDimension('J')->setWidth(20); // Chasis
+            $sheet->getColumnDimension('K')->setWidth(20); // VIN
+            $sheet->getColumnDimension('L')->setWidth(15); // Color
+            $sheet->getColumnDimension('M')->setWidth(20); // Transmisión
+            $sheet->getColumnDimension('N')->setWidth(15); // Kilometraje
+            $sheet->getColumnDimension('O')->setWidth(20); // Fecha Venc. SOAT
+            $sheet->getColumnDimension('P')->setWidth(20); // Fecha Venc. Seguro
+            $sheet->getColumnDimension('Q')->setWidth(20); // RUC
+            $sheet->getColumnDimension('R')->setWidth(30); // Razón Social
+            $sheet->getColumnDimension('S')->setWidth(15); // Precio
+            $sheet->getColumnDimension('T')->setWidth(15); // Precio Venta
+            $sheet->getColumnDimension('U')->setWidth(20); // Fecha de Registro
+            
+            $lastColumn = 'U';
+        } else {
+            // Cabeceras normales para productos
+            $headers = [
+                'ID Producto', 'Nombre', 'Código', 'Cantidad', 'Cantidad Unidad',
+                'Unidad de Medida', 'Tipo de Producto', 'Categoría', 'Fecha de Vencimiento',
+                'RUC', 'Razón Social', 'Precio', 'Precio Total', 'Fecha de Registro',
+                'Guía de Remisión'
+            ];
+
+            $sheet->getColumnDimension('A')->setWidth(15); // ID Producto
+            $sheet->getColumnDimension('B')->setWidth(30); // Nombre
+            $sheet->getColumnDimension('C')->setWidth(20); // Código
+            $sheet->getColumnDimension('D')->setWidth(15); // Cantidad
+            $sheet->getColumnDimension('E')->setWidth(20); // Cantidad Unidad
+            $sheet->getColumnDimension('F')->setWidth(20); // Unidad de Medida
+            $sheet->getColumnDimension('G')->setWidth(20); // Tipo de Producto
+            $sheet->getColumnDimension('H')->setWidth(20); // Categoría
+            $sheet->getColumnDimension('I')->setWidth(20); // Fecha de Vencimiento
+            $sheet->getColumnDimension('J')->setWidth(20); // RUC
+            $sheet->getColumnDimension('K')->setWidth(30); // Razón Social
+            $sheet->getColumnDimension('L')->setWidth(15); // Precio
+            $sheet->getColumnDimension('M')->setWidth(20); // Precio Total
+            $sheet->getColumnDimension('N')->setWidth(20); // Fecha de Registro
+            $sheet->getColumnDimension('O')->setWidth(20); // Guía de Remisión
+            
+            $lastColumn = 'O';
+        }
+
+        // Mapa de nombres de oficina
+        $nombresOficina = [
+            1 => 'Oficina 1',
+            2 => 'Oficina 2',
+            3 => 'Oficina Lima'
+        ];
+        $nombreOficina = $oficina && isset($nombresOficina[$oficina]) ? $nombresOficina[$oficina] : 'Todas las oficinas';
+
+        // Fila 1: Título con oficina
+        $tituloReporte = $esReporteVehiculos ? 'REPORTE DE VEHÍCULOS' : 'REPORTE DE INVENTARIO';
+        $sheet->mergeCells('A1:' . $lastColumn . '1');
+        $sheet->setCellValue('A1', $tituloReporte . ' - ' . strtoupper($nombreOficina));
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Fila 2: Filtros aplicados y fecha
+        $filtrosTexto = [];
+        if ($filtroStock !== 'todos') {
+            $stockLabels = ['con_stock' => 'Con Stock', 'sin_stock' => 'Sin Stock', 'stock_bajo' => 'Stock Bajo'];
+            $filtrosTexto[] = 'Stock: ' . ($stockLabels[$filtroStock] ?? $filtroStock);
+        }
+        if ($filtroTipo !== 'todos' && !empty($filtroTipo)) {
+            $filtrosTexto[] = 'Tipo: ' . $filtroTipo;
+        }
+        if (!empty($categorias)) {
+            $filtrosTexto[] = 'Categorias: ' . implode(', ', $categorias);
+        }
+        if (!empty($busqueda)) {
+            $filtrosTexto[] = 'Busqueda: ' . $busqueda;
+        }
+
+        $textoFiltros = !empty($filtrosTexto) ? 'Filtros: ' . implode(' | ', $filtrosTexto) : 'Sin filtros adicionales';
+        $sheet->mergeCells('A2:' . $lastColumn . '2');
+        $sheet->setCellValue('A2', $textoFiltros . '  -  Fecha: ' . date('d/m/Y H:i'));
+        $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Fila 3: Vacía (separador)
+        // Fila 4: Cabeceras
         $columnIndex = 1;
         foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $sheet->setCellValueByColumnAndRow($columnIndex, 4, $header);
             $columnIndex++;
         }
 
-        $sheet->getColumnDimension('A')->setWidth(15); // ID Producto
-        $sheet->getColumnDimension('B')->setWidth(30); // Nombre
-        $sheet->getColumnDimension('C')->setWidth(20); // Código
-        $sheet->getColumnDimension('D')->setWidth(15); // Cantidad
-        $sheet->getColumnDimension('E')->setWidth(20); // Cantidad Unidad
-        $sheet->getColumnDimension('F')->setWidth(20); // Unidad de Medida
-        $sheet->getColumnDimension('G')->setWidth(20); // Tipo de Producto
-        $sheet->getColumnDimension('H')->setWidth(20); // Categoría
-        $sheet->getColumnDimension('I')->setWidth(20); // Fecha de Vencimiento
-        $sheet->getColumnDimension('J')->setWidth(20); // RUC
-        $sheet->getColumnDimension('K')->setWidth(30); // Razón Social
-        $sheet->getColumnDimension('L')->setWidth(15); // Precio
-        $sheet->getColumnDimension('M')->setWidth(20); // Precio Total
-        $sheet->getColumnDimension('N')->setWidth(20); // Fecha de Registro
-        $sheet->getColumnDimension('O')->setWidth(20); // Guía de Remisión
-        $sheet->getColumnDimension('P')->setWidth(30); // Texto de Cabecera
+        // Estilo cabeceras fila 4
+        $sheet->getStyle('A4:' . $lastColumn . '4')->getFont()->setBold(true);
+        $sheet->getStyle('A4:' . $lastColumn . '4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('38A4F8');
+        $sheet->getStyle('A4:' . $lastColumn . '4')->getFont()->getColor()->setRGB('FFFFFF');
+        $sheet->getStyle('A4:' . $lastColumn . '4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
-       
-
-        // Llamar al modelo para obtener los datos
+        // Llamar al modelo para obtener los datos filtrados
         $productoModel = new Productov2();
-        $productos = $productoModel->reporteProducts();
-        
-        // Escribir los datos en el archivo Excel
-        $rowIndex = 2; // Comenzar desde la segunda fila
+        $productos = $productoModel->reporteProducts($oficina, $filtroStock, $filtroTipo, $categorias, $busqueda);
+
+        // ✅ NUEVO: Si es reporte de vehículos, obtener características
+        $caracteristicasModel = new CaracteristicaProducto();
+
+        // Escribir los datos a partir de la fila 5
+        $rowIndex = 5;
         foreach ($productos as $producto) {
-            $sheet->setCellValue('A' . $rowIndex, $producto['idproductosv2']);
-            $sheet->setCellValue('B' . $rowIndex, $producto['nombre']);
-            $sheet->setCellValue('C' . $rowIndex, $producto['codigo']);
-            $sheet->setCellValue('D' . $rowIndex, $producto['cantidad']);
-            $sheet->setCellValue('E' . $rowIndex, $producto['cantidad_unidad']);
-            $sheet->setCellValue('F' . $rowIndex, $producto['unidad_medida']);
-            $sheet->setCellValue('G' . $rowIndex, $producto['tipo_producto']);
-            $sheet->setCellValue('H' . $rowIndex, $producto['categoria']);
-            $sheet->setCellValue('I' . $rowIndex, $producto['fecha_vencimiento']);
-            $sheet->setCellValue('J' . $rowIndex, $producto['ruc']);
-            $sheet->setCellValue('K' . $rowIndex, $producto['razon_social']);
-            $sheet->setCellValue('L' . $rowIndex, $producto['precio']);
-            $sheet->setCellValue('M' . $rowIndex, $producto['cantidad'] * $producto['precio']); // Precio Total
-            $sheet->setCellValue('N' . $rowIndex, $producto['fecha_registro']);
-            $sheet->setCellValue('O' . $rowIndex, $producto['guia_remision']);
-            $sheet->setCellValue('P' . $rowIndex, $producto['texto_cabecera']); // Texto de Cabecera
+            if ($esReporteVehiculos) {
+                // ✅ Obtener características del vehículo
+                $caracteristicas = $caracteristicasModel->obtenerCaracteristicas($producto['idproductosv2']);
+                
+                // Crear un array asociativo con las características
+                $carMap = [];
+                foreach ($caracteristicas as $car) {
+                    $carMap[$car['nombre_caracteristicas']] = $car['valor_caracteristica'];
+                }
+                
+                // ✅ CORREGIDO: Marca y Modelo vienen de productosv2, el resto de características
+                $sheet->setCellValue('A' . $rowIndex, $producto['idproductosv2']);
+                $sheet->setCellValue('B' . $rowIndex, $producto['nombre']);
+                $sheet->setCellValue('C' . $rowIndex, $producto['codigo']);
+                $sheet->setCellValue('D' . $rowIndex, $producto['cantidad']);
+                $sheet->setCellValue('E' . $rowIndex, $producto['categoria']);
+                $sheet->setCellValue('F' . $rowIndex, $producto['marca'] ?? 'N/A'); // ✅ De productosv2
+                $sheet->setCellValue('G' . $rowIndex, $producto['modelo'] ?? 'N/A'); // ✅ De productosv2
+                $sheet->setCellValue('H' . $rowIndex, $carMap['anio'] ?? 'N/A'); // De características
+                $sheet->setCellValue('I' . $rowIndex, $carMap['placa'] ?? 'N/A'); // De características
+                $sheet->setCellValue('J' . $rowIndex, $carMap['chasis'] ?? 'N/A'); // De características
+                $sheet->setCellValue('K' . $rowIndex, $carMap['vin'] ?? 'N/A'); // De características
+                $sheet->setCellValue('L' . $rowIndex, $carMap['color'] ?? 'N/A'); // De características
+                $sheet->setCellValue('M' . $rowIndex, $carMap['transmision'] ?? 'N/A'); // De características
+                $sheet->setCellValue('N' . $rowIndex, $carMap['kilometraje'] ?? 'N/A'); // De características
+                $sheet->setCellValue('O' . $rowIndex, $carMap['fecha_venc_soat'] ?? 'N/A'); // De características
+                $sheet->setCellValue('P' . $rowIndex, $carMap['fecha_venc_seguro'] ?? 'N/A'); // De características
+                $sheet->setCellValue('Q' . $rowIndex, $producto['ruc']);
+                $sheet->setCellValue('R' . $rowIndex, $producto['razon_social']);
+                $sheet->setCellValue('S' . $rowIndex, $producto['precio']);
+                $sheet->setCellValue('T' . $rowIndex, $producto['precio_venta']);
+                $sheet->setCellValue('U' . $rowIndex, $producto['fecha_registro']);
+            } else {
+                // Escribir datos normales de producto
+                $sheet->setCellValue('A' . $rowIndex, $producto['idproductosv2']);
+                $sheet->setCellValue('B' . $rowIndex, $producto['nombre']);
+                $sheet->setCellValue('C' . $rowIndex, $producto['codigo']);
+                $sheet->setCellValue('D' . $rowIndex, $producto['cantidad']);
+                $sheet->setCellValue('E' . $rowIndex, $producto['cantidad_unidad']);
+                $sheet->setCellValue('F' . $rowIndex, $producto['unidad_medida']);
+                $sheet->setCellValue('G' . $rowIndex, $producto['tipo_producto']);
+                $sheet->setCellValue('H' . $rowIndex, $producto['categoria']);
+                $sheet->setCellValue('I' . $rowIndex, $producto['fecha_vencimiento']);
+                $sheet->setCellValue('J' . $rowIndex, $producto['ruc']);
+                $sheet->setCellValue('K' . $rowIndex, $producto['razon_social']);
+                $sheet->setCellValue('L' . $rowIndex, $producto['precio']);
+                $sheet->setCellValue('M' . $rowIndex, $producto['cantidad'] * $producto['precio']);
+                $sheet->setCellValue('N' . $rowIndex, $producto['fecha_registro']);
+                $sheet->setCellValue('O' . $rowIndex, $producto['guia_remision']);
+            }
             $rowIndex++;
         }
 
-        // Alinear la columna "ID Producto" (columna A) a la izquierda
-        $sheet->getStyle('A2:A' . ($rowIndex - 1)) // Solo la columna "ID Producto" desde la fila 2 hasta la última
-        ->getAlignment()
-        ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT); // Alinear a la izquierda
-
-        // Alinear todo el contenido a partir de la fila 2 a centrado
-        for ($row = 2; $row <= $rowIndex - 1; $row++) {
-            $sheet->getStyle('A' . $row . ':P' . $row) // Desde la columna A hasta la P
+        // Alinear datos
+        if ($rowIndex > 5) {
+            $sheet->getStyle('A5:' . $lastColumn . ($rowIndex - 1))
                 ->getAlignment()
-                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // Alinear a la centrado
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         }
 
-        // Preparar el archivo para la descarga
+        // Nombre del archivo con oficina
         $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, "Xlsx");
-        $fileName = 'reporte_inventario.xlsx';
+        $oficinaSlug = str_replace(' ', '_', $nombreOficina);
+        $tipoReporte = $esReporteVehiculos ? 'Vehiculos' : 'Inventario';
+        $fileName = $tipoReporte . '_' . $oficinaSlug . '_' . date('Y-m-d') . '.xlsx';
 
         // Limpiar cualquier salida previa
         ob_end_clean(); // Añadido: Limpiar el buffer de salida

@@ -717,20 +717,55 @@
                         <!-- Descripción -->
                      <p class="beneficio-description">{{ beneficio.descripcion || 'Producto disponible para financiamiento.' }}</p>
 
+                        <!-- ✅ NUEVO: Departamentos Disponibles -->
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">
+                                    <i class="fa fa-map-marker me-1"></i>Disponible en:
+                                </small>
+                                <!-- ✅ NUEVO: Icono para editar departamentos (siempre visible) -->
+                                <button class="btn btn-sm btn-link p-0 text-primary"
+                                        @click.stop="abrirModalEditarDepartamentos(beneficio)"
+                                        title="Editar departamentos"
+                                        style="font-size: 1rem; text-decoration: none;">
+                                    <i class="fa fa-pencil"></i>
+                                </button>
+                            </div>
+                            <!-- Mostrar departamentos si existen -->
+                            <div v-if="beneficio.departamentos && beneficio.departamentos.length > 0" class="d-flex flex-wrap gap-1">
+                                <span v-for="dept in beneficio.departamentos"
+                                      :key="dept.departamento_id"
+                                      class="badge bg-info text-dark"
+                                      style="font-size: 0.7rem; font-weight: 500;">
+                                    {{ dept.departamento_nombre }}
+                                </span>
+                            </div>
+                            <!-- Mensaje si no hay departamentos -->
+                            <div v-else>
+                                <small class="text-muted fst-italic">Sin departamentos asignados</small>
+                            </div>
+                        </div>
+
                         <!-- Información de Financiamiento -->
                         <div class="mb-3">
                             <div class="row text-center">
-                                <div class="col-4">
+                                <div class="col-6 col-md-3 mb-2">
                                     <small class="text-muted d-block">Cuota Inicial</small>
                                     <strong class="text-primary">{{
                                         getCurrencySymbolForBeneficio(beneficio) }} {{
                                         beneficio.cuota_inicial || '0.00' }}</strong>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-3 mb-2">
+                                    <small class="text-muted d-block">Monto Inscripción</small>
+                                    <strong class="text-warning">{{
+                                        getCurrencySymbolForBeneficio(beneficio) }} {{
+                                        beneficio.pago_inscripcion || '0.00' }}</strong>
+                                </div>
+                                <div class="col-6 col-md-3 mb-2">
                                     <small class="text-muted d-block">Cuotas</small>
                                     <strong class="text-info">{{ beneficio.cantidad_cuotas || 'N/A' }}</strong>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-6 col-md-3 mb-2">
                                     <small class="text-muted d-block">{{
                                         obtenerEtiquetaFrecuenciaForBeneficio(beneficio) }}</small>
                                     <strong class="text-success">{{
@@ -842,23 +877,45 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label class="form-label fw-semibold">
-                                            Departamento
-                                            <small class="text-muted">(Opcional - dejar vacío para disponibilidad nacional)</small>
+                                            Departamentos Disponibles *
+                                            <small class="text-muted">(Selecciona uno o varios)</small>
                                         </label>
-                                        <select class="form-select" v-model="formData.departamento_id">
-                                            <option value="">Nacional (Todos los departamentos)</option>
-                                            <option v-for="dept in departamentosHabilitados"
-                                                    :key="dept.iddepast"
-                                                    :value="dept.iddepast">
-                                                {{ dept.nombre }}
-                                            </option>
-                                        </select>
-                                        <small class="text-muted d-block mt-1">
-                                            <i class="bi bi-info-circle"></i>
-                                            Si seleccionas un departamento específico, el beneficio solo se mostrará para usuarios de ese departamento.
-                                            Si dejas "Nacional", estará disponible para todos.
+
+                                        <!-- ✅ NUEVO: Checkboxes para múltiples departamentos -->
+                                        <div class="border rounded p-3 bg-light">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       id="seleccionarTodos"
+                                                       @change="toggleTodosDepartamentos">
+                                                <label class="form-check-label fw-bold text-primary" for="seleccionarTodos">
+                                                    <i class="bi bi-check2-all me-1"></i>
+                                                    Seleccionar Todos
+                                                </label>
+                                            </div>
+                                            <hr class="my-2">
+                                            <div v-for="dept in departamentosHabilitados"
+                                                 :key="dept.iddepast"
+                                                 class="form-check mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       :id="'dept_' + dept.iddepast"
+                                                       :value="dept.iddepast"
+                                                       v-model="formData.departamentos">
+                                                <label class="form-check-label" :for="'dept_' + dept.iddepast">
+                                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                                    {{ dept.nombre }}
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <small class="text-muted d-block mt-2">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Selecciona en qué departamentos estará visible este beneficio.
+                                            <strong>Seleccionados: {{ formData.departamentos.length }}</strong>
                                         </small>
-                                        <div v-if="errores.departamento_id" class="error-message">{{ errores.departamento_id }}</div>
+
+                                        <div v-if="errores.departamentos" class="error-message mt-2">{{ errores.departamentos }}</div>
                                     </div>
                                 </div>
 
@@ -1043,6 +1100,74 @@
             </div>
         </div>
 
+        <!-- ✅ NUEVO: Modal para Editar Departamentos -->
+        <div class="modal fade" id="modalEditarDepartamentos" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="bi bi-geo-alt-fill me-2"></i>Editar Departamentos Disponibles
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3" v-if="beneficioEditandoDepts">
+                            <strong>{{ beneficioEditandoDepts.nombre }}</strong>
+                        </p>
+
+                        <div class="border rounded p-3 bg-light">
+                            <!-- Seleccionar todos -->
+                            <div class="form-check mb-2">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       id="seleccionarTodosDepts"
+                                       @change="toggleTodosDepartamentosEdicion">
+                                <label class="form-check-label fw-bold text-primary" for="seleccionarTodosDepts">
+                                    <i class="bi bi-check2-all me-1"></i>
+                                    Seleccionar Todos
+                                </label>
+                            </div>
+                            <hr class="my-2">
+
+                            <!-- Lista de departamentos -->
+                            <div v-for="dept in departamentosHabilitados"
+                                 :key="dept.iddepast"
+                                 class="form-check mb-2">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       :id="'edit_dept_' + dept.iddepast"
+                                       :value="dept.iddepast"
+                                       v-model="departamentosTemporales">
+                                <label class="form-check-label" :for="'edit_dept_' + dept.iddepast">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>
+                                    {{ dept.nombre }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Seleccionados: {{ departamentosTemporales.length }}</strong>
+                        </small>
+
+                        <div v-if="errorDepartamentos" class="alert alert-danger mt-3 mb-0">
+                            {{ errorDepartamentos }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" @click="guardarDepartamentos" :disabled="guardandoDepartamentos">
+                            <span v-if="guardandoDepartamentos" class="spinner-border spinner-border-sm me-2"></span>
+                            <i v-else class="bi bi-check-circle me-2"></i>
+                            {{ guardandoDepartamentos ? 'Guardando...' : 'Guardar Cambios' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -1087,6 +1212,14 @@
                         editandoProducto: false,
                         guardandoProducto: false,
                         imagenPreview: null,
+
+                        // ✅ NUEVO: Modal de editar departamentos
+                        modalDepartamentos: null,
+                        beneficioEditandoDepts: null,
+                        departamentosTemporales: [],
+                        guardandoDepartamentos: false,
+                        errorDepartamentos: '',
+
                         formData: {
                             nombre: '',
                             plan_financiamiento_id: '',
@@ -1099,7 +1232,7 @@
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
-                            departamento_id: '',
+                            departamentos: [], // ✅ MODIFICADO: Array de IDs de departamentos
                             disponible: true
                         },
                         errores: {},
@@ -1148,6 +1281,12 @@
         var modalElement = document.getElementById('modalProducto');
         if (modalElement) {
             self.modal = new bootstrap.Modal(modalElement);
+        }
+
+        // ✅ NUEVO: Inicializar modal de editar departamentos
+        var modalDepartamentosElement = document.getElementById('modalEditarDepartamentos');
+        if (modalDepartamentosElement) {
+            self.modalDepartamentos = new bootstrap.Modal(modalDepartamentosElement);
         }
     });
 },
@@ -1324,12 +1463,17 @@
                             }, this);
                         }
 
-                        // Filtrar por departamento
+                        // ✅ MODIFICADO: Filtrar por departamento usando nuevo array
                         if (this.departamentoSeleccionado) {
                             var deptSeleccionado = this.departamentoSeleccionado;
                             resultado = resultado.filter(function (beneficio) {
-                                // Mostrar SOLO beneficios del departamento seleccionado
-                                return beneficio.departamento_id == deptSeleccionado;
+                                // Verificar si el beneficio tiene departamentos en el array
+                                if (beneficio.departamentos && Array.isArray(beneficio.departamentos)) {
+                                    return beneficio.departamentos.some(function(dept) {
+                                        return dept.departamento_id == deptSeleccionado;
+                                    });
+                                }
+                                return false;
                             });
                         }
 
@@ -1446,6 +1590,15 @@
 
                     editarBeneficio: function (beneficio) {
                         this.editandoProducto = true;
+
+                        // ✅ MODIFICADO: Cargar departamentos del beneficio
+                        var departamentosIds = [];
+                        if (beneficio.departamentos && Array.isArray(beneficio.departamentos)) {
+                            departamentosIds = beneficio.departamentos.map(function(d) {
+                                return parseInt(d.departamento_id);
+                            });
+                        }
+
                         this.formData = {
                             id: beneficio.id,
                             nombre: beneficio.nombre,
@@ -1459,7 +1612,7 @@
                             moneda: beneficio.moneda || '',
                             nombre_plan_personalizado: beneficio.nombre_plan_personalizado || '',
                             frecuencia_pago: beneficio.frecuencia_pago || '',
-                            departamento_id: beneficio.departamento_id || '',
+                            departamentos: departamentosIds, // ✅ MODIFICADO: Array de IDs
                             disponible: beneficio.disponible
                         };
 
@@ -1613,7 +1766,7 @@
                             moneda: '',
                             nombre_plan_personalizado: '',
                             frecuencia_pago: '',
-                            departamento_id: '',
+                            departamentos: [], // ✅ MODIFICADO: Array vacío
                             disponible: true
                         };
                         this.errores = {};
@@ -1622,6 +1775,128 @@
                         if (this.$refs.imagenInput) {
                             this.$refs.imagenInput.value = '';
                         }
+                    },
+
+                    // ✅ NUEVO: Seleccionar/Deseleccionar todos los departamentos
+                    toggleTodosDepartamentos: function(event) {
+                        if (event.target.checked) {
+                            // Seleccionar todos
+                            this.formData.departamentos = this.departamentosHabilitados.map(function(dept) {
+                                return dept.iddepast;
+                            });
+                        } else {
+                            // Deseleccionar todos
+                            this.formData.departamentos = [];
+                        }
+                    },
+
+                    // ✅ NUEVO: Abrir modal para editar departamentos
+                    abrirModalEditarDepartamentos: function(beneficio) {
+                        this.beneficioEditandoDepts = beneficio;
+                        this.errorDepartamentos = '';
+
+                        // Cargar departamentos actuales del beneficio
+                        if (beneficio.departamentos && Array.isArray(beneficio.departamentos)) {
+                            this.departamentosTemporales = beneficio.departamentos.map(function(d) {
+                                return parseInt(d.departamento_id);
+                            });
+                        } else {
+                            this.departamentosTemporales = [];
+                        }
+
+                        if (this.modalDepartamentos) {
+                            this.modalDepartamentos.show();
+                        }
+                    },
+
+                    // ✅ NUEVO: Toggle todos en modal de edición
+                    toggleTodosDepartamentosEdicion: function(event) {
+                        if (event.target.checked) {
+                            this.departamentosTemporales = this.departamentosHabilitados.map(function(dept) {
+                                return dept.iddepast;
+                            });
+                        } else {
+                            this.departamentosTemporales = [];
+                        }
+                    },
+
+                    // ✅ NUEVO: Guardar departamentos modificados
+                    guardarDepartamentos: function() {
+                        var self = this;
+
+                        // Validar que se seleccionó al menos un departamento
+                        if (!this.departamentosTemporales || this.departamentosTemporales.length === 0) {
+                            this.errorDepartamentos = 'Debes seleccionar al menos un departamento';
+                            return;
+                        }
+
+                        this.errorDepartamentos = '';
+                        this.guardandoDepartamentos = true;
+
+                        var beneficio = this.beneficioEditandoDepts;
+                        var formData = new FormData();
+
+                        // Campos obligatorios del controlador
+                        formData.append('id', beneficio.id);
+                        formData.append('nombre', beneficio.nombre);
+                        formData.append('plan_financiamiento_id', beneficio.plan_financiamiento_id);
+                        formData.append('categoria', beneficio.categoria || '');
+                        formData.append('descripcion', beneficio.descripcion || '');
+                        formData.append('cuota_inicial', beneficio.cuota_inicial || 0);
+                        formData.append('cantidad_cuotas', beneficio.cantidad_cuotas);
+                        formData.append('cuota_mensual', beneficio.cuota_mensual);
+                        formData.append('pago_inscripcion', beneficio.pago_inscripcion || '');
+                        formData.append('moneda', beneficio.moneda || '');
+                        formData.append('nombre_plan_personalizado', beneficio.nombre_plan_personalizado || '');
+                        formData.append('frecuencia_pago', beneficio.frecuencia_pago || '');
+                        formData.append('disponible', beneficio.disponible ? 1 : 0);
+
+                        // Enviar array de departamentos (lo que estamos editando)
+                        this.departamentosTemporales.forEach(function(deptId) {
+                            formData.append('departamentos[]', deptId);
+                        });
+
+                        fetch(_URL + '/ajs/beneficios/actualizar', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            self.guardandoDepartamentos = false;
+
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Departamentos actualizados',
+                                    text: 'Los departamentos se han actualizado correctamente',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                // Cerrar modal
+                                if (self.modalDepartamentos) {
+                                    self.modalDepartamentos.hide();
+                                }
+
+                                // Recargar beneficios para reflejar los cambios
+                                self.cargarBeneficios();
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message || 'Error al actualizar departamentos'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            self.guardandoDepartamentos = false;
+                            console.error('Error:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de conexión',
+                                text: 'No se pudo conectar con el servidor'
+                            });
+                        });
                     },
 
                     // ============ FUNCIONES DE MONEDA Y FRECUENCIA ============
@@ -1774,6 +2049,11 @@
                             this.errores.cuota_mensual = 'La cuota mensual es obligatoria y debe ser mayor a 0';
                         }
 
+                        // ✅ NUEVO: Validar que se seleccione al menos un departamento
+                        if (!this.formData.departamentos || this.formData.departamentos.length === 0) {
+                            this.errores.departamentos = 'Debes seleccionar al menos un departamento';
+                        }
+
                         return Object.keys(this.errores).length === 0;
                     },
 
@@ -1842,7 +2122,14 @@
                         formData.append('moneda', self.formData.moneda || '');
                         formData.append('nombre_plan_personalizado', self.formData.nombre_plan_personalizado || '');
                         formData.append('frecuencia_pago', self.formData.frecuencia_pago || '');
-                        formData.append('departamento_id', self.formData.departamento_id || '');
+
+                        // ✅ MODIFICADO: Enviar array de departamentos
+                        if (self.formData.departamentos && self.formData.departamentos.length > 0) {
+                            self.formData.departamentos.forEach(function(deptId) {
+                                formData.append('departamentos[]', deptId);
+                            });
+                        }
+
                         formData.append('disponible', self.formData.disponible ? 1 : 0);
 
                         // Agregar imagen si hay archivo seleccionado

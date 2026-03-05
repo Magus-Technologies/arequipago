@@ -30,7 +30,7 @@ class Venta
     /**
      * Venta constructor.
      */
-    public function __construct()
+     public function __construct()
     {
         $this->conectar = (new Conexion())->getConexion();
     }
@@ -374,27 +374,32 @@ class Venta
     {
         $this->sql = $sql;
         $result = $this->conectar->query($sql);
-        
+
         if (!$result) {
             $this->sql_error = $this->conectar->error;
-            error_log("Error en SQL: " . $this->sql_error . "\nConsulta: " . $sql);
+            error_log(
+                "Error en SQL: " . $this->sql_error . "\nConsulta: " . $sql,
+            );
         }
-        
+
         return $result;
     }
-    public function insertar() {
+    public function insertar()
+    {
         // Verificar que existe la sesión
-        if (!isset($_SESSION['usuario_fac'])) {
+        if (!isset($_SESSION["usuario_fac"])) {
             return false;
         }
-        
+
         // Verificar si id_coti está vacío y asignar NULL si es así
-        $id_coti_value = empty($this->idCoti) ? "NULL" : "'".$this->idCoti."'";
-        
-        $this->sql = "INSERT INTO ventas SET 
-                moneda = '{$_POST['moneda']}',
-                cm_tc = '{$_POST['tc']}',
-                pagado = '{$_POST['pagacon']}',
+        $id_coti_value = empty($this->idCoti)
+            ? "NULL"
+            : "'" . $this->idCoti . "'";
+
+        $this->sql = "INSERT INTO ventas SET
+                moneda = '{$_POST["moneda"]}',
+                cm_tc = '{$_POST["tc"]}',
+                pagado = '{$_POST["pagacon"]}',
                 apli_igv = '$this->apli_igv',
                 id_tido = '$this->id_tido',
                 id_tipo_pago = '$this->id_tipo_pago',
@@ -410,57 +415,67 @@ class Venta
                 enviado_sunat = '0',
                 igv = '$this->igv',
                 id_empresa = '$this->id_empresa',
-                sucursal = '{$_SESSION['sucursal']}',
+                sucursal = '{$_SESSION["sucursal"]}',
                 observacion = '$this->observa',
                 medoto_pago_id = '$this->metodo',
                 id_coti = $id_coti_value,
-                id_vendedor = '{$_SESSION['usuario_fac']}'";
-    
+                id_vendedor = '{$_SESSION["usuario_fac"]}'";
+
         $result = $this->conectar->query($this->sql);
-        
+
         if (!$result) {
             $this->sql_error = $this->conectar->error;
-            error_log("Error al insertar venta: " . $this->sql_error . "\nConsulta: " . $this->sql);
+            error_log(
+                "Error al insertar venta: " .
+                    $this->sql_error .
+                    "\nConsulta: " .
+                    $this->sql,
+            );
         } else {
             $this->id_venta = $this->conectar->insert_id;
         }
-        
+
         return $result;
     }
     public function editar($id_venta)
     {
-        $this->sql = "UPDATE ventas set medoto_pago_id='{$_POST['metodo']}',moneda='{$_POST['moneda']}',cm_tc='{$_POST['tc']}',apli_igv='$this->apli_igv', id_tido='$this->id_tido',id_tipo_pago='$this->id_tipo_pago',fecha_emision='$this->fecha',
+        $this->sql = "UPDATE ventas set medoto_pago_id='{$_POST["metodo"]}',moneda='{$_POST["moneda"]}',cm_tc='{$_POST["tc"]}',apli_igv='$this->apli_igv', id_tido='$this->id_tido',id_tipo_pago='$this->id_tipo_pago',fecha_emision='$this->fecha',
         fecha_vencimiento='$this->fechaVenc',dias_pagos='$this->dias_pagos',direccion='$this->direccion',
         id_cliente='$this->id_cliente',total='$this->total',igv='$this->igv',id_empresa='$this->id_empresa',
                    observacion='$this->observa' WHERE id_venta = '$id_venta' ";
-    
+
         $result = $this->conectar->query($this->sql);
-        
+
         if (!$result) {
             $this->sql_error = $this->conectar->error;
-            error_log("Error al editar venta: " . $this->sql_error . "\nConsulta: " . $this->sql);
+            error_log(
+                "Error al editar venta: " .
+                    $this->sql_error .
+                    "\nConsulta: " .
+                    $this->sql,
+            );
         } else {
             $this->id_venta = $id_venta;
         }
-        
+
         return $result;
     }
 
     public function anular()
     {
-        $sql = "update ventas 
-        set estado = '2'   
+        $sql = "update ventas
+        set estado = '2'
         where id_venta = '$this->id_venta'";
         return $this->conectar->query($sql);
     }
 
     public function obtenerId()
     {
-        $sql = "select ifnull(max(id_venta) + 1, 1) as codigo 
+        $sql = "select ifnull(max(id_venta) + 1, 1) as codigo
             from ventas";
         $result = $this->conectar->query($sql);
         $row = $result->fetch_assoc();
-        $this->id_venta = $row['codigo'];
+        $this->id_venta = $row["codigo"];
     }
 
     public function verDetalle()
@@ -472,33 +487,36 @@ class Venta
         if ($row = $this->conectar->query($sql)->fetch_assoc()) {
             $totalVenta = 0;
             $row["detalles"] = [];
-            
+
             // CORREGIDO: Buscar en productosv2 en lugar de productos
-            $sql = "SELECT productos_ventas.*, p.nombre as descripcion, p.codigo 
-                    FROM productos_ventas 
-                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto 
+            $sql =
+                "SELECT productos_ventas.*, p.nombre as descripcion, p.codigo
+                    FROM productos_ventas
+                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto
                     WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
             if ($result) {
                 foreach ($result as $depro) {
-                    $totalVenta += $depro['cantidad'] * $depro['precio'];
+                    $totalVenta += $depro["cantidad"] * $depro["precio"];
                     $row["detalles"][] = $depro;
                 }
             }
-            
-            $sql = "SELECT *,'' as codigo FROM ventas_servicios WHERE id_venta=" . $this->id_venta;
+
+            $sql =
+                "SELECT *,'' as codigo FROM ventas_servicios WHERE id_venta=" .
+                $this->id_venta;
             $result = $this->conectar->query($sql);
             if ($result) {
                 foreach ($result as $depro) {
-                    $depro['precio'] = $depro['monto'];
-                    $totalVenta += $depro['cantidad'] * $depro['monto'];
+                    $depro["precio"] = $depro["monto"];
+                    $totalVenta += $depro["cantidad"] * $depro["monto"];
                     $row["detalles"][] = $depro;
                 }
             }
-            
-            $row["montoTotal"] = number_format($totalVenta, 2, '.', '');
-            $respuesta['res'] = true;
-            $respuesta['data'] = $row;
+
+            $row["montoTotal"] = number_format($totalVenta, 2, ".", "");
+            $respuesta["res"] = true;
+            $respuesta["data"] = $row;
         }
         return json_encode($respuesta);
     }
@@ -511,72 +529,75 @@ class Venta
         if ($row = $this->conectar->query($sql)->fetch_assoc()) {
             $totalVenta = 0;
             $row["detalles"] = [];
-            
+
             // CORREGIDO: Buscar en productosv2 en lugar de productos
-            $sql = "SELECT productos_ventas.*, p.nombre as descripcion 
-                    FROM productos_ventas 
-                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto 
+            $sql =
+                "SELECT productos_ventas.*, p.nombre as descripcion
+                    FROM productos_ventas
+                    JOIN productosv2 p ON p.idproductosv2 = productos_ventas.id_producto
                     WHERE id_venta=" . $this->id_venta;
             $result = $this->conectar->query($sql);
             if ($result) {
                 foreach ($result as $depro) {
-                    $totalVenta += $depro['cantidad'] * $depro['precio'];
+                    $totalVenta += $depro["cantidad"] * $depro["precio"];
                     $row["detalles"][] = $depro;
                 }
             }
-            
-            $sql = "SELECT * FROM ventas_servicios WHERE id_venta=" . $this->id_venta;
+
+            $sql =
+                "SELECT * FROM ventas_servicios WHERE id_venta=" .
+                $this->id_venta;
             $result = $this->conectar->query($sql);
             if ($result) {
                 foreach ($result as $depro) {
-                    $depro['precio'] = $depro['monto'];
-                    $totalVenta += $depro['cantidad'] * $depro['monto'];
+                    $depro["precio"] = $depro["monto"];
+                    $totalVenta += $depro["cantidad"] * $depro["monto"];
                     $row["detalles"][] = $depro;
                 }
             }
-            
-            $row["montoTotal"] = number_format($totalVenta, 2, '.', '');
-            $respuesta['res'] = true;
-            $respuesta['data'] = $row;
+
+            $row["montoTotal"] = number_format($totalVenta, 2, ".", "");
+            $respuesta["res"] = true;
+            $respuesta["data"] = $row;
         }
         return $respuesta;
     }
 
     public function obtenerDatos()
     {
-        $sql = "select * 
-        from ventas 
+        $sql = "select *
+        from ventas
         where id_venta = '$this->id_venta'";
         $fila = $this->conectar->query($sql)->fetch_assoc();
-        $this->fecha = $fila['fecha_emision'];
-        $this->id_tido = $fila['id_tido'];
-        $this->serie = $fila['serie'];
-        $this->numero = $fila['numero'];
-        $this->id_cliente = $fila['id_cliente'];
-        $this->total = $fila['total'];
-        $this->estado = $fila['estado'];
-        $this->enviado_sunat = $fila['enviado_sunat'];
-        $this->id_empresa = $fila['id_empresa'];
-        $this->sucursal = $fila['sucursal'];
+        $this->fecha = $fila["fecha_emision"];
+        $this->id_tido = $fila["id_tido"];
+        $this->serie = $fila["serie"];
+        $this->numero = $fila["numero"];
+        $this->id_cliente = $fila["id_cliente"];
+        $this->total = $fila["total"];
+        $this->estado = $fila["estado"];
+        $this->enviado_sunat = $fila["enviado_sunat"];
+        $this->id_empresa = $fila["id_empresa"];
+        $this->sucursal = $fila["sucursal"];
     }
 
     public function actualizar_envio()
     {
-        $query = "update ventas 
-        set enviado_sunat = 1 
+        $query = "update ventas
+        set enviado_sunat = 1
         where id_venta = '$this->id_venta'";
         return $this->conectar->query($query);
     }
 
     public function validarVenta()
     {
-        $sql = "select id_venta as codigo  
+        $sql = "select id_venta as codigo
             from ventas
-            where id_tido = '$this->id_tido' and 
-                  serie = '$this->serie' and numero = '$this->numero' and id_empresa='{$_SESSION['id_empresa']}'";
+            where id_tido = '$this->id_tido' and
+                  serie = '$this->serie' and numero = '$this->numero' and id_empresa='{$_SESSION["id_empresa"]}'";
         //echo $sql;
         if ($row = $this->conectar->query($sql)->fetch_assoc()) {
-            $this->id_venta = $row['codigo'];
+            $this->id_venta = $row["codigo"];
         } else {
             $this->id_venta = null;
         }
@@ -584,9 +605,7 @@ class Venta
 
     public function verFilasPeriodoGanancia($periodo)
     {
-
-        $temoAr = explode('-', $periodo);
-
+        $temoAr = explode("-", $periodo);
 
         if ($temoAr[2] > 0) {
             $sql = "select v.id_venta, v.fecha_emision, ds.abreviatura,
@@ -596,13 +615,10 @@ class Venta
                  LEFT JOIN clientes c on v.id_cliente = c.id_cliente
                  LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
                  LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
-                 where v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION['sucursal']}' 
-               and YEAR(v.fecha_emision) = '$temoAr[0]'  and MONTH(v.fecha_emision) = '$temoAr[1]'  and day(v.fecha_emision) = '$temoAr[2]'  
+                 where v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION["sucursal"]}'
+               and YEAR(v.fecha_emision) = '$temoAr[0]'  and MONTH(v.fecha_emision) = '$temoAr[1]'  and day(v.fecha_emision) = '$temoAr[2]'
              order by v.fecha_emision asc, v.numero asc";
-        } elseif ($temoAr[2] == 'nn') {
-
-
-
+        } elseif ($temoAr[2] == "nn") {
             $periodo = $temoAr[0] . $temoAr[1];
             $sql = "select v.id_venta, v.fecha_emision, ds.abreviatura,
        v.id_tido, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.enviado_sunat, vs.nombre_xml,metodo_pago.nombre AS metodo
@@ -611,10 +627,8 @@ class Venta
             LEFT JOIN clientes c on v.id_cliente = c.id_cliente
             LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
             LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
-        where v.id_empresa = '$this->id_empresa' and YEAR(v.fecha_emision) = '$temoAr[0]' and MONTH(v.fecha_emision) = '$temoAr[1]'  
+        where v.id_empresa = '$this->id_empresa' and YEAR(v.fecha_emision) = '$temoAr[0]' and MONTH(v.fecha_emision) = '$temoAr[1]'
         order by v.fecha_emision asc, v.numero asc";
-
-
         } else {
             $sql = "select v.id_venta, v.fecha_emision, ds.abreviatura,
        v.id_tido, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.enviado_sunat, vs.nombre_xml,metodo_pago.nombre AS metodo
@@ -623,33 +637,30 @@ class Venta
             LEFT JOIN clientes c on v.id_cliente = c.id_cliente
             LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
             LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
-  
+
         where v.id_empresa = '$this->id_empresa' and concat(year(v.fecha_emision), LPAD(month(v.fecha_emision), 2, 0)) = '$periodo'
         order by v.fecha_emision asc, v.numero asc";
         }
 
-
-
         $rest = $this->conectar->query($sql);
         $lista = [];
         foreach ($rest as $row) {
-            $sql = "SELECT  SUM(pv.cantidad*pv.costo) costo FROM productos_ventas pv WHERE pv.id_venta = '{$row['id_venta']}'";
+            $sql = "SELECT  SUM(pv.cantidad*pv.costo) costo FROM productos_ventas pv WHERE pv.id_venta = '{$row["id_venta"]}'";
             $rest22 = $this->conectar->query($sql);
             $costorTwemp = 0;
             if ($temDa = $rest22->fetch_assoc()) {
-                $costorTwemp = $temDa['costo'];
+                $costorTwemp = $temDa["costo"];
             }
-            $row['costo'] = $costorTwemp;
-            $row['cod_v'] = $row['id_venta'];
-            $row['id_venta'] = $row['id_venta'] . '--' . $row['nombre_xml'];
+            $row["costo"] = $costorTwemp;
+            $row["cod_v"] = $row["id_venta"];
+            $row["id_venta"] = $row["id_venta"] . "--" . $row["nombre_xml"];
             $lista[] = $row;
         }
         return $lista;
     }
     public function verFilasPeriodo($periodo)
     {
-
-        $temoAr = explode('-', $periodo);
+        $temoAr = explode("-", $periodo);
 
         //Tools::prettyPrint($temoAr);
 
@@ -665,10 +676,10 @@ class Venta
                  LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
                  LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
                  LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
-                 where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION['sucursal']}' 
+                 where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION["sucursal"]}'
                and YEAR(v.fecha_emision) = '$temoAr[0]'  and MONTH(v.fecha_emision) = '$temoAr[1]'  and day(v.fecha_emision) = '$temoAr[2]'   AND metodo_pago.id_metodo_pago = '$metodo'
              order  by v.fecha_emision asc, v.numero asc";
-        } elseif ($temoAr[2] == 'nn' && $metodo != 0) {
+        } elseif ($temoAr[2] == "nn" && $metodo != 0) {
             echo "b";
             $periodo = $temoAr[0] . $temoAr[1];
             $sql = "select v.id_venta, v.fecha_emision, ds.abreviatura,mdp2.nombre AS metodo2,v.pagado,v.pagado2,
@@ -679,10 +690,10 @@ class Venta
             LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
             LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
             LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
-                                                                
+
         where v.estado<>2 and v.id_empresa = '$this->id_empresa' and YEAR(v.fecha_emision) = '$temoAr[0]' and MONTH(v.fecha_emision) = '$temoAr[1]'  AND metodo_pago.id_metodo_pago = '$metodo'
         order by v.fecha_emision asc, v.numero asc";
-        } elseif ($temoAr[2] == 'nn' && $metodo == 0) {
+        } elseif ($temoAr[2] == "nn" && $metodo == 0) {
             echo "c";
             $sql = "select v.id_venta, v.fecha_emision, ds.abreviatura,mdp2.nombre AS metodo2,v.pagado,v.pagado2,
             v.id_tido, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.enviado_sunat, vs.nombre_xml,metodo_pago.nombre AS metodo
@@ -692,7 +703,7 @@ class Venta
                  LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
                  LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
  LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
-             where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION['sucursal']}' 
+             where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION["sucursal"]}'
              and YEAR(v.fecha_emision) = '$temoAr[0]' and MONTH(v.fecha_emision) = '$temoAr[1]'
              order by v.fecha_emision asc, v.numero asc";
         } elseif ($temoAr[2] > 0 && $metodo == 0) {
@@ -705,8 +716,8 @@ class Venta
                  LEFT JOIN ventas_sunat vs on v.id_venta = vs.id_venta
                  LEFT JOIN metodo_pago ON metodo_pago.id_metodo_pago=v.medoto_pago_id
 LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
-                 where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION['sucursal']}' 
-               and YEAR(v.fecha_emision) = '$temoAr[0]'  and MONTH(v.fecha_emision) = '$temoAr[1]'  and day(v.fecha_emision) = '$temoAr[2]' 
+                 where v.estado<>2 and v.id_empresa = '$this->id_empresa' and v.sucursal='{$_SESSION["sucursal"]}'
+               and YEAR(v.fecha_emision) = '$temoAr[0]'  and MONTH(v.fecha_emision) = '$temoAr[1]'  and day(v.fecha_emision) = '$temoAr[2]'
              order by v.fecha_emision asc, v.numero asc";
         } else {
             echo "e";
@@ -722,7 +733,6 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
         order by v.fecha_emision asc, v.numero asc";
         }
         // die();
-
 
         /*$sql = "select v.id_venta, v.fecha, ds.abreviatura,
        v.id_tido, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.enviado_sunat, vs.nombre_xml
@@ -741,13 +751,12 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
         where v.id_empresa = '$this->id_empresa'
         order by v.fecha asc, v.numero asc";*/
 
-
         //echo $sql;
         $rest = $this->conectar->query($sql);
         $lista = [];
         foreach ($rest as $row) {
-            $row['cod_v'] = $row['id_venta'];
-            $row['id_venta'] = $row['id_venta'] . '--' . $row['nombre_xml'];
+            $row["cod_v"] = $row["id_venta"];
+            $row["id_venta"] = $row["id_venta"] . "--" . $row["nombre_xml"];
             $lista[] = $row;
         }
         return $lista;
@@ -763,12 +772,11 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
         where v.id_empresa = '$empresa' and v.sucursal='$sucuarsal'
         order by v.fecha_emision asc, v.numero asc";
 
-
         $rest = $this->conectar->query($sql);
         $lista = [];
         foreach ($rest as $row) {
-            $row['cod_v'] = $row['id_venta'];
-            $row['id_venta'] = $row['id_venta'] . '--' . $row['nombre_xml'];
+            $row["cod_v"] = $row["id_venta"];
+            $row["id_venta"] = $row["id_venta"] . "--" . $row["nombre_xml"];
             $lista[] = $row;
         }
         return $lista;
@@ -801,13 +809,12 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
         where v.id_empresa = '$this->id_empresa'
         order by v.fecha asc, v.numero asc";*/
 
-
         //echo $sql;
         $rest = $this->conectar->query($sql);
         $lista = [];
         foreach ($rest as $row) {
-            $row['cod_v'] = $row['id_venta'];
-            $row['id_venta'] = $row['id_venta'] . '--' . $row['nombre_xml'];
+            $row["cod_v"] = $row["id_venta"];
+            $row["id_venta"] = $row["id_venta"] . "--" . $row["nombre_xml"];
             $lista[] = $row;
         }
         return $lista;
@@ -816,9 +823,9 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
     public function verDocumentosResumen()
     {
         $sql = "select v.id_venta, v.fecha, ds.cod_sunat, ds.abreviatura, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.id_tido, v.enviado_sunat, v.estado
-        from ventas as v 
+        from ventas as v
             inner join documentos_sunat ds on v.id_tido = ds.id_tido
-            inner join clientes c on v.id_cliente = c.id_cliente 
+            inner join clientes c on v.id_cliente = c.id_cliente
         where v.id_empresa = '$this->id_empresa' and v.fecha = '$this->fecha' and v.id_tido in (1,3)";
         return $this->conectar->get_Cursor($sql);
     }
@@ -826,24 +833,22 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
     public function verFacturasResumen()
     {
         $sql = "select v.id_venta, v.fecha, ds.cod_sunat, ds.abreviatura, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.id_tido, v.enviado_sunat, v.estado
-        from ventas as v 
+        from ventas as v
             inner join documentos_sunat ds on v.id_tido = ds.id_tido
-            inner join clientes c on v.id_cliente = c.id_cliente 
+            inner join clientes c on v.id_cliente = c.id_cliente
         where v.id_empresa = '$this->id_empresa' and v.fecha = '$this->fecha' and v.id_tido = 2 ";
         return $this->conectar->get_Cursor($sql);
     }
 
     public function verPeriodos()
     {
-        $sql = "select DISTINCT(concat(year(fecha), LPAD(month(fecha), 2, 0))) as periodo 
-        from ventas 
+        $sql = "select DISTINCT(concat(year(fecha), LPAD(month(fecha), 2, 0))) as periodo
+        from ventas
         where id_empresa = '$this->id_empresa'
         order by concat(year(fecha), LPAD(month(fecha), 2, 0)) desc";
         return $this->conectar->get_Cursor($sql);
     }
 
-    
-    
     /**
      * Busca ventas según los criterios especificados
      * @param string $searchTerm Término de búsqueda
@@ -854,95 +859,147 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
      * @param int $sucursal ID de la sucursal (opcional)
      * @return array Datos de ventas y contadores
      */
-    public function buscarVentas($searchTerm, $start, $length, $orderColumn, $orderDir, $sucursal = null) {
+    public function buscarVentas(
+        $searchTerm,
+        $start,
+        $length,
+        $orderColumn,
+        $orderDir,
+        $sucursal = null,
+        $usuarioId = null,
+        $tipoDoc = null
+    ) {
         // CORREGIDO: Añadir depuración
-        error_log("Modelo - Búsqueda: '$searchTerm', Start: $start, Length: $length, OrderCol: $orderColumn, OrderDir: $orderDir");
-        
+        error_log(
+            "Modelo - Búsqueda: '$searchTerm', Start: $start, Length: $length, OrderCol: $orderColumn, OrderDir: $orderDir, Usuario: $usuarioId, TipoDoc: $tipoDoc",
+        );
+
         // Columnas para la consulta
         $columns = [
-            "v.cod_v", "v.sn_v", "v.fecha_emision", "v.datos_cl", 
-            "v.subtotal", "v.igv_v", "v.total", "v.doc_ventae", 
-            "v.estado", "v.enviado_sunat", "v.id_venta", "v.documento", 
-            "v.serie", "v.numero"
+            "v.cod_v",
+            "v.sn_v",
+            "v.fecha_emision",
+            "v.datos_cl",
+            "v.subtotal",
+            "v.igv_v",
+            "v.total",
+            "v.doc_ventae",
+            "v.estado",
+            "v.enviado_sunat",
+            "v.id_venta",
+            "v.documento",
+            "v.serie",
+            "v.numero",
         ];
-    
+
         // Construir la condición WHERE para la búsqueda
         $whereSearch = "";
         $searchParams = [];
         $searchTypes = "";
-        
+
         if (!empty($searchTerm)) {
             $whereSearch = " AND (
-                v.datos_cl LIKE ? OR 
-                v.documento LIKE ? OR 
-                v.fecha_emision LIKE ? OR 
-                v.total LIKE ? OR 
-                v.serie LIKE ? OR 
+                v.datos_cl LIKE ? OR
+                v.documento LIKE ? OR
+                v.fecha_emision LIKE ? OR
+                v.total LIKE ? OR
+                v.serie LIKE ? OR
                 v.numero LIKE ? OR
                 CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, '')) LIKE ?
             )";
-            
+
             $searchParam = "%$searchTerm%";
             for ($i = 0; $i < 7; $i++) {
                 $searchParams[] = $searchParam;
                 $searchTypes .= "s";
             }
         }
-    
+
         // Condición de sucursal
         $whereSucursal = "";
         if ($sucursal !== null) {
-            $whereSucursal = " AND v.sucursal = ?";
+            $whereSucursal = " AND vt.sucursal = ?";
         }
-    
+
+        // Condición de usuario (para asesores)
+        $whereUsuario = "";
+        if ($usuarioId !== null) {
+            $whereUsuario = " AND vt.id_vendedor = ?";
+        }
+
+        // Condición de tipo de documento (para asesores)
+        $whereTipoDoc = "";
+        if ($tipoDoc !== null) {
+            $whereTipoDoc = " AND v.id_tido = ?";
+        }
+
         // Consulta para obtener el total de registros sin filtrar
         $queryTotal = "SELECT COUNT(*) as total FROM view_ventas";
         $stmtTotal = $this->conectar->prepare($queryTotal);
         $stmtTotal->execute();
         $resultTotal = $stmtTotal->get_result();
-        $totalRecords = $resultTotal->fetch_assoc()['total'];
+        $totalRecords = $resultTotal->fetch_assoc()["total"];
         $stmtTotal->close();
-    
+
         // CORREGIDO: Verificar si hay errores en la consulta
         if ($this->conectar->error) {
             error_log("Error en consulta total: " . $this->conectar->error);
         }
-    
+
         // Consulta para obtener el total de registros filtrados
-        $queryFiltered = "SELECT COUNT(*) as total 
+        $queryFiltered =
+            "SELECT COUNT(*) as total
                          FROM view_ventas v
                          LEFT JOIN ventas vt ON v.id_venta = vt.id_venta
                          LEFT JOIN usuarios u ON vt.id_vendedor = u.usuario_id
-                         WHERE 1=1" . $whereSucursal . $whereSearch;
-        
+                         WHERE 1=1" .
+            $whereSucursal .
+            $whereUsuario .
+            $whereTipoDoc .
+            $whereSearch;
+
         $stmtFiltered = $this->conectar->prepare($queryFiltered);
-        
+
         // CORREGIDO: Verificar si hay errores en la preparación
         if (!$stmtFiltered) {
-            error_log("Error preparando consulta filtrada: " . $this->conectar->error);
+            error_log(
+                "Error preparando consulta filtrada: " . $this->conectar->error,
+            );
             return [
-                'data' => [],
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0
+                "data" => [],
+                "recordsTotal" => 0,
+                "recordsFiltered" => 0,
             ];
         }
-        
+
         // Parámetros para bind_param
         $bindParams = [];
         $bindTypes = "";
-        
+
         // Agregar parámetro de sucursal si es necesario
         if ($sucursal !== null) {
             $bindTypes .= "i";
             $bindParams[] = $sucursal;
         }
-        
+
+        // Agregar parámetro de usuario si es necesario
+        if ($usuarioId !== null) {
+            $bindTypes .= "i";
+            $bindParams[] = $usuarioId;
+        }
+
+        // Agregar parámetro de tipo de documento si es necesario
+        if ($tipoDoc !== null) {
+            $bindTypes .= "i";
+            $bindParams[] = $tipoDoc;
+        }
+
         // Agregar parámetros de búsqueda si hay término de búsqueda
         if (!empty($searchTerm)) {
             $bindTypes .= $searchTypes;
             $bindParams = array_merge($bindParams, $searchParams);
         }
-        
+
         // CORREGIDO: Solo hacer bind_param si hay parámetros
         if (!empty($bindParams)) {
             // Crear array de referencias para bind_param
@@ -950,76 +1007,110 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
             foreach ($bindParams as $key => $value) {
                 $bindParamsRefs[$key] = &$bindParams[$key];
             }
-            
+
             // Prepend con el tipo
             array_unshift($bindParamsRefs, $bindTypes);
-            
+
             // Llamar a bind_param con referencias
-            call_user_func_array([$stmtFiltered, 'bind_param'], $bindParamsRefs);
+            call_user_func_array(
+                [$stmtFiltered, "bind_param"],
+                $bindParamsRefs,
+            );
         }
-        
+
         $stmtFiltered->execute();
-        
+
         // CORREGIDO: Verificar si hay errores en la ejecución
         if ($stmtFiltered->error) {
-            error_log("Error ejecutando consulta filtrada: " . $stmtFiltered->error);
+            error_log(
+                "Error ejecutando consulta filtrada: " . $stmtFiltered->error,
+            );
         }
-        
+
         $resultFiltered = $stmtFiltered->get_result();
-        $totalFilteredRecords = $resultFiltered->fetch_assoc()['total'];
+        $totalFilteredRecords = $resultFiltered->fetch_assoc()["total"];
         $stmtFiltered->close();
-    
+
         // CORREGIDO: Asegurar que orderColumn sea válido
         if ($orderColumn >= count($columns)) {
             $orderColumn = 0; // Valor por defecto si está fuera de rango
         }
-        
+
         // CORREGIDO: Asegurar que orderDir sea válido
-        $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
-    
+        $orderDir = strtoupper($orderDir) === "ASC" ? "ASC" : "DESC";
+
         // Consulta para obtener los datos
-        $query = "SELECT " . implode(", ", $columns) . ", 
+        $query =
+            "SELECT " .
+            implode(", ", $columns) .
+            ",
                  CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, '')) AS nombre_vendedor
                  FROM view_ventas v
                  LEFT JOIN ventas vt ON v.id_venta = vt.id_venta
                  LEFT JOIN usuarios u ON vt.id_vendedor = u.usuario_id
-                 WHERE 1=1" . $whereSucursal . $whereSearch . " 
-                 ORDER BY " . $columns[$orderColumn] . " " . $orderDir . " 
+                 WHERE 1=1" .
+            $whereSucursal .
+            $whereUsuario .
+            $whereTipoDoc .
+            $whereSearch .
+            "
+                 ORDER BY " .
+            $columns[$orderColumn] .
+            " " .
+            $orderDir .
+            "
                  LIMIT ?, ?";
-        
+
         $stmt = $this->conectar->prepare($query);
-        
+
         // CORREGIDO: Verificar si hay errores en la preparación
         if (!$stmt) {
-            error_log("Error preparando consulta principal: " . $this->conectar->error . "\nQuery: " . $query);
+            error_log(
+                "Error preparando consulta principal: " .
+                    $this->conectar->error .
+                    "\nQuery: " .
+                    $query,
+            );
             return [
-                'data' => [],
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalFilteredRecords
+                "data" => [],
+                "recordsTotal" => $totalRecords,
+                "recordsFiltered" => $totalFilteredRecords,
             ];
         }
-        
+
         // Tipos de parámetros
         $bindParams = [];
         $bindTypes = "";
-        
+
         // Agregar parámetro de sucursal si es necesario
         if ($sucursal !== null) {
             $bindTypes .= "i";
             $bindParams[] = $sucursal;
         }
-        
+
+        // Agregar parámetro de usuario si es necesario
+        if ($usuarioId !== null) {
+            $bindTypes .= "i";
+            $bindParams[] = $usuarioId;
+        }
+
+        // Agregar parámetro de tipo de documento si es necesario
+        if ($tipoDoc !== null) {
+            $bindTypes .= "i";
+            $bindParams[] = $tipoDoc;
+        }
+
         // Agregar parámetros de búsqueda si hay término de búsqueda
         if (!empty($searchTerm)) {
             $bindTypes .= $searchTypes;
             $bindParams = array_merge($bindParams, $searchParams);
         }
-        
+
         // Agregar parámetros de paginación
         $bindTypes .= "ii";
-        $bindParams[] = (int)$start;
-        $bindParams[] = (int)$length;
-        
+        $bindParams[] = (int) $start;
+        $bindParams[] = (int) $length;
+
         // CORREGIDO: Solo hacer bind_param si hay parámetros
         if (!empty($bindParams)) {
             // Crear array de referencias para bind_param
@@ -1027,53 +1118,61 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
             foreach ($bindParams as $key => $value) {
                 $bindParamsRefs[$key] = &$bindParams[$key];
             }
-            
+
             // Prepend con el tipo
             array_unshift($bindParamsRefs, $bindTypes);
-            
+
             // Llamar a bind_param con referencias
-            call_user_func_array([$stmt, 'bind_param'], $bindParamsRefs);
+            call_user_func_array([$stmt, "bind_param"], $bindParamsRefs);
         }
-        
+
         $stmt->execute();
-        
+
         // CORREGIDO: Verificar si hay errores en la ejecución
         if ($stmt->error) {
             error_log("Error ejecutando consulta principal: " . $stmt->error);
         }
-        
+
         $result = $stmt->get_result();
-        
+
         $data = [];
         while ($row = $result->fetch_assoc()) {
-            $nombreVendedor = trim($row['nombre_vendedor']);
-            $nombreVendedor = empty($nombreVendedor) ? 'No identificado' : $nombreVendedor;
-            
+            $nombreVendedor = trim($row["nombre_vendedor"]);
+            $nombreVendedor = empty($nombreVendedor)
+                ? "No identificado"
+                : $nombreVendedor;
+
             $data[] = [
-                $row['cod_v'],
-                $row['sn_v'],
-                $row['fecha_emision'],
-                $row['datos_cl'],
-                $row['subtotal'],
-                $row['igv_v'],
-                $row['total'],
+                $row["cod_v"],
+                $row["sn_v"],
+                $row["fecha_emision"],
+                $row["datos_cl"],
+                $row["subtotal"],
+                $row["igv_v"],
+                $row["total"],
                 $nombreVendedor,
-                $row['doc_ventae'],
-                $row['estado'],
-                $row['id_venta'] . '--' . ($row['enviado_sunat'] ?? '-')
+                $row["doc_ventae"],
+                $row["estado"],
+                $row["id_venta"] . "--" . ($row["enviado_sunat"] ?? "-"),
             ];
         }
-        
+
         $stmt->close();
-        
+
         // CORREGIDO: Añadir depuración
-        error_log("Resultados: Total=" . $totalRecords . ", Filtrados=" . $totalFilteredRecords . ", Filas=" . count($data));
-        
+        error_log(
+            "Resultados: Total=" .
+                $totalRecords .
+                ", Filtrados=" .
+                $totalFilteredRecords .
+                ", Filas=" .
+                count($data),
+        );
+
         return [
-            'data' => $data,
-            'recordsTotal' => $totalRecords,
-            'recordsFiltered' => $totalFilteredRecords
+            "data" => $data,
+            "recordsTotal" => $totalRecords,
+            "recordsFiltered" => $totalFilteredRecords,
         ];
     }
-    
 }

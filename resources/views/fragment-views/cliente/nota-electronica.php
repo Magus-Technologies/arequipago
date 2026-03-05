@@ -16,7 +16,7 @@
         </div>
     </div>
 </div>
-<input type="hidden" id="fecha-app" value="<?=date("Y-m-d")?>">
+<input type="hidden" id="fecha-app" value="<?= date("Y-m-d") ?>">
 <div class="row" id="container-vue">
 
     <div class="col-md-4">
@@ -60,6 +60,23 @@
                             </div>
                         </div>
 
+                        <!-- ✅ NUEVO: Campo Fecha Editable -->
+                        <div class="form-group">
+                            <label class="col-md-4 control-label">Fecha de Emisión</label>
+                            <div class="col-md-12">
+                                <input
+                                    v-model="venta.fecha"
+                                    type="date"
+                                    class="form-control"
+                                    :min="fechaMinimaNC"
+                                    :max="fechaActual"
+                                    required
+                                >
+                                <small class="form-text text-muted">
+                                    Debe ser igual o posterior a la fecha del documento
+                                </small>
+                            </div>
+                        </div>
 
                     </div>
                 </form>
@@ -100,6 +117,16 @@
                                         <button @click="buscarDocVenta" type="button" class="btn btn-primary"><i class="fa fa-search"></i> Buscar</button>
                                     </div>
                                 </div>
+
+                                <!-- ✅ NUEVO: Botón Ver Factura -->
+                                <div v-if="venta.ventacod" class="form-group row mt-2">
+                                    <div class="col-lg-12 text-center">
+                                        <button @click="verFacturaOriginal" type="button" class="btn btn-info btn-sm">
+                                            <i class="fa fa-file-pdf"></i> Ver Factura Original
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div class="form-group">
                                     <label class="col-lg-4 control-label">Cliente</label>
                                 </div>
@@ -219,19 +246,40 @@
 
 </div>
 
+<!-- ✅ NUEVO: Modal para ver PDF de factura original -->
+<div class="modal fade" id="modalVerFactura" tabindex="-1" aria-labelledby="modalVerFacturaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalVerFacturaLabel">Vista Previa - Factura Original</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="pdf-preview-nc" src="" style="width: 100%; height: 600px; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <textarea id="jsom-motivos" style="display: none"><?php
-    $listaMotivos = (new Conexion())->getConexion()->query("select * from motivo_documento");
-    $temp=[];
-    foreach ($listaMotivos as $motivo){
-        $temp[]=$motivo;
-    }
-    echo json_encode($temp);
-    ?></textarea>
+$conexion = (new Conexion())->getConexion();
+$listaMotivos = $conexion->query("select * from motivo_documento");
+$temp = [];
+foreach ($listaMotivos as $motivo) {
+    $temp[] = $motivo;
+}
+echo json_encode($temp);
+?></textarea>
 <script>
     $(document).ready(function(){
         const app=new Vue({
             el:"#container-vue",
             data:{
+                fechaMinimaNC: '',  // ✅ NUEVO: Fecha mínima permitida (fecha del documento original)
+                fechaActual: $("#fecha-app").val(),  // ✅ NUEVO: Fecha actual
                 producto:{
                     productoid:"",
                     descripcion:"",
@@ -268,31 +316,69 @@
                 guardarNotaElectronica(){
                     if(this.venta.ventacod!=""){
                         if (this.productos.length>0){
-                            const data={
-                                ...this.venta,
-                                listaPro:JSON.stringify(this.productos)
-                            }
-                            $("#loader-menor").show();
-                            _ajax("/ajs/nota/electronica/add","POST",
-                                data,
-                                function (resp) {
-                                    console.log(resp);
-                                    if (resp.res){
-                                        alertExito("Exito","Venta Guardada")
-                                            .then(function (){
-                                                location.href=_URL+"/nota/electronica/lista"
-                                            })
-                                    }else{
-                                        alertAdvertencia("No se pudo Guardar la Venta")
-                                    }
+
+                            // ✅ NUEVO: Validar fecha antes de guardar
+                            if (this.fechaMinimaNC) {
+                                const fechaNC = new Date(this.venta.fecha);
+                                const fechaDoc = new Date(this.fechaMinimaNC);
+
+                                if (fechaNC < fechaDoc) {
+                                    alertAdvertencia("La fecha de la NC (" + this.venta.fecha + ") no puede ser anterior a la fecha del documento original (" + this.fechaMinimaNC + ")");
+                                    return;
                                 }
-                            )
+                            }
+
+                            // ✅ NUEVO: Validar que el total coincida
+                            const totalOriginal = parseFloat(this.venta.total);
+                            const totalNC = parseFloat(this.venta.total_NE);
+
+                            if (Math.abs(totalOriginal - totalNC) > 0.01) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Advertencia de Totales',
+                                    html: `<p>El total de la NC (<b>${totalNC.toFixed(2)}</b>) no coincide exactamente con el total del documento original (<b>${totalOriginal.toFixed(2)}</b>).</p>
+                                           <p>Diferencia: <b>${Math.abs(totalOriginal - totalNC).toFixed(2)}</b></p>
+                                           <p>¿Desea continuar de todas formas?</p>`,
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Sí, continuar',
+                                    cancelButtonText: 'No, revisar'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        this.enviarNotaCredito();
+                                    }
+                                });
+                                return;
+                            }
+
+                            this.enviarNotaCredito();
                         }else{
-                            alertAdvertencia("Ho hay itens agregado a la lista")
+                            alertAdvertencia("No hay ítems agregados a la lista")
                         }
                     }else{
-                        alertAdvertencia("No a buscado un documento de venta")
+                        alertAdvertencia("No ha buscado un documento de venta")
                     }
+                },
+                // ✅ NUEVO: Método separado para enviar la NC
+                enviarNotaCredito(){
+                    const data={
+                        ...this.venta,
+                        listaPro:JSON.stringify(this.productos)
+                    }
+                    $("#loader-menor").show();
+                    _ajax("/ajs/nota/electronica/add","POST",
+                        data,
+                        function (resp) {
+                            console.log(resp);
+                            if (resp.res){
+                                alertExito("Éxito","Nota de Crédito guardada. Puede enviarla a SUNAT desde la lista")
+                                    .then(function (){
+                                        location.href=_URL+"/nota/electronica/lista"
+                                    })
+                            }else{
+                                alertAdvertencia(resp.msg || "No se pudo guardar la Nota de Crédito")
+                            }
+                        }
+                    )
                 },
                 buscarDocVenta(){
                     $("#loader-menor").show();
@@ -306,13 +392,93 @@
                                 app._data.venta.num_doc=resp.data.documento
                                 app._data.venta.nom_cli=resp.data.datos
                                 app._data.venta.total=resp.data.total
-                              
-                                alertExito("Documento de venta encontrado")
+
+                                // ✅ Actualizar serie de NC según el tipo de documento encontrado
+                                app.actualizarSerieNC();
+
+                                // ✅ NUEVO: Establecer fecha mínima = fecha del documento original
+                                app.fechaMinimaNC = resp.data.fecha_emision;
+
+                                // ✅ NUEVO: Fecha por defecto = hoy (si es >= fecha documento)
+                                const fechaDoc = new Date(resp.data.fecha_emision);
+                                const fechaHoy = new Date(app.fechaActual);
+
+                                if (fechaHoy >= fechaDoc) {
+                                    app.venta.fecha = app.fechaActual;
+                                } else {
+                                    // Si el documento es del futuro, usar su fecha
+                                    app.venta.fecha = resp.data.fecha_emision;
+                                }
+
+                                // ✅ CORREGIDO: Cargar productos CON IGV
+                                app.productos = []; // Limpiar lista
+
+                                // Obtener configuración de IGV
+                                const aplicaIgv = resp.data.apli_igv == '1';
+                                const igv = parseFloat(resp.data.igv || 0.18);
+
+                                console.log("Configuración IGV:", {aplicaIgv, igv});
+
+                                // Agregar productos del inventario CON IGV
+                                if(resp.data.productos && resp.data.productos.length > 0){
+                                    resp.data.productos.forEach(function(prod){
+                                        // ✅ CORREGIDO: Calcular precio CON IGV
+                                        const precioSinIgv = parseFloat(prod.precio);
+                                        const precioConIgv = aplicaIgv
+                                            ? precioSinIgv * (1 + igv)
+                                            : precioSinIgv;
+
+                                        console.log("Producto:", prod.descripcion, "Precio sin IGV:", precioSinIgv, "Precio con IGV:", precioConIgv.toFixed(2));
+
+                                        app.productos.push({
+                                            productoid: prod.productoid,
+                                            descripcion: prod.descripcion,
+                                            cantidad: prod.cantidad,
+                                            precio: precioConIgv.toFixed(2)  // ✅ PRECIO CON IGV
+                                        });
+                                    });
+                                }
+
+                                // Agregar servicios CON IGV
+                                if(resp.data.servicios && resp.data.servicios.length > 0){
+                                    resp.data.servicios.forEach(function(serv){
+                                        // ✅ CORREGIDO: Calcular precio CON IGV
+                                        const precioSinIgv = parseFloat(serv.precio);
+                                        const precioConIgv = aplicaIgv
+                                            ? precioSinIgv * (1 + igv)
+                                            : precioSinIgv;
+
+                                        console.log("Servicio:", serv.descripcion, "Precio sin IGV:", precioSinIgv, "Precio con IGV:", precioConIgv.toFixed(2));
+
+                                        app.productos.push({
+                                            productoid: "",
+                                            descripcion: serv.descripcion,
+                                            cantidad: serv.cantidad,
+                                            precio: precioConIgv.toFixed(2)  // ✅ PRECIO CON IGV
+                                        });
+                                    });
+                                }
+
+                                $("#loader-menor").hide();
+                                alertExito("Documento encontrado. Productos cargados con precios correctos (IGV incluido).");
                             }else{
+                                $("#loader-menor").hide();
                                 alertAdvertencia("Documento no encontrado")
                             }
                         }
                     )
+                },
+                // ✅ MEJORADO: Ver factura en modal (como en ventas-productos.php)
+                verFacturaOriginal(){
+                    if(this.venta.ventacod){
+                        const url = _URL + "/venta/comprobante/pdf/" + this.venta.ventacod;
+
+                        // Mostrar en modal
+                        $("#pdf-preview-nc").attr("src", url);
+                        $("#modalVerFactura").modal('show');
+                    }else{
+                        alertAdvertencia("Primero debe buscar un documento");
+                    }
                 },
                 eliminarItemPro(index){
                     this.productos.splice(index,1)
@@ -360,21 +526,43 @@
                 },
                 onChangeTiDocNE(event){
                     this. buscarSNdoc()
-                    /*this.venta.serieNE=''
-                    this.venta.numeroNE=''*/
+                    // ✅ Actualizar serie según tipo de documento afectado
+                    this.actualizarSerieNC()
                 },
                 buscarSNdoc(){
+                    // ✅ Primero determinar la serie según el tipo de documento
+                    this.actualizarSerieNC();
+
+                    // ✅ Enviar la serie al backend para obtener el número correcto
                     _ajax("/ajs/consulta/sn","POST",
-                        {doc:this.venta.tipo_docNE},
+                        {
+                            doc: this.venta.tipo_docNE,
+                            serie: this.venta.serieNE  // ✅ NUEVO: Enviar la serie
+                        },
                         function(resp){
-                            app.venta.serieNE=resp.serie
-                            app.venta.numeroNE=resp.numero
+                            // Guardar el número del correlativo
+                            app.venta.numeroNE = resp.numero
                         }
                     )
                 },
                 onChangeTiDoc(event) {
                     this.venta.serie=''
                     this.venta.numero=''
+                    // ✅ Actualizar serie de NC según tipo de documento afectado
+                    this.actualizarSerieNC()
+                },
+                actualizarSerieNC() {
+                    // Determinar la serie correcta según el tipo de documento afectado
+                    // SUNAT solo requiere que la serie EMPIECE con la letra correcta
+                    if (this.venta.tipo_doc == '1') {
+                        // Boleta → Serie con B (puede ser B001, BC01, BB01, etc.)
+                        this.venta.serieNE = 'BC01'
+                    } else if (this.venta.tipo_doc == '2') {
+                        // Factura → Serie con F (puede ser F001, FC01, FF01, etc.)
+                        this.venta.serieNE = 'FC01'
+                    }
+                    // El número se mantiene igual (viene de documentos_empresas)
+                    // Nota: La serie BC01/FC01 es solo para mostrar, el correlativo es independiente
                 },
                 limpiasDatos(){
                     this.producto={
@@ -413,6 +601,9 @@
             },
             mounted(){
                 this.motivos= JSON.parse($("#jsom-motivos").val());
+                // ✅ Inicializar tipo_docNE y buscar serie/número
+                this.venta.tipo_docNE = '3'; // Nota de Crédito por defecto
+                this.buscarSNdoc();
             }
         });
 

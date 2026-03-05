@@ -1,4 +1,5 @@
 <!-- resources\views\components\lista-clientes.php -->
+<?php $id_rol_lista = $_SESSION['id_rol'] ?? null; ?>
 <div class="row">
     <div class="col-lg-8">
         <div class="card mb-4">
@@ -8,11 +9,33 @@
 
             <div class="card-body">
                 <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="searchCliente"
-                            placeholder="Buscar por nombre, documento, número de unidad o grupo"
-                            oninput="buscarClientes()">
+                    <div class="row g-2 align-items-end">
+                        <div class="<?= $id_rol_lista == 3 ? 'col-md-5' : 'col-md-12' ?>">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="searchCliente"
+                                    placeholder="Buscar por nombre, documento, unidad o grupo"
+                                    oninput="buscarClientes()">
+                            </div>
+                        </div>
+                        <?php if ($id_rol_lista == 3): ?>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                <select class="form-select" id="filtroAsesor" onchange="filtrarPorAsesor()">
+                                    <option value="">Todos los asesores</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex gap-1">
+                            <button class="btn btn-success btn-sm flex-fill" onclick="exportarFinanciamientosExcel()" title="Exportar a Excel">
+                                <i class="fas fa-file-excel me-1"></i>Excel
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="limpiarFiltros()" title="Limpiar filtros">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 

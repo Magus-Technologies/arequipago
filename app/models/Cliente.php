@@ -1268,17 +1268,18 @@ public function obtenerDepartamentos()
                         c.apellido_materno,
                         'cliente' AS tipo_registro
                     FROM clientes_financiar c
-                    WHERE c.nombres LIKE ? 
-                    OR c.apellido_paterno LIKE ? 
-                    OR c.apellido_materno LIKE ? 
+                    WHERE (c.nombres LIKE ?
+                    OR c.apellido_paterno LIKE ?
+                    OR c.apellido_materno LIKE ?
                     OR c.num_cod_finan LIKE ?
-                    OR c.n_documento = ? 
+                    OR c.n_documento = ?
                     OR c.n_documento LIKE ?
+                    OR CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ?)
                     LIMIT ? OFFSET ?";
-            
+
             $stmt = $this->conectar->prepare($sql);
-            $searchTermLike = "%$searchTerm%";
-            $stmt->bind_param("ssssssii", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTerm, $searchTermLike, $cantidadPorPagina, $offset);
+            $searchTermLike = "%" . str_replace(' ', '%', trim($searchTerm)) . "%";
+            $stmt->bind_param("sssssssii", $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTerm, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
             $stmt->execute();
             $result = $stmt->get_result();
 

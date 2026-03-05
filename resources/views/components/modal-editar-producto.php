@@ -286,6 +286,15 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
+                                    <label for="edit_kilometraje" class="form-label">
+                                        <i class="fas fa-tachometer-alt text-primary"></i> Kilometraje
+                                    </label>
+                                    <input type="number" class="form-control" id="edit_kilometraje" name="kilometraje" min="0" placeholder="Ej: 15000">
+                                    <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
                                     <label for="edit_fecha_venc_soat" class="form-label">
                                         <i class="fas fa-calendar-check text-primary"></i> Fecha Vencimiento SOAT
                                     </label>
@@ -582,7 +591,7 @@ function renderizarCaracteristicasEdit(caracteristicas) {
         $('#tab-caracteristicas-nav').hide();
         
         // Limpiar campos de vehículo primero
-        $('#edit_vin, #edit_chasis, #edit_placa, #edit_color, #edit_anio, #edit_transmision, #edit_fecha_venc_soat, #edit_fecha_venc_seguro').val('');
+        $('#edit_vin, #edit_chasis, #edit_placa, #edit_color, #edit_anio, #edit_transmision, #edit_kilometraje, #edit_fecha_venc_soat, #edit_fecha_venc_seguro').val('');
         
         // Llenar campos de vehículo desde las características
         if (Array.isArray(caracteristicas) && caracteristicas.length > 0) {
@@ -614,6 +623,9 @@ function renderizarCaracteristicasEdit(caracteristicas) {
                     case 'transmision':
                     case 'transmisión':
                         $('#edit_transmision').val(valor);
+                        break;
+                    case 'kilometraje':
+                        $('#edit_kilometraje').val(valor);
                         break;
                     case 'fecha_venc_soat':
                     case 'fecha de vencimiento':
@@ -768,8 +780,8 @@ function guardarCambiosProducto() {
         const name = element.attr('name');
         
         // Excluir campos que se manejarán por separado
-        if (name && name !== 'ID_PRODUCTO' && 
-            !['vin', 'chasis', 'placa', 'color', 'anio', 'transmision', 'fecha_venc_soat', 'fecha_venc_seguro'].includes(name)) {
+        if (name && name !== 'ID_PRODUCTO' &&
+            !['vin', 'chasis', 'placa', 'color', 'anio', 'transmision', 'kilometraje', 'fecha_venc_soat', 'fecha_venc_seguro'].includes(name)) {
             formData.append(name, element.val());
         }
     });
@@ -790,6 +802,7 @@ function guardarCambiosProducto() {
             'edit_color': 'color',
             'edit_anio': 'anio',
             'edit_transmision': 'transmision',
+            'edit_kilometraje': 'kilometraje',
             'edit_fecha_venc_soat': 'fecha_venc_soat',
             'edit_fecha_venc_seguro': 'fecha_venc_seguro'
         };

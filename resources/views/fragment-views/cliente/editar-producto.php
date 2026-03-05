@@ -601,8 +601,11 @@
                 ];
             } else if (categoriaNorm.includes('vehiculo')) {
                 todasLasCaracteristicas = [
-                    { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat', tipo: 'date' },  // ✅ TIPO DATE
-                    { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro', tipo: 'date' },  // ✅ TIPO DATE
+                    { nombre: 'Placa', campo: 'placa_vehiculo', tipo: 'text' },
+                    { nombre: 'Transmisión', campo: 'transmision_vehiculo', tipo: 'text' },
+                    { nombre: 'Kilometraje', campo: 'kilometraje', tipo: 'number' },
+                    { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat', tipo: 'date' },
+                    { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro', tipo: 'date' },
                     { nombre: 'Nº de Motor', campo: 'chasis', tipo: 'text' },
                     { nombre: 'VIN (Número de identificación del Vehículo)', campo: 'vin', tipo: 'text' },
                     { nombre: 'Color', campo: 'color', tipo: 'text' },
@@ -955,6 +958,9 @@
                 ];
             } else if (categoriaNorm.includes('vehiculo')) {
                 todasLasCaracteristicas = [
+                    { nombre: 'Placa', campo: 'placa_vehiculo' },
+                    { nombre: 'Transmisión', campo: 'transmision_vehiculo' },
+                    { nombre: 'Kilometraje', campo: 'kilometraje' },
                     { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat' },
                     { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro' },
                     { nombre: 'Nº de Motor', campo: 'chasis' },

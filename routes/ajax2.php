@@ -105,6 +105,10 @@ Route::get('/ajs/getHistorialCuotasPagadas', 'FinanciamientoController@getHistor
 // RUTA PARA ENTREGAR VEHÍCULO CREDIYANGO Y GENERAR CRONOGRAMA
 Route::post('/ajs/entregarVehiculoCrediYango', 'FinanciamientoController@entregarVehiculoCrediYango');
 
+// RUTA PARA ENTREGAR VEHÍCULO CREDI AHORRO AUTOS Y REGISTRAR EXCEDENTE
+Route::post('/ajs/entregarVehiculoCrediAhorrosAutos', 'FinanciamientoController@entregarVehiculoCrediAhorrosAutos');
+Route::post('/ajs/generarReciboExcedente', 'FinanciamientoController@generarReciboExcedente');
+
 // RUTAS PARA RESUMEN DE FINANCIAMIENTOS
 Route::get('/ajs/obtenerResumenFinanciamientos', 'FinanciamientoController@obtenerResumenFinanciamientos');
 Route::get('/ajs/obtenerDetalleFinanciamientoPlan', 'FinanciamientoController@obtenerDetalleFinanciamientoPlan');
@@ -138,8 +142,20 @@ Route::get('/ajs/buscarSugerenciasConductores', 'FinanciamientoController@buscar
 // RUTA PARA GENERAR BOLETA DE CUOTA (pagos por app o registrados)
 Route::post('/ajs/generarBoletaCuota', 'FinanciamientoController@generarBoletaCuota');
 
+// RUTAS PARA RETIRO DE FINANCIAMIENTOS (PLANES 19 Y 38)
+Route::post('/ajs/retiro/calcularPenalidad', 'RetiroFinanciamientoController@calcularPenalidad');
+Route::post('/ajs/retiro/procesarRetiro', 'RetiroFinanciamientoController@procesarRetiro');
+Route::get('/ajs/retiro/listarRetirados', 'RetiroFinanciamientoController@obtenerFinanciamientosRetirados');
+
 // RUTAS PARA RECAUDACIONES DE CAJA AREQUIPA
 Route::post('/ajs/recaudaciones/listar', 'RecaudacionesController@listarRecaudaciones');
 Route::post('/ajs/recaudaciones/resumen', 'RecaudacionesController@obtenerResumen');
 Route::post('/ajs/recaudaciones/detalle', 'RecaudacionesController@obtenerDetalle');
 Route::post('/ajs/recaudaciones/exportar', 'RecaudacionesController@exportarExcel');
+Route::post('/ajs/recaudaciones/serie-numero', 'RecaudacionesController@obtenerSerieNumero');
+Route::post('/ajs/recaudaciones/facturar', 'RecaudacionesController@generarFacturaPago');
+
+// Facturación de pagos de financiamiento
+Route::post('/ajs/financiamiento/pago/detalle', 'FinanciamientoController@obtenerDetallePagoFinanciamiento');
+Route::post('/ajs/financiamiento/pago/serie-numero', 'FinanciamientoController@obtenerSerieNumeroFinanciamiento');
+Route::post('/ajs/financiamiento/pago/facturar', 'FinanciamientoController@generarFacturaPagoFinanciamiento');

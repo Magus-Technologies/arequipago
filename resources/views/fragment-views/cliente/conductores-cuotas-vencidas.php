@@ -67,6 +67,8 @@ $query = "
         cf.fecha_vencimiento < '$fecha_actual'
         AND cf.estado = 'En Progreso'
         AND f.incobrable = 0
+        AND f.estado_eliminado = 0
+        AND (f.aprobado = 1 OR f.aprobado IS NULL)
     GROUP BY
         c.id_conductor, p.nombre, f.moneda, c.numUnidad, c.desvinculado, c.telefono, c.nombres, c.apellido_paterno, c.apellido_materno
 
@@ -97,6 +99,8 @@ $query = "
         AND cf.estado = 'En Progreso'
         AND f.id_cliente IS NOT NULL
         AND f.incobrable = 0
+        AND f.estado_eliminado = 0
+        AND (f.aprobado = 1 OR f.aprobado IS NULL)
     GROUP BY
         cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno 
 ";

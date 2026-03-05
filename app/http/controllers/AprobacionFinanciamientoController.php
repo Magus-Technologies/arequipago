@@ -188,12 +188,13 @@ class AprobacionFinanciamientoController extends Controller
                 return;
             }
 
-            // Obtener información del producto
+            // Obtener información del producto y verificar si es financiamiento principal
             $idProducto = $financiamiento['idproductosv2'];
             $cantidadProducto = $financiamiento['cantidad_producto'];
+            $esPrincipal = $financiamiento['es_financiamiento_principal'] ?? 1; // Por defecto es principal
 
-            // Verificar stock
-            $queryProducto = "SELECT cantidad FROM productosv2 WHERE idproductosv2 = ?";
+            // ✅ NUEVO: Obtener información del producto para verificar si es tangible
+            $queryProducto = "SELECT cantidad, categoria, tipo_producto FROM productosv2 WHERE idproductosv2 = ?";
             $stmt = $this->conexion->prepare($queryProducto);
             $stmt->bind_param('i', $idProducto);
             $stmt->execute();
@@ -205,19 +206,37 @@ class AprobacionFinanciamientoController extends Controller
                 return;
             }
 
-            if ($producto['cantidad'] < $cantidadProducto) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Stock insuficiente para aprobar']);
-                return;
+            // ✅ NUEVO: Determinar si el producto es tangible (requiere stock)
+            // Productos intangibles: SOAT, Seguros, Servicios, etc.
+            $categoriaNorm = strtolower($producto['categoria'] ?? '');
+            $tipoProductoNorm = strtolower($producto['tipo_producto'] ?? '');
+            
+            $esIntangible = (
+                strpos($categoriaNorm, 'soat') !== false ||
+                strpos($categoriaNorm, 'seguro') !== false ||
+                strpos($categoriaNorm, 'servicio') !== false ||
+                strpos($categoriaNorm, 'intangible') !== false ||
+                strpos($tipoProductoNorm, 'intangible') !== false ||
+                strpos($tipoProductoNorm, 'servicio') !== false
+            );
+
+            // Solo descontar stock si es financiamiento principal Y el producto es tangible
+            if ($esPrincipal == 1 && !$esIntangible) {
+                // Verificar stock solo para productos tangibles
+                if ($producto['cantidad'] < $cantidadProducto) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Stock insuficiente para aprobar']);
+                    return;
+                }
+
+                // Descontar stock
+                $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
+                $queryUpdateStock = "UPDATE productosv2 SET cantidad = ? WHERE idproductosv2 = ?";
+                $stmtStock = $this->conexion->prepare($queryUpdateStock);
+                $stmtStock->bind_param('ii', $nuevaCantidad, $idProducto);
+                $stmtStock->execute();
             }
-
-            // Descontar stock
-            $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
-            $queryUpdateStock = "UPDATE productosv2 SET cantidad = ? WHERE idproductosv2 = ?";
-            $stmtStock = $this->conexion->prepare($queryUpdateStock);
-            $stmtStock->bind_param('ii', $nuevaCantidad, $idProducto);
-            $stmtStock->execute();
-
+            
             // Actualizar estado del financiamiento a aprobado
             $queryUpdate = "UPDATE financiamiento SET aprobado = 1 WHERE idfinanciamiento = ?";
             $stmtUpdate = $this->conexion->prepare($queryUpdate);

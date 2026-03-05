@@ -89,8 +89,10 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                 <tr>
                     <th>Item</th>
                     <th>Cliente</th>
+                    <th>Nº Identidad</th>
                     <th>Nº de unidad</th> 
                     <th>Asesor</th>
+                    <th>Tipo Pago</th>
                     <th>Monto</th>
                     <th>Fecha Emisión</th>
                     <th>Acciones</th>
@@ -98,7 +100,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             </thead>
             <tbody id="tabla-reportes">
                 <tr>
-                    <td colspan="7" class="text-center">Cargando datos...</td>
+                    <td colspan="9" class="text-center">Cargando datos...</td>
                 </tr>
             </tbody>
         </table>
@@ -968,7 +970,7 @@ function eliminarReporte(id) {
 // Función para mostrar los reportes en la tabla
 function mostrarReportes(reportes) {
     if (reportes.length === 0) {
-        $("#tabla-reportes").html('<tr><td colspan="7" class="text-center">No hay reportes disponibles</td></tr>');
+        $("#tabla-reportes").html('<tr><td colspan="9" class="text-center">No hay reportes disponibles</td></tr>');
         return;
     }
 
@@ -983,12 +985,24 @@ function mostrarReportes(reportes) {
             rutaPDF = 'files/notasPagoInscripcion/nota_venta_cliente_' + reporte.id_pago + '.pdf';
         }
 
+        // Determinar el badge del tipo de pago
+        let tipoPagoBadge = '';
+        if (reporte.tipo_pago === 'contado') {
+            tipoPagoBadge = '<span class="badge bg-success">Contado</span>';
+        } else if (reporte.tipo_pago === 'cuotas') {
+            tipoPagoBadge = '<span class="badge bg-primary">Cuotas</span>';
+        } else {
+            tipoPagoBadge = '<span class="badge bg-secondary">-</span>';
+        }
+
         html += `
         <tr>
             <td>${index + 1}</td>
             <td>${reporte.nombre_persona || 'No especificado'}</td>
+            <td>${reporte.nro_identidad || '-'}</td>
             <td>${reporte.num_unidad ? reporte.num_unidad : '-'}</td>
             <td>${reporte.nombre_asesor || 'No especificado'}</td>
+            <td>${tipoPagoBadge}</td>
             <td>S/ ${parseFloat(reporte.monto).toFixed(2)}</td>
             <td>${formatearFecha(reporte.fecha_emision)}</td>
             <td>
@@ -996,6 +1010,7 @@ function mostrarReportes(reportes) {
                     <button class="btn btn-sm btn-primary ver-pdf"
                             data-id="${reporte.id_pago}"
                             data-tipo="${reporte.tipo_persona}"
+                            data-tipopago="${reporte.tipo_pago}"
                             data-ruta="${rutaPDF}"
                             title="Ver PDF">
                         <i class="fa fa-eye"></i>
@@ -1003,6 +1018,7 @@ function mostrarReportes(reportes) {
                     <button class="btn btn-sm btn-success descargar-pdf"
                             data-id="${reporte.id_pago}"
                             data-tipo="${reporte.tipo_persona}"
+                            data-tipopago="${reporte.tipo_pago}"
                             data-ruta="${rutaPDF}"
                             title="Descargar PDF">
                         <i class="fa fa-download"></i>
@@ -1033,13 +1049,20 @@ function mostrarReportes(reportes) {
     $(".ver-pdf").click(function () {
         const id = $(this).data("id");
         const tipo = $(this).data("tipo");
+        const tipoPago = $(this).data("tipopago");
         const ruta = $(this).data("ruta");
 
         // Si es cliente, usar la nueva ruta dinámica
         if (tipo === 'cliente') {
             window.open(`/arequipago/verComprobante/${id}`, "_blank");
+        } else if (tipoPago === 'contado' && ruta) {
+            // Para conductores con pago al contado que ya tienen PDF, usar ruta directa
+            window.open(ruta, "_blank");
+        } else if (tipoPago === 'contado') {
+            // Para conductores con pago al contado sin PDF, regenerar
+            window.open(`/arequipago/verComprobanteContado/${id}`, "_blank");
         } else {
-            // Para conductores, usar la ruta tradicional
+            // Para conductores con cuotas, usar la ruta tradicional
             window.open(ruta, "_blank");
         }
     });
@@ -1047,13 +1070,20 @@ function mostrarReportes(reportes) {
     $(".descargar-pdf").click(function () {
         const id = $(this).data("id");
         const tipo = $(this).data("tipo");
+        const tipoPago = $(this).data("tipopago");
         const ruta = $(this).data("ruta");
 
         // Si es cliente, usar la nueva ruta dinámica
         if (tipo === 'cliente') {
             descargarPDF(`/arequipago/verComprobante/${id}`);
+        } else if (tipoPago === 'contado' && ruta) {
+            // Para conductores con pago al contado que ya tienen PDF, usar ruta directa
+            descargarPDF(ruta);
+        } else if (tipoPago === 'contado') {
+            // Para conductores con pago al contado sin PDF, regenerar
+            descargarPDF(`/arequipago/verComprobanteContado/${id}`);
         } else {
-            // Para conductores, usar la ruta tradicional
+            // Para conductores con cuotas, usar la ruta tradicional
             descargarPDF(ruta);
         }
     });
@@ -1106,6 +1136,7 @@ function filtrarTabla() {
     const reportesFiltrados = reportesGlobales.filter(reporte => {
         return (
             (reporte.nombre_persona && reporte.nombre_persona.toLowerCase().includes(textoBusqueda)) ||
+            (reporte.nro_identidad && reporte.nro_identidad.toString().toLowerCase().includes(textoBusqueda)) ||
             (reporte.nombre_asesor && reporte.nombre_asesor.toLowerCase().includes(textoBusqueda)) ||
             (reporte.monto && reporte.monto.toString().includes(textoBusqueda)) ||
             (reporte.fecha_emision && formatearFecha(reporte.fecha_emision).toLowerCase().includes(textoBusqueda))||

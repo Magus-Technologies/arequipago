@@ -143,6 +143,40 @@ class CuotaFinanciamiento
         }
     }
 
+    /**
+     * Obtener las ÚLTIMAS N cuotas de un financiamiento (para Credi Ahorros Autos - Plan 49)
+     */
+    public function obtenerUltimasCuotasPorFinanciamiento($id_financiamiento, $limite)
+    {
+        try {
+            $sql = "SELECT idcuotas_financiamiento as id, fecha_vencimiento, monto, estado, numero_cuota
+                    FROM cuotas_financiamiento
+                    WHERE id_financiamiento = ?
+                    ORDER BY numero_cuota DESC
+                    LIMIT ?";
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param("ii", $id_financiamiento, $limite);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $cuotas = [];
+            while ($row = $result->fetch_assoc()) {
+                $cuotas[] = $row;
+            }
+
+            // Reordenar ASC para que estén en orden correcto
+            usort($cuotas, function($a, $b) {
+                return $a['numero_cuota'] - $b['numero_cuota'];
+            });
+
+            return $cuotas;
+
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
     public function getCuotasforFinanciamientoList($id_financiamiento) { // Modificado
         $sql = "SELECT * FROM cuotas_financiamiento WHERE id_financiamiento = ? ORDER BY numero_cuota ASC"; // Modificado
         $stmt = $this->conectar->prepare($sql); // Modificado

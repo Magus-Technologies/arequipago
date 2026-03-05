@@ -1,1 +1,0 @@
-hola responde en español porfavor , analiza resources\views\fragment-views\cliente\almacen-productos.php app\models\Productov2.php app\http\controllers\ProductosController.php analiza porfavor  

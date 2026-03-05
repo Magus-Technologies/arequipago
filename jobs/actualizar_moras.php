@@ -36,10 +36,11 @@ class ScriptBD {
         while ($cuota = $resultado_cuotas->fetch_assoc()) {
             $cuotas_procesadas++;
 
-            // Obtener datos del financiamiento incluyendo estado_entrega, frecuencia, categoría del producto y cobrar_mora del plan
+            // Obtener datos del financiamiento incluyendo moras por frecuencia del plan
             $query_financiamiento = "
                 SELECT f.idproductosv2, f.moneda, f.estado_entrega, f.frecuencia, f.cobrar_mora as financiamiento_cobra_mora,
-                       p.categoria, COALESCE(pf.cobrar_mora, 1) as plan_cobra_mora
+                       p.categoria, COALESCE(pf.cobrar_mora, 1) as plan_cobra_mora,
+                       pf.penalizacion_mora, pf.mora_semanal, pf.mora_quincenal, pf.mora_mensual
                 FROM financiamiento f
                 INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                 LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
@@ -84,32 +85,55 @@ class ScriptBD {
             $frecuencia = strtolower($financiamiento['frecuencia']);
             $categoria = strtolower(trim($financiamiento['categoria']));
 
-            // Verificar si es un vehículo
-            $esVehiculo = (strpos($categoria, 'vehiculo') !== false || strpos($categoria, 'vehículo') !== false);
+            // Moras configuradas por frecuencia en el plan
+            $moraSemanal = $financiamiento['mora_semanal'];
+            $moraQuincenal = $financiamiento['mora_quincenal'];
+            $moraMensual = $financiamiento['mora_mensual'];
+            $penalizacionMoraGeneral = $financiamiento['penalizacion_mora']; // fallback legacy
 
-            if ($esVehiculo && $moneda == '$') {
-                // MORA PARA VEHÍCULOS EN DÓLARES según frecuencia
-                if ($frecuencia == 'semanal') {
-                    $nueva_mora = 5;  // $5 dólares semanal
-                } elseif ($frecuencia == 'mensual') {
-                    $nueva_mora = 20; // $20 dólares mensual
-                } else {
-                    $nueva_mora = 5;  // Por defecto $5 si no se especifica frecuencia
-                }
-                echo "<pre>🚗 Vehículo - Frecuencia: {$frecuencia} - Mora: \${$nueva_mora}</pre>";
-            } elseif ($moneda == 'S/.') {
-                // Soles (mantener lógica anterior para productos no vehiculares)
-                if ($monto_cuota >= 100) {
-                    $nueva_mora = 10;
-                } else {
-                    $nueva_mora = 5;
-                }
-            } elseif ($moneda == '$') {
-                // Dólares (para productos no vehiculares)
-                $nueva_mora = 5;
+            // PRIORIDAD 1: Buscar mora específica según la frecuencia del financiamiento
+            $moraEspecifica = null;
+            if ($frecuencia == 'semanal' && $moraSemanal !== null && $moraSemanal !== '') {
+                $moraEspecifica = floatval($moraSemanal);
+            } elseif ($frecuencia == 'quincenal' && $moraQuincenal !== null && $moraQuincenal !== '') {
+                $moraEspecifica = floatval($moraQuincenal);
+            } elseif ($frecuencia == 'mensual' && $moraMensual !== null && $moraMensual !== '') {
+                $moraEspecifica = floatval($moraMensual);
+            }
+
+            if ($moraEspecifica !== null) {
+                // Usar mora configurada para esta frecuencia
+                $nueva_mora = $moraEspecifica;
+                echo "<pre>📋 Mora por frecuencia ({$frecuencia}): {$moneda} {$nueva_mora}</pre>";
+            } elseif ($penalizacionMoraGeneral !== null && $penalizacionMoraGeneral !== '') {
+                // PRIORIDAD 2: Fallback a penalizacion_mora general (legacy)
+                $nueva_mora = floatval($penalizacionMoraGeneral);
+                echo "<pre>📋 Mora general del plan: {$moneda} {$nueva_mora}</pre>";
             } else {
-                echo "<pre>⚠️ Moneda no reconocida para cuota ID " . $cuota['idcuotas_financiamiento'] . ": " . $moneda . "</pre>";
-                continue;
+                // PRIORIDAD 3: Mora automática según reglas del sistema (hardcodeadas)
+                $esVehiculo = (strpos($categoria, 'vehiculo') !== false || strpos($categoria, 'vehículo') !== false);
+
+                if ($esVehiculo && $moneda == '$') {
+                    if ($frecuencia == 'semanal') {
+                        $nueva_mora = 5;
+                    } elseif ($frecuencia == 'mensual') {
+                        $nueva_mora = 20;
+                    } else {
+                        $nueva_mora = 5;
+                    }
+                    echo "<pre>🚗 Vehículo (mora automática) - Frecuencia: {$frecuencia} - Mora: \${$nueva_mora}</pre>";
+                } elseif ($moneda == 'S/.') {
+                    if ($monto_cuota >= 100) {
+                        $nueva_mora = 10;
+                    } else {
+                        $nueva_mora = 5;
+                    }
+                } elseif ($moneda == '$') {
+                    $nueva_mora = 5;
+                } else {
+                    echo "<pre>⚠️ Moneda no reconocida para cuota ID " . $cuota['idcuotas_financiamiento'] . ": " . $moneda . "</pre>";
+                    continue;
+                }
             }
             
             // Actualizar la mora en la cuota

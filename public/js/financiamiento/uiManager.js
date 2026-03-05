@@ -339,6 +339,17 @@ function asignarEventListenersFinanciamiento() {
         validarCuotaInicialVariante();
         return;
       }
+      
+      // ✅ FIX CRÍTICO: Para planes especiales (14, 15, 16, 22, 38, 44, 47), 
+      // NO ejecutar calcularFinanciamiento() porque tiene lógica diferente
+      // En su lugar, se ejecutará recalcularPorCambioCuotaInicial() que llama a calcularCronogramaDinamico()
+      if (planGlobal && [14, 15, 16, 22, 38, 44, 47].includes(parseInt(planGlobal.idplan_financiamiento))) {
+        console.log("🔧 PLAN ESPECIAL - Saltando calcularFinanciamiento() en event listener de cuotaInicial");
+        // NO ejecutar calcularFinanciamiento() aquí
+        // La función recalcularPorCambioCuotaInicial() se encargará del recálculo
+        return;
+      }
+      
       calcularFinanciamiento();
     });
 
@@ -507,6 +518,14 @@ function mostrarModalEntregarVehiculo() {
   if (esCrediYango) {
     console.log("🚗 CrediYango detectado - mostrando modal con fecha");
     mostrarModalEntregarCrediYango();
+    return;
+  }
+
+  // ✅ CASO 1.5: Credi Ahorros Autos - Modal con selector + excedente
+  const esCrediAhorrosAutos = verificarSiEsCrediAhorrosAutos();
+  if (esCrediAhorrosAutos) {
+    console.log("🚗 Credi Ahorros Autos detectado - mostrando modal con excedente");
+    mostrarModalEntregarCrediAhorrosAutos();
     return;
   }
 
@@ -883,6 +902,26 @@ function descargarContratoEntregaDesdeModal() {
 
   // Llamar a la función de generación con el ID seleccionado
   generarContratoEntregaVehiculo(idFinanciamientoSeleccionado);
+}
+
+// ✅ NUEVO: Descargar acta de entrega de celular
+function descargarActaEntregaCelular() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire("Error", "No se ha seleccionado un financiamiento", "error");
+    return;
+  }
+  generarContratoInstant(idFinanciamientoSeleccionado, false, true);
+}
+
+/**
+ * Descargar acta de entrega de chip (Plan 36 - CORPORATIVO CLARO)
+ */
+function descargarActaEntregaChip() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire("Error", "No se ha seleccionado un financiamiento", "error");
+    return;
+  }
+  generarContratoInstant(idFinanciamientoSeleccionado, false, true);
 }
 
 /**
@@ -1536,15 +1575,73 @@ function verificarSiEsCrediYango() {
 }
 
 /**
+ * Verifica si el financiamiento seleccionado es Credi Ahorros Autos (grupo 49)
+ */
+function verificarSiEsCrediAhorrosAutos() {
+  const tablas = ["#tablaFinanciamientos tbody tr", "#detalleSelect tbody tr"];
+
+  for (let selector of tablas) {
+    const rows = document.querySelectorAll(selector);
+    for (let row of rows) {
+      try {
+        const financiamiento = JSON.parse(
+          row.getAttribute("data-financiamiento")
+        );
+        if (
+          financiamiento.financiamiento.idfinanciamiento ==
+          idFinanciamientoSeleccionado
+        ) {
+          const grupo = financiamiento.financiamiento.grupo_financiamiento;
+          const esCrediAhorrosAutos = grupo == "49" || grupo == 49;
+          console.log("✅ Financiamiento encontrado:", {
+            id: idFinanciamientoSeleccionado,
+            grupo: grupo,
+            esCrediAhorrosAutos: esCrediAhorrosAutos,
+            tabla: selector,
+          });
+          return esCrediAhorrosAutos;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+
+  console.warn(
+    "⚠️ No se encontró el financiamiento en ninguna tabla:",
+    idFinanciamientoSeleccionado
+  );
+  return false;
+}
+
+/**
  * Muestra modal específico para entregar vehículo CrediYango
- * Solo pide fecha de entrega
+ * Permite seleccionar el vehículo real del almacén
  */
 function mostrarModalEntregarCrediYango() {
   console.log("🚗 Mostrando modal de entrega para CrediYango");
 
+  // ✅ NUEVO: Calcular fecha por defecto (día 9 del mes siguiente)
+  const hoy = new Date();
+  const mesActual = hoy.getMonth();
+  const anioActual = hoy.getFullYear();
+  
+  // Si estamos después del día 9, usar el mes siguiente; si no, usar el mes actual
+  let mesPrimeraCuota = hoy.getDate() > 9 ? mesActual + 1 : mesActual;
+  let anioPrimeraCuota = anioActual;
+  
+  // Si el mes es diciembre y pasamos al siguiente, ajustar año
+  if (mesPrimeraCuota > 11) {
+    mesPrimeraCuota = 0;
+    anioPrimeraCuota++;
+  }
+  
+  const fechaPrimeraCuotaDefault = new Date(anioPrimeraCuota, mesPrimeraCuota, 9);
+  const fechaPrimeraCuotaStr = fechaPrimeraCuotaDefault.toISOString().split("T")[0];
+
   const modalHTML = `
         <div id="modalEntregarCrediYango" class="modal-entregar-vehiculo">
-            <div class="modal-content-vehiculo">
+            <div class="modal-content-vehiculo" style="max-width: 1200px;">
                 <div class="modal-header-vehiculo" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
                     <h5><i class="fas fa-truck me-2"></i>Entregar Vehículo - CrediYango</h5>
                     <button type="button" class="btn-close-vehiculo" onclick="cerrarModalEntregarCrediYango()">
@@ -1552,37 +1649,99 @@ function mostrarModalEntregarCrediYango() {
                     </button>
                 </div>
                 <div class="modal-body-vehiculo">
-                    <div class="alert alert-info">
+                    <div class="alert alert-info mb-3">
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>Importante:</strong> Al registrar la fecha de entrega se generará automáticamente el cronograma de 200 cuotas semanales.
-                        La fecha de inicio de pagos será 7 días después de la entrega.
                     </div>
 
-                    <!-- ✅ NUEVO: Mostrar información del vehículo registrado -->
-                    <div class="alert alert-success mb-3">
-                        <h6 class="mb-2"><i class="fas fa-car me-2"></i>Vehículo Registrado</h6>
-                        <p class="mb-0" id="infoVehiculoRegistrado">
-                            <strong>Cargando información del vehículo...</strong>
-                        </p>
-                    </div>
+                    <!-- ✅ NUEVO: Layout en dos columnas -->
+                    <div class="row">
+                        <!-- COLUMNA IZQUIERDA: Selector de vehículo -->
+                        <div class="col-md-7">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-car me-2"></i>Seleccionar Vehículo del Almacén
+                                </label>
+                                <input type="text" id="buscarVehiculoCrediYango" class="form-control mb-2"
+                                       placeholder="Buscar por código o nombre" onkeyup="buscarVehiculosCrediYango()">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;">
+                                    <table class="table table-hover table-sm mb-0" id="tablaVehiculosCrediYango">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th style="width: 8%;"></th>
+                                                <th>Código</th>
+                                                <th>Nombre</th>
+                                                <th style="width: 12%;">Stock</th>
+                                                <th style="width: 15%;">Precio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyVehiculosCrediYango">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4">
+                                                    <i class="fas fa-spinner fa-spin me-2"></i>Cargando vehículos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="fechaEntregaCrediYango" class="form-label">
-                            <i class="fas fa-calendar-alt me-2"></i>Fecha de Entrega del Vehículo
-                        </label>
-                        <input type="date"
-                               id="fechaEntregaCrediYango"
-                               class="form-control"
-                               required
-                               value="${new Date().toISOString().split("T")[0]}"
-                               max="${new Date().toISOString().split("T")[0]}">
-                        <small class="text-muted">Seleccione la fecha en que se entregó el vehículo al cliente</small>
-                    </div>
+                        <!-- COLUMNA DERECHA: Fechas -->
+                        <div class="col-md-5">
+                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-calendar-alt me-2 text-success"></i>Fechas de Entrega
+                                    </h6>
 
-                    <div id="previewFechaInicio" class="alert alert-info">
-                        <strong><i class="fas fa-calendar-check me-2"></i>Fecha de inicio de pagos:</strong>
-                        <span id="fechaInicioCalculadaPreview"></span>
-                        <br><small class="text-muted">7 días después de la fecha de entrega</small>
+                                    <div class="mb-3">
+                                        <label for="fechaEntregaCrediYango" class="form-label">
+                                            <i class="fas fa-truck me-2"></i>Fecha de Entrega del Vehículo
+                                        </label>
+                                        <input type="date"
+                                               id="fechaEntregaCrediYango"
+                                               class="form-control"
+                                               required
+                                               value="${new Date().toISOString().split("T")[0]}"
+                                               max="${new Date().toISOString().split("T")[0]}">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Fecha en que se entregó el vehículo
+                                        </small>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="mb-3">
+                                        <label for="fechaPrimeraCuotaCrediYango" class="form-label">
+                                            <i class="fas fa-calendar-check me-2"></i>Fecha de Primera Cuota
+                                        </label>
+                                        <input type="date"
+                                               id="fechaPrimeraCuotaCrediYango"
+                                               class="form-control"
+                                               required
+                                               value="${fechaPrimeraCuotaStr}">
+                                        <small class="text-success">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            Por defecto: día 9 de cada mes (editable)
+                                        </small>
+                                    </div>
+
+                                    <div class="alert alert-success mt-3 mb-0" style="background: rgba(40, 167, 69, 0.1); border-color: rgba(40, 167, 69, 0.3);">
+                                        <strong><i class="fas fa-calendar-check me-2"></i>Inicio de pagos:</strong>
+                                        <div id="fechaInicioCalculadaPreview" class="mt-2 fw-bold text-success">
+                                            ${fechaPrimeraCuotaDefault.toLocaleDateString("es-PE", {
+                                              weekday: "long",
+                                              year: "numeric",
+                                              month: "long",
+                                              day: "numeric",
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer-vehiculo">
@@ -1606,18 +1765,15 @@ function mostrarModalEntregarCrediYango() {
   modal.offsetHeight;
   modal.classList.add("show");
 
-  // ✅ NUEVO: Mostrar información del vehículo ya registrado
-  mostrarInfoVehiculoRegistrado();
+  // ✅ NUEVO: Cargar vehículos del almacén
+  cargarVehiculosCrediYango();
 
-  // Agregar evento para calcular fecha de inicio cuando cambie la fecha de entrega
+  // ✅ NUEVO: Agregar evento para actualizar preview cuando cambie la fecha de primera cuota
   document
-    .getElementById("fechaEntregaCrediYango")
+    .getElementById("fechaPrimeraCuotaCrediYango")
     .addEventListener("change", function () {
-      calcularFechaInicioPagosPreview();
+      actualizarPreviewPrimeraCuota();
     });
-
-  // Calcular fecha inicial
-  calcularFechaInicioPagosPreview();
 }
 
 /**
@@ -1668,15 +1824,14 @@ function buscarVehiculosCrediYango() {
 */
 
 /**
- * Calcula y muestra preview de la fecha de inicio de pagos
+ * ✅ NUEVA FUNCIÓN: Actualizar preview de fecha de primera cuota
  */
-function calcularFechaInicioPagosPreview() {
-  const fechaEntregaInput = document.getElementById("fechaEntregaCrediYango");
-  const fechaEntrega = fechaEntregaInput.value;
+function actualizarPreviewPrimeraCuota() {
+  const fechaPrimeraCuotaInput = document.getElementById("fechaPrimeraCuotaCrediYango");
+  const fechaPrimeraCuota = fechaPrimeraCuotaInput.value;
 
-  if (fechaEntrega) {
-    const fecha = new Date(fechaEntrega + "T00:00:00");
-    fecha.setDate(fecha.getDate() + 7); // Agregar 7 días
+  if (fechaPrimeraCuota) {
+    const fecha = new Date(fechaPrimeraCuota + "T00:00:00");
 
     const fechaFormateada = fecha.toLocaleDateString("es-PE", {
       weekday: "long",
@@ -1685,10 +1840,110 @@ function calcularFechaInicioPagosPreview() {
       day: "numeric",
     });
 
-    document.getElementById("fechaInicioCalculadaPreview").textContent =
-      fechaFormateada;
+    document.getElementById("fechaInicioCalculadaPreview").textContent = fechaFormateada;
     document.getElementById("previewFechaInicio").style.display = "block";
   }
+}
+
+/**
+ * Calcula y muestra preview de la fecha de inicio de pagos
+ * ⚠️ OBSOLETA - Ya no se usa el cálculo de 15 días, ahora se elige manualmente
+ */
+function calcularFechaInicioPagosPreview() {
+  // Esta función ya no se usa para CrediYango
+  console.log("⚠️ calcularFechaInicioPagosPreview() obsoleta para CrediYango");
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Cargar vehículos del almacén para CrediYango
+ */
+function cargarVehiculosCrediYango() {
+  $.ajax({
+    url: "/arequipago/obtenerProductosVehiculos",
+    type: "GET",
+    dataType: "json",
+    success: function (data) {
+      mostrarVehiculosCrediYango(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al cargar vehículos");
+      const tbody = $("#tbodyVehiculosCrediYango");
+      tbody.html(`
+        <tr>
+          <td colspan="5" class="text-center text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>Error al cargar vehículos
+          </td>
+        </tr>
+      `);
+    },
+  });
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Mostrar vehículos en la tabla
+ */
+function mostrarVehiculosCrediYango(productos) {
+  const tbody = $("#tbodyVehiculosCrediYango");
+  tbody.empty();
+
+  // ✅ NUEVO: Filtrar solo productos con stock disponible
+  const productosConStock = productos.filter(p => parseInt(p.cantidad) > 0);
+
+  if (productosConStock.length === 0) {
+    tbody.append(`
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          <i class="fas fa-info-circle me-2"></i>No hay vehículos disponibles con stock
+        </td>
+      </tr>
+    `);
+    return;
+  }
+
+  productosConStock.forEach((producto) => {
+    const cantidad = parseInt(producto.cantidad) || 0;
+
+    tbody.append(`
+      <tr class="vehiculo-row-crediyango" 
+          data-id-producto="${producto.idproductosv2}"
+          data-nombre="${producto.nombre || 'N/A'}"
+          data-codigo="${producto.codigo || 'N/A'}">
+        <td>
+          <input type="radio" name="vehiculoCrediYango" class="vehiculo-checkbox-crediyango" value="${producto.idproductosv2}">
+        </td>
+        <td>${producto.codigo || "N/A"}</td>
+        <td>${producto.nombre || "N/A"}</td>
+        <td class="text-success fw-bold">${cantidad}</td>
+        <td>S/. ${parseFloat(producto.precio_venta || 0).toFixed(2)}</td>
+      </tr>
+    `);
+  });
+
+  // Event listener para selección
+  $(".vehiculo-checkbox-crediyango").on("change", function () {
+    $(".vehiculo-row-crediyango").removeClass("vehiculo-seleccionado");
+    $(this).closest("tr").addClass("vehiculo-seleccionado");
+  });
+}
+
+/**
+ * ✅ NUEVA FUNCIÓN: Buscar vehículos por código o nombre
+ */
+function buscarVehiculosCrediYango() {
+  const searchTerm = $("#buscarVehiculoCrediYango").val();
+
+  $.ajax({
+    url: "/arequipago/buscarProductosVehiculos",
+    type: "GET",
+    data: { searchTerm: searchTerm },
+    dataType: "json",
+    success: function (data) {
+      mostrarVehiculosCrediYango(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al buscar vehículos");
+    },
+  });
 }
 
 /**
@@ -1705,11 +1960,321 @@ window.cerrarModalEntregarCrediYango =
     }
   };
 
+// ========================================
+// 🚗 FUNCIONES PARA CREDI AHORROS AUTOS (GRUPO 49)
+// ========================================
+
 /**
- * Confirma la entrega del vehículo CrediYango y genera el cronograma
+ * Muestra modal específico para entregar vehículo Credi Ahorros Autos
+ * Incluye selector de vehículo y cálculo de excedente
  */
-window.confirmarEntregaCrediYango = function confirmarEntregaCrediYango() {
-  const fechaEntrega = document.getElementById("fechaEntregaCrediYango").value;
+function mostrarModalEntregarCrediAhorrosAutos() {
+  console.log("🚗 Mostrando modal de entrega para Credi Ahorros Autos");
+
+  const fin = financiamientoSeleccionadoCompleto?.financiamiento;
+  const montoSinInteres = parseFloat(fin?.monto_sin_interes || 0);
+  const moneda = fin?.moneda || "S/.";
+  const simbolo = moneda === "$" || moneda === "Dólares" ? "$" : "S/.";
+
+  const modalHTML = `
+        <div id="modalEntregarCrediAhorros" class="modal-entregar-vehiculo">
+            <div class="modal-content-vehiculo" style="max-width: 1200px;">
+                <div class="modal-header-vehiculo" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h5><i class="fas fa-truck me-2"></i>Entregar Vehículo - Credi Ahorro Autos</h5>
+                    <button type="button" class="btn-close-vehiculo" onclick="cerrarModalEntregarCrediAhorros()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body-vehiculo">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Seleccione el vehículo a entregar. Si el precio del vehículo supera el monto del plan, se registrará el excedente como pago adicional.
+                    </div>
+
+                    <div class="row">
+                        <!-- COLUMNA IZQUIERDA: Selector de vehículo -->
+                        <div class="col-md-7">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-car me-2"></i>Seleccionar Vehículo del Almacén
+                                </label>
+                                <input type="text" id="buscarVehiculoCrediAhorros" class="form-control mb-2"
+                                       placeholder="Buscar por código o nombre" onkeyup="buscarVehiculosCrediAhorros()">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;">
+                                    <table class="table table-hover table-sm mb-0" id="tablaVehiculosCrediAhorros">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th style="width: 8%;"></th>
+                                                <th>Código</th>
+                                                <th>Nombre</th>
+                                                <th style="width: 12%;">Stock</th>
+                                                <th style="width: 15%;">Precio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyVehiculosCrediAhorros">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4">
+                                                    <i class="fas fa-spinner fa-spin me-2"></i>Cargando vehículos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA DERECHA: Fecha + Resumen Financiero -->
+                        <div class="col-md-5">
+                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-calendar-alt me-2 text-success"></i>Fecha de Entrega
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label for="fechaEntregaCrediAhorros" class="form-label">
+                                            <i class="fas fa-truck me-2"></i>Fecha de Entrega del Vehículo
+                                        </label>
+                                        <input type="date"
+                                               id="fechaEntregaCrediAhorros"
+                                               class="form-control"
+                                               required
+                                               value="${new Date().toISOString().split("T")[0]}"
+                                               max="${new Date().toISOString().split("T")[0]}">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Fecha en que se entregó el vehículo
+                                        </small>
+                                    </div>
+
+                                    <hr>
+
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-calculator me-2 text-primary"></i>Resumen Financiero
+                                    </h6>
+
+                                    <div class="mb-2 d-flex justify-content-between">
+                                        <span>Monto del Plan:</span>
+                                        <strong id="montoplanCrediAhorros">${simbolo} ${montoSinInteres.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                    </div>
+
+                                    <div class="mb-2 d-flex justify-content-between">
+                                        <span>Precio del Vehículo:</span>
+                                        <strong id="precioVehiculoCrediAhorros" class="text-muted">-- Seleccione vehículo --</strong>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="mb-0 d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">Excedente:</span>
+                                        <strong id="excedenteCrediAhorros" class="fs-5 text-muted">--</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección excedente (visible solo si excedente > 0) -->
+                            <div id="seccionExcedente" class="mt-3" style="display: none;">
+                                <div class="card border-danger">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger mb-3">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Pago de Excedente
+                                        </h6>
+
+                                        <div class="mb-3">
+                                            <label for="metodoPagoExcedente" class="form-label">Método de Pago</label>
+                                            <select id="metodoPagoExcedente" class="form-select">
+                                                <option value="">-- Seleccione --</option>
+                                                <option value="Efectivo">Efectivo</option>
+                                                <option value="Transferencia">Transferencia</option>
+                                                <option value="Yape/Plin">Yape/Plin</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label for="notaExcedente" class="form-label">Nota (opcional)</label>
+                                            <textarea id="notaExcedente" class="form-control" rows="2" placeholder="Observaciones sobre el pago del excedente"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer-vehiculo">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEntregarCrediAhorros()">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="confirmarEntregaCrediAhorrosAutos()">
+                        <i class="fas fa-check me-2"></i>Confirmar Entrega
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+  // Agregar modal al body
+  document.body.insertAdjacentHTML("beforeend", modalHTML);
+
+  // Mostrar modal con animación
+  const modal = document.getElementById("modalEntregarCrediAhorros");
+  modal.style.display = "flex";
+  modal.offsetHeight;
+  modal.classList.add("show");
+
+  // Desactivar focus trap de Bootstrap para que los inputs del modal custom funcionen
+  modal.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+  modal.addEventListener('focusin', function(e) { e.stopPropagation(); });
+
+  // Cargar vehículos del almacén
+  cargarVehiculosCrediAhorros();
+}
+
+/**
+ * Cargar vehículos del almacén para Credi Ahorros Autos
+ */
+function cargarVehiculosCrediAhorros() {
+  $.ajax({
+    url: "/arequipago/obtenerProductosVehiculos",
+    type: "GET",
+    dataType: "json",
+    success: function (data) {
+      mostrarVehiculosCrediAhorros(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al cargar vehículos");
+      const tbody = $("#tbodyVehiculosCrediAhorros");
+      tbody.html(`
+        <tr>
+          <td colspan="5" class="text-center text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>Error al cargar vehículos
+          </td>
+        </tr>
+      `);
+    },
+  });
+}
+
+/**
+ * Mostrar vehículos en la tabla de Credi Ahorros Autos
+ */
+function mostrarVehiculosCrediAhorros(productos) {
+  const tbody = $("#tbodyVehiculosCrediAhorros");
+  tbody.empty();
+
+  const productosConStock = productos.filter(p => parseInt(p.cantidad) > 0);
+
+  if (productosConStock.length === 0) {
+    tbody.append(`
+      <tr>
+        <td colspan="5" class="text-center text-muted">
+          <i class="fas fa-info-circle me-2"></i>No hay vehículos disponibles con stock
+        </td>
+      </tr>
+    `);
+    return;
+  }
+
+  productosConStock.forEach((producto) => {
+    const cantidad = parseInt(producto.cantidad) || 0;
+
+    tbody.append(`
+      <tr class="vehiculo-row-crediahorros" 
+          data-id-producto="${producto.idproductosv2}"
+          data-nombre="${producto.nombre || 'N/A'}"
+          data-codigo="${producto.codigo || 'N/A'}"
+          data-precio="${producto.precio_venta || 0}">
+        <td>
+          <input type="radio" name="vehiculoCrediAhorros" class="vehiculo-checkbox-crediahorros" value="${producto.idproductosv2}" data-precio="${producto.precio_venta || 0}">
+        </td>
+        <td>${producto.codigo || "N/A"}</td>
+        <td>${producto.nombre || "N/A"}</td>
+        <td class="text-success fw-bold">${cantidad}</td>
+        <td>${parseFloat(producto.precio_venta || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    `);
+  });
+
+  // Event listener para selección y cálculo de excedente
+  $(".vehiculo-checkbox-crediahorros").on("change", function () {
+    $(".vehiculo-row-crediahorros").removeClass("vehiculo-seleccionado");
+    $(this).closest("tr").addClass("vehiculo-seleccionado");
+    calcularExcedenteCrediAhorros();
+  });
+}
+
+/**
+ * Buscar vehículos por código o nombre para Credi Ahorros Autos
+ */
+function buscarVehiculosCrediAhorros() {
+  const searchTerm = $("#buscarVehiculoCrediAhorros").val();
+
+  $.ajax({
+    url: "/arequipago/buscarProductosVehiculos",
+    type: "GET",
+    data: { searchTerm: searchTerm },
+    dataType: "json",
+    success: function (data) {
+      mostrarVehiculosCrediAhorros(data.productos || []);
+    },
+    error: function () {
+      console.error("Error al buscar vehículos");
+    },
+  });
+}
+
+/**
+ * Calcula el excedente entre el precio del vehículo y el monto del plan
+ */
+function calcularExcedenteCrediAhorros() {
+  const fin = financiamientoSeleccionadoCompleto?.financiamiento;
+  const montoSinInteres = parseFloat(fin?.monto_sin_interes || 0);
+  const moneda = fin?.moneda || "S/.";
+  const simbolo = moneda === "$" || moneda === "Dólares" ? "$" : "S/.";
+
+  const vehiculoSeleccionado = document.querySelector('input[name="vehiculoCrediAhorros"]:checked');
+  if (!vehiculoSeleccionado) return;
+
+  const precioVehiculo = parseFloat(vehiculoSeleccionado.dataset.precio || 0);
+  const excedente = precioVehiculo - montoSinInteres;
+
+  // Actualizar precio del vehículo
+  document.getElementById("precioVehiculoCrediAhorros").textContent =
+    simbolo + " " + precioVehiculo.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById("precioVehiculoCrediAhorros").classList.remove("text-muted");
+
+  // Actualizar excedente
+  const excedenteEl = document.getElementById("excedenteCrediAhorros");
+  excedenteEl.textContent =
+    simbolo + " " + excedente.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  if (excedente > 0) {
+    excedenteEl.classList.remove("text-success", "text-muted");
+    excedenteEl.classList.add("text-danger");
+    document.getElementById("seccionExcedente").style.display = "block";
+  } else {
+    excedenteEl.classList.remove("text-danger", "text-muted");
+    excedenteEl.classList.add("text-success");
+    document.getElementById("seccionExcedente").style.display = "none";
+  }
+}
+
+/**
+ * Cierra el modal de entrega de Credi Ahorros Autos
+ */
+window.cerrarModalEntregarCrediAhorros = function cerrarModalEntregarCrediAhorros() {
+  const modal = document.getElementById("modalEntregarCrediAhorros");
+  if (modal) {
+    modal.classList.remove("show");
+    setTimeout(() => {
+      modal.remove();
+    }, 200);
+  }
+};
+
+/**
+ * Confirma la entrega del vehículo Credi Ahorros Autos
+ */
+window.confirmarEntregaCrediAhorrosAutos = function confirmarEntregaCrediAhorrosAutos() {
+  const fechaEntrega = document.getElementById("fechaEntregaCrediAhorros").value;
 
   if (!fechaEntrega) {
     Swal.fire({
@@ -1720,18 +2285,311 @@ window.confirmarEntregaCrediYango = function confirmarEntregaCrediYango() {
     return;
   }
 
-  // ✅ MODIFICADO: Obtener información del vehículo desde el financiamiento seleccionado
-  const financiamiento = financiamientoSeleccionadoCompleto;
-  if (!financiamiento || !financiamiento.producto) {
+  const vehiculoSeleccionado = document.querySelector('input[name="vehiculoCrediAhorros"]:checked');
+
+  if (!vehiculoSeleccionado) {
     Swal.fire({
       icon: "error",
       title: "Error",
-      text: "No se encontró información del vehículo registrado",
+      text: "Debe seleccionar un vehículo del almacén",
     });
     return;
   }
 
-  const nombreProducto = financiamiento.producto.nombre || "Vehículo";
+  const idProducto = vehiculoSeleccionado.value;
+  const nombreProducto = vehiculoSeleccionado.closest('tr').dataset.nombre;
+  const codigoProducto = vehiculoSeleccionado.closest('tr').dataset.codigo;
+  const precioVehiculo = parseFloat(vehiculoSeleccionado.dataset.precio || 0);
+
+  const fin = financiamientoSeleccionadoCompleto?.financiamiento;
+  const montoSinInteres = parseFloat(fin?.monto_sin_interes || 0);
+  const moneda = fin?.moneda || "S/.";
+  const simbolo = moneda === "$" || moneda === "Dólares" ? "$" : "S/.";
+  const excedente = precioVehiculo - montoSinInteres;
+
+  // Validar método de pago si hay excedente
+  let metodoPago = "";
+  let notaExcedente = "";
+  if (excedente > 0) {
+    metodoPago = document.getElementById("metodoPagoExcedente").value;
+    notaExcedente = document.getElementById("notaExcedente").value;
+
+    if (!metodoPago) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Debe seleccionar un método de pago para el excedente",
+      });
+      return;
+    }
+  }
+
+  // Armar resumen
+  let resumenHTML = `
+    <div class="text-start">
+        <p><strong>Vehículo:</strong> ${nombreProducto}</p>
+        <p><strong>Código:</strong> ${codigoProducto}</p>
+        <p><strong>Fecha de entrega:</strong> ${fechaEntrega}</p>
+        <p><strong>Monto del Plan:</strong> ${simbolo} ${montoSinInteres.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+        <p><strong>Precio del Vehículo:</strong> ${simbolo} ${precioVehiculo.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+        <p><strong>Excedente:</strong> <span style="color: ${excedente > 0 ? 'red' : 'green'}; font-weight: bold;">${simbolo} ${excedente.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span></p>
+  `;
+
+  if (excedente > 0) {
+    resumenHTML += `
+        <hr>
+        <p><strong>Método de pago excedente:</strong> ${metodoPago}</p>
+        ${notaExcedente ? `<p><strong>Nota:</strong> ${notaExcedente}</p>` : ""}
+    `;
+  }
+
+  resumenHTML += `</div>`;
+
+  Swal.fire({
+    title: "¿Confirmar entrega Credi Ahorros Autos?",
+    html: resumenHTML,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#0d6efd",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Sí, confirmar entrega",
+    cancelButtonText: "Cancelar",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      procesarEntregaCrediAhorrosAutos({
+        id_financiamiento: idFinanciamientoSeleccionado,
+        fecha_entrega: fechaEntrega,
+        id_producto: idProducto,
+        precio_vehiculo: precioVehiculo,
+        excedente: excedente,
+        metodo_pago_excedente: excedente > 0 ? metodoPago : "",
+        nota_excedente: excedente > 0 ? notaExcedente : "",
+      });
+    }
+  });
+};
+
+/**
+ * Procesa la entrega del vehículo Credi Ahorros Autos en el backend
+ */
+function procesarEntregaCrediAhorrosAutos(data) {
+  Swal.fire({
+    title: "Procesando entrega...",
+    html: "Registrando entrega de vehículo Credi Ahorros Autos...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  $.ajax({
+    url: "/arequipago/ajs/entregarVehiculoCrediAhorrosAutos",
+    type: "POST",
+    data: data,
+    dataType: "json",
+    success: function (response) {
+      if (response.success) {
+        let htmlExito = `
+            <p>${response.message}</p>
+            <p><strong>Fecha de entrega:</strong> ${response.fecha_entrega || data.fecha_entrega}</p>
+        `;
+
+        if (response.excedente > 0 && response.id_pago_excedente) {
+          htmlExito += `
+            <hr>
+            <p><strong>Excedente registrado:</strong> ${response.moneda} ${parseFloat(response.excedente).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
+            <p><strong>ID Pago:</strong> #${response.id_pago_excedente}</p>
+            <button class="btn btn-outline-primary btn-sm mt-2" onclick="descargarReciboExcedente(${response.id_pago_excedente}, ${response.id_financiamiento})">
+              <i class="fas fa-file-pdf me-2"></i>Descargar Recibo del Excedente
+            </button>
+          `;
+        }
+
+        Swal.fire({
+          icon: "success",
+          title: "Vehículo Entregado",
+          html: htmlExito,
+          confirmButtonText: "Aceptar",
+        }).then(() => {
+          cerrarModalEntregarCrediAhorros();
+
+          // Cerrar modal de detalles
+          const modalDetalles = bootstrap.Modal.getInstance(
+            document.getElementById("financingDetailsModal")
+          );
+          if (modalDetalles) {
+            modalDetalles.hide();
+          }
+
+          // Recargar automáticamente
+          console.log("🔄 Recargando vista automáticamente...");
+
+          if (typeof cargarFinanciamientos === "function") {
+            console.log("📋 Recargando lista general de financiamientos");
+            cargarFinanciamientos();
+          }
+
+          if (
+            idConductorClienteActual &&
+            typeof mostrarDetallesCliente === "function"
+          ) {
+            console.log(
+              "👤 Recargando detalles del cliente:",
+              idConductorClienteActual
+            );
+            setTimeout(() => {
+              mostrarDetallesCliente(idConductorClienteActual);
+            }, 300);
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response.message || "Error al procesar la entrega",
+        });
+      }
+    },
+    error: function (xhr, status, error) {
+      console.error("Error al entregar vehículo Credi Ahorros Autos:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al procesar la entrega. Por favor, intente nuevamente.",
+      });
+    },
+  });
+}
+
+/**
+ * Descargar recibo PDF del excedente
+ */
+window.descargarReciboExcedente = function descargarReciboExcedente(idPago, idFinanciamiento) {
+  Swal.fire({
+    title: "Generando recibo...",
+    text: "Preparando el recibo del excedente...",
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); },
+  });
+
+  $.ajax({
+    url: "/arequipago/ajs/generarReciboExcedente",
+    type: "POST",
+    data: { id_pago: idPago, id_financiamiento: idFinanciamiento },
+    dataType: "json",
+    success: function (response) {
+      Swal.close();
+      if (response.success && response.pdf_base64) {
+        const linkSource = "data:application/pdf;base64," + response.pdf_base64;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = linkSource;
+        downloadLink.download = "Recibo_Excedente_" + idFinanciamiento + ".pdf";
+        downloadLink.click();
+      } else {
+        Swal.fire("Error", response.message || "No se pudo generar el recibo", "error");
+      }
+    },
+    error: function () {
+      Swal.close();
+      Swal.fire("Error", "Error al generar el recibo. Intente nuevamente.", "error");
+    },
+  });
+};
+
+/**
+ * Descargar boleta del excedente desde el modal de detalles
+ */
+window.descargarBoletaExcedente = function descargarBoletaExcedente() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire({ icon: "error", title: "Error", text: "No se ha seleccionado un financiamiento" });
+    return;
+  }
+
+  Swal.fire({
+    title: "Generando boleta...",
+    text: "Preparando la boleta del excedente...",
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); },
+  });
+
+  $.ajax({
+    url: "/arequipago/ajs/generarReciboExcedente",
+    type: "POST",
+    data: { id_financiamiento: idFinanciamientoSeleccionado },
+    dataType: "json",
+    success: function (response) {
+      Swal.close();
+      if (response.success && response.pdf_base64) {
+        const linkSource = "data:application/pdf;base64," + response.pdf_base64;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = linkSource;
+        downloadLink.download = "Boleta_Excedente_" + idFinanciamientoSeleccionado + ".pdf";
+        downloadLink.click();
+      } else {
+        Swal.fire("Sin excedente", response.message || "No se encontró pago de excedente para este financiamiento", "info");
+      }
+    },
+    error: function () {
+      Swal.close();
+      Swal.fire("Error", "Error al generar la boleta. Intente nuevamente.", "error");
+    },
+  });
+};
+
+// Asegurar que las funciones estén disponibles globalmente
+window.mostrarModalEntregarCrediAhorrosAutos = mostrarModalEntregarCrediAhorrosAutos;
+window.buscarVehiculosCrediAhorros = buscarVehiculosCrediAhorros;
+window.calcularExcedenteCrediAhorros = calcularExcedenteCrediAhorros;
+
+/**
+ * Confirma la entrega del vehículo CrediYango y genera el cronograma
+ */
+window.confirmarEntregaCrediYango = function confirmarEntregaCrediYango() {
+  const fechaEntrega = document.getElementById("fechaEntregaCrediYango").value;
+  const fechaPrimeraCuota = document.getElementById("fechaPrimeraCuotaCrediYango").value;
+
+  if (!fechaEntrega) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Debe seleccionar la fecha de entrega del vehículo",
+    });
+    return;
+  }
+
+  if (!fechaPrimeraCuota) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Debe seleccionar la fecha de la primera cuota",
+    });
+    return;
+  }
+
+  // ✅ NUEVO: Verificar que se haya seleccionado un vehículo
+  const vehiculoSeleccionado = document.querySelector('input[name="vehiculoCrediYango"]:checked');
+  
+  if (!vehiculoSeleccionado) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Debe seleccionar un vehículo del almacén",
+    });
+    return;
+  }
+
+  const idProducto = vehiculoSeleccionado.value;
+  const nombreProducto = vehiculoSeleccionado.closest('tr').dataset.nombre;
+  const codigoProducto = vehiculoSeleccionado.closest('tr').dataset.codigo;
+
+  // Formatear fechas para mostrar
+  const fechaPrimeraCuotaObj = new Date(fechaPrimeraCuota + "T00:00:00");
+  const fechaPrimeraCuotaFormateada = fechaPrimeraCuotaObj.toLocaleDateString("es-PE", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   // Confirmar acción
   Swal.fire({
@@ -1739,9 +2597,10 @@ window.confirmarEntregaCrediYango = function confirmarEntregaCrediYango() {
     html: `
             <div class="text-start">
                 <p><strong>Vehículo:</strong> ${nombreProducto}</p>
+                <p><strong>Código:</strong> ${codigoProducto}</p>
                 <p><strong>Fecha de entrega:</strong> ${fechaEntrega}</p>
+                <p><strong>Primera cuota:</strong> ${fechaPrimeraCuotaFormateada}</p>
                 <p><strong>Cronograma:</strong> Se generarán 200 cuotas semanales automáticamente</p>
-                <p><strong>Inicio de pagos:</strong> 7 días después de la entrega</p>
             </div>
         `,
     icon: "question",
@@ -1752,8 +2611,8 @@ window.confirmarEntregaCrediYango = function confirmarEntregaCrediYango() {
     cancelButtonText: "Cancelar",
   }).then((result) => {
     if (result.isConfirmed) {
-      // ✅ MODIFICADO: Ya NO enviamos el ID del producto porque ya está registrado
-      procesarEntregaCrediYango(fechaEntrega, null);
+      // ✅ NUEVO: Enviar también la fecha de primera cuota
+      procesarEntregaCrediYango(fechaEntrega, idProducto, fechaPrimeraCuota);
     }
   });
 };
@@ -1876,7 +2735,7 @@ function descargarContratoExcelDesdeModal() {
   generarContratoInstant(idFinanciamientoSeleccionado, true);
 }
 
-function procesarEntregaCrediYango(fechaEntrega, idProducto) {
+function procesarEntregaCrediYango(fechaEntrega, idProducto, fechaPrimeraCuota) {
   Swal.fire({
     title: "Procesando CrediYango...",
     html: "Registrando entrega y generando cronograma de 200 cuotas...",
@@ -1893,6 +2752,7 @@ function procesarEntregaCrediYango(fechaEntrega, idProducto) {
       id_financiamiento: idFinanciamientoSeleccionado,
       fecha_entrega: fechaEntrega,
       id_producto: idProducto,
+      fecha_primera_cuota: fechaPrimeraCuota, // ✅ NUEVO: Enviar fecha de primera cuota
     },
     dataType: "json",
     success: function (response) {
@@ -1903,7 +2763,7 @@ function procesarEntregaCrediYango(fechaEntrega, idProducto) {
           html: `
                         <p>${response.message}</p>
                         <p><strong>Fecha de entrega:</strong> ${response.fecha_entrega_formateada}</p>
-                        <p><strong>Fecha de inicio de pagos:</strong> ${response.fecha_inicio_pagos_formateada}</p>
+                        <p><strong>Fecha de primera cuota:</strong> ${response.fecha_primera_cuota_formateada}</p>
                         <p><strong>Cronograma:</strong> ${response.total_pagos} cuotas generadas</p>
                     `,
           confirmButtonText: "Aceptar",
@@ -1912,7 +2772,7 @@ function procesarEntregaCrediYango(fechaEntrega, idProducto) {
 
           // Cerrar modal de detalles
           const modalDetalles = bootstrap.Modal.getInstance(
-            document.getElementById("staticBackdrop2")
+            document.getElementById("financingDetailsModal")
           );
           if (modalDetalles) {
             modalDetalles.hide();
@@ -1974,3 +2834,81 @@ function irAResumenFinanciamientos() {
 
 // Asegurar que las funciones estén disponibles globalmente
 window.irAResumenFinanciamientos = irAResumenFinanciamientos;
+
+/**
+ * 🚗 NUEVA FUNCIÓN: Descargar contrato PDF para grupo 49 (Credi Ahorros Autos)
+ */
+function descargarContratoPDF49DesdeModal() {
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se ha seleccionado un financiamiento",
+    });
+    return;
+  }
+
+  console.log("🚗 Descargando contrato PDF para grupo 49, ID:", idFinanciamientoSeleccionado);
+
+  // Mostrar loader
+  Swal.fire({
+    title: "Generando contrato PDF",
+    text: "Por favor espere...",
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    },
+  });
+
+  // Usar la misma ruta que generarContratoInstant
+  fetch("/arequipago/generarContratos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ 
+      ids: [idFinanciamientoSeleccionado],
+      soloExcel: false  // Queremos el PDF
+    }),
+  })
+    .then((response) => {
+      console.log("🔍 Respuesta recibida, status:", response.status);
+      return response.json();
+    })
+    .then((data) => {
+      console.log("🔍 Datos parseados:", data);
+      Swal.close();
+      
+      // Verificar si hay errores críticos
+      if (data.mensaje && data.mensaje.includes("El financiamiento fue rechazado")) {
+        Swal.fire("Atención", data.mensaje, "warning");
+        return;
+      }
+
+      // Verificar si hay PDFs para descargar
+      if (data.pdfs && data.pdfs.length > 0) {
+        console.log("✅ PDFs encontrados:", data.pdfs.length);
+        data.pdfs.forEach((pdf) => {
+          console.log("📄 Descargando PDF:", pdf.nombre);
+          const linkSource = `data:application/pdf;base64,${pdf.content}`;
+          const downloadLink = document.createElement("a");
+          downloadLink.href = linkSource;
+          downloadLink.download = pdf.nombre;
+          downloadLink.click();
+        });
+        
+        Swal.fire("Éxito", "El contrato se descargó correctamente.", "success");
+      } else {
+        // Si no hay PDFs, mostrar mensaje específico
+        console.error("❌ No se encontraron PDFs en la respuesta");
+        const mensajeError = data.mensaje || data.errores?.[0] || "No se pudo generar el contrato para este financiamiento.";
+        Swal.fire("Atención", mensajeError, "warning");
+      }
+    })
+    .catch((error) => {
+      Swal.close();
+      console.error("❌ Error al descargar contrato:", error);
+      Swal.fire("Error", "No se pudo descargar el contrato. Intente nuevamente.", "error");
+    });
+}
+

@@ -321,10 +321,11 @@ class ReportFinanciamientoController extends Controller
                                     </div>";
                 }
             } else {
-                // Si no hay cuotas, mostrar solo el monto total // MODIFICADO: Mostrar monto total cuando no hay cuotas
+                // Si no hay cuotas, mostrar concepto del pago y monto
+                $conceptoPago = !empty($pago['concepto']) ? $pago['concepto'] : 'Pago';
                 $detalleCuotasHTML = "<div class='cuota-item'>
-                                    <span>Pago</span>
-                                    <span>{$monedaFinanciamiento} {$pago['monto']}</span>
+                                    <span>{$conceptoPago}</span>
+                                    <span>{$monedaFinanciamiento} " . number_format($pago['monto'], 2) . "</span>
                                 </div>";
             }
             

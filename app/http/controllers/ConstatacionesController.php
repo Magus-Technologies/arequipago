@@ -693,7 +693,7 @@ class ConstatacionesController extends Controller
         $sheet1->setTitle('Verificadas');
 
         // ENCABEZADO PRINCIPAL
-        $sheet1->mergeCells('A1:L1');
+        $sheet1->mergeCells('A1:M1');
         $sheet1->setCellValue('A1', 'CONSTATACIONES VERIFICADAS');
         $sheet1->getStyle('A1')->applyFromArray([
             'font' => [
@@ -713,7 +713,7 @@ class ConstatacionesController extends Controller
         $sheet1->getRowDimension(1)->setRowHeight(30);
 
         // Subtítulo
-        $sheet1->mergeCells('A2:L2');
+        $sheet1->mergeCells('A2:M2');
         $sheet1->setCellValue('A2', 'Fecha de generación: ' . date('d/m/Y H:i:s') . ' | Total: ' . count($verificadas));
         $sheet1->getStyle('A2')->applyFromArray([
             'font' => [
@@ -741,18 +741,19 @@ class ConstatacionesController extends Controller
             'E4' => 'Documento',
             'F4' => 'Teléfono',
             'G4' => 'Nº Unidad',
-            'H4' => 'Producto/Vehículo',
-            'I4' => 'Departamento',
-            'J4' => 'Provincia',
-            'K4' => 'Distrito',
-            'L4' => 'Dirección'
+            'H4' => 'Placa',
+            'I4' => 'Producto/Vehículo',
+            'J4' => 'Departamento',
+            'K4' => 'Provincia',
+            'L4' => 'Distrito',
+            'M4' => 'Dirección'
         ];
 
         foreach ($headers as $cell => $value) {
             $sheet1->setCellValue($cell, $value);
         }
 
-        $sheet1->getStyle('A4:L4')->applyFromArray([
+        $sheet1->getStyle('A4:M4')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -789,13 +790,14 @@ class ConstatacionesController extends Controller
             $sheet1->setCellValue('E' . $row, $item['documento'] ?: 'N/A');
             $sheet1->setCellValue('F' . $row, $item['telefono'] ?: 'N/A');
             $sheet1->setCellValue('G' . $row, $item['numero_unidad'] ?: 'N/A');
-            $sheet1->setCellValue('H' . $row, $item['producto_nombre'] ?: 'N/A');
-            $sheet1->setCellValue('I' . $row, $item['departamento'] ?: 'N/A');
-            $sheet1->setCellValue('J' . $row, $item['provincia'] ?: 'N/A');
-            $sheet1->setCellValue('K' . $row, $item['distrito'] ?: 'N/A');
-            $sheet1->setCellValue('L' . $row, $item['direccion'] ?: 'N/A');
+            $sheet1->setCellValue('H' . $row, $item['placa_vehiculo'] ?: 'N/A');
+            $sheet1->setCellValue('I' . $row, $item['producto_nombre'] ?: 'N/A');
+            $sheet1->setCellValue('J' . $row, $item['departamento'] ?: 'N/A');
+            $sheet1->setCellValue('K' . $row, $item['provincia'] ?: 'N/A');
+            $sheet1->setCellValue('L' . $row, $item['distrito'] ?: 'N/A');
+            $sheet1->setCellValue('M' . $row, $item['direccion'] ?: 'N/A');
 
-            $sheet1->getStyle('A' . $row . ':L' . $row)->applyFromArray([
+            $sheet1->getStyle('A' . $row . ':M' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -814,9 +816,10 @@ class ConstatacionesController extends Controller
             $sheet1->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet1->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet1->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             if ($row % 2 == 0) {
-                $sheet1->getStyle('A' . $row . ':L' . $row)->applyFromArray([
+                $sheet1->getStyle('A' . $row . ':M' . $row)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'E8F5E9']
@@ -829,10 +832,10 @@ class ConstatacionesController extends Controller
 
         // TOTAL VERIFICADAS
         $row++;
-        $sheet1->mergeCells('A' . $row . ':K' . $row);
+        $sheet1->mergeCells('A' . $row . ':L' . $row);
         $sheet1->setCellValue('A' . $row, 'TOTAL VERIFICADAS');
-        $sheet1->setCellValue('L' . $row, count($verificadas));
-        $sheet1->getStyle('A' . $row . ':L' . $row)->applyFromArray([
+        $sheet1->setCellValue('M' . $row, count($verificadas));
+        $sheet1->getStyle('A' . $row . ':M' . $row)->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 12,
@@ -862,18 +865,19 @@ class ConstatacionesController extends Controller
         $sheet1->getColumnDimension('E')->setWidth(12);
         $sheet1->getColumnDimension('F')->setWidth(12);
         $sheet1->getColumnDimension('G')->setWidth(10);
-        $sheet1->getColumnDimension('H')->setWidth(25);
-        $sheet1->getColumnDimension('I')->setWidth(15);
+        $sheet1->getColumnDimension('H')->setWidth(12);
+        $sheet1->getColumnDimension('I')->setWidth(25);
         $sheet1->getColumnDimension('J')->setWidth(15);
         $sheet1->getColumnDimension('K')->setWidth(15);
-        $sheet1->getColumnDimension('L')->setWidth(40);
+        $sheet1->getColumnDimension('L')->setWidth(15);
+        $sheet1->getColumnDimension('M')->setWidth(40);
 
         // ==================== HOJA 2: PENDIENTES ====================
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('Pendientes');
 
         // ENCABEZADO PRINCIPAL
-        $sheet2->mergeCells('A1:H1');
+        $sheet2->mergeCells('A1:I1');
         $sheet2->setCellValue('A1', 'CONSTATACIONES PENDIENTES');
         $sheet2->getStyle('A1')->applyFromArray([
             'font' => [
@@ -893,7 +897,7 @@ class ConstatacionesController extends Controller
         $sheet2->getRowDimension(1)->setRowHeight(30);
 
         // Subtítulo
-        $sheet2->mergeCells('A2:H2');
+        $sheet2->mergeCells('A2:I2');
         $sheet2->setCellValue('A2', 'Fecha de generación: ' . date('d/m/Y H:i:s') . ' | Total: ' . count($pendientes));
         $sheet2->getStyle('A2')->applyFromArray([
             'font' => [
@@ -921,14 +925,15 @@ class ConstatacionesController extends Controller
             'E4' => 'Documento',
             'F4' => 'Teléfono',
             'G4' => 'Nº Unidad',
-            'H4' => 'Producto/Vehículo'
+            'H4' => 'Placa',
+            'I4' => 'Producto/Vehículo'
         ];
 
         foreach ($headersPendientes as $cell => $value) {
             $sheet2->setCellValue($cell, $value);
         }
 
-        $sheet2->getStyle('A4:H4')->applyFromArray([
+        $sheet2->getStyle('A4:I4')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -965,9 +970,10 @@ class ConstatacionesController extends Controller
             $sheet2->setCellValue('E' . $row, $item['documento'] ?: 'N/A');
             $sheet2->setCellValue('F' . $row, $item['telefono'] ?: 'N/A');
             $sheet2->setCellValue('G' . $row, $item['numero_unidad'] ?: 'N/A');
-            $sheet2->setCellValue('H' . $row, $item['producto_nombre'] ?: 'N/A');
+            $sheet2->setCellValue('H' . $row, $item['placa_vehiculo'] ?: 'N/A');
+            $sheet2->setCellValue('I' . $row, $item['producto_nombre'] ?: 'N/A');
 
-            $sheet2->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+            $sheet2->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -986,9 +992,10 @@ class ConstatacionesController extends Controller
             $sheet2->getStyle('E' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet2->getStyle('F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet2->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle('H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             if ($row % 2 == 0) {
-                $sheet2->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+                $sheet2->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFF3E0']
@@ -1001,10 +1008,10 @@ class ConstatacionesController extends Controller
 
         // TOTAL PENDIENTES
         $row++;
-        $sheet2->mergeCells('A' . $row . ':G' . $row);
+        $sheet2->mergeCells('A' . $row . ':H' . $row);
         $sheet2->setCellValue('A' . $row, 'TOTAL PENDIENTES');
-        $sheet2->setCellValue('H' . $row, count($pendientes));
-        $sheet2->getStyle('A' . $row . ':H' . $row)->applyFromArray([
+        $sheet2->setCellValue('I' . $row, count($pendientes));
+        $sheet2->getStyle('A' . $row . ':I' . $row)->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 12,
@@ -1034,7 +1041,8 @@ class ConstatacionesController extends Controller
         $sheet2->getColumnDimension('E')->setWidth(12);
         $sheet2->getColumnDimension('F')->setWidth(12);
         $sheet2->getColumnDimension('G')->setWidth(10);
-        $sheet2->getColumnDimension('H')->setWidth(25);
+        $sheet2->getColumnDimension('H')->setWidth(12);
+        $sheet2->getColumnDimension('I')->setWidth(25);
 
         // Configurar salida
         $filename = 'Constataciones_Domiciliarias_' . date('Ymd_His') . '.xlsx';
