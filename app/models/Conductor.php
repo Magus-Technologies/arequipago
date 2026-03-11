@@ -157,9 +157,17 @@ class Conductor
     {
         try {
             // Búsqueda exacta y parcial para número de documento
-            $sql = 'SELECT id_conductor, nro_documento, nombres, apellido_paterno, apellido_materno, numeroCodFi
-                    FROM conductores
-                    WHERE nro_documento = ? OR nro_documento LIKE ?
+            $sql = 'SELECT c.id_conductor, c.nro_documento, c.nombres, c.apellido_paterno, c.apellido_materno,
+                    c.desvinculado,
+                    COALESCE(
+                        NULLIF(NULLIF(c.numeroCodFi, ""), "0"),
+                        NULLIF(NULLIF(MAX(f.codigo_asociado), ""), "0")
+                    ) as numeroCodFi,
+                    (SELECT pc.puntaje_actual FROM puntaje_crediticio pc WHERE pc.id_conductor = c.id_conductor AND pc.tipo_cliente = "conductor" LIMIT 1) AS puntaje_actual
+                    FROM conductores c
+                    LEFT JOIN financiamiento f ON f.id_conductor = c.id_conductor AND f.estado_eliminado = 0
+                    WHERE c.nro_documento = ? OR c.nro_documento LIKE ?
+                    GROUP BY c.id_conductor
                     LIMIT 10';
 
             $stmt = $this->conectar->prepare($sql);
@@ -723,12 +731,18 @@ class Conductor
             $sql = "SELECT 
                         c.id_conductor, 
                         c.nro_documento, 
+                        c.desvinculado,
                         CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS datos, 
-                        COALESCE(c.numeroCodFi, '') AS codigo_asociado, 
-                        COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento, 
-                        COUNT(f.idfinanciamiento) AS cantidad_financiamientos
+                        COALESCE(
+                            NULLIF(NULLIF(c.numeroCodFi, ''), '0'),
+                            NULLIF(NULLIF(MAX(f.codigo_asociado), ''), '0'),
+                            ''
+                        ) AS codigo_asociado,
+                        COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+                        COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
+                        (SELECT pc.puntaje_actual FROM puntaje_crediticio pc WHERE pc.id_conductor = c.id_conductor AND pc.tipo_cliente = 'conductor' LIMIT 1) AS puntaje_actual
                     FROM conductores c
-                    LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor
+                    LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor AND f.estado_eliminado = 0
                     WHERE (c.nombres LIKE ?
                     OR c.apellido_paterno LIKE ?
                     OR c.apellido_materno LIKE ?

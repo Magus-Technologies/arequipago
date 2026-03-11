@@ -312,6 +312,15 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     </li>
                 <?php endif; ?>
 
+                <?php if ($id_rol == 4): ?>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="" href="/arequipago/vehiculos">
+                            <i class="fas fa-piggy-bank"></i>
+                            CARROS Y MOTOS
+                        </a>
+                    </li>
+                <?php endif; ?>
+
                 <?php if ($id_rol == 3): ?>
                     <li class="nav-item">
                         <a class="nav-link" href="/arequipago/adjudicaciones">

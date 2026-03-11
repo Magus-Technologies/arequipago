@@ -40,6 +40,7 @@ if (!window.AdjudicacionesDataTables) {
           data: function (d) {
             d.tipo_adjudicacion = $("#filtro-tipo-adjudicacion").val();
             d.estado_entrega = $("#filtro-estado-entrega").val();
+            d.fecha_entrega = $("#filtro-fecha-entrega").val();
             console.log("Parámetros enviados:", d);
           },
           dataSrc: function (json) {
@@ -132,12 +133,40 @@ if (!window.AdjudicacionesDataTables) {
       });
 
       // Recargar tabla cuando cambien los filtros
-      $("#filtro-tipo-adjudicacion, #filtro-estado-entrega").on(
+      $("#filtro-tipo-adjudicacion, #filtro-estado-entrega, #filtro-fecha-entrega").on(
         "change",
         () => {
           this.tablaAdjudicados.ajax.reload();
         },
       );
+
+      // Cargar fechas de entrega disponibles en el select
+      this.cargarFechasEntrega();
+    },
+
+    /**
+     * Cargar fechas de entrega distintas en el filtro
+     */
+    cargarFechasEntrega() {
+      $.ajax({
+        url: _URL + "/ajs/adjudicaciones/fechas-entrega",
+        type: "GET",
+        dataType: "json",
+        success: function (response) {
+          if (response.success && response.data) {
+            var select = $("#filtro-fecha-entrega");
+            select.find("option:not(:first)").remove();
+            response.data.forEach(function (fecha) {
+              var fechaObj = new Date(fecha + "T00:00:00");
+              var dia = fechaObj.getDate();
+              var meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+              var texto = dia + " de " + meses[fechaObj.getMonth()] + " " + fechaObj.getFullYear();
+              select.append('<option value="' + fecha + '">' + texto + "</option>");
+            });
+          }
+        },
+      });
     },
 
     /**

@@ -1025,7 +1025,7 @@ class Financiamiento
         return ['success' => true];
     }
 
-    public function newPago($idConductor, $idAsesor, $monto, $concepto = null, $efectivoRecibido, $vuelto, $monedaEfectivo, $idFinanciamiento = null, $idCliente = null, $metodoPago = null, $estado = 1)
+    public function newPago($idConductor, $idAsesor, $monto, $concepto = null, $efectivoRecibido, $vuelto, $monedaEfectivo, $idFinanciamiento = null, $idCliente = null, $metodoPago = null, $estado = 1, $entidadFinanciera = null, $numeroOperacion = null)
     {
         try {
             $fechaPago = date('Y-m-d H:i:s');  // ✅ OK
@@ -1044,23 +1044,27 @@ class Financiamiento
 
             $metodoPagoParam = $metodoPago ?? '';  // ✅ OK
             $conceptoParam = $concepto ?? '';  // ✅ OK
+            $entidadFinancieraParam = $entidadFinanciera ?? '';
+            $numeroOperacionParam = $numeroOperacion ?? '';
 
             // ✅ QUERY corregida con el nuevo campo estado 🌎
             $query = 'INSERT INTO pagos_financiamiento 
-            (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, concepto, fecha_pago, efectivo_recibido, vuelto, moneda, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, entidad_financiera, numero_operacion, concepto, fecha_pago, efectivo_recibido, vuelto, moneda, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $stmt = $this->conectar->prepare($query);  // ✅ OK
 
             // ✅ TIPO DE DATOS CORREGIDOS: 12 variables = 12 letras
             $stmt->bind_param(
-                'iiiidsssddsi',  // ⚠️ CORREGIDO: 12 variables, 12 tipos
+                'iiiidsssssddsi',
                 $idFinanciamientoParam,
                 $idConductorParam,
                 $idClienteParam,
                 $idAsesor,
                 $monto,
                 $metodoPagoParam,
+                $entidadFinancieraParam,
+                $numeroOperacionParam,
                 $conceptoParam,
                 $fechaPago,
                 $efectivoRecibido,

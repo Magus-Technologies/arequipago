@@ -446,8 +446,16 @@ class ReportFinanciamientoController extends Controller
             
             $html .= '    <p>Nombre: ' . $nombrePersona . '</p>  <!-- MODIFICADO: Cambiado "Conductor" por "Nombre" -->
                 <p>Documento: ' . $tipoDocumento . ' N° ' . $numeroDocumento . '</p>  <!-- MODIFICADO: Usando variables -->
-                    <p>Método de Pago: ' . $pago['metodo_pago'] . '</p>
-                </div>
+                    <p>Método de Pago: ' . $pago['metodo_pago'] . '</p>';
+            
+            if (!empty($pago['entidad_financiera'])) {
+                $html .= '<p>Entidad Financiera: ' . $pago['entidad_financiera'] . '</p>';
+            }
+            if (!empty($pago['numero_operacion'])) {
+                $html .= '<p>N° de Operación: ' . $pago['numero_operacion'] . '</p>';
+            }
+            
+            $html .= '</div>
 
                 <div class="detalle-section">
                     <h5>' . $tituloDetalle . '</h5>
@@ -532,6 +540,9 @@ class ReportFinanciamientoController extends Controller
             $id = $data['id'];
             $pagos = $data['pagos']; // Array de pagos
             $metodoPago = isset($data['metodoPago']) ? $data['metodoPago'] : ''; // Obtener método d
+            $entidadFinanciera = isset($data['entidadFinanciera']) ? $data['entidadFinanciera'] : '';
+            $numeroOperacion = isset($data['numeroOperacion']) ? $data['numeroOperacion'] : '';
+
     
             // Modificado: Obtener tanto id_conductor como id_cliente
             $stmt = $this->conexion->prepare("SELECT id_conductor, id_cliente, moneda FROM financiamiento WHERE idfinanciamiento = ?");
@@ -575,12 +586,15 @@ class ReportFinanciamientoController extends Controller
                     $idAsesor,
                     $monto,
                     $concepto,
-                    $monto, // efectivo recibido igual al monto
-                    0, // vuelto
+                    $monto,
+                    0,
                     $moneda,
                     $id,
                     $idCliente,
-                    $metodoPago
+                    $metodoPago,
+                    1,
+                    $entidadFinanciera,
+                    $numeroOperacion
                 );
     
                 if (!$pagoResult['success']) {
@@ -885,8 +899,16 @@ class ReportFinanciamientoController extends Controller
             
             $html .= '     <p>Cliente: ' . $nombreCompleto . '</p>
                     <p>Documento: ' . $tipoDoc . ' N° ' . $nroDocumento . '</p>
-                    <p>Método de Pago: ' . $metodoPago . '</p>
-                    <p>Concepto: ' . $concepto . '</p>
+                    <p>Método de Pago: ' . $metodoPago . '</p>';
+            
+            if (!empty($pago['entidad_financiera'])) {
+                $html .= '<p>Entidad Financiera: ' . $pago['entidad_financiera'] . '</p>';
+            }
+            if (!empty($pago['numero_operacion'])) {
+                $html .= '<p>N° de Operación: ' . $pago['numero_operacion'] . '</p>';
+            }
+            
+            $html .= '<p>Concepto: ' . $concepto . '</p>
                     ' . $certificadoHtml . '
                 </div>';
 

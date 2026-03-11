@@ -18,39 +18,39 @@ class Adjudicacion
             $indicadores = [];
 
             // Total de adjudicados
-            $sql = "SELECT COUNT(DISTINCT f.idfinanciamiento) as total_adjudicados
+            $sql = "SELECT COUNT(DISTINCT f.idfinanciamiento) as total
                     FROM financiamiento f
                     INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                     WHERE f.estado_eliminado = 0
                       AND p.categoria IN ('Vehiculo', 'Moto')
                       AND f.estado_entrega IN ('entregado', 'pendiente')";
             $result = $this->conectar->query($sql);
-            $indicadores["total_adjudicados"] =
-                $result->fetch_assoc()["total_adjudicados"] ?? 0;
+            $indicadores["total_adjudicaciones"] =
+                $result->fetch_assoc()["total"] ?? 0;
 
             // Vehículos disponibles en stock
-            $sql = "SELECT COUNT(*) as vehiculos_disponibles
+            $sql = "SELECT COUNT(*) as total
                     FROM productosv2
                     WHERE categoria IN ('Vehiculo', 'Moto')
                       AND cantidad > 0
                       AND estado = 'Activo'";
             $result = $this->conectar->query($sql);
-            $indicadores["vehiculos_disponibles"] =
-                $result->fetch_assoc()["vehiculos_disponibles"] ?? 0;
+            $indicadores["total_en_stock"] =
+                $result->fetch_assoc()["total"] ?? 0;
 
             // Vehículos entregados
-            $sql = "SELECT COUNT(DISTINCT f.idfinanciamiento) as vehiculos_entregados
+            $sql = "SELECT COUNT(DISTINCT f.idfinanciamiento) as total
                     FROM financiamiento f
                     INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                     WHERE f.estado_eliminado = 0
                       AND p.categoria IN ('Vehiculo', 'Moto')
                       AND f.estado_entrega = 'entregado'";
             $result = $this->conectar->query($sql);
-            $indicadores["vehiculos_entregados"] =
-                $result->fetch_assoc()["vehiculos_entregados"] ?? 0;
+            $indicadores["total_entregados"] =
+                $result->fetch_assoc()["total"] ?? 0;
 
             // SOATS por vencer (próximos 30 días)
-            $sql = "SELECT COUNT(DISTINCT p.idproductosv2) as soats_por_vencer
+            $sql = "SELECT COUNT(DISTINCT p.idproductosv2) as total
                     FROM productosv2 p
                     INNER JOIN caracteristicas_producto cp ON p.idproductosv2 = cp.idproductosv2
                     INNER JOIN financiamiento f ON p.idproductosv2 = f.idproductosv2
@@ -60,11 +60,11 @@ class Adjudicacion
                       AND f.estado_entrega = 'entregado'
                       AND f.estado_eliminado = 0";
             $result = $this->conectar->query($sql);
-            $indicadores["soats_por_vencer"] =
-                $result->fetch_assoc()["soats_por_vencer"] ?? 0;
+            $indicadores["total_soat_por_vencer"] =
+                $result->fetch_assoc()["total"] ?? 0;
 
             // Seguros por vencer (próximos 30 días)
-            $sql = "SELECT COUNT(DISTINCT p.idproductosv2) as seguros_por_vencer
+            $sql = "SELECT COUNT(DISTINCT p.idproductosv2) as total
                     FROM productosv2 p
                     INNER JOIN caracteristicas_producto cp ON p.idproductosv2 = cp.idproductosv2
                     INNER JOIN financiamiento f ON p.idproductosv2 = f.idproductosv2
@@ -74,8 +74,8 @@ class Adjudicacion
                       AND f.estado_entrega = 'entregado'
                       AND f.estado_eliminado = 0";
             $result = $this->conectar->query($sql);
-            $indicadores["seguros_por_vencer"] =
-                $result->fetch_assoc()["seguros_por_vencer"] ?? 0;
+            $indicadores["total_seguro_por_vencer"] =
+                $result->fetch_assoc()["total"] ?? 0;
 
             return $indicadores;
         } catch (Exception $e) {
@@ -115,6 +115,10 @@ class Adjudicacion
                         $filtros["estado_entrega"],
                     ) .
                     "'";
+            }
+            if (!empty($filtros["fecha_entrega"])) {
+                $fechaEntrega = $this->conectar->real_escape_string($filtros["fecha_entrega"]);
+                $whereConditions[] = "DATE(f.fecha_entrega) = '" . $fechaEntrega . "'";
             }
 
             $whereClause = implode(" AND ", $whereConditions);
@@ -835,6 +839,40 @@ class Adjudicacion
         } catch (Exception $e) {
             error_log("Error en obtenerInfoVencimiento: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Obtener fechas de entrega distintas para el filtro
+     */
+    public function obtenerFechasEntregaDistintas()
+    {
+        try {
+            $sql = "SELECT DISTINCT DATE(f.fecha_entrega) as fecha_entrega
+                    FROM financiamiento f
+                    INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                    WHERE f.estado_eliminado = 0
+                      AND p.categoria IN ('Vehiculo', 'Moto')
+                      AND f.estado_entrega IN ('entregado', 'pendiente')
+                      AND f.fecha_entrega IS NOT NULL
+                    ORDER BY f.fecha_entrega DESC";
+
+            $result = $this->conectar->query($sql);
+            if (!$result) {
+                throw new Exception("Error: " . $this->conectar->error);
+            }
+
+            $fechas = [];
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['fecha_entrega'])) {
+                    $fechas[] = $row['fecha_entrega'];
+                }
+            }
+
+            return $fechas;
+        } catch (Exception $e) {
+            error_log("Error en obtenerFechasEntregaDistintas: " . $e->getMessage());
+            return [];
         }
     }
 }

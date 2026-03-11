@@ -158,7 +158,9 @@ function mostrarImagenFlotante() {
 async function handleGeneratePDFs(
   idFinanciamiento,
   pagos,
-  metodoPagoParam = null
+  metodoPagoParam = null,
+  entidadFinancieraParam = null,
+  numOperacionParam = null
 ) {
   // Usar el método de pago pasado como parámetro o buscar en el DOM
   let metodoPago = metodoPagoParam;
@@ -189,6 +191,8 @@ async function handleGeneratePDFs(
         id: idFinanciamiento,
         pagos,
         metodoPago: metodoPago,
+        entidadFinanciera: entidadFinancieraParam || "",
+        numeroOperacion: numOperacionParam || "",
       }),
     });
 
@@ -598,9 +602,9 @@ function actualizarSelectMetodoPago() {
       // Insertar el select antes del botón de registrar
       const selectHTML = `
                             <div class="row mb-3" id="contenedorMetodoPago">
-                                <div class="col-md-6 offset-md-3">
+                                <div class="col-md-4">
                                     <label for="metodoPago" class="form-label">Método de Pago</label>
-                                    <select class="form-select metodoPago" id="metodoPago">
+                                    <select class="form-select metodoPago" id="metodoPago" onchange="toggleEntidadOperacionInicial()">
                                         <option value="">Seleccione...</option>
                                         <option value="Efectivo">Efectivo</option>
                                         <option value="Transferencia">Transferencia</option>
@@ -610,15 +614,52 @@ function actualizarSelectMetodoPago() {
                                         <option value="Pago Efectivo" disabled>Pago Efectivo (Próximamente)</option>
                                     </select>
                                 </div>
+                                <div class="col-md-4" id="contenedorEntidadInicial" style="display: none;">
+                                    <label for="entidadFinancieraInicial" class="form-label">Entidad Financiera</label>
+                                    <select class="form-select" id="entidadFinancieraInicial">
+                                        <option value="">Seleccione...</option>
+                                        <option value="BCP">BCP</option>
+                                        <option value="BBVA">BBVA</option>
+                                        <option value="Interbank">Interbank</option>
+                                        <option value="Scotiabank">Scotiabank</option>
+                                        <option value="Banco de la Nación">Banco de la Nación</option>
+                                        <option value="Caja Arequipa">Caja Arequipa</option>
+                                        <option value="Yape">Yape</option>
+                                        <option value="Plin">Plin</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4" id="contenedorNumOperacionInicial" style="display: none;">
+                                    <label for="numOperacionInicial" class="form-label">N° de Operación</label>
+                                    <input type="text" class="form-control" id="numOperacionInicial" placeholder="Ingrese N° de operación">
+                                </div>
                             </div>
                         `;
       $(selectHTML).insertBefore($(".d-flex.justify-content-center.mt-4"));
+    }
+    // Sincronizar visibilidad de campos de entidad/operación si ya hay método seleccionado
+    if (typeof toggleEntidadOperacionInicial === 'function') {
+      toggleEntidadOperacionInicial();
     }
   } else {
     // Si no debe mostrarse, lo eliminamos si existe
     $("#contenedorMetodoPago").remove();
   }
 }
+
+function toggleEntidadOperacionInicial() {
+  const metodo = $("#metodoPago").val();
+  if (metodo !== "") {
+    $("#contenedorEntidadInicial").show();
+    $("#contenedorNumOperacionInicial").show();
+  } else {
+    $("#contenedorEntidadInicial").hide();
+    $("#contenedorNumOperacionInicial").hide();
+    $("#entidadFinancieraInicial").val("");
+    $("#numOperacionInicial").val("");
+  }
+}
+
 // Función para chequear cambios de valor
 function checkAndUpdate() {
   // Verificar que las variables globales existen

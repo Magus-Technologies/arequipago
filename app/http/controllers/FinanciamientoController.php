@@ -339,78 +339,98 @@ class FinanciamientoController extends Controller
         if ($id_conductor > 0) {
             // Obtener financiamientos del conductor
             $financiamientos = $financiamientoModel->getFinanciamientoList($id_conductor);
-            
+
             // Obtener información del conductor
             $conductorModel = new Conductor();
             $persona = $conductorModel->getConductorFinanceList($id_conductor);
-            
+
             // Obtener dirección del conductor
             $direccionModel = new DireccionConductor();
             $direccion = $direccionModel->obtenerDatosDireccion($id_conductor);
-            
-            // NUEVO: Procesar cada financiamiento para agregar información del plan
-            if ($financiamientos) {
-                foreach ($financiamientos as &$financiamiento) {
-                    // Obtener información del plan
-                    $planQuery = "SELECT 
-                        p.nombre_plan,
-                        p.tipo_vehicular,
-                        p.monto_sin_interes as plan_capacidad_original,
-                        p.monto_cuota,
-                        p.cantidad_cuotas,
-                        p.fecha_inicio as plan_fecha_inicio
-                    FROM planes_financiamiento p 
-                    WHERE p.idplan_financiamiento = ?";
-                    
-                    $conexion = $this->conexion; 
-                    $planStmt = $conexion->prepare($planQuery);
-                    $planStmt->bind_param("i", $financiamiento['grupo_financiamiento']);
-                    $planStmt->execute();
-                    $planResult = $planStmt->get_result();
-                    $planData = $planResult->fetch_assoc();
-                    
-                    // NUEVO: Calcular capacidad de compra actual si es vehículo
-                    // Verificar si es vehículo por tipo_vehicular O por nombre del plan
-                    $esVehiculo = ($planData && (
-                        $planData['tipo_vehicular'] === 'vehiculo' || 
-                        stripos($planData['nombre_plan'], 'vehicular') !== false
-                    ));
-                    
-                    if ($esVehiculo) {
-                        $semanasPerdidas = 0;
-                        $dineroPerdido = 0;
-                        $capacidadCompraActual = $planData['plan_capacidad_original'];
-                        
-                        if ($planData['plan_fecha_inicio'] && $financiamiento['fecha_creacion']) {
-                            $fechaInicio = new DateTime($planData['plan_fecha_inicio']);
-                            $fechaEntrada = new DateTime($financiamiento['fecha_creacion']);
-                            $diferencia = $fechaEntrada->diff($fechaInicio);
-                            $semanasPerdidas = floor($diferencia->days / 7);
-                            $dineroPerdido = $semanasPerdidas * $planData['monto_cuota'];
-                            $capacidadCompraActual = $planData['plan_capacidad_original'] - $dineroPerdido;
-                        }
-                        
-                        $financiamiento['es_vehiculo'] = true;
-                        $financiamiento['plan_capacidad_original'] = $planData['plan_capacidad_original'];
-                        $financiamiento['semanas_perdidas'] = $semanasPerdidas;
-                        $financiamiento['dinero_perdido'] = $dineroPerdido;
-                        $financiamiento['capacidad_compra_actual'] = $capacidadCompraActual;
-                    } else {
-                        $financiamiento['es_vehiculo'] = false;
-                    }
-                    
-                    $planStmt->close();
-                }
-            }
         } elseif ($id_cliente > 0) {
             // Obtener financiamientos del cliente
             $financiamientos = $financiamientoModel->getFinanciamientoListCliente($id_cliente);
-            
+
             // Obtener información del cliente
             $clienteModel = new Cliente();
             $persona = $clienteModel->getClienteList($id_cliente);
-            
+
             $direccion = $clienteModel->obtenerDatosDireccionCliente($id_cliente);
+        }
+
+        // Procesar cada financiamiento para agregar información del plan (aplica tanto a conductores como a clientes)
+        if (!empty($financiamientos)) {
+            foreach ($financiamientos as &$financiamiento) {
+                // Obtener información del plan
+                $planQuery = "SELECT
+                    p.nombre_plan,
+                    p.tipo_vehicular,
+                    p.monto_sin_interes as plan_capacidad_original,
+                    p.monto_cuota,
+                    p.cantidad_cuotas,
+                    p.fecha_inicio as plan_fecha_inicio
+                FROM planes_financiamiento p
+                WHERE p.idplan_financiamiento = ?";
+
+                $conexion = $this->conexion;
+                $planStmt = $conexion->prepare($planQuery);
+                $planStmt->bind_param("i", $financiamiento['grupo_financiamiento']);
+                $planStmt->execute();
+                $planResult = $planStmt->get_result();
+                $planData = $planResult->fetch_assoc();
+
+                // Calcular capacidad de compra actual si es vehículo
+                // Verificar si es vehículo por tipo_vehicular O por nombre del plan
+                $esVehiculo = ($planData && (
+                    $planData['tipo_vehicular'] === 'vehiculo' ||
+                    stripos($planData['nombre_plan'], 'vehicular') !== false
+                ));
+
+                if ($esVehiculo) {
+                    $semanasPerdidas = 0;
+                    $dineroPerdido = 0;
+
+                    // Capacidad original: usar del plan, si no tiene usar del financiamiento
+                    $planCapacidadOriginal = (floatval($planData['plan_capacidad_original']) > 0)
+                        ? $planData['plan_capacidad_original']
+                        : $financiamiento['monto_sin_interes'];
+
+                    $capacidadCompraActual = $planCapacidadOriginal;
+
+                    // Monto cuota: usar del plan, si no tiene calcular del financiamiento
+                    $montoCuota = (floatval($planData['monto_cuota']) > 0)
+                        ? $planData['monto_cuota']
+                        : ($financiamiento['cuotas'] > 0 ? $financiamiento['monto_sin_interes'] / $financiamiento['cuotas'] : 0);
+
+                    // Calcular semanas perdidas usando el número de la primera cuota del cronograma
+                    // Si la primera cuota es #21, significa que perdió 20 cuotas (21 - 1)
+                    $primeraCuotaQuery = "SELECT MIN(numero_cuota) as primera_cuota FROM cuotas_financiamiento WHERE id_financiamiento = ?";
+                    $pcStmt = $conexion->prepare($primeraCuotaQuery);
+                    $pcStmt->bind_param("i", $financiamiento['idfinanciamiento']);
+                    $pcStmt->execute();
+                    $pcResult = $pcStmt->get_result();
+                    $pcData = $pcResult->fetch_assoc();
+                    $pcStmt->close();
+
+                    $primeraCuota = $pcData ? intval($pcData['primera_cuota']) : 1;
+                    if ($primeraCuota > 1) {
+                        $semanasPerdidas = $primeraCuota - 1;
+                        $dineroPerdido = $semanasPerdidas * $montoCuota;
+                        $capacidadCompraActual = $planCapacidadOriginal - $dineroPerdido;
+                    }
+
+                    $financiamiento['es_vehiculo'] = true;
+                    $financiamiento['plan_capacidad_original'] = $planCapacidadOriginal;
+                    $financiamiento['semanas_perdidas'] = $semanasPerdidas;
+                    $financiamiento['dinero_perdido'] = $dineroPerdido;
+                    $financiamiento['capacidad_compra_actual'] = $capacidadCompraActual;
+                } else {
+                    $financiamiento['es_vehiculo'] = false;
+                }
+
+                $planStmt->close();
+            }
+            unset($financiamiento); // romper referencia del foreach
         }
         
         if (empty($financiamientos)) {
@@ -711,8 +731,23 @@ class FinanciamientoController extends Controller
                     $maxClientes = intval($row['max_cod']) ?: 0;
                 }
 
+                // Obtener el máximo código de financiamiento
+                $sqlFinanciamiento = "SELECT MAX(CAST(codigo_asociado AS UNSIGNED)) as max_cod
+                                      FROM financiamiento
+                                      WHERE codigo_asociado IS NOT NULL
+                                      AND codigo_asociado != ''
+                                      AND codigo_asociado != '0'
+                                      AND codigo_asociado REGEXP '^[0-9]+$'
+                                      AND estado_eliminado = 0";
+
+                $resultFinanciamiento = $this->conexion->query($sqlFinanciamiento);
+                $maxFinanciamiento = 0;
+                if ($resultFinanciamiento && $row = $resultFinanciamiento->fetch_assoc()) {
+                    $maxFinanciamiento = intval($row['max_cod']) ?: 0;
+                }
+
                 // El siguiente código es el máximo + 1
-                $siguienteCodigo = max($maxConductores, $maxClientes) + 1;
+                $siguienteCodigo = max($maxConductores, $maxClientes, $maxFinanciamiento) + 1;
 
                 echo json_encode([
                     'success' => true,
@@ -1224,6 +1259,8 @@ class FinanciamientoController extends Controller
                 $monedaEfectivo = $_POST['moneda_efectivo'] ?? null;
                 $vuelto = $_POST['vuelto'] ?? null;
                 $cuotasJson = $_POST['cuotas'] ?? '[]';
+                $entidadFinanciera = $_POST['entidad_financiera'] ?? null;
+                $numeroOperacion = $_POST['numero_operacion'] ?? null;
                 $cuotasSeleccionadas = json_decode($cuotasJson, true);
 
                 error_log("🔍 [TIMING] Después de parsear datos: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
@@ -1342,9 +1379,11 @@ class FinanciamientoController extends Controller
                         $vuelto,
                         $monedaEfectivo,
                         null,
-                        $idCliente, // MODIFICADO: Agregado el idCliente
+                        $idCliente,
                         $metodoPago,
-                        $estado 
+                        $estado,
+                        $entidadFinanciera,
+                        $numeroOperacion
                     );
                     // *** NUEVO: Registrar las cuotas seleccionadas en detalle_pago_financiamiento ***
                     if ($pagoResult['success'] && isset($pagoResult['id_pago'])) {  
@@ -3778,6 +3817,7 @@ class FinanciamientoController extends Controller
                 LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                 WHERE CAST(f.grupo_financiamiento AS UNSIGNED) = ?
                 AND f.estado != 'eliminado'
+                AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 ORDER BY COALESCE(c.nombres, cl.nombres) ASC

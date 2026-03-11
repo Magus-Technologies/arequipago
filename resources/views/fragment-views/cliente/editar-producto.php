@@ -645,7 +645,9 @@
                 'cargador': 'cargador',
                 'cable_usb': 'cable_usb',
                 'manual_usuario': 'manual_usuario',
-                'estuche': 'estuche'
+                'estuche': 'estuche',
+                'memoria_ram': 'memoria_ram',
+                'almacenamiento': 'almacenamiento'
             };
 
             // Si no es nueva categoría y tenemos una categoría específica, cargar campos completos
@@ -684,15 +686,28 @@
                         tipo = 'number';
                     }
 
-                    html += `
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-cog text-primary"></i>
-                                ${nombre}
-                            </label>
-                            <input type="${tipo}" class="form-control" name="${campo}" value="${valor}"${tipo === 'date' ? '' : ' placeholder="Ingrese ' + nombre.toLowerCase() + '"'}>
-                        </div>
-                    `;
+                    // Campos con select para RAM y Almacenamiento
+                    if (campo === 'memoria_ram') {
+                        const opcionesRam = ['2GB','3GB','4GB','6GB','8GB','12GB','16GB'];
+                        html += `<div class="mb-3"><label class="form-label"><i class="fas fa-memory text-primary"></i> Memoria RAM</label><select class="form-control" name="${campo}"><option value="">Seleccionar</option>`;
+                        opcionesRam.forEach(op => { html += `<option value="${op}"${valor===op?' selected':''}>${op}</option>`; });
+                        html += `</select></div>`;
+                    } else if (campo === 'almacenamiento') {
+                        const opcionesAlm = ['16GB','32GB','64GB','128GB','256GB','512GB','1TB'];
+                        html += `<div class="mb-3"><label class="form-label"><i class="fas fa-hdd text-primary"></i> Almacenamiento</label><select class="form-control" name="${campo}"><option value="">Seleccionar</option>`;
+                        opcionesAlm.forEach(op => { html += `<option value="${op}"${valor===op?' selected':''}>${op}</option>`; });
+                        html += `</select></div>`;
+                    } else {
+                        html += `
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-cog text-primary"></i>
+                                    ${nombre}
+                                </label>
+                                <input type="${tipo}" class="form-control" name="${campo}" value="${valor}"${tipo === 'date' ? '' : ' placeholder="Ingrese ' + nombre.toLowerCase() + '"'}>
+                            </div>
+                        `;
+                    }
 
                 });
             } else {

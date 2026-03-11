@@ -531,28 +531,57 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
     // NUEVO: Mostrar sección CrediYango si aplica
     mostrarSeccionCrediYangoModal(financiamiento);
 
-    // NUEVO: Llenar campos según tipo de plan
+    // Llenar campos según tipo de plan
     if (financiamiento.financiamiento.es_vehiculo) {
-      // Mostrar campos de vehículo
-      document.getElementById("campoCapacidadCompra").style.display = "block";
+      // Mostrar sección de vehículo
       document.getElementById("infoVehiculo").style.display = "block";
 
-      // Llenar capacidad de compra actual
+      // Capacidad de compra actual (lo que el plan le permite comprar)
       const capacidadCompra =
         financiamiento.financiamiento.capacidad_compra_actual || 0;
       document.getElementById(
         "modalFinanciamientoCapacidadCompra"
-      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
+      ).innerText = `${simboloMoneda} ${parseFloat(capacidadCompra).toLocaleString(
         "en-US",
         { minimumFractionDigits: 2 }
       )}`;
 
-      // Llenar información del plan
+      // Costo del Vehículo (precio_venta del producto)
+      const costoVehiculo = parseFloat(financiamiento.producto.precio_venta) || 0;
+      document.getElementById(
+        "modalFinanciamientoCostoVehiculo"
+      ).innerText = `${simboloMoneda} ${costoVehiculo.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+      })}`;
+
+      // Excedente = costo del vehículo - capacidad de compra (lo que el cliente paga extra)
+      const excedente = costoVehiculo - capacidadCompra;
+      const campoExcedente = document.getElementById("campoExcedente");
+      if (excedente > 0) {
+        campoExcedente.style.display = "block";
+        document.getElementById(
+          "modalFinanciamientoExcedente"
+        ).innerText = `${simboloMoneda} ${excedente.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+        })}`;
+      } else {
+        campoExcedente.style.display = "none";
+      }
+
+      // Monto de Compra = precio_venta del vehículo
+      document.getElementById(
+        "modalFinanciamientoMontoCompra"
+      ).innerText = `${simboloMoneda} ${costoVehiculo.toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2 }
+      )}`;
+
+      // Plan Original
       const planOriginal =
         financiamiento.financiamiento.plan_capacidad_original || 0;
       document.getElementById(
         "modalFinanciamientoPlanOriginal"
-      ).innerText = `${simboloMoneda} ${planOriginal.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(planOriginal).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
 
@@ -564,30 +593,21 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
       const dineroPerdido = financiamiento.financiamiento.dinero_perdido || 0;
       document.getElementById(
         "modalFinanciamientoDineroPerdido"
-      ).innerText = `${simboloMoneda} ${dineroPerdido.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(dineroPerdido).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
-
-      // Llenar monto de compra (capacidad actual)
-      document.getElementById(
-        "modalFinanciamientoMontoCompra"
-      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
-        "en-US",
-        { minimumFractionDigits: 2 }
-      )}`;
     } else {
       // Ocultar campos de vehículo para otros productos
-      document.getElementById("campoCapacidadCompra").style.display = "none";
       document.getElementById("infoVehiculo").style.display = "none";
 
-      // Llenar monto de compra normal
-      const montoCompra =
+      // Llenar monto de compra normal (precio_venta del producto)
+      const montoCompra = parseFloat(financiamiento.producto.precio_venta) ||
         financiamiento.financiamiento.monto_sin_interes ||
         financiamiento.financiamiento.monto_total ||
         0;
       document.getElementById(
         "modalFinanciamientoMontoCompra"
-      ).innerText = `${simboloMoneda} ${montoCompra.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(montoCompra).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
     }

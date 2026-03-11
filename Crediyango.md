@@ -1,3 +1,4 @@
+
 ¡FELICIDADES! 
   
 ESTIMADO ASOCIADO, 
@@ -37,14 +38,14 @@ El ASOCIADO declara conocer y aceptar que su incorporación al programa CREDI YA
 El plazo del contrato es único, fijo y no modificable, salvo acuerdo expreso y por escrito con AREQUIPA GO E.I.R.L., conforme a las condiciones establecidas en el presente contrato.
 (4) PAGOS: Los pagos de las cuotas deberán realizarse exclusivamente a través de CAJA AREQUIPA, siendo este el único medio de pago autorizado por AREQUIPA GO E.I.R.L. – CREDI YANGO.
 El ASOCIADO declara conocer y aceptar que:
-•	No se aceptan pagos en efectivo en oficinas
-•	No se aceptan pagos por medios distintos a los autorizados
+●	No se aceptan pagos en efectivo en oficinas
+●	No se aceptan pagos por medios distintos a los autorizados
 
 Actualmente, el medio habilitado es Caja Arequipa; no obstante, la Administradora podrá, en cualquier momento, incorporar, modificar o reemplazar las entidades financieras o medios de pago autorizados. Cualquier cambio será comunicado oportunamente al ASOCIADO a través de los canales oficiales.
 El incumplimiento en el pago oportuno de las cuotas podrá generar penalidades, restricciones operativas y la aplicación de medidas contractuales.
 (5) ENTREGA DEL VEHÍCULO (ADJUDICACIÓN): La entrega del vehículo se realizará una vez cumplidos los siguientes requisitos:
-•	Pago total de la inicial correspondiente al modelo seleccionado, conforme a lo establecido en la cláusula (2) del presente contrato.
-•	Presentación y validación de la documentación requerida.
+●	Pago total de la inicial correspondiente al modelo seleccionado, conforme a lo establecido en la cláusula (2) del presente contrato.
+●	Presentación y validación de la documentación requerida.
 
 El ASOCIADO declara conocer y aceptar que el plazo máximo de entrega será de hasta ____ (__) días hábiles, contados desde la confirmación del pago de la inicial y aprobación de la documentación.
 AREQUIPA GO E.I.R.L. se compromete a gestionar la adquisición dentro del plazo indicado; sin embargo, este podrá variar por causas ajenas a la empresa, tales como disponibilidad en concesionaria, trámites administrativos, logística o por tratarse de una compra gestionada en conjunto con aliados estratégicos.
@@ -58,8 +59,8 @@ No procede, bajo ninguna circunstancia, la devolución de la inicial ni de las c
 (8) CONDICIÓN OPERATIVA – CONEXIÓN MÍNIMA: El ASOCIADO se obliga a cumplir con una conexión mínima de treinta y seis (36) horas semanales dentro de la plataforma autorizada (YANGO).
 El incumplimiento reiterado de este objetivo podrá ser sancionado con un incremento en la tasa de financiamiento de hasta un cinco por ciento (5%), dicho incremento no será automático y estará sujeto a evaluación por AREQUIPA GO E.I.R.L.
 (9) EVALUACIÓN Y GARANTÍAS: AREQUIPA GO E.I.R.L. – CREDI YANGO, a su solo criterio, podrá solicitar avales y constituir las garantías reales y personales necesarias para asegurar el cumplimiento del contrato, incluyendo de manera obligatoria:
-•	Garantía mobiliaria sobre el vehículo adjudicado.
-•	Instalación de sistema GPS.
+●	Garantía mobiliaria sobre el vehículo adjudicado.
+●	Instalación de sistema GPS.
 
 El vehículo será entregado con GPS instalado, el cual deberá permanecer activo durante toda la vigencia del contrato.
 Todos los costos asociados a garantías, seguro vehicular, gastos notariales y registrales serán asumidos íntegramente por el ASOCIADO.
@@ -70,7 +71,7 @@ El ASOCIADO declara conocer y aceptar expresamente que:
 2.	Está prohibido realizar viajes de ruta, servicios denominados “viajes express”, colectivos informales o cualquier modalidad distinta a la autorizada por la empresa y por la normativa vigente.
 3.	El vehículo deberá operar dentro de la jurisdicción de la ciudad de Arequipa o Lima (según corresponda al registro del ASOCIADO). En caso requiera salir de dicha jurisdicción, deberá comunicarlo previamente y contar con autorización expresa de AREQUIPA GO E.I.R.L.
 Dicha salida no lo exime del cumplimiento de la conexión mínima semanal establecido en el presente contrato.
-4.	El ASOCIADO se obliga a mantener una conexión mínima de veinte (20) horas semanales en la plataforma autorizada (YANGO). El incumplimiento reiterado podrá generar la evaluación de medidas contractuales, incluyendo la aplicación de las disposiciones previstas en la cláusula correspondiente sobre incremento de tasa.
+4.	El ASOCIADO se obliga a mantener una conexión mínima de treinta y seis (36) horas semanales en la plataforma autorizada (YANGO). El incumplimiento reiterado podrá generar la evaluación de medidas contractuales, incluyendo la aplicación de las disposiciones previstas en la cláusula correspondiente sobre incremento de tasa.
 5.	El ASOCIADO deberá cumplir con todas las disposiciones legales, municipales y administrativas vigentes aplicables al servicio de taxi, remisse o transporte por aplicativo, así como con las políticas y términos del servicio de la plataforma autorizada.
 6.	En caso de emitirse nuevas normas, reformas o exigencias regulatorias para la prestación del servicio, el ASOCIADO será responsable de cumplirlas y asumir los costos que correspondan, sin que ello implique modificación automática del presente contrato.
 (12) RESOLUCIÓN EXPRESS
@@ -106,9 +107,9 @@ o	Riesgo de pérdida o responsabilidad para la empresa: en cualquier otro supues
 (15) INCUMPLIMIENTO, INCAUTACIÓN Y GASTOS
 Si el ASOCIADO incurre en el atraso de cuatro (4) cuotas semanales consecutivas, conforme a lo establecido en la cláusula (13) del presente contrato, AREQUIPA GO E.I.R.L. quedará facultada para iniciar el proceso de incautación y recuperación del vehículo.
 En tal supuesto, el ASOCIADO declara y acepta expresamente que:
-•	Deberá asumir íntegramente todos los gastos derivados del proceso de incautación, incluyendo, de manera enunciativa mas no limitativa: servicio de grúa, traslado, depósito vehicular, guardianía, trámites administrativos, honorarios, costos notariales y cualquier otro gasto necesario para la recuperación del bien.
-•	Dichos montos se adicionarán a la deuda pendiente.
-•	Asimismo, en caso de incautación y bloqueo del vehículo por incumplimiento contractual o mora, el ASOCIADO quedará inhabilitado para acceder a futuros programas de financiamiento administrados por AREQUIPA GO E.I.R.L., sin perjuicio de las acciones civiles y penales que correspondan.
+●	Deberá asumir íntegramente todos los gastos derivados del proceso de incautación, incluyendo, de manera enunciativa mas no limitativa: servicio de grúa, traslado, depósito vehicular, guardianía, trámites administrativos, honorarios, costos notariales y cualquier otro gasto necesario para la recuperación del bien.
+●	Dichos montos se adicionarán a la deuda pendiente.
+●	Asimismo, en caso de incautación y bloqueo del vehículo por incumplimiento contractual o mora, el ASOCIADO quedará inhabilitado para acceder a futuros programas de financiamiento administrados por AREQUIPA GO E.I.R.L., sin perjuicio de las acciones civiles y penales que correspondan.
 
 (16) PROCEDIMIENTO DE REVERSIÓN
 
@@ -124,8 +125,8 @@ En todos los casos, la reversión no extingue la obligación del asociado de con
 
 El ASOCIADO declara conocer y aceptar que AREQUIPA GO E.I.R.L. podrá realizar modificaciones, actualizaciones o adecuaciones a las condiciones operativas y/o contractuales del Programa CREDI YANGO, cuando ello resulte necesario por razones operativas, regulatorias, legales o administrativas.
 Dichas variaciones serán comunicadas de manera virtual mediante los canales previamente registrados por el ASOCIADO en el aplicativo CREDIGO, incluyendo de forma enunciativa mas no limitativa:
-•	Mensajes vía WhatsApp
-•	Correo electrónico registrado
+●	Mensajes vía WhatsApp
+●	Correo electrónico registrado
 El ASOCIADO declara que la información de contacto consignada en el aplicativo es válida, vigente y de su exclusiva responsabilidad mantenerla actualizada.
 
 Las comunicaciones enviadas por dichos medios se considerarán válidamente notificadas desde el momento de su envío, no pudiendo el ASOCIADO negarse a su recepción ni desconocer su contenido alegando falta de lectura o revisión.
@@ -184,12 +185,12 @@ PROGRAMA DE FINANCIAMIENTO VEHICULAR “CREDI YANGO”
 La presente cartilla tiene por finalidad explicar de manera clara y sencilla los aspectos más importantes del programa de financiamiento vehicular CREDI YANGO (en adelante, el Programa), y deberá ser entregada obligatoriamente por AREQUIPA GO E.I.R.L. (en adelante, la Administradora) a los potenciales asociados, como requisito previo a la suscripción del contrato o de cualquier documento relacionado.
 1. ¿QUÉ ES EL PROGRAMA CREDI YANGO?
 El Programa CREDI YANGO es una modalidad de financiamiento vehicular dirigida exclusivamente a conductores, que permite acceder a la adquisición de un vehículo mediante:
-•	Pago de una inicial
-•	Cuotas semanales fijas
-•	Cumplimiento de condiciones operativas
+●	Pago de una inicial
+●	Cuotas semanales fijas
+●	Cumplimiento de condiciones operativas
 El asociado paga:
-•	Inicial: ________
-•	Cuotas: 200 cuotas semanales de USD ____
+●	Inicial: ________
+●	Cuotas: 200 cuotas semanales de USD ____
 
 El objetivo del Programa es brindar una alternativa de financiamiento directa, sin sorteos ni adjudicaciones aleatorias.
 2. ¿CÓMO SE ADQUIERE LA CALIDAD DE ASOCIADO?
@@ -205,21 +206,21 @@ El asociado se obliga a realizar los siguientes pagos:
 a). Inicial
 Pago único de USD _____, requisito indispensable para iniciar el proceso de entrega del vehículo.
 b). Cuotas semanales
-•	Monto: USD ____
-•	Cantidad: 200 semanas
+●	Monto: USD ____
+●	Cantidad: 200 semanas
 
 Las cuotas comprenden conceptos de capital, administración y otros cargos contractuales cuando corresponda.
 Todos los pagos se realizan exclusivamente a través de CAJA AREQUIPA.
 No se aceptan pagos en efectivo ni en oficinas.
 4. ¿CUÁLES SON LAS CONDICIONES PARA LA ENTREGA DEL VEHÍCULO?
 Una vez cancelada la cuota inicial y presentada la documentación completa requerida, la Administradora gestionará la entrega del vehículo.
-•	El plazo máximo de entrega podrá ser de hasta treinta (__) días hábiles, estando este plazo subvencionado a la disponibilidad del stock de la concesionaria según corresponda y trámite de los documentos necesarios para la circulación del vehículo (tarjeta de propiedad y placas)
-•	El vehículo será entregado con sistema GPS ya instalado, el cual deberá permanecer activo durante toda la vigencia del contrato.
+●	El plazo máximo de entrega podrá ser de hasta treinta (__) días hábiles, estando este plazo subvencionado a la disponibilidad del stock de la concesionaria según corresponda y trámite de los documentos necesarios para la circulación del vehículo (tarjeta de propiedad y placas)
+●	El vehículo será entregado con sistema GPS ya instalado, el cual deberá permanecer activo durante toda la vigencia del contrato.
 
 Para recibir el vehículo, el asociado deberá:
-•	Firmar los documentos contractuales y garantías exigidas.
-•	Cumplir con los requisitos administrativos establecidos.
-•	Contratar obligatoriamente el Seguro Vehicular y el SOAT con AREQUIPA GO E.I.R.L., manteniéndolos vigentes durante todo el contrato.
+●	Firmar los documentos contractuales y garantías exigidas.
+●	Cumplir con los requisitos administrativos establecidos.
+●	Contratar obligatoriamente el Seguro Vehicular y el SOAT con AREQUIPA GO E.I.R.L., manteniéndolos vigentes durante todo el contrato.
 
 La primera cuota semanal se paga una (1) semana después de la entrega del vehículo.
 
@@ -228,17 +229,17 @@ Todos los gastos notariales, registrales, de garantías, seguro vehicular y SOAT
 5. ¿CÓMO Y DÓNDE SE REALIZAN LOS PAGOS?
 Todos los pagos del Programa CREDI YANGO se realizan exclusivamente a través de CAJA AREQUIPA, siendo este el único canal autorizado.
 Los pagos incluyen:
-•	Cuota inicial
-•	Cuotas semanales
-•	Penalidades por mora, de corresponder
-•	Otros conceptos contractuales
+●	Cuota inicial
+●	Cuotas semanales
+●	Penalidades por mora, de corresponder
+●	Otros conceptos contractuales
 
 El asociado podrá visualizar el estado de su financiamiento, cuotas pagadas y pendientes, a través del aplicativo CREDI GO.
 6. CONDICIÓN OPERATIVA DEL PROGRAMA
 El asociado se compromete a cumplir con una conexión mínima de veinte (20) horas semanales dentro de la plataforma autorizada.
 El incumplimiento reiterado podrá generar:
-•	Restricciones operativas
-•	Incremento en la tasa de financiamiento de hasta un cinco por ciento (5%), sujeto a evaluación de la Administradora.
+●	Restricciones operativas
+●	Incremento en la tasa de financiamiento de hasta un cinco por ciento (5%), sujeto a evaluación de la Administradora.
 
 7. ¿QUÉ SUCEDE SI EL ASOCIADO INCUMPLE CON LOS PAGOS?
 En caso de incumplimiento:
@@ -247,9 +248,9 @@ b)	El atraso reiterado podrá generar restricciones operativas.
 c)	El incumplimiento de cuatro (4) cuotas semanales consecutivas podrá dar lugar a medidas contractuales más severas, como la resolución del contrato.
 
 Si el vehículo ya fue entregado, la Administradora podrá:
-•	Exigir el pago del saldo pendiente.
-•	Ejecutar las garantías.
-•	Administrar temporalmente o recuperar el vehículo conforme al contrato.
+●	Exigir el pago del saldo pendiente.
+●	Ejecutar las garantías.
+●	Administrar temporalmente o recuperar el vehículo conforme al contrato.
 
 En caso de incautación, el asociado deberá asumir todos los gastos derivados del proceso, tales como grúa, traslado, depósito vehicular, trámites administrativos, honorarios y demás costos vinculados a la recuperación del bien.
 
@@ -286,12 +287,12 @@ En caso de incumplimiento en el pago oportuno de las cuotas correspondientes al 
 El asociado deberá abonar una penalidad fija de USD 5.00 (Cinco dólares americanos) por cada cuota vencida, a partir del día siguiente al vencimiento de la misma.
 Las penalidades por mora son automáticas y acumulativas por cada cuota impaga, sin necesidad de previo aviso.
 PENALIZACIONES ADICIONALES
-•	En casos de puntaje bajo, mal comportamiento operativo o incumplimientos reiterados, la Administradora podrá aplicar restricciones al acceso a nuevos beneficios, promociones o programas adicionales.
-•	Si el asociado forma parte de un sistema de ahorro sin entrega de vehículo y presenta retraso en sus pagos por más de dos (2) meses, podrá ser descalificado o suspendido del grupo, quedando a la espera de su correspondiente liquidación, conforme a lo establecido en el contrato.
+●	En casos de puntaje bajo, mal comportamiento operativo o incumplimientos reiterados, la Administradora podrá aplicar restricciones al acceso a nuevos beneficios, promociones o programas adicionales.
+●	Si el asociado forma parte de un sistema de ahorro sin entrega de vehículo y presenta retraso en sus pagos por más de dos (2) meses, podrá ser descalificado o suspendido del grupo, quedando a la espera de su correspondiente liquidación, conforme a lo establecido en el contrato.
 OBSERVACIONES IMPORTANTES
-•	El asociado recibirá una notificación por escrito al detectarse el incumplimiento de pago.
-•	Para continuar vigente dentro del acuerdo, el asociado deberá regularizar su situación mediante el pago de dos (2) cuotas adelantadas.
-•	El asociado contará con un plazo máximo de cuarenta y ocho (48) horas desde la recepción de la notificación para efectuar el pago correspondiente.
+●	El asociado recibirá una notificación por escrito al detectarse el incumplimiento de pago.
+●	Para continuar vigente dentro del acuerdo, el asociado deberá regularizar su situación mediante el pago de dos (2) cuotas adelantadas.
+●	El asociado contará con un plazo máximo de cuarenta y ocho (48) horas desde la recepción de la notificación para efectuar el pago correspondiente.
 FECHA: _______________________________________________________________________ 
 NOMBRE:_____________________________________________________________________
 FIRMA: _______________________________________________________________________
@@ -332,3 +333,12 @@ DNI: ____________________________
 Teléfono / Correo electrónico: ____________________________
 Firma: ____________________________
 Fecha: ____ de __________ de 20___
+
+
+ PAGOS: Los pagos de las cuotas deberán realizarse exclusivamente a través de CAJA AREQUIPA, siendo este el único medio de pago autorizado por AREQUIPA GO E.I.R.L. – CREDI YANGO.
+El ASOCIADO declara conocer y aceptar que:
+●	No se aceptan pagos en efectivo en oficinas
+●	No se aceptan pagos por medios distintos a los autorizados
+
+Actualmente, el medio habilitado es Caja Arequipa; no obstante, la Administradora podrá, en cualquier momento, incorporar, modificar o reemplazar las entidades financieras o medios de pago autorizados. Cualquier cambio será comunicado oportunamente al ASOCIADO a través de los canales oficiales.
+El incumplimiento en el pago oportuno de las cuotas podrá generar penalidades, restricciones operativas y la aplicación de medidas contractuales.

@@ -1258,16 +1258,21 @@ public function obtenerDepartamentos()
             $offset = ($pagina - 1) * $cantidadPorPagina;
 
             // Búsqueda exacta y parcial para documento
-            $sql = "SELECT 
-                        c.id, 
-                        c.n_documento AS nro_documento, 
-                        CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS datos, 
-                        COALESCE(c.num_cod_finan, '') AS codigo_asociado,
+            $sql = "SELECT
+                        c.id,
+                        c.n_documento AS nro_documento,
+                        CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS datos,
+                        COALESCE(
+                            NULLIF(NULLIF(c.num_cod_finan, ''), '0'),
+                            NULLIF(NULLIF(MAX(f.codigo_asociado), ''), '0'),
+                            ''
+                        ) AS codigo_asociado,
                         c.nombres,
                         c.apellido_paterno,
                         c.apellido_materno,
                         'cliente' AS tipo_registro
                     FROM clientes_financiar c
+                    LEFT JOIN financiamiento f ON f.id_cliente = c.id AND f.estado_eliminado = 0
                     WHERE (c.nombres LIKE ?
                     OR c.apellido_paterno LIKE ?
                     OR c.apellido_materno LIKE ?
@@ -1275,6 +1280,7 @@ public function obtenerDepartamentos()
                     OR c.n_documento = ?
                     OR c.n_documento LIKE ?
                     OR CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ?)
+                    GROUP BY c.id
                     LIMIT ? OFFSET ?";
 
             $stmt = $this->conectar->prepare($sql);

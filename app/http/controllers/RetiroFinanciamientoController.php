@@ -14,7 +14,7 @@ class RetiroFinanciamientoController extends Controller
 
     /**
      * Calcular penalidad según tabla de retiro
-     * Solo aplica para planes 19 (CrediGo auto Grupo 3) y 38 (CrediGo Autos Grupo 4)
+     * Solo aplica para planes 19 (CrediGo auto Grupo 3), 38 (CrediGo Autos Grupo 4) y 49 (Credi Ahorros Autos)
      */
     public function calcularPenalidad()
     {
@@ -56,9 +56,10 @@ class RetiroFinanciamientoController extends Controller
                 return;
             }
 
-            // Verificar que sea plan 19 o 38
+            // Verificar que sea plan permitido (19, 38 o 49)
             $grupoFinanciamiento = intval($financiamiento['grupo_financiamiento']);
-            if ($grupoFinanciamiento != 19 && $grupoFinanciamiento != 38) {
+            $planesPermitidos = [19, 38, 49];
+            if (!in_array($grupoFinanciamiento, $planesPermitidos)) {
                 echo json_encode(['success' => false, 'message' => 'Este plan no permite retiros con penalidad']);
                 return;
             }
@@ -216,9 +217,10 @@ class RetiroFinanciamientoController extends Controller
                 return;
             }
 
-            // Verificar que sea plan 19 o 38
+            // Verificar que sea plan permitido (19, 38 o 49)
             $grupoFinanciamiento = intval($financiamiento['grupo_financiamiento']);
-            if ($grupoFinanciamiento != 19 && $grupoFinanciamiento != 38) {
+            $planesPermitidos = [19, 38, 49];
+            if (!in_array($grupoFinanciamiento, $planesPermitidos)) {
                 $this->conexion->rollback();
                 echo json_encode(['success' => false, 'message' => 'Este plan no permite retiros con penalidad']);
                 return;

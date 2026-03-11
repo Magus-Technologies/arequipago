@@ -135,9 +135,14 @@
         <div class="tab-pane fade show active" id="adjudicados" role="tabpanel">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="mb-0">Lista de Adjudicados</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Lista de Adjudicados</h3>
+                        <button class="btn btn-success btn-sm" onclick="exportarAdjudicadosExcel()" title="Descargar Excel">
+                            <i class="fas fa-file-excel me-1"></i> Descargar Excel
+                        </button>
+                    </div>
                     <div class="row mt-2">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <select class="form-control" id="filtro-tipo-adjudicacion">
                                 <option value="">Todos los tipos</option>
                                 <option value="sorteo">Sorteo</option>
@@ -145,11 +150,16 @@
                                 <option value="crediyango">CrediYango</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <select class="form-control" id="filtro-estado-entrega">
                                 <option value="">Todos los estados</option>
                                 <option value="entregado">Entregado</option>
                                 <option value="pendiente">Pendiente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="filtro-fecha-entrega">
+                                <option value="">Todas las fechas de entrega</option>
                             </select>
                         </div>
                     </div>
@@ -459,6 +469,21 @@
     background-color: #11cdef;
 }
 </style>
+
+<script>
+function exportarAdjudicadosExcel() {
+    var tipoAdj = $('#filtro-tipo-adjudicacion').val();
+    var estadoEntrega = $('#filtro-estado-entrega').val();
+    var fechaEntrega = $('#filtro-fecha-entrega').val();
+    var url = _URL + '/ajs/adjudicaciones/exportar-excel?';
+    var params = [];
+    if (tipoAdj) params.push('tipo_adjudicacion=' + encodeURIComponent(tipoAdj));
+    if (estadoEntrega) params.push('estado_entrega=' + encodeURIComponent(estadoEntrega));
+    if (fechaEntrega) params.push('fecha_entrega=' + encodeURIComponent(fechaEntrega));
+    url += params.join('&');
+    window.open(url, '_blank');
+}
+</script>
 
 <!-- Módulos JavaScript de Adjudicaciones -->
 <!-- IMPORTANTE: Cargar en este orden específico -->

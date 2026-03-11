@@ -585,6 +585,8 @@ function saveFinanciamiento(event) {
          // Preparar array de pagos a generar
           const pagos = [];
           const metodoPago = $("#metodoPago").val() || "Efectivo"; // Valor por defecto
+          const entidadFinanciera = $("#entidadFinancieraInicial").val() || "";
+          const numOperacion = $("#numOperacionInicial").val() || "";
 
           // CORREGIDO: Priorizar Cuota Inicial sobre Monto de Inscripción
           if (cuotaInicial > 0) {
@@ -609,7 +611,7 @@ function saveFinanciamiento(event) {
           }
           // Solo hacer la llamada si hay pagos para generar
           if (pagos.length > 0) {
-            handleGeneratePDFs(response.id_financiamiento, pagos, metodoPago);
+            handleGeneratePDFs(response.id_financiamiento, pagos, metodoPago, entidadFinanciera, numOperacion);
           }
 
           // 🐱 Clear the selected variant ID
@@ -734,9 +736,14 @@ function saveFinanciamiento(event) {
                   tipo: "Producto Financiado",
                 });
               }
+              // Capturar datos de entidad y operación antes de limpiar
+              const metodoPagoVeh = $("#metodoPago").val() || "Efectivo";
+              const entidadFinancieraVeh = $("#entidadFinancieraInicial").val() || "";
+              const numOperacionVeh = $("#numOperacionInicial").val() || "";
+
               // Solo hacer la llamada si hay pagos para generar
               if (pagos.length > 0) {
-                handleGeneratePDFs(response.id_financiamiento, pagos);
+                handleGeneratePDFs(response.id_financiamiento, pagos, metodoPagoVeh, entidadFinancieraVeh, numOperacionVeh);
               }
               document.getElementById("grupo").value = "";
               limpiarFormulario();
@@ -1179,9 +1186,13 @@ function saveFinanciamientoVehicular() {
 
           console.log("ID Financiamiento a enviar:", response.idFinanciamiento);
           console.log("Pagos a enviar:", pagos);
+          // Capturar datos de entidad y operación
+          const metodoPagoVeh2 = $("#metodoPago").val() || "Efectivo";
+          const entidadFinancieraVeh2 = $("#entidadFinancieraInicial").val() || "";
+          const numOperacionVeh2 = $("#numOperacionInicial").val() || "";
           // Solo hacer la llamada si hay pagos para generar
           if (pagos.length > 0) {
-            handleGeneratePDFs(response.idFinanciamiento, pagos);
+            handleGeneratePDFs(response.idFinanciamiento, pagos, metodoPagoVeh2, entidadFinancieraVeh2, numOperacionVeh2);
           }
           // 🐱 Clear the selected variant ID
           limpiarVarianteSeleccionada();

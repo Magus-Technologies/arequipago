@@ -449,6 +449,8 @@ Route::postBase('/resumen-financiamientos', 'FragmentController@resumenFinanciam
 Route::get('/obtenerVehiculosEntregados', 'FinanciamientoController@obtenerVehiculosEntregados');
 Route::get('/ajs/exportarVehiculosEntregados', 'ReportesResumenFinanciamientoController@exportarVehiculosEntregados');
 
+Route::get('/ajs/adjudicaciones/exportar-excel', 'AdjudicacionesController@exportarAdjudicadosExcel');
+
 // ============ RUTAS DEL EDITOR DE CONTRATOS ============
 // Gestión de plantillas de contratos
 Route::get('/api/contratos/plantillas', 'EditorContratosController@listarPlantillas');

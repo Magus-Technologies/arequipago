@@ -1,5 +1,12 @@
 <?php
 require_once "app/models/Adjudicacion.php";
+require_once 'utils/lib/exel/vendor/autoload.php';
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class AdjudicacionesController
 {
@@ -35,6 +42,30 @@ class AdjudicacionesController
     }
 
     /**
+     * Obtener fechas de entrega distintas para el filtro
+     */
+    public function obtenerFechasEntrega()
+    {
+        try {
+            $adjudicacionModel = new Adjudicacion();
+            $fechas = $adjudicacionModel->obtenerFechasEntregaDistintas();
+
+            header("Content-Type: application/json");
+            echo json_encode([
+                "success" => true,
+                "data" => $fechas,
+            ]);
+        } catch (Exception $e) {
+            error_log("Error en obtenerFechasEntrega: " . $e->getMessage());
+            header("Content-Type: application/json");
+            echo json_encode([
+                "success" => false,
+                "error" => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Listar todos los adjudicados
      */
     public function listarAdjudicados()
@@ -48,6 +79,9 @@ class AdjudicacionesController
             }
             if (isset($_GET["estado_entrega"])) {
                 $filtros["estado_entrega"] = $_GET["estado_entrega"];
+            }
+            if (!empty($_GET["fecha_entrega"])) {
+                $filtros["fecha_entrega"] = $_GET["fecha_entrega"];
             }
 
             $adjudicacionModel = new Adjudicacion();
@@ -751,6 +785,196 @@ class AdjudicacionesController
                 "message" =>
                     "Error al enviar notificación: " . $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Exportar lista de adjudicados a Excel
+     */
+    public function exportarAdjudicadosExcel()
+    {
+        try {
+            $filtros = [];
+            if (!empty($_GET["tipo_adjudicacion"])) {
+                $filtros["tipo_adjudicacion"] = $_GET["tipo_adjudicacion"];
+            }
+            if (!empty($_GET["estado_entrega"])) {
+                $filtros["estado_entrega"] = $_GET["estado_entrega"];
+            }
+            if (!empty($_GET["fecha_entrega"])) {
+                $filtros["fecha_entrega"] = $_GET["fecha_entrega"];
+            }
+
+            $adjudicacionModel = new Adjudicacion();
+            $adjudicados = $adjudicacionModel->obtenerTodosAdjudicados($filtros);
+
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $spreadsheet->getProperties()
+                ->setCreator("ArequipaGo")
+                ->setTitle("Adjudicaciones")
+                ->setDescription("Reporte generado por ArequipaGo");
+
+            // ENCABEZADO PRINCIPAL
+            $sheet->mergeCells('A1:K1');
+            $sheet->setCellValue('A1', 'MODULO DE ADJUDICACIONES');
+            $sheet->getStyle('A1')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 16, 'color' => ['rgb' => 'FFFFFF']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '5e72e4']]
+            ]);
+            $sheet->getRowDimension(1)->setRowHeight(30);
+
+            // Subtitulo
+            $filtroTexto = 'Todos los adjudicados';
+            if (!empty($filtros["estado_entrega"])) {
+                $filtroTexto = 'Estado: ' . ucfirst($filtros["estado_entrega"]);
+            }
+            if (!empty($filtros["tipo_adjudicacion"])) {
+                $filtroTexto .= ' | Tipo: ' . ucfirst($filtros["tipo_adjudicacion"]);
+            }
+            $sheet->mergeCells('A2:K2');
+            $sheet->setCellValue('A2', $filtroTexto . ' | Total: ' . count($adjudicados) . ' registros');
+            $sheet->getStyle('A2')->applyFromArray([
+                'font' => ['bold' => true, 'size' => 12, 'color' => ['rgb' => 'FFFFFF']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '825ee4']]
+            ]);
+            $sheet->getRowDimension(2)->setRowHeight(25);
+
+            // Fecha generacion
+            $sheet->mergeCells('A3:K3');
+            $sheet->setCellValue('A3', 'Fecha de generacion: ' . date('d/m/Y H:i:s'));
+            $sheet->getStyle('A3')->applyFromArray([
+                'font' => ['italic' => true, 'size' => 10],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ]);
+
+            // ENCABEZADOS
+            $headers = [
+                'A5' => 'Codigo', 'B5' => 'Nombre Completo', 'C5' => 'Documento',
+                'D5' => 'Vehiculo', 'E5' => 'Plan', 'F5' => 'Tipo Adjudicacion',
+                'G5' => 'Estado Entrega', 'H5' => 'Fecha Entrega',
+                'I5' => 'Monto Total', 'J5' => 'Cuotas Pagadas', 'K5' => 'Cuotas Vencidas'
+            ];
+            foreach ($headers as $cell => $value) {
+                $sheet->setCellValue($cell, $value);
+            }
+            $sheet->getStyle('A5:K5')->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2dce89']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]]
+            ]);
+            $sheet->getRowDimension(5)->setRowHeight(20);
+
+            // DATOS
+            $row = 6;
+            $totalEntregados = 0;
+            $totalPendientes = 0;
+
+            foreach ($adjudicados as $adj) {
+                $nombre = '';
+                if (!empty($adj['conductor_nombres'])) {
+                    $nombre = trim($adj['conductor_nombres'] . ' ' . ($adj['conductor_apellido_paterno'] ?? '') . ' ' . ($adj['conductor_apellido_materno'] ?? ''));
+                } elseif (!empty($adj['cliente_nombres'])) {
+                    $nombre = trim($adj['cliente_nombres'] . ' ' . ($adj['cliente_apellido_paterno'] ?? '') . ' ' . ($adj['cliente_apellido_materno'] ?? ''));
+                }
+                $documento = $adj['conductor_documento'] ?? $adj['cliente_documento'] ?? 'N/A';
+
+                $fechaEntrega = 'Sin fecha';
+                if (!empty($adj['fecha_entrega'])) {
+                    $fechaEntrega = date('d/m/Y', strtotime($adj['fecha_entrega']));
+                }
+
+                $moneda = $adj['moneda'] ?: 'S/.';
+                $monto = number_format((float)$adj['monto_total'], 2, '.', ',');
+
+                $tipoAdj = ucfirst(str_replace('_', ' ', $adj['tipo_adjudicacion'] ?? 'N/A'));
+
+                $sheet->setCellValue('A' . $row, $adj['codigo_asociado'] ?: $adj['idfinanciamiento']);
+                $sheet->setCellValue('B' . $row, $nombre);
+                $sheet->setCellValue('C' . $row, $documento);
+                $sheet->setCellValue('D' . $row, $adj['producto_nombre'] ?? 'N/A');
+                $sheet->setCellValue('E' . $row, $adj['nombre_plan'] ?? 'N/A');
+                $sheet->setCellValue('F' . $row, $tipoAdj);
+                $sheet->setCellValue('G' . $row, ucfirst($adj['estado_entrega'] ?? 'N/A'));
+                $sheet->setCellValue('H' . $row, $fechaEntrega);
+                $sheet->setCellValue('I' . $row, $moneda . ' ' . $monto);
+                $sheet->setCellValue('J' . $row, ($adj['cuotas_pagadas'] ?? 0) . '/' . ($adj['total_cuotas'] ?? 0));
+                $sheet->setCellValue('K' . $row, $adj['cuotas_vencidas'] ?? 0);
+
+                // Estilo de datos
+                $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'CCCCCC']]],
+                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER]
+                ]);
+
+                // Centrar columnas especificas
+                foreach (['A', 'C', 'F', 'G', 'H', 'J', 'K'] as $col) {
+                    $sheet->getStyle($col . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                }
+                $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                // Color alternado
+                if ($row % 2 == 0) {
+                    $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F8F9FA']]
+                    ]);
+                }
+
+                // Resaltar vencidas
+                if (($adj['cuotas_vencidas'] ?? 0) > 0) {
+                    $sheet->getStyle('K' . $row)->applyFromArray([
+                        'font' => ['bold' => true, 'color' => ['rgb' => 'DC3545']]
+                    ]);
+                }
+
+                if ($adj['estado_entrega'] === 'entregado') $totalEntregados++;
+                else $totalPendientes++;
+
+                $row++;
+            }
+
+            // FILA DE RESUMEN
+            $row++;
+            $sheet->mergeCells('A' . $row . ':H' . $row);
+            $sheet->setCellValue('A' . $row, "RESUMEN: Entregados: {$totalEntregados} | Pendientes: {$totalPendientes} | Total: " . count($adjudicados));
+            $sheet->getStyle('A' . $row . ':K' . $row)->applyFromArray([
+                'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '5e72e4']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
+            ]);
+
+            // Anchos de columna
+            $sheet->getColumnDimension('A')->setWidth(12);
+            $sheet->getColumnDimension('B')->setWidth(30);
+            $sheet->getColumnDimension('C')->setWidth(14);
+            $sheet->getColumnDimension('D')->setWidth(25);
+            $sheet->getColumnDimension('E')->setWidth(22);
+            $sheet->getColumnDimension('F')->setWidth(18);
+            $sheet->getColumnDimension('G')->setWidth(15);
+            $sheet->getColumnDimension('H')->setWidth(15);
+            $sheet->getColumnDimension('I')->setWidth(15);
+            $sheet->getColumnDimension('J')->setWidth(15);
+            $sheet->getColumnDimension('K')->setWidth(15);
+
+            $filename = 'Adjudicaciones_' . date('Ymd_His') . '.xlsx';
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit();
+
+        } catch (Exception $e) {
+            error_log("Error en exportarAdjudicadosExcel: " . $e->getMessage());
+            header('Content-Type: text/html; charset=utf-8');
+            echo "Error al exportar: " . $e->getMessage();
+            exit();
         }
     }
 

@@ -619,6 +619,18 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             </div>
                         </div>
                         <hr class="my-3">
+                        <h6 class="text-muted small mb-3">Especificaciones Técnicas</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Memoria RAM</label>
+                                <p class="mb-0" id="detalle-memoria-ram"></p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Almacenamiento</label>
+                                <p class="mb-0" id="detalle-almacenamiento"></p>
+                            </div>
+                        </div>
+                        <hr class="my-3">
                         <h6 class="text-muted small mb-3">Accesorios Incluidos</h6>
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -809,6 +821,34 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 <div class="col-md-6">
                                     <label for="colorc" class="form-label">Color</label>
                                     <input id="colorc" name="colorc" class="form-control">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="memoria_ram" class="form-label">Memoria RAM</label>
+                                    <select id="memoria_ram" name="memoria_ram" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="2GB">2 GB</option>
+                                        <option value="3GB">3 GB</option>
+                                        <option value="4GB">4 GB</option>
+                                        <option value="6GB">6 GB</option>
+                                        <option value="8GB">8 GB</option>
+                                        <option value="12GB">12 GB</option>
+                                        <option value="16GB">16 GB</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="almacenamiento" class="form-label">Almacenamiento</label>
+                                    <select id="almacenamiento" name="almacenamiento" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="16GB">16 GB</option>
+                                        <option value="32GB">32 GB</option>
+                                        <option value="64GB">64 GB</option>
+                                        <option value="128GB">128 GB</option>
+                                        <option value="256GB">256 GB</option>
+                                        <option value="512GB">512 GB</option>
+                                        <option value="1TB">1 TB</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -1757,6 +1797,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             formData.append('cable_usb', document.getElementById('cable_usb').value);
             formData.append('manual_usuario', document.getElementById('manual_usuario').value);
             formData.append('estuche', document.getElementById('estuche').value);
+            formData.append('memoria_ram', document.getElementById('memoria_ram').value);
+            formData.append('almacenamiento', document.getElementById('almacenamiento').value);
         }
 
         // Obtener el wrapper de vehículo
@@ -2083,6 +2125,8 @@ function mostrarDetallesProducto(idProducto) {
                     $('#detalle-cable-usb').text(producto.cable_usb || 'No disponible');
                     $('#detalle-manual').text(producto.manual_usuario || 'No disponible');
                     $('#detalle-estuche').text(producto.estuche || 'No disponible');
+                    $('#detalle-memoria-ram').text(producto.memoria_ram || 'No disponible');
+                    $('#detalle-almacenamiento').text(producto.almacenamiento || 'No disponible');
                 }
 
                 // Mostrar/ocultar sección de chip/plan móvil

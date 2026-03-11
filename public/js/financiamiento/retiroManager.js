@@ -209,8 +209,8 @@ function procesarRetiroFinanciamiento(datos) {
 
 // Función para verificar si un financiamiento puede retirarse
 function puedeRetirarse(grupoFinanciamiento, estadoRetiro) {
-    // Solo planes 19 (CrediGo auto Grupo 3) y 38 (CrediGo Autos Grupo 4)
-    const planesPermitidos = [19, 38];
+    // Planes 19 (CrediGo auto Grupo 3), 38 (CrediGo Autos Grupo 4) y 49 (Credi Ahorros Autos)
+    const planesPermitidos = [19, 38, 49];
     const grupo = parseInt(grupoFinanciamiento);
     
     return planesPermitidos.includes(grupo) && estadoRetiro !== 'retirado';

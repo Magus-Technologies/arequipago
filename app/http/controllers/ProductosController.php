@@ -280,7 +280,9 @@ class ProductosController extends Controller
                 'cargador' => $_POST['cargador'] ?? null,
                 'cable_usb' => $_POST['cable_usb'] ?? null,
                 'manual_usuario' => $_POST['manual_usuario'] ?? null,
-                'estuche' => $_POST['estuche'] ?? null
+                'estuche' => $_POST['estuche'] ?? null,
+                'memoria_ram' => $_POST['memoria_ram'] ?? null,
+                'almacenamiento' => $_POST['almacenamiento'] ?? null
             ];
             
             // Guardar en la tabla celulares
@@ -1906,9 +1908,11 @@ private function esCategoríaCelular($categoriaNormalizada) {
                     'cargador' => 'cargador',
                     'cable_usb' => 'cable_usb',
                     'manual_usuario' => 'manual_usuario',
-                    'estuche' => 'estuche'
+                    'estuche' => 'estuche',
+                    'memoria_ram' => 'memoria_ram',
+                    'almacenamiento' => 'almacenamiento'
                 ];
-                
+
                 // Contador para asignar IDs únicos a cada característica
                 $idCaracteristica = 1;
                 
@@ -2315,7 +2319,9 @@ private function esCategoríaCelular($categoriaNormalizada) {
             'cargador' => $post['cargador'] ?? null,
             'cable_usb' => $post['cable_usb'] ?? null,
             'manual_usuario' => $post['manual_usuario'] ?? null,
-            'estuche' => $post['estuche'] ?? null
+            'estuche' => $post['estuche'] ?? null,
+            'memoria_ram' => $post['memoria_ram'] ?? null,
+            'almacenamiento' => $post['almacenamiento'] ?? null
         ];
 
         $celularModel->actualizarCaracteristicasCelular($datosCelular);
@@ -2367,10 +2373,11 @@ private function esCategoríaCelular($categoriaNormalizada) {
         $codigo = trim($_POST['codigo']);
 
         try {
-            // Buscar productos con el mismo código o código de barras
+            // Buscar productos con el mismo código o código de barras (excluir eliminados)
             $sql = "SELECT idproductosv2, nombre, codigo, codigo_barra, cantidad
                     FROM productosv2
-                    WHERE codigo = ? OR codigo_barra = ?";
+                    WHERE (codigo = ? OR codigo_barra = ?)
+                    AND estado != '0'";
 
             $stmt = $this->conexion->prepare($sql);
             $stmt->bind_param("ss", $codigo, $codigo);

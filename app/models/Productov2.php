@@ -960,6 +960,8 @@ class Productov2
                             $producto['cable_usb'] = $datosCelular['cable_usb'];
                             $producto['manual_usuario'] = $datosCelular['manual_usuario'];
                             $producto['estuche'] = $datosCelular['estuche'];
+                            $producto['memoria_ram'] = $datosCelular['memoria_ram'];
+                            $producto['almacenamiento'] = $datosCelular['almacenamiento'];
                         }
 
                         $stmtCelular->close();

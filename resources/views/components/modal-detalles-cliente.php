@@ -166,28 +166,30 @@
                 <span id="modalFinanciamientoID" class="badge bg-primary" style="font-size: 0.9em;">N/A</span>
             </p>
 
-            <!-- NUEVO: Campo inteligente según tipo de plan -->
-            <div id="campoCapacidadCompra" style="display: none;">
-                <p><i class="fas fa-car me-2"></i><strong>Capacidad de Compra Actual:</strong>
-                    <span id="modalFinanciamientoCapacidadCompra" class="text-success fw-bold">$0.00</span>
-                </p>
-                <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Monto disponible para comprar un vehículo (considerando semanas perdidas)
-                </small>
-            </div>
-
             <!-- Campo normal para todos los planes -->
             <p><i class="fas fa-dollar-sign me-2"></i><strong>Monto de Compra:</strong>
                 <span id="modalFinanciamientoMontoCompra" class="text-primary fw-bold">$0.00</span>
             </p>
 
-            <p><i class="fas fa-calculator me-2"></i><strong>Monto Total:</strong>
+            <p><i class="fas fa-calculator me-2"></i><strong>Monto Total (con intereses):</strong>
                 <span id="modalFinanciamientoMontoTotal" class="text-warning fw-bold">$0.00</span>
             </p>
 
-            <!-- NUEVO: Información adicional para vehículos -->
+            <!-- Información adicional para vehículos -->
             <div id="infoVehiculo" style="display: none;">
+                <hr>
+                <div id="campoCapacidadCompra">
+                    <p><i class="fas fa-shopping-cart me-2"></i><strong>Capacidad de Compra Actual:</strong>
+                        <span id="modalFinanciamientoCapacidadCompra" class="text-success fw-bold">$0.00</span>
+                    </p>
+                </div>
+                <p><i class="fas fa-car me-2"></i><strong>Costo del Vehículo:</strong>
+                    <span id="modalFinanciamientoCostoVehiculo" class="text-primary fw-bold">$0.00</span>
+                </p>
+                <p id="campoExcedente" style="display: none;">
+                    <i class="fas fa-coins me-2" style="color: #e67e22;"></i><strong>Excedente:</strong>
+                    <span id="modalFinanciamientoExcedente" class="fw-bold" style="color: #e67e22;">$0.00</span>
+                </p>
                 <hr>
                 <p><i class="fas fa-calendar-alt me-2"></i><strong>Plan Original:</strong>
                     <span id="modalFinanciamientoPlanOriginal" class="text-info">$0.00</span>
