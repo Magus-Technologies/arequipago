@@ -278,8 +278,10 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
                                     <th>N° Unid</th>
                                     <th>Asesor</th>
                                     <th>Monto</th>
+                                    <th>Concepto</th>
                                     <th>Fecha Emisión</th>
                                     <th>Estado</th>
+                                    <th>Facturación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -488,6 +490,92 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
     </div>
 </div>
 
+<!-- Modal Facturar Pago Financiamiento (fuera de #registrarPago para que no quede oculto) -->
+<div class="modal fade" id="modalFacturarFinanciamiento" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Generar Factura/Boleta - Pago Financiamiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formFacturarFinanciamiento">
+                    <input type="hidden" id="fact_fin_id_pago" name="id_pago">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-user me-2"></i>Datos del Cliente</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">Cliente:</th><td id="fact_fin_cliente"></td></tr>
+                                <tr><th>DNI/RUC:</th><td id="fact_fin_dni"></td></tr>
+                                <tr><th>Código:</th><td id="fact_fin_codigo"></td></tr>
+                                <tr><th>Plan:</th><td id="fact_fin_plan"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-money-bill me-2"></i>Datos del Pago</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">Concepto:</th><td id="fact_fin_concepto"></td></tr>
+                                <tr><th>Monto:</th><td id="fact_fin_monto"></td></tr>
+                                <tr><th>Fecha Pago:</th><td id="fact_fin_fecha_pago"></td></tr>
+                                <tr><th>Método Pago:</th><td id="fact_fin_metodo_pago"></td></tr>
+                                <tr id="fila_fact_entidad" style="display:none;"><th>Entidad:</th><td id="fact_fin_entidad"></td></tr>
+                                <tr id="fila_fact_num_op" style="display:none;"><th>N° Operación:</th><td id="fact_fin_num_operacion"></td></tr>
+                                <tr><th>ID Financ.:</th><td id="fact_fin_id_financiamiento"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-file-alt me-1"></i>Tipo de Documento *</label>
+                            <select class="form-control" name="tipo_doc" id="fact_fin_tipo_doc" required onchange="actualizarSerieNumeroFinanciamiento()">
+                                <option value="1">Boleta de Venta</option>
+                                <option value="2">Factura</option>
+                            </select>
+                            <small class="text-muted">Boleta para DNI, Factura para RUC</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-hashtag me-1"></i>Serie - Número</label>
+                            <input type="text" class="form-control" id="fact_fin_serie_numero" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Serie y número que se generará</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar me-1"></i>Fecha de Emisión *</label>
+                            <input type="date" class="form-control" name="fecha_emision" id="fact_fin_fecha_emision" required>
+                            <small class="text-muted">Hasta 5 días atrás permitido</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-align-left me-1"></i>Descripción del Servicio *</label>
+                        <textarea class="form-control" name="descripcion" id="fact_fin_descripcion" rows="3" required></textarea>
+                        <small class="text-muted">Esta descripción aparecerá en el comprobante</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> La factura se generará pero NO se enviará automáticamente a SUNAT.
+                        Podrá enviarla desde la lista de ventas.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarFacturacionFinanciamiento()">
+                    <i class="fas fa-file-invoice me-1"></i> Generar Factura
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="registrarPago" class="content hidden-right">
     <!-- Modal para ver el comprobante -->
     <div class="modal fade" id="modalComprobante" tabindex="-1" aria-labelledby="modalComprobanteLabel" aria-hidden="true">
@@ -596,6 +684,32 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
                 <option value="Caja Arequipa">Caja Arequipa</option>
                 <option value="Pago Efectivo" disabled>Pago Efectivo (Próximamente)</option>
             </select>
+        </div>
+
+        <!-- Entidad Financiera y Número de Operación -->
+        <div class="form-section mb-4 p-3 border rounded shadow-sm" id="seccion_entidad_operacion" style="display: none;">
+            <h5><i class="fa fa-university"></i> Datos de la Operación</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="entidad_financiera">Entidad Financiera</label>
+                    <select id="entidad_financiera" class="form-select mt-2">
+                        <option value="">Seleccione...</option>
+                        <option value="BCP">BCP</option>
+                        <option value="BBVA">BBVA</option>
+                        <option value="Interbank">Interbank</option>
+                        <option value="Scotiabank">Scotiabank</option>
+                        <option value="Banco de la Nación">Banco de la Nación</option>
+                        <option value="Caja Arequipa">Caja Arequipa</option>
+                        <option value="Yape">Yape</option>
+                        <option value="Plin">Plin</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="numero_operacion">Número de Operación</label>
+                    <input type="text" id="numero_operacion" class="form-control mt-2" placeholder="Ingrese el N° de operación">
+                </div>
+            </div>
         </div>
 
         <!-- Pago en efectivo -->
@@ -1381,6 +1495,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
     function actualizarMetodoPago() {
         let metodo = document.getElementById("metodo_pago").value;
         let seccionEfectivo = document.getElementById("seccion_efectivo");
+        let seccionEntidad = document.getElementById("seccion_entidad_operacion");
 
         if (metodo === "Efectivo") {
             seccionEfectivo.style.display = "block";
@@ -1390,6 +1505,15 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
             $("#vuelto").val("");
         } else {
             seccionEfectivo.style.display = "none";
+        }
+
+        // Mostrar/ocultar sección de entidad financiera y número de operación
+        if (metodo !== "") {
+            seccionEntidad.style.display = "block";
+        } else {
+            seccionEntidad.style.display = "none";
+            $("#entidad_financiera").val("");
+            $("#numero_operacion").val("");
         }
 
         // ✅ NUEVO: Recargar cuotas cuando cambie el método de pago
@@ -1607,6 +1731,8 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
         // Añadimos los datos básicos
         formData.append('documento_identidad', documentoIdentidad);
         formData.append('metodo_pago', metodoPago);
+        formData.append('entidad_financiera', $("#entidad_financiera").val() || '');
+        formData.append('numero_operacion', $("#numero_operacion").val() || '');
         formData.append('total_pagar', totalPagar);
         
         // Añadimos los datos de efectivo si corresponde
@@ -3202,7 +3328,7 @@ function eliminarPago(idPago) {
             ordering: true,
             searching: true,
             destroy: true,
-            order: [[5, 'desc']],
+            order: [[7, 'desc']],
             ajax: {
                 url: '/arequipago/getReportFinance',
                 method: "POST",
@@ -3223,7 +3349,7 @@ function eliminarPago(idPago) {
                 url: "ServerSide/Spanish.json",
             },
             columnDefs: [
-                { orderable: false, targets: [0, 7] }
+                { orderable: false, targets: [0, 9, 10] }
             ],
             columns: [
                 {
@@ -3263,6 +3389,22 @@ function eliminarPago(idPago) {
                     }
                 },
                 {
+                    data: "concepto",
+                    class: "text-center",
+                    render: function(data) {
+                        if (!data || data.trim() === '') return '<span class="badge" style="background:#2196F3;">Cuota</span>';
+                        var d = data.toLowerCase();
+                        if (d.includes('inscripci')) return '<span class="badge" style="background:#6f42c1;">Inscripción</span>';
+                        if (d.includes('cuota inicial') || d.includes('inicial')) return '<span class="badge" style="background:#e67e22;">Inicial</span>';
+                        if (d.includes('recalculado')) return '<span class="badge" style="background:#17a2b8;">Recalculado</span>';
+                        if (d.includes('adelantada')) return '<span class="badge" style="background:#20c997;">Adelantado</span>';
+                        if (d.includes('excedente')) return '<span class="badge" style="background:#fd7e14;">Excedente</span>';
+                        if (d.includes('producto')) return '<span class="badge" style="background:#007bff;">Producto</span>';
+                        if (d.includes('mora')) return '<span class="badge bg-danger">Mora</span>';
+                        return '<span class="badge bg-secondary">' + data + '</span>';
+                    }
+                },
+                {
                     data: "fecha_pago",
                     class: "text-center",
                     render: function(data, type, row) {
@@ -3296,6 +3438,34 @@ function eliminarPago(idPago) {
                     }
                 },
 
+                // Columna Facturación
+                {
+                    data: null,
+                    class: "text-center",
+                    render: function(data, type, row) {
+                        var concepto = (row.concepto || '').toLowerCase().trim();
+                        var esFacturable = (
+                            concepto.includes('inicial') ||
+                            concepto.includes('inscripci') ||
+                            concepto.includes('recalculado') ||
+                            concepto.includes('adelantada') ||
+                            concepto.includes('excedente') ||
+                            concepto.includes('producto')
+                        );
+                        if (!esFacturable) {
+                            return '<span class="badge bg-light text-muted" style="font-size:0.75em;">No aplica</span>';
+                        }
+                        if (row.facturado == 1) {
+                            var fecha = row.fecha_facturacion ? row.fecha_facturacion.substring(0,10) : '';
+                            return '<span class="badge bg-success" title="Facturado ' + fecha + '"><i class="fas fa-check-circle me-1"></i>Facturado</span>';
+                        }
+                        if (row.estado == 1) {
+                            return '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendiente</span>';
+                        }
+                        return '<span class="badge bg-light text-muted" style="font-size:0.75em;">No aplica</span>';
+                    }
+                },
+                // Columna Acciones
                 {
                     data: null,
                     class: "text-center",
@@ -3317,11 +3487,29 @@ function eliminarPago(idPago) {
                             <i class="fab fa-whatsapp"></i>
                         </button>`;
 
-                        // ⬇️ NUEVO: Botón Anular solo si estado = 1 (Pagado) y roles 1 o 3
+                        // Botón Anular solo si estado = 1 (Pagado) y roles 1 o 3
                         if (row.estado == 1 && (ROL_USUARIO == 1 || ROL_USUARIO == 3)) {
                             botones += ` <button class="btn btn-warning btn-sm" onclick="anularPago(${row.idpagos_financiamiento})">
                                 <i class="fa fa-undo"></i> Anular
                             </button>`;
+                        }
+
+                        // Botón Facturar para pagos iniciales elegibles (roles 3 y 4)
+                        if ((ROL_USUARIO == 3 || ROL_USUARIO == 4) && row.estado == 1 && row.facturado != 1) {
+                            var concepto = (row.concepto || '').toLowerCase().trim();
+                            var esFacturable = (
+                                concepto.includes('inicial') ||
+                                concepto.includes('inscripci') ||
+                                concepto.includes('recalculado') ||
+                                concepto.includes('adelantada') ||
+                                concepto.includes('excedente') ||
+                                concepto.includes('producto')
+                            );
+                            if (esFacturable) {
+                                botones += ` <button class="btn btn-primary btn-sm" onclick="abrirModalFacturarPagoFinanciamiento(${row.idpagos_financiamiento})" title="Generar Boleta/Factura SUNAT">
+                                    <i class="fas fa-file-invoice"></i>
+                                </button>`;
+                            }
                         }
 
                         return `<div class="btn-group btn-sm">${botones}</div>`;
@@ -3955,5 +4143,180 @@ function eliminarPago(idPago) {
     });
 
     // ========== FIN FUNCIONES MORAS PENDIENTES ==========
+
+    // ========== FUNCIONES DE FACTURACIÓN PAGOS FINANCIAMIENTO ==========
+
+    function actualizarSerieNumeroFinanciamiento() {
+        var tipoDoc = $('#fact_fin_tipo_doc').val();
+
+        $.ajax({
+            url: _URL + '/ajs/financiamiento/pago/serie-numero',
+            type: 'POST',
+            data: { tipo_doc: tipoDoc },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    $('#fact_fin_serie_numero').val(response.serie + ' - ' + response.numero);
+                } else {
+                    $('#fact_fin_serie_numero').val('Error al obtener');
+                }
+            },
+            error: function() {
+                $('#fact_fin_serie_numero').val('Error al obtener');
+            }
+        });
+    }
+
+    function abrirModalFacturarPagoFinanciamiento(idPago) {
+        $.ajax({
+            url: _URL + '/ajs/financiamiento/pago/detalle',
+            type: 'POST',
+            data: { id: idPago },
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    var detalle = data.data;
+
+                    $('#fact_fin_id_pago').val(idPago);
+                    $('#fact_fin_cliente').text(detalle.nombre_cliente || 'N/A');
+                    $('#fact_fin_dni').text(detalle.dni_cliente || 'N/A');
+                    $('#fact_fin_codigo').text(detalle.codigo_asociado || 'N/A');
+                    $('#fact_fin_plan').text(detalle.nombre_plan || 'N/A');
+                    $('#fact_fin_concepto').text(detalle.concepto || 'N/A');
+                    $('#fact_fin_monto').text('S/ ' + parseFloat(detalle.monto || 0).toFixed(2));
+                    $('#fact_fin_fecha_pago').text(detalle.fecha_pago || 'N/A');
+                    $('#fact_fin_metodo_pago').text(detalle.metodo_pago || 'N/A');
+                    if (detalle.entidad_financiera && detalle.entidad_financiera.trim() !== '') {
+                        $('#fact_fin_entidad').text(detalle.entidad_financiera);
+                        $('#fila_fact_entidad').show();
+                    } else {
+                        $('#fila_fact_entidad').hide();
+                    }
+                    if (detalle.numero_operacion && detalle.numero_operacion.trim() !== '') {
+                        $('#fact_fin_num_operacion').text(detalle.numero_operacion);
+                        $('#fila_fact_num_op').show();
+                    } else {
+                        $('#fila_fact_num_op').hide();
+                    }
+                    $('#fact_fin_id_financiamiento').text(detalle.idfinanciamiento || 'N/A');
+
+                    var tipoDoc = detalle.dni_cliente && detalle.dni_cliente.length === 11 ? '2' : '1';
+                    $('#fact_fin_tipo_doc').val(tipoDoc);
+
+                    actualizarSerieNumeroFinanciamiento();
+
+                    var fechaPago = detalle.fecha_pago ? detalle.fecha_pago.substring(0, 10) : '';
+                    $('#fact_fin_fecha_emision').val(fechaPago);
+
+                    var fechaObj = new Date(fechaPago + 'T00:00:00');
+                    var fechaMinima = new Date(fechaObj);
+                    fechaMinima.setDate(fechaMinima.getDate() - 5);
+                    var hoy = new Date();
+
+                    $('#fact_fin_fecha_emision').attr('min', fechaMinima.toISOString().split('T')[0]);
+                    $('#fact_fin_fecha_emision').attr('max', hoy.toISOString().split('T')[0]);
+
+                    var descripcion = 'Pago ' + (detalle.concepto || 'Financiamiento') + ' - ' + (detalle.nombre_plan || 'Plan') + ' - ' + (detalle.metodo_pago || '');
+                    if (detalle.entidad_financiera && detalle.entidad_financiera.trim() !== '') {
+                        descripcion += ' - ' + detalle.entidad_financiera;
+                    }
+                    if (detalle.numero_operacion && detalle.numero_operacion.trim() !== '') {
+                        descripcion += ' - Op: ' + detalle.numero_operacion;
+                    }
+                    descripcion += ' - Cod: ' + (detalle.codigo_asociado || 'N/A');
+                    $('#fact_fin_descripcion').val(descripcion);
+
+                    new bootstrap.Modal(document.getElementById('modalFacturarFinanciamiento')).show();
+                } else {
+                    Swal.fire('Error', data.message || 'Error al obtener detalle del pago', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error en petición:', error);
+                Swal.fire('Error', 'Error al obtener detalle del pago', 'error');
+            }
+        });
+    }
+
+    function confirmarFacturacionFinanciamiento() {
+        var form = document.getElementById('formFacturarFinanciamiento');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Generar Factura?',
+            text: 'Se generará el comprobante con los datos ingresados',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f4f750',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, generar',
+            cancelButtonText: 'Cancelar'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                generarFacturaFinanciamiento();
+            }
+        });
+    }
+
+    function generarFacturaFinanciamiento() {
+        var formData = $('#formFacturarFinanciamiento').serialize();
+
+        Swal.fire({
+            title: 'Generando factura...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: function() {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: _URL + '/ajs/financiamiento/pago/facturar',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Factura Generada!',
+                        html: '<p><strong>Serie:</strong> ' + response.serie + '</p>' +
+                              '<p><strong>Número:</strong> ' + response.numero + '</p>' +
+                              '<p class="text-info mt-3"><i class="fas fa-info-circle me-1"></i>' +
+                              'La factura NO ha sido enviada a SUNAT aún.<br>' +
+                              'Puede enviarla desde la lista de ventas.</p>',
+                        confirmButtonColor: '#f4f750',
+                        confirmButtonText: 'Entendido'
+                    }).then(function() {
+                        bootstrap.Modal.getInstance(document.getElementById('modalFacturarFinanciamiento')).hide();
+                        if (typeof tablaReportes !== 'undefined' && tablaReportes) {
+                            tablaReportes.ajax.reload(null, false);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Error al generar factura',
+                        confirmButtonColor: '#f4f750'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al generar factura: ' + error,
+                    confirmButtonColor: '#f4f750'
+                });
+            }
+        });
+    }
+
+    // ========== FIN FUNCIONES FACTURACIÓN ==========
 
 </script>

@@ -62,6 +62,7 @@ class ReportesResumenFinanciamientoController extends Controller
                 LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                 WHERE CAST(f.grupo_financiamiento AS UNSIGNED) = ?
                 AND f.estado != 'eliminado'
+                AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 ORDER BY COALESCE(c.nombres, cl.nombres) ASC

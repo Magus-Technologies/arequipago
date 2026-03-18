@@ -31,9 +31,9 @@ class ComisionesController extends Controller
             $fecha_hasta = isset($_POST['fecha_hasta']) ? $_POST['fecha_hasta'] : '';
             $usuario_filtro = isset($_POST['usuario_filtro']) ? $_POST['usuario_filtro'] : '';
 
-            // Si no es director (rol 3), solo mostrar sus comisiones
+            // Si no es director (rol 3 y rol 4), solo mostrar sus comisiones
             // Si es director y seleccionó un usuario específico, filtrar por ese usuario
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 $filtro_usuario = $usuario_id;
             } else {
                 $filtro_usuario = !empty($usuario_filtro) ? $usuario_filtro : null;
@@ -75,7 +75,7 @@ class ComisionesController extends Controller
             $usuario_filtro = isset($_POST['usuario_filtro']) ? $_POST['usuario_filtro'] : '';
             
             // Determinar filtro de usuario
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 $filtro_usuario = $usuario_id;
             } else {
                 $filtro_usuario = !empty($usuario_filtro) ? $usuario_filtro : null;
@@ -309,7 +309,7 @@ class ComisionesController extends Controller
             $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             
             // Solo directores pueden ver esta lista
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 echo json_encode([
                     'success' => false,
                     'message' => 'No autorizado'
@@ -394,7 +394,7 @@ class ComisionesController extends Controller
             $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             
             // Solo directores pueden cambiar estados
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 echo json_encode([
                     'success' => false,
                     'message' => 'No tiene permisos para realizar esta acción'
@@ -460,7 +460,7 @@ class ComisionesController extends Controller
             $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             
             // Solo directores pueden eliminar
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 echo json_encode([
                     'success' => false,
                     'message' => 'No tiene permisos para realizar esta acción'
@@ -509,7 +509,7 @@ class ComisionesController extends Controller
             $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             
             // Solo directores pueden realizar acciones masivas
-            if ($rol_usuario != 3) {
+            if ($rol_usuario != 3 && $rol_usuario != 4) {
                 echo json_encode([
                     'success' => false,
                     'message' => 'No tiene permisos para realizar esta acción'

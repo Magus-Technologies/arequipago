@@ -614,8 +614,11 @@ class ReportesVentaController extends Controller
     $totalOpinafecta = number_format($totalOpinafecta, 2, '.', ',');
     $SC = number_format($SC, 2, '.', ',');
     $percepcion = number_format($percepcion, 2, '.', ',');
-    $igv = $total / 1.18 * 0.18;
-    $totalOpgravado = $total - $igv;
+    
+    // CORREGIDO: Cálculo correcto del IGV para cotizaciones (siempre 18%)
+    $totalOpgravado = round($total / 1.18, 2);  // Base imponible
+    $igv = round($total - $totalOpgravado, 2);   // IGV = Total - Base
+    
     $total = number_format($total, 2, '.', ',');
     $igv = number_format($igv, 2, '.', ',');
     $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
@@ -759,7 +762,7 @@ class ReportesVentaController extends Controller
 
   public function comprobanteNotaE($venta, $nombreXML = '')
   {
-    $sql = "SELECT ne.*,ds.nombre as 'nota_nombre',v.id_cliente FROM notas_electronicas ne
+    $sql = "SELECT ne.*,ds.nombre as 'nota_nombre',v.id_cliente, v.igv as 'igv_venta' FROM notas_electronicas ne
       join documentos_sunat ds on ne.tido = ds.id_tido
       join ventas v on ne.id_venta = v.id_venta
       where ne.nota_id =" . $venta;
@@ -884,8 +887,17 @@ class ReportesVentaController extends Controller
     $totalOpinafecta = number_format($totalOpinafecta, 2, '.', ',');
     $SC = number_format($SC, 2, '.', ',');
     $percepcion = number_format($percepcion, 2, '.', ',');
-    $igv = $total / 1.18 * 0.18;
-    $totalOpgravado = $total - $igv;
+    
+    // CORREGIDO: Usar el IGV de la venta relacionada
+    $igv_venta_sel = $datoVenta['igv_venta'];
+    
+    // ✅ FIX: El campo igv en BD está en formato decimal (0.18), no entero (18)
+    // Si igv < 1, es formato decimal (0.18), multiplicar por 100 para obtener porcentaje
+    $igv_porcentaje = ($igv_venta_sel < 1) ? ($igv_venta_sel * 100) : $igv_venta_sel;
+    
+    $totalOpgravado = round($total / (1 + ($igv_porcentaje / 100)), 2);  // Base imponible
+    $igv = round($total - $totalOpgravado, 2);   // IGV = Total - Base
+    
     $total = number_format($total, 2, '.', ',');
     $igv = number_format($igv, 2, '.', ',');
     $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
@@ -1872,9 +1884,18 @@ class ReportesVentaController extends Controller
     $totalOpinafecta = number_format($totalOpinafecta, 2, '.', ',');
     $SC = number_format($SC, 2, '.', ',');
     $percepcion = number_format($percepcion, 2, '.', ',');
-    $igv = $total / ($igv_venta_sel + 1) * $igv_venta_sel;
-    $totalOpgravado = $total - $igv;
-    $total = number_format($total, 2, '.', '.');
+    
+    // CORREGIDO: Usar el total de la tabla ventas (que incluye IGV) en lugar del calculado
+    $total_con_igv = floatval($datoVenta['total']);
+    
+    // ✅ FIX: El campo igv en BD está en formato decimal (0.18), no entero (18)
+    // Si igv < 1, es formato decimal (0.18), multiplicar por 100 para obtener porcentaje
+    $igv_porcentaje = ($igv_venta_sel < 1) ? ($igv_venta_sel * 100) : $igv_venta_sel;
+    
+    $totalOpgravado = round($total_con_igv / (1 + ($igv_porcentaje / 100)), 2);  // Base imponible
+    $igv = round($total_con_igv - $totalOpgravado, 2);  // IGV = Total - Base
+    
+    $total = number_format($total_con_igv, 2, '.', '.');
     $igv = number_format($igv, 2, '.', ',');
     $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
 
@@ -2318,9 +2339,18 @@ class ReportesVentaController extends Controller
     $totalOpinafecta = number_format($totalOpinafecta, 2, '.', ',');
     $SC = number_format($SC, 2, '.', ',');
     $percepcion = number_format($percepcion, 2, '.', ',');
-    $igv = $total / ($igv_venta_sel + 1) * $igv_venta_sel;
-    $totalOpgravado = $total - $igv;
-    $total = number_format($total, 2, '.', ',');
+    
+    // CORREGIDO: Usar el total de la tabla ventas (que incluye IGV) en lugar del calculado
+    $total_con_igv = floatval($datoVenta['total']);
+    
+    // ✅ FIX: El campo igv en BD está en formato decimal (0.18), no entero (18)
+    // Si igv < 1, es formato decimal (0.18), multiplicar por 100 para obtener porcentaje
+    $igv_porcentaje = ($igv_venta_sel < 1) ? ($igv_venta_sel * 100) : $igv_venta_sel;
+    
+    $totalOpgravado = round($total_con_igv / (1 + ($igv_porcentaje / 100)), 2);  // Base imponible
+    $igv = round($total_con_igv - $totalOpgravado, 2);  // IGV = Total - Base
+    
+    $total = number_format($total_con_igv, 2, '.', ',');
     $igv = number_format($igv, 2, '.', ',');
     $totalOpgravado = number_format($totalOpgravado, 2, '.', ',');
 

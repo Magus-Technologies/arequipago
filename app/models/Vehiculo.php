@@ -321,6 +321,10 @@ class Vehiculo
                 throw new Exception('Error al preparar la consulta');
             }
 
+            // Convertir fechas vacías a null para la BD
+            $fech_soat = empty($this->fech_soat) ? null : $this->fech_soat;
+            $fech_seguro = empty($this->fech_seguro) ? null : $this->fech_seguro;
+
             $stmt->bind_param("ssssissssssi",
                 $this->placa,
                 $this->marca,
@@ -330,7 +334,7 @@ class Vehiculo
                 $this->condicion,
                 $this->vehiculo_flota,
                 $fech_soat,
-                $fech_seguro, 
+                $fech_seguro,
                 $this->color,
                 $this->tipo_vehiculo,
                 $this->id_conductor

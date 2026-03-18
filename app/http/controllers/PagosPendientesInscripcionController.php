@@ -155,10 +155,10 @@ class PagosPendientesInscripcionController extends Controller
         // ✅ CORRECCIÓN: Obtener el usuario que REGISTRÓ el pago (asesor), no el que lo aprueba (director)
         $id_usuario_registro = $pagoPendiente['id_usuario_registro'] ?? $id_usuario_aprobacion;
 
-        // 1. Registrar en conductor_pago
+        // 1. Registrar en conductor_pago con el asesor que registró
         $conductorPagoModel = new ConductorPagoModel();
         $id_tipopago = ($tipo_pago === 'contado') ? 1 : 2;
-        $id_pago = $conductorPagoModel->registrarPago($id_conductor, $tipo_pago, $fecha_actual, $monto_pago);
+        $id_pago = $conductorPagoModel->registrarPago($id_conductor, $tipo_pago, $fecha_actual, $monto_pago, $id_usuario_registro);
 
         if (!$id_pago) {
             throw new Exception('Error al registrar el pago del conductor');
@@ -232,11 +232,11 @@ class PagosPendientesInscripcionController extends Controller
             // 4. Si hay monto inicial, generar nota de venta
             $monto_inicial = $observaciones['monto_inicial'];
             if ($monto_inicial > 0) {
-                $this->generarNotaVentaFinanciado($id_conductor, $id_pago, $id_financiamiento, $monto_inicial, $id_usuario_aprobacion);
+                $this->generarNotaVentaFinanciado($id_conductor, $id_pago, $id_financiamiento, $monto_inicial, $id_usuario_registro);
             }
         } else {
-            // Pago al contado - generar nota de venta
-            $this->generarNotaVentaContado($id_conductor, $id_pago, $monto_pago, $id_usuario_aprobacion);
+            // Pago al contado - generar nota de venta con el asesor que registró
+            $this->generarNotaVentaContado($id_conductor, $id_pago, $monto_pago, $id_usuario_registro);
         }
     }
 
@@ -300,6 +300,22 @@ class PagosPendientesInscripcionController extends Controller
 
         // Actualizar el ID en pagos_pendientes_inscripcion
         $this->model->actualizarIdClientePago($pagoPendiente['id'], $id_cliente_pago);
+
+        // COMENTADO: Comisión por ingreso de cliente - Descomentar si se decide aplicar comisión a clientes
+        // $comisionModel = new Comision();
+        // $comisionData = $comisionModel->calcularComisionIngresoCliente();
+        // if ($comisionData['aplica'] && $id_usuario_original) {
+        //     $comisionModel->registrarComision(
+        //         $id_usuario_original,
+        //         'inscripcion',
+        //         $id_cliente_pago,
+        //         $comisionData['monto'],
+        //         null,
+        //         "Comisión por ingreso de cliente",
+        //         $comisionData['moneda']
+        //     );
+        //     error_log("✅ Comisión registrada para asesor $id_usuario_original por ingreso de cliente $id_cliente - Monto: {$comisionData['monto']} {$comisionData['moneda']}");
+        // }
 
         // Generar boleta de pago con el ID del asesor original
         $this->generarBoletaPagoCliente($id_cliente_pago, $id_cliente, $id_usuario_original);

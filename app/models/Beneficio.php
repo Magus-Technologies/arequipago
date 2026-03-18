@@ -388,14 +388,14 @@ class Beneficio
     public function obtenerTodos($filtros = [])
     {
         try {
-            $sql = 'SELECT b.*,
+            // ✅ MODIFICADO: Usar nueva tabla beneficios_departamentos
+            $sql = 'SELECT DISTINCT b.*,
                     COALESCE(b.moneda, p.moneda) as moneda,
                     COALESCE(b.frecuencia_pago, p.frecuencia_pago) as frecuencia_pago,
-                    COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display,
-                    d.nombre as departamento_nombre
+                    COALESCE(b.nombre_plan_personalizado, p.nombre_plan) as nombre_plan_display
                     FROM beneficios b
                     LEFT JOIN planes_financiamiento p ON b.plan_financiamiento_id = p.idplan_financiamiento
-                    LEFT JOIN depast d ON b.departamento_id = d.iddepast
+                    LEFT JOIN beneficios_departamentos bd ON b.id = bd.beneficio_id
                     WHERE 1=1';
             $params = [];
             $types = '';
@@ -419,17 +419,11 @@ class Beneficio
                 $types .= 'i';
             }
 
-            // Filtro por departamento
-            if (isset($filtros['departamento_id'])) {
-                if ($filtros['departamento_id'] === 'nacional') {
-                    // Beneficios nacionales (sin departamento específico)
-                    $sql .= ' AND b.departamento_id IS NULL';
-                } else if (!empty($filtros['departamento_id'])) {
-                    // Beneficios de un departamento específico O nacionales
-                    $sql .= ' AND (b.departamento_id = ? OR b.departamento_id IS NULL)';
-                    $params[] = $filtros['departamento_id'];
-                    $types .= 'i';
-                }
+            // ✅ MODIFICADO: Filtro por departamento usando nueva tabla
+            if (isset($filtros['departamento_id']) && !empty($filtros['departamento_id'])) {
+                $sql .= ' AND bd.departamento_id = ?';
+                $params[] = $filtros['departamento_id'];
+                $types .= 'i';
             }
 
             if (!empty($filtros['busqueda'])) {
@@ -466,10 +460,81 @@ class Beneficio
             }
 
             $stmt->close();
+
+            // ✅ NUEVO: Agregar departamentos a cada beneficio
+            foreach ($beneficios as &$beneficio) {
+                $beneficio['departamentos'] = $this->obtenerDepartamentosDeBeneficio($beneficio['id']);
+            }
+
             return $beneficios;
         } catch (Exception $e) {
             error_log('Error en Beneficio::obtenerTodos(): ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener departamentos de un beneficio específico
+     */
+    public function obtenerDepartamentosDeBeneficio($beneficioId)
+    {
+        try {
+            $sql = 'SELECT bd.departamento_id, d.nombre as departamento_nombre
+                    FROM beneficios_departamentos bd
+                    INNER JOIN depast d ON bd.departamento_id = d.iddepast
+                    WHERE bd.beneficio_id = ?
+                    ORDER BY d.nombre ASC';
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $beneficioId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $departamentos = [];
+            while ($row = $result->fetch_assoc()) {
+                $departamentos[] = $row;
+            }
+
+            $stmt->close();
+            return $departamentos;
+        } catch (Exception $e) {
+            error_log('Error en Beneficio::obtenerDepartamentosDeBeneficio(): ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Guardar departamentos de un beneficio
+     * @param int $beneficioId
+     * @param array $departamentosIds Array de IDs de departamentos
+     */
+    public function guardarDepartamentosBeneficio($beneficioId, $departamentosIds)
+    {
+        try {
+            // Primero eliminar todas las relaciones existentes
+            $sqlDelete = 'DELETE FROM beneficios_departamentos WHERE beneficio_id = ?';
+            $stmt = $this->conectar->prepare($sqlDelete);
+            $stmt->bind_param('i', $beneficioId);
+            $stmt->execute();
+            $stmt->close();
+
+            // Luego insertar las nuevas relaciones
+            if (!empty($departamentosIds) && is_array($departamentosIds)) {
+                $sqlInsert = 'INSERT INTO beneficios_departamentos (beneficio_id, departamento_id) VALUES (?, ?)';
+                $stmt = $this->conectar->prepare($sqlInsert);
+
+                foreach ($departamentosIds as $departamentoId) {
+                    $stmt->bind_param('ii', $beneficioId, $departamentoId);
+                    $stmt->execute();
+                }
+
+                $stmt->close();
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log('Error en Beneficio::guardarDepartamentosBeneficio(): ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -790,12 +855,13 @@ class Beneficio
     public function obtenerDepartamentosHabilitados()
     {
         try {
+            // ✅ MODIFICADO: Excluir CALLAO (id 13) solo para beneficios
             $sql = 'SELECT
                         d.iddepast,
                         d.nombre
                     FROM depast d
                     INNER JOIN departamentos_habilitados dh ON d.iddepast = dh.iddepast
-                    WHERE dh.habilitado = 1
+                    WHERE dh.habilitado = 1 AND d.iddepast != 13
                     ORDER BY d.nombre ASC';
 
             $stmt = $this->conectar->prepare($sql);

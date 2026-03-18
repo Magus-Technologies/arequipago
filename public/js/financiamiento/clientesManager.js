@@ -127,25 +127,62 @@ function setearLinkActive(liElement) {
                         data.forEach(registro => {
                             let listItem = document.createElement('li');
                             listItem.classList.add('list-group-item');
+                            listItem.style.cursor = 'pointer';
                             
-                            // NUEVO: Agregar badge visual para distinguir tipo
+                            // Badge de tipo
                             let badge = registro.tipo_registro === 'conductor' 
                                 ? '<span class="badge bg-primary me-2">Conductor</span>' 
                                 : '<span class="badge bg-success me-2">Cliente</span>';
                             
-                            listItem.innerHTML = badge + registro.datos; // ✅ Usar innerHTML en lugar de textContent
+                            // Badge de bloqueado
+                            let badgeEstado = '';
+                            if (registro.desvinculado == 1) {
+                                badgeEstado = '<span class="badge bg-danger me-2"><i class="fas fa-ban me-1"></i>Bloqueado</span>';
+                                listItem.style.backgroundColor = '#fff3f3';
+                                listItem.style.opacity = '0.8';
+                            }
+
+                            // Badge de puntaje bajo
+                            let badgePuntaje = '';
+                            if (registro.puntaje_actual !== null && registro.puntaje_actual !== undefined && parseInt(registro.puntaje_actual) < 50) {
+                                badgePuntaje = '<span class="badge bg-warning text-dark me-2"><i class="fas fa-exclamation-triangle me-1"></i>Puntaje: ' + registro.puntaje_actual + '</span>';
+                            }
+
+                            listItem.innerHTML = badge + badgeEstado + badgePuntaje + registro.datos;
                             listItem.setAttribute('data-id', registro.id_conductor || registro.id);
-                            listItem.setAttribute('data-tipo', registro.tipo_registro); // NUEVO
+                            listItem.setAttribute('data-tipo', registro.tipo_registro);
                             listItem.setAttribute('data-nro-documento', registro.nro_documento);
                             listItem.setAttribute('data-codfi', registro.codigo_asociado);
 
                             // Evento al hacer clic
                             listItem.addEventListener('click', function () {
-                                seleccionarConductor(registro); // Cambiar conductor por registro
+                                // Validar si está bloqueado
+                                if (registro.desvinculado == 1) {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Cliente Bloqueado',
+                                        html: '<b>' + registro.datos + '</b> se encuentra <span style="color:red;font-weight:bold;">desvinculado/bloqueado</span>.<br><br>No es posible registrar un financiamiento para este cliente.',
+                                        confirmButtonColor: '#dc3545'
+                                    });
+                                    return;
+                                }
+
+                                // Validar puntaje bajo
+                                if (registro.puntaje_actual !== null && registro.puntaje_actual !== undefined && parseInt(registro.puntaje_actual) < 50) {
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Puntaje Crediticio Bajo',
+                                        html: '<b>' + registro.datos + '</b> tiene un puntaje crediticio de <span style="color:red;font-weight:bold;">' + registro.puntaje_actual + '/100</span>.<br><br>Este cliente se encuentra en <b>riesgo</b> y no califica para un nuevo financiamiento.',
+                                        confirmButtonColor: '#f0ad4e'
+                                    });
+                                    return;
+                                }
+
+                                seleccionarConductor(registro);
                                 console.log(registro);
                             });
 
-                            listaAutomatic.appendChild(listItem); // ✅ ESTA SÍ es listaAutomatic
+                            listaAutomatic.appendChild(listItem);
                         });
 
                         listaAutomatic.style.display = 'block'; // Mostrar la lista de resultados
@@ -165,7 +202,21 @@ function setearLinkActive(liElement) {
 
             // Poner el número de documento en el input correspondiente
             document.getElementById('numeroDocumento').value = conductor.nro_documento;
-            document.getElementById('codigoAsociado').value = conductor.codigo_asociado; // Setea `numeroCodFi` en el input correspondiente // <--- NUEVO CAMBIO
+
+            // ✅ MODIFICADO: Verificar si tiene código de asociado, si no, generar uno nuevo
+            let codigoExistente = conductor.codigo_asociado || conductor.numeroCodFi || '';
+            
+            if (!codigoExistente || codigoExistente === '0' || codigoExistente.trim() === '') {
+                // Generar nuevo código automáticamente
+                generarNuevoCodigoAsociado({
+                    tipo_registro: conductor.tipo_registro || 'conductor',
+                    id_conductor: conductor.id_conductor,
+                    id: conductor.id_conductor
+                });
+            } else {
+                document.getElementById('codigoAsociado').value = codigoExistente;
+                document.getElementById('codigoAsociado').dataset.esCodigoNuevo = 'false';
+            }
 
             // Opcional: puedes almacenar el id del cliente en otro campo oculto si es necesario
             document.getElementById('cliente').dataset.id = conductor.id_conductor;
@@ -197,30 +248,40 @@ function setearLinkActive(liElement) {
                         data.forEach(registro => {
                             let listItem = document.createElement('li');
                             listItem.classList.add('list-group-item');
-                            listItem.style.cursor = 'pointer'; // ✅ Agregar cursor pointer
+                            listItem.style.cursor = 'pointer';
                             
                             // Badge visual
                             let badge = registro.tipo_registro === 'conductor' 
                                 ? '<span class="badge bg-primary me-2">Conductor</span>' 
                                 : '<span class="badge bg-success me-2">Cliente</span>';
                             
-                            // ✅ MOSTRAR el número de documento
-                            listItem.innerHTML = badge + registro.nro_documento;
+                            // Badge de bloqueado
+                            let badgeEstado = '';
+                            if (registro.desvinculado == 1) {
+                                badgeEstado = '<span class="badge bg-danger me-2"><i class="fas fa-ban me-1"></i>Bloqueado</span>';
+                                listItem.style.backgroundColor = '#fff3f3';
+                                listItem.style.opacity = '0.8';
+                            }
+
+                            // Badge de puntaje bajo
+                            let badgePuntaje = '';
+                            if (registro.puntaje_actual !== null && registro.puntaje_actual !== undefined && parseInt(registro.puntaje_actual) < 50) {
+                                badgePuntaje = '<span class="badge bg-warning text-dark me-2"><i class="fas fa-exclamation-triangle me-1"></i>Puntaje: ' + registro.puntaje_actual + '</span>';
+                            }
+
+                            listItem.innerHTML = badge + badgeEstado + badgePuntaje + registro.nro_documento;
                             
                             // Atributos data
                             listItem.setAttribute('data-id', registro.id_conductor || registro.id);
                             listItem.setAttribute('data-tipo', registro.tipo_registro);
                             listItem.setAttribute('data-nro-documento', registro.nro_documento);
                             
-                            // ✅ IMPORTANTE: Extraer nombres correctamente
                             if (registro.tipo_registro === 'cliente') {
-                                // Para clientes, extraer del campo 'datos'
                                 let partesNombre = registro.datos.split(' ');
                                 listItem.setAttribute('data-nombre', partesNombre[0] || '');
                                 listItem.setAttribute('data-apellido-paterno', partesNombre[1] || '');
                                 listItem.setAttribute('data-apellido-materno', partesNombre[2] || '');
                             } else {
-                                // Para conductores, usar los campos directos
                                 listItem.setAttribute('data-nombre', registro.nombres || '');
                                 listItem.setAttribute('data-apellido-paterno', registro.apellido_paterno || '');
                                 listItem.setAttribute('data-apellido-materno', registro.apellido_materno || '');
@@ -228,8 +289,32 @@ function setearLinkActive(liElement) {
                             
                             listItem.setAttribute('data-codigo-asociado', registro.numeroCodFi || registro.codigo_asociado || '');
 
-                            // Evento click
+                            // Evento click con validación
                             listItem.addEventListener('click', function () {
+                                // Validar si está bloqueado
+                                if (registro.desvinculado == 1) {
+                                    let nombreCompleto = registro.datos || (registro.nombres + ' ' + registro.apellido_paterno);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Cliente Bloqueado',
+                                        html: '<b>' + nombreCompleto + '</b> se encuentra <span style="color:red;font-weight:bold;">desvinculado/bloqueado</span>.<br><br>No es posible registrar un financiamiento para este cliente.',
+                                        confirmButtonColor: '#dc3545'
+                                    });
+                                    return;
+                                }
+
+                                // Validar puntaje bajo
+                                if (registro.puntaje_actual !== null && registro.puntaje_actual !== undefined && parseInt(registro.puntaje_actual) < 50) {
+                                    let nombreCompleto = registro.datos || (registro.nombres + ' ' + registro.apellido_paterno);
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Puntaje Crediticio Bajo',
+                                        html: '<b>' + nombreCompleto + '</b> tiene un puntaje crediticio de <span style="color:red;font-weight:bold;">' + registro.puntaje_actual + '/100</span>.<br><br>Este cliente se encuentra en <b>riesgo</b> y no califica para un nuevo financiamiento.',
+                                        confirmButtonColor: '#f0ad4e'
+                                    });
+                                    return;
+                                }
+
                                 seleccionarNumDoc(registro);
                             });
 
@@ -265,11 +350,72 @@ function setearLinkActive(liElement) {
                 document.getElementById('cliente').value = nombreCompleto;
             }
             
-            // Llenar código de asociado
-            document.getElementById('codigoAsociado').value = registro.numeroCodFi || registro.codigo_asociado || '';
+            // ✅ MODIFICADO: Verificar si tiene código de asociado, si no, generar uno nuevo
+            let codigoExistente = registro.numeroCodFi || registro.codigo_asociado || '';
+            
+            // Verificar si el código está vacío o es "0"
+            if (!codigoExistente || codigoExistente === '0' || codigoExistente.trim() === '') {
+                // Generar nuevo código automáticamente
+                generarNuevoCodigoAsociado(registro);
+            } else {
+                // Usar el código existente
+                document.getElementById('codigoAsociado').value = codigoExistente;
+                // Marcar que NO es código nuevo generado
+                document.getElementById('codigoAsociado').dataset.esCodigoNuevo = 'false';
+            }
             
             // Ocultar lista
             document.getElementById('listaNumDoc').style.display = 'none';
+        }
+
+        /**
+         * Genera un nuevo código de asociado correlativo cuando el conductor/cliente no tiene uno
+         */
+        function generarNuevoCodigoAsociado(registro) {
+            const inputCodigo = document.getElementById('codigoAsociado');
+            const spinnerCodigo = document.getElementById('spinnerCodigoAsociado');
+            
+            // Mostrar spinner mientras se genera
+            if (spinnerCodigo) spinnerCodigo.style.display = 'inline-block';
+            inputCodigo.value = '';
+            inputCodigo.placeholder = 'Generando código...';
+            
+            $.ajax({
+                url: '/arequipago/obtenerSiguienteCodigoAsociado',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (spinnerCodigo) spinnerCodigo.style.display = 'none';
+                    
+                    if (response.success && response.siguiente_codigo) {
+                        inputCodigo.value = response.siguiente_codigo;
+                        inputCodigo.placeholder = 'Código de asociado';
+                        
+                        // Marcar que es un código nuevo generado (para actualizarlo al guardar)
+                        inputCodigo.dataset.esCodigoNuevo = 'true';
+                        inputCodigo.dataset.tipoRegistro = registro.tipo_registro;
+                        inputCodigo.dataset.idRegistro = registro.id_conductor || registro.id;
+                        
+                        // Mostrar mensaje informativo
+                        const mensajeCodigo = document.getElementById('mensajeCodigoAsociado');
+                        if (mensajeCodigo) {
+                            mensajeCodigo.style.display = 'block';
+                            mensajeCodigo.className = 'text-success small mt-1';
+                            mensajeCodigo.innerHTML = '<i class="fas fa-check-circle me-1"></i>Código generado automáticamente (se guardará con el financiamiento)';
+                        }
+                        
+                        console.log("✅ Código de asociado generado:", response.siguiente_codigo);
+                    } else {
+                        inputCodigo.placeholder = 'Error al generar';
+                        console.error("Error al generar código:", response.error);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (spinnerCodigo) spinnerCodigo.style.display = 'none';
+                    inputCodigo.placeholder = 'Error al generar';
+                    console.error("Error AJAX al generar código:", error);
+                }
+            });
         }
 
         function getDataCliente() {

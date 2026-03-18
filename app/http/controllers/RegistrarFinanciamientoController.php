@@ -25,6 +25,10 @@ class RegistrarFinanciamientoController extends Controller
             $esCrediYango = isset($datos['grupo_financiamiento']) &&
                 ($datos['grupo_financiamiento'] == '45' || $datos['grupo_financiamiento'] == 45);
 
+            // Detectar si es Credi Ahorros Autos (grupo 49)
+            $esCrediAhorrosAutos = isset($datos['grupo_financiamiento']) &&
+                ($datos['grupo_financiamiento'] == '49' || $datos['grupo_financiamiento'] == 49);
+
             // ✅ CORREGIDO: Normalizar estado_entrega ANTES de cualquier validación
             // Si NO viene el campo, establecerlo como NULL por defecto
             if (!isset($datos['estado_entrega'])) {
@@ -51,6 +55,13 @@ class RegistrarFinanciamientoController extends Controller
                 error_log('CrediYango: Registrando con producto real ID ' . ($datos['id_producto'] ?? 'N/A') . " y estado_entrega='pendiente'");
             }
 
+            // Para Credi Ahorros Autos (grupo 49), establecer estado_entrega como 'pendiente'
+            if ($esCrediAhorrosAutos) {
+                $datos['estado_entrega'] = 'pendiente';
+                $datos['cantidad_producto'] = isset($datos['cantidad_producto']) ? $datos['cantidad_producto'] : 1;
+                error_log("🚗 Credi Ahorros Autos detectado - Estableciendo estado_entrega='pendiente'");
+            }
+
             // 🆕 NUEVO: Detectar si id_producto es "No disponible" y establecer estado_entrega
             if (isset($datos['id_producto']) && $datos['id_producto'] === 'No disponible') {
                 $datos['id_producto'] = 37;
@@ -59,8 +70,8 @@ class RegistrarFinanciamientoController extends Controller
                 error_log("Producto No disponible: Cambiado a ID 37 con estado_entrega='pendiente'");
             }
 
-            // 🆕 NUEVO: Si NO es CrediYango y NO es "No disponible", estado_entrega debe ser NULL
-            if (!$esCrediYango && (!isset($datos['estado_entrega']) || $datos['estado_entrega'] === null)) {
+            // Si NO es CrediYango ni Credi Ahorros Autos y NO es "No disponible", estado_entrega debe ser NULL
+            if (!$esCrediYango && !$esCrediAhorrosAutos && (!isset($datos['estado_entrega']) || $datos['estado_entrega'] === null)) {
                 $datos['estado_entrega'] = null;
             }
 
@@ -113,14 +124,15 @@ class RegistrarFinanciamientoController extends Controller
                 error_log("📱 Número corporativo recibido: " . $datos['numero_corporativo']);
             }
 
-            // ✅ NUEVO: Obtener cantidad de cuotas adelantadas (para Plan 22 - CREDI MOTOS y Plan 38 - CrediGo Autos Grupo 4)
+            // ✅ NUEVO: Obtener cantidad de cuotas adelantadas (para Plan 22 - CREDI MOTOS, Plan 38 - CrediGo Autos Grupo 4 y Plan 49 - Credi Ahorros Autos)
             $cantidadCuotasAdelantadas = isset($datos['cantidad_cuotas_adelantadas']) ? intval($datos['cantidad_cuotas_adelantadas']) : 0;
             $esPlan22 = isset($datos['grupo_financiamiento']) && intval($datos['grupo_financiamiento']) === 22;
             $esPlan38 = isset($datos['grupo_financiamiento']) && intval($datos['grupo_financiamiento']) === 38;
+            $esPlan49 = isset($datos['grupo_financiamiento']) && intval($datos['grupo_financiamiento']) === 49;
 
             // Log para debugging
-            if (($esPlan22 || $esPlan38) && $cantidadCuotasAdelantadas > 0) {
-                $nombrePlan = $esPlan22 ? "CREDI MOTOS" : "CrediGo Autos Grupo 4";
+            if (($esPlan22 || $esPlan38 || $esPlan49) && $cantidadCuotasAdelantadas > 0) {
+                $nombrePlan = $esPlan22 ? "CREDI MOTOS" : ($esPlan38 ? "CrediGo Autos Grupo 4" : "Credi Ahorros Autos");
                 error_log("🚗 {$nombrePlan} - Cuotas adelantadas detectadas: " . $cantidadCuotasAdelantadas);
                 error_log("🚗 Monto de cuota inicial (total adelantado): " . $datos['cuota_inicial']);
             }
@@ -135,7 +147,7 @@ class RegistrarFinanciamientoController extends Controller
             // Si hay fecha de entrega, calcular fecha de inicio de pagos automáticamente
             if ($fechaEntrega) {
                 $fechaEntregaObj = new DateTime($fechaEntrega);
-                $fechaEntregaObj->add(new DateInterval('P7D'));  // Agregar 7 días
+                $fechaEntregaObj->add(new DateInterval('P15D'));  // ✅ MODIFICADO: Cambiar de P7D a P15D (15 días)
                 $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
 
                 // Actualizar las fechas del cronograma si es CrediYango (ID 45)
@@ -158,6 +170,7 @@ class RegistrarFinanciamientoController extends Controller
             // Agregar los campos de CrediYango a los datos
             $datos['fecha_entrega'] = $fechaEntrega;
             $datos['fecha_inicio_pagos_calculada'] = $fechaInicioPagosCalculada;
+            $datos['fecha_proxima_entrega'] = isset($datos['fecha_proxima_entrega']) && !empty($datos['fecha_proxima_entrega']) ? $datos['fecha_proxima_entrega'] : null;
 
             // Para CrediYango, fechasVencimiento puede ser null o vacío (se generan al entregar)
             $fechasVencimiento = isset($datos['fechas_vencimiento']) ? $datos['fechas_vencimiento'] : [];
@@ -333,6 +346,16 @@ class RegistrarFinanciamientoController extends Controller
             $financiamientoModel = new Financiamiento();
             $idFinanciamiento = $financiamientoModel->guardarFinanciamiento($datos);
 
+            // ✅ NUEVO: Actualizar código de asociado si fue generado automáticamente
+            $esCodigoNuevo = isset($datos['es_codigo_nuevo']) && ($datos['es_codigo_nuevo'] === 'true' || $datos['es_codigo_nuevo'] === true);
+            $tipoRegistroCodigo = isset($datos['tipo_registro_codigo']) ? $datos['tipo_registro_codigo'] : null;
+            $idRegistroCodigo = isset($datos['id_registro_codigo']) ? intval($datos['id_registro_codigo']) : null;
+            $codigoAsociado = isset($datos['codigo_asociado']) ? trim($datos['codigo_asociado']) : null;
+
+            if ($esCodigoNuevo && $codigoAsociado && $idRegistroCodigo > 0) {
+                $this->actualizarCodigoAsociado($tipoRegistroCodigo, $idRegistroCodigo, $codigoAsociado);
+            }
+
             // Actualizar verificación domiciliaria si es financiamiento vehicular y hay valor
             if ($verificacion_domiciliaria !== null) {
                 $this->actualizarVerificacionDomiciliaria($datos['id_conductor'], $datos['id_cliente'], $verificacion_domiciliaria);
@@ -388,28 +411,36 @@ class RegistrarFinanciamientoController extends Controller
             error_log("🔥 CHECKPOINT: Llegamos después de guardar cuotas. ID Financiamiento: " . $idFinanciamiento);
             error_log("🔥 CHECKPOINT: grupo_financiamiento = " . $datos['grupo_financiamiento']);
 
-            // ✅ NUEVO: Para Plan 22 (CREDI MOTOS) y Plan 38 (CrediGo Autos Grupo 4), crear pago automático para cuotas adelantadas
+            // ✅ NUEVO: Para Plan 22 (CREDI MOTOS), Plan 38 (CrediGo Autos Grupo 4) y Plan 49 (Credi Ahorros Autos), crear pago automático para cuotas adelantadas
             // DEBUG: Verificar valores de las variables
             error_log("🔍 DEBUG - esPlan22: " . ($esPlan22 ? 'true' : 'false'));
             error_log("🔍 DEBUG - esPlan38: " . ($esPlan38 ? 'true' : 'false'));
+            error_log("🔍 DEBUG - esPlan49: " . ($esPlan49 ? 'true' : 'false'));
             error_log("🔍 DEBUG - cantidadCuotasAdelantadas: " . $cantidadCuotasAdelantadas);
             error_log("🔍 DEBUG - esCrediYango: " . ($esCrediYango ? 'true' : 'false'));
-            error_log("🔍 DEBUG - Condición completa: " . ((($esPlan22 || $esPlan38) && $cantidadCuotasAdelantadas > 0 && !$esCrediYango) ? 'CUMPLIDA' : 'NO CUMPLIDA'));
+            error_log("🔍 DEBUG - Condición completa: " . ((($esPlan22 || $esPlan38 || $esPlan49) && $cantidadCuotasAdelantadas > 0 && !$esCrediYango) ? 'CUMPLIDA' : 'NO CUMPLIDA'));
 
-            if (($esPlan22 || $esPlan38) && $cantidadCuotasAdelantadas > 0 && !$esCrediYango) {
-                $nombrePlan = $esPlan22 ? "CREDI MOTOS" : "CrediGo Autos Grupo 4";
+            if (($esPlan22 || $esPlan38 || $esPlan49) && $cantidadCuotasAdelantadas > 0 && !$esCrediYango) {
+                $nombrePlan = $esPlan22 ? "CREDI MOTOS" : ($esPlan38 ? "CrediGo Autos Grupo 4" : "Credi Ahorros Autos");
                 error_log("🚗 Iniciando proceso de pago automático para cuotas adelantadas de {$nombrePlan}...");
 
                 try {
-                    // Obtener las primeras N cuotas del financiamiento recién creado
+                    // Obtener las cuotas del financiamiento recién creado
+                    // Plan 49 (Credi Ahorros Autos): obtener las ÚLTIMAS N cuotas
+                    // Plan 22/38: obtener las PRIMERAS N cuotas
                     $cuotaModel = new CuotaFinanciamiento();
-                    $cuotasParaPagar = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                    if ($esPlan49) {
+                        $cuotasParaPagar = $cuotaModel->obtenerUltimasCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                        error_log("🚗 Credi Ahorros Autos - Obteniendo ÚLTIMAS {$cantidadCuotasAdelantadas} cuotas");
+                    } else {
+                        $cuotasParaPagar = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                    }
 
                     if (!empty($cuotasParaPagar)) {
                         // ✅ LOG: Mostrar las cuotas obtenidas
                         error_log("🚗 Cuotas obtenidas del financiamiento:");
                         foreach ($cuotasParaPagar as $idx => $cuota) {
-                            error_log("  Cuota " . ($idx + 1) . ": ID=" . $cuota['id'] . ", Fecha=" . $cuota['fecha_vencimiento'] . ", Monto=" . $cuota['monto'] . ", Estado=" . $cuota['estado']);
+                            error_log("  Cuota " . ($idx + 1) . ": ID=" . $cuota['id'] . ", NroCuota=" . $cuota['numero_cuota'] . ", Fecha=" . $cuota['fecha_vencimiento'] . ", Monto=" . $cuota['monto'] . ", Estado=" . $cuota['estado']);
                         }
 
                         // Obtener datos necesarios para el pago
@@ -476,7 +507,9 @@ class RegistrarFinanciamientoController extends Controller
 
                                 // ✅ VERIFICAR: Leer las cuotas de la BD para confirmar
                                 error_log("🚗 Verificando estado actual en BD...");
-                                $cuotasVerificadas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                                $cuotasVerificadas = $esPlan49 
+                                    ? $cuotaModel->obtenerUltimasCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas)
+                                    : $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
                                 foreach ($cuotasVerificadas as $idx => $cv) {
                                     error_log("  BD Cuota " . ($idx + 1) . ": ID=" . $cv['id'] . ", Fecha=" . $cv['fecha_vencimiento'] . ", Estado=" . $cv['estado']);
                                 }
@@ -679,6 +712,9 @@ class RegistrarFinanciamientoController extends Controller
             // ✅ NUEVO: Capturar número corporativo (Plan 36 - CORPORATIVO CLARO)
             'numero_corporativo' => isset($_POST['numero_corporativo']) && !empty(trim($_POST['numero_corporativo']))
                 ? trim($_POST['numero_corporativo'])
+                : null,
+            'fecha_proxima_entrega' => isset($_POST['fecha_proxima_entrega']) && !empty($_POST['fecha_proxima_entrega'])
+                ? $_POST['fecha_proxima_entrega']
                 : null
         ];
 
@@ -700,8 +736,8 @@ class RegistrarFinanciamientoController extends Controller
         $query = 'INSERT INTO financiamiento
         (id_conductor, id_cliente, idproductosv2, id_coti, codigo_asociado, grupo_financiamiento, id_variante, cantidad_producto,
         monto_total, cuota_inicial, cuotas, estado, fecha_inicio, fecha_fin, fecha_creacion,
-        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora, estado_entrega, nombre_personalizado, numero_corporativo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora, estado_entrega, nombre_personalizado, numero_corporativo, fecha_proxima_entrega)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $conexion->prepare($query);
 
@@ -884,6 +920,15 @@ class RegistrarFinanciamientoController extends Controller
             error_log("📱 Número corporativo a guardar: " . $datos['numero_corporativo']);
         }
 
+        // fecha_proxima_entrega (puede ser null) - Recordatorio entrega CrediYango
+        if (isset($datos['fecha_proxima_entrega']) && $datos['fecha_proxima_entrega'] !== null && $datos['fecha_proxima_entrega'] !== '') {
+            $tipos .= 's';
+            $params[] = $datos['fecha_proxima_entrega'];
+        } else {
+            $tipos .= 's';
+            $params[] = NULL;
+        }
+
         // ⭐ Modificado: Vinculación dinámica de parámetros
         $stmt->bind_param($tipos, ...$params);
 
@@ -930,21 +975,30 @@ class RegistrarFinanciamientoController extends Controller
             );
         }
 
-        // ✅ NUEVO: Para Plan 38 (CrediGo Autos Grupo 4), crear pago automático para cuotas adelantadas
+        // ✅ NUEVO: Para Plan 38 (CrediGo Autos Grupo 4) y Plan 49 (Credi Ahorros Autos), crear pago automático para cuotas adelantadas
         $cantidadCuotasAdelantadas = isset($_POST['cantidad_cuotas_adelantadas']) ? intval($_POST['cantidad_cuotas_adelantadas']) : 0;
         $esPlan38 = isset($grupo_financiamiento) && intval($grupo_financiamiento) === 38;
+        $esPlan49 = isset($grupo_financiamiento) && intval($grupo_financiamiento) === 49;
 
         error_log("🔥 CHECKPOINT VEHICULAR: Llegamos después de guardar cuotas. ID Financiamiento: " . $idFinanciamiento);
         error_log("🔥 CHECKPOINT VEHICULAR: grupo_financiamiento = " . $grupo_financiamiento);
         error_log("🔍 DEBUG VEHICULAR - esPlan38: " . ($esPlan38 ? 'true' : 'false'));
+        error_log("🔍 DEBUG VEHICULAR - esPlan49: " . ($esPlan49 ? 'true' : 'false'));
         error_log("🔍 DEBUG VEHICULAR - cantidadCuotasAdelantadas: " . $cantidadCuotasAdelantadas);
 
-        if ($esPlan38 && $cantidadCuotasAdelantadas > 0) {
-            error_log("🚗 VEHICULAR - Iniciando proceso de pago automático para CrediGo Autos Grupo 4...");
+        if (($esPlan38 || $esPlan49) && $cantidadCuotasAdelantadas > 0) {
+            $nombrePlanVehicular = $esPlan38 ? "CrediGo Autos Grupo 4" : "Credi Ahorros Autos";
+            error_log("🚗 VEHICULAR - Iniciando proceso de pago automático para {$nombrePlanVehicular}...");
 
             try {
                 $cuotaModel = new CuotaFinanciamiento();
-                $cuotasParaPagar = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                // Plan 49 (Credi Ahorros Autos): obtener las ÚLTIMAS N cuotas
+                if ($esPlan49) {
+                    $cuotasParaPagar = $cuotaModel->obtenerUltimasCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                    error_log("🚗 VEHICULAR - Credi Ahorros Autos - Obteniendo ÚLTIMAS {$cantidadCuotasAdelantadas} cuotas");
+                } else {
+                    $cuotasParaPagar = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento, $cantidadCuotasAdelantadas);
+                }
 
                 if (!empty($cuotasParaPagar)) {
                     error_log("🚗 VEHICULAR - Cuotas obtenidas: " . count($cuotasParaPagar));
@@ -958,7 +1012,7 @@ class RegistrarFinanciamientoController extends Controller
                         $idConductor,
                         $idAsesor,
                         $montoPago,
-                        "Cuotas adelantadas - Plan CrediGo Autos Grupo 4",
+                        "Cuotas adelantadas - Plan {$nombrePlanVehicular}",
                         $montoPago,
                         0,
                         $moneda,
@@ -1164,6 +1218,46 @@ class RegistrarFinanciamientoController extends Controller
             }
         } catch (Exception $e) {
             error_log('Error al actualizar verificación domiciliaria: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualiza el código de asociado en la tabla correspondiente (conductores o clientes_financiar)
+     * cuando se genera automáticamente al crear un financiamiento
+     */
+    private function actualizarCodigoAsociado($tipoRegistro, $idRegistro, $codigoAsociado)
+    {
+        try {
+            if ($tipoRegistro === 'conductor') {
+                // Actualizar en tabla conductores
+                $query = 'UPDATE conductores SET numeroCodFi = ? WHERE id_conductor = ?';
+                $stmt = $this->conexion->prepare($query);
+                $stmt->bind_param('si', $codigoAsociado, $idRegistro);
+                
+                if ($stmt->execute()) {
+                    error_log("✅ Código de asociado '{$codigoAsociado}' actualizado para conductor ID: {$idRegistro}");
+                } else {
+                    error_log("❌ Error al actualizar código de asociado para conductor ID: {$idRegistro}");
+                }
+                $stmt->close();
+                
+            } elseif ($tipoRegistro === 'cliente') {
+                // Actualizar en tabla clientes_financiar
+                $query = 'UPDATE clientes_financiar SET num_cod_finan = ? WHERE id = ?';
+                $stmt = $this->conexion->prepare($query);
+                $stmt->bind_param('si', $codigoAsociado, $idRegistro);
+                
+                if ($stmt->execute()) {
+                    error_log("✅ Código de asociado '{$codigoAsociado}' actualizado para cliente ID: {$idRegistro}");
+                } else {
+                    error_log("❌ Error al actualizar código de asociado para cliente ID: {$idRegistro}");
+                }
+                $stmt->close();
+            } else {
+                error_log("⚠️ Tipo de registro desconocido: {$tipoRegistro}");
+            }
+        } catch (Exception $e) {
+            error_log('Error al actualizar código de asociado: ' . $e->getMessage());
         }
     }
 }

@@ -14,16 +14,17 @@ class ConsultasController extends Controller
 {
     private $consulta;
     private $sunatApi;
-    private $token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InN5c3RlbWNyYWZ0LnBlQGdtYWlsLmNvbSJ9.yuNS5hRaC0hCwymX_PjXRoSZJWLNNBeOdlLRSUGlHGA';
+    private $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InN5c3RlbWNyYWZ0LnBlQGdtYWlsLmNvbSJ9.yuNS5hRaC0hCwymX_PjXRoSZJWLNNBeOdlLRSUGlHGA";
 
     public function __construct()
     {
         $this->consulta = new Consultas();
         $this->sunatApi = new SunatApi();
     }
-    public function agregarTransportista(){
-        $sql="insert into tamsporte_persona set ruc='{$_POST['ruc']}'
-             ,direccion='{$_POST['direccion']}',razon_social='{$_POST['razon']}'";
+    public function agregarTransportista()
+    {
+        $sql = "insert into tamsporte_persona set ruc='{$_POST["ruc"]}'
+             ,direccion='{$_POST["direccion"]}',razon_social='{$_POST["razon"]}'";
         $this->consulta->exeSQL($sql);
         echo "{}";
     }
@@ -31,30 +32,30 @@ class ConsultasController extends Controller
     {
         $venta = $_POST["venta"];
 
-
         $sql = "select c.*,vs.nombre_xml from ventas v join clientes c on v.id_cliente = c.id_cliente join ventas_sunat vs on v.id_venta = vs.id_venta where v.id_venta = $venta";
 
         $datos = $this->consulta->exeSQL($sql)->fetch_assoc();
 
         return json_encode([
-            "link" => URL::to("/venta/comprobante/pdf/$venta/" . $datos['nombre_xml']),
+            "link" => URL::to(
+                "/venta/comprobante/pdf/$venta/" . $datos["nombre_xml"],
+            ),
             "linkd" => URL::to("/venta/comprobante/pdfd/$venta"),
-            "file_name" => $datos['nombre_xml'] . '.pdf',
-            "numero" => $datos['telefono'] ? $datos['telefono'] : '',
-            "mail" => $datos['email'] ? $datos['email'] : '',
+            "file_name" => $datos["nombre_xml"] . ".pdf",
+            "numero" => $datos["telefono"] ? $datos["telefono"] : "",
+            "mail" => $datos["email"] ? $datos["email"] : "",
         ]);
     }
 
     public function buscarProdId()
     {
-        $sql = "SELECT * from productosv2 where estado = '1' AND  idproductosv2 ='{$_POST['index']}' order by idproductosv2 DESC";
+        $sql = "SELECT * from productosv2 where estado = '1' AND  idproductosv2 ='{$_POST["index"]}' order by idproductosv2 DESC";
 
-        $result =  $this->consulta->exeSQL($sql)->fetch_assoc();
+        $result = $this->consulta->exeSQL($sql)->fetch_assoc();
         echo json_encode($result);
     }
     public function getMetodoPago()
     {
-
         $sql = "SELECT * FROM metodo_pago WHERE estado = 1";
         $metodosPago = $this->consulta->exeSQL($sql);
         $lista = [];
@@ -68,27 +69,55 @@ class ConsultasController extends Controller
     public function enviarcomprobanteEmail()
     {
         $respuesta = ["res" => false];
-        $empresa = $this->consulta->exeSQL("select * from empresas where id_empresa='{$_SESSION['id_empresa']}'")->fetch_assoc();
+        $empresa = $this->consulta
+            ->exeSQL(
+                "select * from empresas where id_empresa='{$_SESSION["id_empresa"]}'",
+            )
+            ->fetch_assoc();
 
         $tock_temp = Tools::getToken(10);
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_URL, $_POST['link'] . "/"
-            . base64_encode("files/temp/" . $tock_temp . ".pdf"));
+        curl_setopt(
+            $ch,
+            CURLOPT_URL,
+            $_POST["link"] .
+                "/" .
+                base64_encode("files/temp/" . $tock_temp . ".pdf"),
+        );
         $data = curl_exec($ch);
         curl_close($ch);
 
         ob_start();
-        $sendEmail = (new EnvioEmail());
-        $sendEmail->de(USER_SMTP, $empresa['razon_social'])
-            ->addEmail($_POST['email'], 'Cliente')
+        $sendEmail = new EnvioEmail();
+        $sendEmail
+            ->de(USER_SMTP, $empresa["razon_social"])
+            ->addEmail($_POST["email"], "Cliente")
             ->setasunto("Comprobante Electronico")
-            ->cuerpo("<h1>Comproante: {$_POST['nombrefile']}</h1>")
-            ->addArchivo("files/temp/" . $tock_temp . ".pdf", $_POST['nombrefile']);
+            ->cuerpo("<h1>Comproante: {$_POST["nombrefile"]}</h1>")
+            ->addArchivo(
+                "files/temp/" . $tock_temp . ".pdf",
+                $_POST["nombrefile"],
+            );
 
-        if (file_exists("files/facturacion/xml/" . $empresa['ruc'] . '/' . basename($_POST['nombrefile'], ".pdf") . ".xml")) {
-            $sendEmail->addArchivo("files/facturacion/xml/" . $empresa['ruc'] . '/' . basename($_POST['nombrefile'], ".pdf") . ".xml", basename($_POST['nombrefile'], ".pdf") . ".xml");
+        if (
+            file_exists(
+                "files/facturacion/xml/" .
+                    $empresa["ruc"] .
+                    "/" .
+                    basename($_POST["nombrefile"], ".pdf") .
+                    ".xml",
+            )
+        ) {
+            $sendEmail->addArchivo(
+                "files/facturacion/xml/" .
+                    $empresa["ruc"] .
+                    "/" .
+                    basename($_POST["nombrefile"], ".pdf") .
+                    ".xml",
+                basename($_POST["nombrefile"], ".pdf") . ".xml",
+            );
         }
 
         $resul = $sendEmail->enviar();
@@ -105,31 +134,31 @@ class ConsultasController extends Controller
     {
         $respuesta = ["res" => false];
         $data = $_POST;
-        $sql = "update usuarios set 
-        num_doc='{$data['documento']}',
-        usuario='{$data['usuario']}', 
-        email='{$data['email']}',
-        nombres='{$data['nombres']}', 
-        telefono='{$data['telefono']}' where usuario_id='{$data['usuarioid']}' ";
+        $sql = "update usuarios set
+        num_doc='{$data["documento"]}',
+        usuario='{$data["usuario"]}',
+        email='{$data["email"]}',
+        nombres='{$data["nombres"]}',
+        telefono='{$data["telefono"]}' where usuario_id='{$data["usuarioid"]}' ";
         if ($this->consulta->exeSQL($sql)) {
             $respuesta["res"] = true;
 
-            $sq2l = "UPDATE sucursales set direccion= '{$data['direccion']}',distrito = '{$data['distrito']}', provincia = '{$data['provincia']}' ,departamento = '{$data['departamento']}',ubigeo = '{$data['ubigeo']}',cod_sucursal = '{$data['sucursal']}' WHERE empresa_id = '{$data['empr']}'  AND cod_sucursal = '{$data['sucursal']}' ";
+            $sq2l = "UPDATE sucursales set direccion= '{$data["direccion"]}',distrito = '{$data["distrito"]}', provincia = '{$data["provincia"]}' ,departamento = '{$data["departamento"]}',ubigeo = '{$data["ubigeo"]}',cod_sucursal = '{$data["sucursal"]}' WHERE empresa_id = '{$data["empr"]}'  AND cod_sucursal = '{$data["sucursal"]}' ";
             if ($this->consulta->exeSQL($sq2l)) {
                 $respuesta["res"] = true;
             }
 
-            $sql = " update documentos_empresas set serie='{$data['serieF']}',numero='{$data['numeroF']}' where id_empresa='{$data['empr']}' and id_tido=2 and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieF"]}',numero='{$data["numeroF"]}' where id_empresa='{$data["empr"]}' and id_tido=2 and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " update documentos_empresas set serie='{$data['serieB']}',numero='{$data['numeroB']}' where id_empresa='{$data['empr']}' and id_tido=1  and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieB"]}',numero='{$data["numeroB"]}' where id_empresa='{$data["empr"]}' and id_tido=1  and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " update documentos_empresas set serie='{$data['serieNV']}',numero='{$data['numeroNV']}' where  id_empresa='{$data['empr']}' and id_tido=6 and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieNV"]}',numero='{$data["numeroNV"]}' where  id_empresa='{$data["empr"]}' and id_tido=6 and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " update documentos_empresas set serie='{$data['serieNC']}',numero='{$data['numeroNC']}' where id_empresa='{$data['empr']}' and id_tido=3 and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieNC"]}',numero='{$data["numeroNC"]}' where id_empresa='{$data["empr"]}' and id_tido=3 and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " update documentos_empresas set serie='{$data['serieND']}',numero='{$data['numeroND']}' where id_empresa='{$data['empr']}' and id_tido=4 and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieND"]}',numero='{$data["numeroND"]}' where id_empresa='{$data["empr"]}' and id_tido=4 and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " update documentos_empresas set serie='{$data['serieGR']}',numero='{$data['numeroGR']}' where id_empresa='{$data['empr']}' and id_tido=11 and sucursal='{$data['sucursal']}'";
+            $sql = " update documentos_empresas set serie='{$data["serieGR"]}',numero='{$data["numeroGR"]}' where id_empresa='{$data["empr"]}' and id_tido=11 and sucursal='{$data["sucursal"]}'";
             $this->consulta->exeSQL($sql);
         }
         return json_encode($respuesta);
@@ -138,10 +167,10 @@ class ConsultasController extends Controller
     public function getInfoSucursal()
     {
         $dataR = [];
-        $sql = "SELECT * from usuarios where usuario_id='{$_POST['user']}'";
+        $sql = "SELECT * from usuarios where usuario_id='{$_POST["user"]}'";
         $user = $this->consulta->exeSQL($sql)->fetch_assoc();
 
-        $sql = "select * from  documentos_empresas where  id_empresa='{$user['id_empresa']}' and sucursal='{$user['sucursal']}'";
+        $sql = "select * from  documentos_empresas where  id_empresa='{$user["id_empresa"]}' and sucursal='{$user["sucursal"]}'";
         $temResp = $this->consulta->exeSQL($sql);
         $user["docEmp"] = [];
         foreach ($temResp as $rowT) {
@@ -151,8 +180,8 @@ class ConsultasController extends Controller
     }
     public function getInfoSucursalDetalle()
     {
-        $empresa = $_POST['data']['empresa'];
-        $sucursal = $_POST['data']['sucursal'];
+        $empresa = $_POST["data"]["empresa"];
+        $sucursal = $_POST["data"]["sucursal"];
         $sql = "SELECT * from sucursales where empresa_id='$empresa' AND cod_sucursal = '$sucursal'";
         $dataa = $this->consulta->exeSQL($sql)->fetch_assoc();
 
@@ -167,7 +196,7 @@ class ConsultasController extends Controller
     public function cargarVentaServicios()
     {
         /*  $dataR =[]; */
-        $sql = "SELECT id_item,descripcion,monto AS precio,LEFT(cantidad,CHAR_LENGTH(cantidad)-3) as cantidad ,codsunat FROM ventas_servicios where id_venta='{$_POST['idVenta']}'";
+        $sql = "SELECT id_item,descripcion,monto AS precio,LEFT(cantidad,CHAR_LENGTH(cantidad)-3) as cantidad ,codsunat FROM ventas_servicios where id_venta='{$_POST["idVenta"]}'";
         $ventas = $this->consulta->exeSQL($sql);
         $lista = [];
         foreach ($ventas as $rowT) {
@@ -178,7 +207,7 @@ class ConsultasController extends Controller
     public function cargarVentaDetalles()
     {
         /*  $dataR =[]; */
-        $sql = "SELECT * FROM ventas where id_venta='{$_POST['idVenta']}'";
+        $sql = "SELECT * FROM ventas where id_venta='{$_POST["idVenta"]}'";
         $ventas = $this->consulta->exeSQL($sql);
         $lista = [];
         foreach ($ventas as $rowT) {
@@ -189,9 +218,9 @@ class ConsultasController extends Controller
     public function cargarVentaProductos()
     {
         /*  $dataR =[]; */
-        $sql = "SELECT pv.id_producto AS productoid,p.descripcion,LEFT(pv.cantidad,CHAR_LENGTH(pv.cantidad)-3) AS cantidad,pv.precio,pv.costo  FROM productos_ventas AS pv 
+        $sql = "SELECT pv.id_producto AS productoid,p.descripcion,LEFT(pv.cantidad,CHAR_LENGTH(pv.cantidad)-3) AS cantidad,pv.precio,pv.costo  FROM productos_ventas AS pv
         JOIN productos AS p ON pv.id_producto=p.id_producto
-        WHERE id_venta='{$_POST['idVenta']}'";
+        WHERE id_venta='{$_POST["idVenta"]}'";
         $ventas = $this->consulta->exeSQL($sql);
         $lista = [];
         foreach ($ventas as $rowT) {
@@ -203,45 +232,45 @@ class ConsultasController extends Controller
     {
         $respuesta = ["res" => false];
 
-        $sql = "select * from usuarios where id_empresa = '{$_POST['empr']}' order by  sucursal desc limit 1";
+        $sql = "select * from usuarios where id_empresa = '{$_POST["empr"]}' order by  sucursal desc limit 1";
         $ultimoSuculsal = $this->consulta->exeSQL($sql)->fetch_assoc();
 
-        $sigienteSucursal = $ultimoSuculsal['sucursal'] + 1;
+        $sigienteSucursal = $ultimoSuculsal["sucursal"] + 1;
 
-        $sql = "insert into usuarios set id_empresa='{$_POST['empr']}',
+        $sql = "insert into usuarios set id_empresa='{$_POST["empr"]}',
   id_rol='2',
-  num_doc='{$_POST['documento']}',
-  usuario='{$_POST['usuario']}',
-  clave=SHA1('{$_POST['clave']}'),
-  email='{$_POST['email']}',
-  nombres='{$_POST['nombres']}',
+  num_doc='{$_POST["documento"]}',
+  usuario='{$_POST["usuario"]}',
+  clave=SHA1('{$_POST["clave"]}'),
+  email='{$_POST["email"]}',
+  nombres='{$_POST["nombres"]}',
   apellidos='',
-  rubro='{$ultimoSuculsal['rubro']}',
+  rubro='{$ultimoSuculsal["rubro"]}',
   sucursal='$sigienteSucursal',
-  telefono='{$_POST['telefono']}',
+  telefono='{$_POST["telefono"]}',
   estado='1'";
         if ($this->consulta->exeSQLInsert($sql)) {
             $idUsuaio = $this->consulta->getUltimoId();
             $data = $_POST;
-            $idEmpresa = $_POST['empr'];
+            $idEmpresa = $_POST["empr"];
 
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal', id_empresa='$idEmpresa',id_tido=2,serie='{$data['serieF']}',numero='{$data['numeroF']}'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal', id_empresa='$idEmpresa',id_tido=2,serie='{$data["serieF"]}',numero='{$data["numeroF"]}'";
             //echo $sql;
             $this->consulta->exeSQL($sql);
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=1,serie='{$data['serieB']}',numero='{$data['numeroB']}'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=1,serie='{$data["serieB"]}',numero='{$data["numeroB"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=6,serie='{$data['serieNV']}',numero='{$data['numeroNV']}'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=6,serie='{$data["serieNV"]}',numero='{$data["numeroNV"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=3,serie='{$data['serieNC']}',numero='{$data['numeroNC']}'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=3,serie='{$data["serieNC"]}',numero='{$data["numeroNC"]}'";
             $this->consulta->exeSQL($sql);
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=4,serie='{$data['serieND']}',numero='{$data['numeroND']}'";
-            $this->consulta->exeSQL($sql);
-
-            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=11,serie='{$data['serieGR']}',numero='{$data['numeroGR']}'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=4,serie='{$data["serieND"]}',numero='{$data["numeroND"]}'";
             $this->consulta->exeSQL($sql);
 
-            $sql = "INSERT INTO sucursales set empresa_id = '{$_POST['empr']}', direccion = '{$_POST['direccion']}',distrito ='{$_POST['distrito']}',provincia = '{$_POST['provincia']}',
-            departamento = '{$_POST['departamento']}',ubigeo ='{$_POST['ubigeo']}',cod_sucursal ='$sigienteSucursal'";
+            $sql = " insert into documentos_empresas set sucursal='$sigienteSucursal',id_empresa='$idEmpresa',id_tido=11,serie='{$data["serieGR"]}',numero='{$data["numeroGR"]}'";
+            $this->consulta->exeSQL($sql);
+
+            $sql = "INSERT INTO sucursales set empresa_id = '{$_POST["empr"]}', direccion = '{$_POST["direccion"]}',distrito ='{$_POST["distrito"]}',provincia = '{$_POST["provincia"]}',
+            departamento = '{$_POST["departamento"]}',ubigeo ='{$_POST["ubigeo"]}',cod_sucursal ='$sigienteSucursal'";
             $this->consulta->exeSQL($sql);
             $respuesta["res"] = true;
         }
@@ -251,7 +280,7 @@ class ConsultasController extends Controller
     public function listasucursaleEmpresa()
     {
         $lista = [];
-        $sql = "SELECT * from usuarios where id_empresa='{$_POST['cod']}' AND sucursal <> 1";
+        $sql = "SELECT * from usuarios where id_empresa='{$_POST["cod"]}' AND sucursal <> 1";
         $result = $this->consulta->exeSQL($sql);
         foreach ($result as $R) {
             $lista[] = $R;
@@ -262,8 +291,8 @@ class ConsultasController extends Controller
     public function verificadorToken()
     {
         $respuesta = ["res" => false];
-        $save = $_POST['s'];
-        $token = json_decode(Tools::decryptText($_POST['token']), true);
+        $save = $_POST["s"];
+        $token = json_decode(Tools::decryptText($_POST["token"]), true);
         if ($token) {
             $respuesta["res"] = true;
             if ($save) {
@@ -278,12 +307,14 @@ class ConsultasController extends Controller
         $sql = "select * from notas_electronicas_sunat where id_notas_electronicas = '{$_POST["cod"]}'";
         $resultado = ["res" => false];
         if ($row = $this->consulta->exeSQL($sql)->fetch_assoc()) {
-            if ($this->sunatApi->envioIndividualDocumentoV($row["nombre_xml"])) {
+            if (
+                $this->sunatApi->envioIndividualDocumentoV($row["nombre_xml"])
+            ) {
                 $sql = "update notas_electronicas set  estado_sunat='1' where nota_id = '{$_POST["cod"]}'";
                 $this->consulta->exeSQL($sql);
-                $resultado['res'] = true;
+                $resultado["res"] = true;
             } else {
-                $resultado['msg'] = $this->sunatApi->getMensaje();
+                $resultado["msg"] = $this->sunatApi->getMensaje();
             }
         }
         return json_encode($resultado);
@@ -291,112 +322,205 @@ class ConsultasController extends Controller
 
     public function guardarNotaElectronica()
     {
-        $c_tido = new DocumentoEmpresa();
+        // ✅ La serie ya viene correcta desde el frontend (BC01 o FC01)
+        $serieE = $_POST["serieNE"]; // BC01 para boleta, FC01 para factura
 
-        $c_tido->setIdEmpresa($_SESSION['id_empresa']);
-        $c_tido->setIdTido($_POST['tipo_docNE']);
-        $c_tido->obtenerDatos();
-        $serieE = $c_tido->getSerie();
+        // ✅ Obtener el número específico para esta serie
+        $c_tido = new DocumentoEmpresa();
+        $c_tido->setIdEmpresa($_SESSION["id_empresa"]);
+        $c_tido->setIdTido($_POST["tipo_docNE"]);
+        $c_tido->setSerie($serieE); // ✅ NUEVO: Buscar por serie específica
+        $c_tido->obtenerDatosPorSerie(); // ✅ NUEVO: Método que busca por serie
         $numeroE = $c_tido->getNumero();
 
-        $sql = "insert into notas_electronicas set id_venta='{$_POST['ventacod']}',
-  tido='{$_POST['tipo_docNE']}',
-  fecha='{$_POST['fecha']}',
-    id_empresa='{$_SESSION['id_empresa']}',
-    sucursal='{$_SESSION['sucursal']}',
+        $sql = "insert into notas_electronicas set id_venta='{$_POST["ventacod"]}',
+  tido='{$_POST["tipo_docNE"]}',
+  fecha='{$_POST["fecha"]}',
+    id_empresa='{$_SESSION["id_empresa"]}',
+    sucursal='{$_SESSION["sucursal"]}',
   serie='$serieE',
   numero='$numeroE',
-  motivo='{$_POST['motivoNE']}',
-  monto='{$_POST['total_NE']}',
+  motivo='{$_POST["motivoNE"]}',
+  monto='{$_POST["total_NE"]}',
   productos=?";
-        $productos = $_POST['listaPro'];
+        $productos = $_POST["listaPro"];
         $stmt = $this->consulta->getConectar()->prepare($sql);
         $stmt->bind_param("s", $productos);
         $respuesta = ["res" => false];
         if ($stmt->execute()) {
-
             $idNotaElectronica = $stmt->insert_id;
 
             $respuesta["res"] = true;
 
-            $empresa = $this->consulta->exeSQL("select * from empresas where id_empresa='{$_SESSION['id_empresa']}'")->fetch_assoc();
+            $empresa = $this->consulta
+                ->exeSQL(
+                    "select * from empresas where id_empresa='{$_SESSION["id_empresa"]}'",
+                )
+                ->fetch_assoc();
             $dataSend = [];
-            if ($_POST['tipo_doc'] == '1') {
-                $dataSend['tip_doc_afectado'] = '03';
-            } elseif ($_POST['tipo_doc'] == '2') {
-                $dataSend['tip_doc_afectado'] = '01';
+            if ($_POST["tipo_doc"] == "1") {
+                $dataSend["tip_doc_afectado"] = "03";
+            } elseif ($_POST["tipo_doc"] == "2") {
+                $dataSend["tip_doc_afectado"] = "01";
             }
 
-            if ($_POST['tipo_docNE'] == '3') {
-                $dataSend['cod_notaE'] = '07';
+            if ($_POST["tipo_docNE"] == "3") {
+                $dataSend["cod_notaE"] = "07";
             } else {
-                $dataSend['cod_notaE'] = '08';
+                $dataSend["cod_notaE"] = "08";
             }
 
-            $sql = "SELECT * FROM motivo_documento where id_motivo = {$_POST['motivoNE']}";
+            $sql = "SELECT * FROM motivo_documento where id_motivo = {$_POST["motivoNE"]}";
 
             $motivoNEData = $this->consulta->exeSQL($sql)->fetch_assoc();
 
-
-            $dataSend['productos'] = [];
+            $dataSend["productos"] = [];
             $dataSend["certGlobal"] = false;
-            $dataSend["endpoints"] = $empresa['modo'];
+            $dataSend["endpoints"] = $empresa["modo"];
 
             $listaProd = json_decode($productos, true);
 
             foreach ($listaProd as $prodd) {
-                $dataSend['productos'][] = [
-                    "precio" => $prodd['precio'],
-                    "cantidad" => $prodd['cantidad'],
-                    "cod_pro" => $prodd['productoid'],
+                $dataSend["productos"][] = [
+                    "precio" => $prodd["precio"],
+                    "cantidad" => $prodd["cantidad"],
+                    "cod_pro" => isset($prodd["productoid"])
+                        ? $prodd["productoid"]
+                        : "",
                     "cod_sunat" => "",
-                    "descripcion" => $prodd['descripcion']
+                    "descripcion" => $prodd["descripcion"],
                 ];
             }
 
-            $dataSend['cliente'] = json_encode([
-                'doc_num' => $_POST['num_doc'],
-                'nom_RS' => $_POST['nom_cli'],
-                'direccion' => $_POST['dir_cli'],
+            $dataSend["cliente"] = json_encode([
+                "doc_num" => $_POST["num_doc"],
+                "nom_RS" => $_POST["nom_cli"],
+                "direccion" => isset($_POST["dir_cli"])
+                    ? $_POST["dir_cli"]
+                    : "-",
             ]);
 
-            $dataSend['total'] = $_POST['total_NE'];
-            $dataSend['serie'] = $serieE;
+            // ✅ NUEVO: Obtener datos de la venta original para validaciones
+            $sqlVentaOriginal = "SELECT moneda, total, apli_igv, igv, fecha_emision
+                                 FROM ventas
+                                 WHERE id_venta = '{$_POST["ventacod"]}'";
+            $ventaOriginal = $this->consulta
+                ->exeSQL($sqlVentaOriginal)
+                ->fetch_assoc();
 
-            $dataSend['sn_afectado'] = $_POST['serie'] . '-' . $_POST['numero'];
-            $dataSend['cod_motivo'] = $motivoNEData['codigo'];
-            $dataSend['des_motivo'] = $motivoNEData['nombre']; //$_POST['motivodes'];
-            $dataSend['numero'] = $numeroE;
-            $dataSend['fecha'] = $_POST['fecha'];
-            $dataSend['moneda'] = "PEN";
-            $dataSend['empresa'] = json_encode([
-                'ruc' => $empresa['ruc'],
-                'razon_social' => $empresa['razon_social'],
-                'direccion' => $empresa['direccion'],
-                'ubigeo' => $empresa['ubigeo'],
-                'distrito' => $empresa['distrito'],
-                'provincia' => $empresa['provincia'],
-                'departamento' => $empresa['departamento'],
-                'clave_sol' => $empresa['clave_sol'],
-                'usuario_sol' => $empresa['user_sol']
+            // ✅ NUEVO: Validar que el total coincida (con tolerancia de 0.01)
+            $ventaTotal = floatval($ventaOriginal["total"]);
+            $ncTotal = floatval($_POST["total_NE"]);
+
+            if (abs($ventaTotal - $ncTotal) > 0.01) {
+                error_log(
+                    "ADVERTENCIA NC: Total no coincide. Venta: {$ventaTotal}, NC: {$ncTotal}, Diferencia: " .
+                        abs($ventaTotal - $ncTotal),
+                );
+                // No bloqueamos, pero registramos en log
+            }
+
+            // ✅ NUEVO: Validar fecha (NC >= fecha venta)
+            if (
+                isset($_POST["fecha"]) &&
+                !empty($ventaOriginal["fecha_emision"])
+            ) {
+                $fechaNC = strtotime($_POST["fecha"]);
+                $fechaVenta = strtotime($ventaOriginal["fecha_emision"]);
+
+                if ($fechaNC < $fechaVenta) {
+                    return json_encode([
+                        "res" => false,
+                        "msg" => "ERROR: La fecha de la NC ({$_POST["fecha"]}) no puede ser anterior a la fecha del documento original ({$ventaOriginal["fecha_emision"]}). SUNAT rechazará este documento.",
+                    ]);
+                }
+            }
+
+            $dataSend["total"] = $_POST["total_NE"];
+            $dataSend["serie"] = $serieE;
+
+            $dataSend["sn_afectado"] = $_POST["serie"] . "-" . $_POST["numero"];
+            $dataSend["cod_motivo"] = $motivoNEData["codigo"];
+            $dataSend["des_motivo"] = $motivoNEData["nombre"]; //$_POST['motivodes'];
+            $dataSend["numero"] = $numeroE;
+            $dataSend["fecha"] = $_POST["fecha"];
+
+            // ✅ CORREGIDO: Convertir ID de moneda a código ISO
+            $monedaId = $ventaOriginal["moneda"] ?? "1";
+
+            // Mapeo de IDs a códigos ISO de moneda
+            $monedasMap = [
+                "1" => "PEN", // Soles
+                "2" => "USD", // Dólares
+                "3" => "EUR", // Euros
+            ];
+
+            $dataSend["moneda"] = $monedasMap[$monedaId] ?? "PEN";
+
+            // ✅ NUEVO: Log para debugging
+            error_log(
+                "NC Generada - Moneda ID: {$monedaId}, Código: {$dataSend["moneda"]}, Total: {$dataSend["total"]}, Venta Original: {$ventaTotal}",
+            );
+            $dataSend["empresa"] = json_encode([
+                "ruc" => $empresa["ruc"],
+                "razon_social" => $empresa["razon_social"],
+                "direccion" => $empresa["direccion"],
+                "ubigeo" => $empresa["ubigeo"],
+                "distrito" => $empresa["distrito"],
+                "provincia" => $empresa["provincia"],
+                "departamento" => $empresa["departamento"],
+                "clave_sol" => $empresa["clave_sol"],
+                "usuario_sol" => $empresa["user_sol"],
             ]);
 
             /*$file = fopen("archivo.txt", "w");
             fwrite($file, json_encode($dataSend) );
             fclose($file);*/
 
-            $dataSend['productos'] = json_encode($dataSend['productos']);
+            $dataSend["productos"] = json_encode($dataSend["productos"]);
             $dataResp = $this->sunatApi->genNotaElectronicaXML($dataSend);
             if ($dataResp["res"]) {
-                $sql = "insert into notas_electronicas_sunat set 
+                $sql = "insert into notas_electronicas_sunat set
 id_notas_electronicas='$idNotaElectronica',
-  hash='{$dataResp['data']['hash']}',
-  nombre_xml='{$dataResp['data']['nombre_archivo']}',
-  qr_data='{$dataResp['data']['qr']}'
+  hash='{$dataResp["data"]["hash"]}',
+  nombre_xml='{$dataResp["data"]["nombre_archivo"]}',
+  qr_data='{$dataResp["data"]["qr"]}'
 ";
                 $this->consulta->exeSQL($sql);
 
+                // ✅ DEBUG: Guardar información en archivo
+                $debugInfo = [
+                    "timestamp" => date("Y-m-d H:i:s"),
+                    "serie" => $serieE,
+                    "numero_usado" => $numeroE,
+                    "numero_nuevo" => $numeroE + 1,
+                    "id_empresa" => $_SESSION["id_empresa"],
+                    "id_tido" => $_POST["tipo_docNE"],
+                    "sucursal" => $_SESSION["sucursal"],
+                ];
+                file_put_contents(
+                    "debug_nc.txt",
+                    print_r($debugInfo, true) . "\n\n",
+                    FILE_APPEND,
+                );
+
+                // ✅ NUEVO: Incrementar el correlativo de esta serie específica
+                error_log(
+                    "Antes de incrementar - Serie: {$serieE}, Numero actual: {$numeroE}",
+                );
+                $c_tido->setNumero($numeroE + 1);
+                error_log(
+                    "Después de setNumero - Nuevo numero: " . ($numeroE + 1),
+                );
+                $c_tido->modificarPorSerie();
+                error_log("Después de modificarPorSerie");
+
                 //$respuesta["err"]=$dataResp['data']["error"];
+            } else {
+                $respuesta["res"] = false;
+                $respuesta["msg"] =
+                    "Error al generar XML: " .
+                    ($dataResp["msg"] ?? "Error desconocido");
             }
         }
         //echo" ccc";
@@ -406,34 +530,60 @@ id_notas_electronicas='$idNotaElectronica',
     public function functionbuscarDocumentoVentasSN()
     {
         $respuesta = ["res" => false];
+        // ✅ CORREGIDO: Usar id_empresa de la sesión en lugar de hardcodear '12'
         $sql = "select v.*,c.documento,c.datos from ventas v
                 join clientes c on c.id_cliente = v.id_cliente
-                        where v.serie='{$_POST['serie']}' 
-                       and v.numero='{$_POST['numero']}' 
-                       and v.id_tido='{$_POST['tidoc']}' and v.id_empresa='12' ";
+                        where v.serie='{$_POST["serie"]}'
+                       and v.numero='{$_POST["numero"]}'
+                       and v.id_tido='{$_POST["tidoc"]}'
+                       and v.id_empresa='{$_SESSION["id_empresa"]}'
+                ORDER BY v.id_venta DESC
+                LIMIT 1";
         //echo $sql;
         $resul = $this->consulta->exeSQL($sql);
         if ($row = $resul->fetch_assoc()) {
             $respuesta["res"] = true;
             $respuesta["data"] = $row;
+
+            // ✅ NUEVO: Agregar productos del inventario
+            $sqlProd = "SELECT pv.id_producto AS productoid, pv.descripcion, pv.cantidad, pv.precio, pv.costo
+                        FROM productos_ventas pv
+                        WHERE pv.id_venta = '{$row["id_venta"]}'";
+            $productos = $this->consulta->exeSQL($sqlProd);
+            $respuesta["data"]["productos"] = [];
+            foreach ($productos as $prod) {
+                $respuesta["data"]["productos"][] = $prod;
+            }
+
+            // ✅ NUEVO: Agregar servicios
+            $sqlServ = "SELECT id_item, descripcion, monto AS precio, cantidad, codsunat
+                        FROM ventas_servicios
+                        WHERE id_venta = '{$row["id_venta"]}'";
+            $servicios = $this->consulta->exeSQL($sqlServ);
+            $respuesta["data"]["servicios"] = [];
+            foreach ($servicios as $serv) {
+                $respuesta["data"]["servicios"][] = $serv;
+            }
         }
 
         return json_encode($respuesta);
     }
     public function buscarDataProveedor()
     {
+        $searchTerm = filter_input(INPUT_GET, "term");
 
-        $searchTerm = filter_input(INPUT_GET, 'term');
+        $resultados = $this->consulta->buscarProveedor(
+            $searchTerm,
+            $_SESSION["id_empresa"],
+        );
 
-        $resultados = $this->consulta->buscarProveedor($searchTerm, $_SESSION['id_empresa']);
-
-        $array_resultado = array();
+        $array_resultado = [];
         foreach ($resultados as $value) {
-            $fila = array();
-            $fila['value'] = $value['ruc'] . " | " . $value['razon_social'];
-            $fila['codigo'] = $value['proveedor_id'];
-            $fila['documento'] = $value['ruc'];
-            $fila['datos'] = $value['razon_social'];
+            $fila = [];
+            $fila["value"] = $value["ruc"] . " | " . $value["razon_social"];
+            $fila["codigo"] = $value["proveedor_id"];
+            $fila["documento"] = $value["ruc"];
+            $fila["datos"] = $value["razon_social"];
             array_push($array_resultado, $fila);
         }
 
@@ -442,19 +592,21 @@ id_notas_electronicas='$idNotaElectronica',
 
     public function buscarDataCliente()
     {
+        $searchTerm = filter_input(INPUT_GET, "term");
 
-        $searchTerm = filter_input(INPUT_GET, 'term');
+        $resultados = $this->consulta->buscarClientes(
+            $searchTerm,
+            $_SESSION["id_empresa"],
+        );
 
-        $resultados = $this->consulta->buscarClientes($searchTerm, $_SESSION['id_empresa']);
-
-        $array_resultado = array();
+        $array_resultado = [];
         foreach ($resultados as $value) {
-            $fila = array();
-            $fila['value'] = $value['documento'] . " | " . $value['datos'];
-            $fila['codigo'] = $value['id_cliente'];
-            $fila['documento'] = $value['documento'];
-            $fila['direccion'] = $value['direccion'];
-            $fila['datos'] = $value['datos'];
+            $fila = [];
+            $fila["value"] = $value["documento"] . " | " . $value["datos"];
+            $fila["codigo"] = $value["id_cliente"];
+            $fila["documento"] = $value["documento"];
+            $fila["direccion"] = $value["direccion"];
+            $fila["datos"] = $value["datos"];
             array_push($array_resultado, $fila);
         }
 
@@ -462,24 +614,36 @@ id_notas_electronicas='$idNotaElectronica',
     }
 
     public function buscarDocInfo()
-    
-    {// Validar y sanitizar el documento
-        
-        $doc = filter_var($_POST['doc'], FILTER_SANITIZE_STRING);
-        
+    {
+        // Validar y sanitizar el documento
+
+        $doc = filter_var($_POST["doc"], FILTER_SANITIZE_STRING);
+
         if (strlen($doc) == 8) {
-            $url = 'https://dniruc.apisperu.com/api/v1/dni/' . $doc . '?token=' . $this->token;
+            $url =
+                "https://dniruc.apisperu.com/api/v1/dni/" .
+                $doc .
+                "?token=" .
+                $this->token;
         } else {
-            $url = 'https://dniruc.apisperu.com/api/v1/ruc/' . $doc . '?token=' . $this->token;
+            $url =
+                "https://dniruc.apisperu.com/api/v1/ruc/" .
+                $doc .
+                "?token=" .
+                $this->token;
         }
 
         $data = $this->apiRequest($url);
-        
-        if (isset($data['data'])) {
+
+        if (isset($data["data"])) {
             if (strlen($doc) == 8) {
-                
                 if (strlen($doc) == 8) {
-                    $data["data"]["nombre"] = $data["data"]["nombres"] . " " . $data["data"]["apellidoPaterno"] . " " . $data["data"]["apellidoMaterno"];
+                    $data["data"]["nombre"] =
+                        $data["data"]["nombres"] .
+                        " " .
+                        $data["data"]["apellidoPaterno"] .
+                        " " .
+                        $data["data"]["apellidoMaterno"];
                 } else {
                     $data["data"]["nombre"] = $data["data"]["razonSocial"];
                 }
@@ -502,12 +666,12 @@ id_notas_electronicas='$idNotaElectronica',
 
     public function consultvfb()
     {
-        $_SESSION['ventaproductos'] = array();
+        $_SESSION["ventaproductos"] = [];
 
         //obtener las variables
-        $tido = filter_input(INPUT_POST, 'idtido');
-        $serie = filter_input(INPUT_POST, 'serie');
-        $numero = filter_input(INPUT_POST, 'numero');
+        $tido = filter_input(INPUT_POST, "idtido");
+        $serie = filter_input(INPUT_POST, "serie");
+        $numero = filter_input(INPUT_POST, "numero");
 
         //iniciar clases
         $c_venta = new Venta();
@@ -525,8 +689,8 @@ id_notas_electronicas='$idNotaElectronica',
 
         //validar si existe venta
         if ($c_venta->getIdVenta() == null || $c_venta->getIdVenta() == "") {
-            $resultado['res'] = false;
-            $resultado['msg'] = "Documento no encontrado";
+            $resultado["res"] = false;
+            $resultado["msg"] = "Documento no encontrado";
         } else {
             $c_venta->obtenerDatos();
             if ($c_venta->getSucursal() == $_SESSION["sucursal"]) {
@@ -538,25 +702,26 @@ id_notas_electronicas='$idNotaElectronica',
 
                 $resultado["productos"] = [];
                 foreach ($a_detalle as $row) {
-                    $fila = array();
-                    $fila['idproducto'] = $row['id_producto'];
-                    $fila['descripcion'] = $row['descripcion'];
-                    $fila['cantidad'] = $row['cantidad'];
-                    $fila['precio'] = $row['precio'];
-                    $fila['costo'] = $row['costo'];
+                    $fila = [];
+                    $fila["idproducto"] = $row["id_producto"];
+                    $fila["descripcion"] = $row["descripcion"];
+                    $fila["cantidad"] = $row["cantidad"];
+                    $fila["precio"] = $row["precio"];
+                    $fila["costo"] = $row["costo"];
                     $resultado["productos"][] = $fila;
                 }
 
                 //iniciar array resultado con valores reales
-                $resultado['res'] = true;
-                $resultado['idventa'] = $c_venta->getIdVenta();
-                $resultado['total'] = $c_venta->getTotal();
-                $resultado['doc_cliente'] = $c_cliente->getDocumento();
-                $resultado['nom_cliente'] = $c_cliente->getDatos();
-                $resultado['dir_cliente'] = $c_cliente->getDireccion();
+                $resultado["res"] = true;
+                $resultado["idventa"] = $c_venta->getIdVenta();
+                $resultado["total"] = $c_venta->getTotal();
+                $resultado["doc_cliente"] = $c_cliente->getDocumento();
+                $resultado["nom_cliente"] = $c_cliente->getDatos();
+                $resultado["dir_cliente"] = $c_cliente->getDireccion();
             } else {
-                $resultado['res'] = false;
-                $resultado['msg'] = "El documento Ingresado Pertenece a otra sucursal";
+                $resultado["res"] = false;
+                $resultado["msg"] =
+                    "El documento Ingresado Pertenece a otra sucursal";
             }
         }
 
@@ -567,8 +732,8 @@ id_notas_electronicas='$idNotaElectronica',
     {
         $c_ubigeo = new Ubigeo();
 
-        $c_ubigeo->setDepartamento(filter_input(INPUT_POST, 'departamento'));
-        $c_ubigeo->setProvincia(filter_input(INPUT_POST, 'provincia'));
+        $c_ubigeo->setDepartamento(filter_input(INPUT_POST, "departamento"));
+        $c_ubigeo->setProvincia(filter_input(INPUT_POST, "provincia"));
 
         echo $c_ubigeo->verDistritos();
     }
@@ -576,28 +741,32 @@ id_notas_electronicas='$idNotaElectronica',
     {
         $c_ubigeo = new Ubigeo();
 
-        $c_ubigeo->setDepartamento(filter_input(INPUT_POST, 'departamento'));
+        $c_ubigeo->setDepartamento(filter_input(INPUT_POST, "departamento"));
         echo $c_ubigeo->verProvincias();
     }
 
     function buscarSNdoc()
     {
-        return json_encode($this->consulta->buscarSNdoc($_REQUEST['doc']));
+        // ✅ Obtener serie si se envió desde el frontend
+        $serie = isset($_REQUEST["serie"]) ? $_REQUEST["serie"] : null;
+        return json_encode(
+            $this->consulta->buscarSNdoc($_REQUEST["doc"], $serie),
+        );
     }
 
     function buscarTransporteGui()
     {
-        $searchTerm = filter_input(INPUT_GET, 'term');
-        $sql="select * from tamsporte_persona where ruc like '%$searchTerm%' or razon_social like '%$searchTerm%' ";
+        $searchTerm = filter_input(INPUT_GET, "term");
+        $sql = "select * from tamsporte_persona where ruc like '%$searchTerm%' or razon_social like '%$searchTerm%' ";
         $resultados = $this->consulta->exeSQL($sql);
         /*   echo 'asdasd';
-        die(); */
-        $array_resultado = array();
+         die(); */
+        $array_resultado = [];
         foreach ($resultados as $value) {
-            $fila = array();
-            $fila['value'] = $value['ruc'] .' | '. $value['razon_social'] ;
-            $fila['ruc'] = $value['ruc'];
-            $fila['razon'] = $value['razon_social'];
+            $fila = [];
+            $fila["value"] = $value["ruc"] . " | " . $value["razon_social"];
+            $fila["ruc"] = $value["ruc"];
+            $fila["razon"] = $value["razon_social"];
 
             array_push($array_resultado, $fila);
         }
@@ -607,27 +776,38 @@ id_notas_electronicas='$idNotaElectronica',
 
     function buscarProducto($almacen)
     {
-        $searchTerm = filter_input(INPUT_GET, 'term');
-        $resultados = $this->consulta->buscarProducto((isset($_SESSION['id_empresa']) ? $_SESSION['id_empresa'] : ''), $searchTerm, $almacen);
+        $searchTerm = filter_input(INPUT_GET, "term");
+        $resultados = $this->consulta->buscarProducto(
+            isset($_SESSION["id_empresa"]) ? $_SESSION["id_empresa"] : "",
+            $searchTerm,
+            $almacen,
+        );
         /*   echo 'asdasd';
-        die(); */
-        $array_resultado = array();
-        
+         die(); */
+        $array_resultado = [];
+
         // Verificar que $resultados sea válido antes del foreach
         if ($resultados && $resultados->num_rows > 0) {
             foreach ($resultados as $value) {
-                $fila = array();
-                $fila['value'] = $value['codigo'] .' | '. $value['nombre'] . " | P.Venta S/ : " . $value['precio_venta'] . " | Stock: " . $value['cantidad'];
-                $fila['codigo'] = $value['idproductosv2'];
-                $fila['codigo_pp'] = $value['codigo'];
-                $fila['descripcion'] = $value['nombre'];
-                $fila['precio'] = $value['precio_venta'];
-                $fila['cnt'] = $value['cantidad'];
-                $fila['costo'] = $value['precio'];
-                $fila['precio2'] = $value['precio_venta'];
-                $fila['precio3'] = $value['precio_venta'];
-                $fila['precio4'] = $value['precio_venta'];
-                $fila['precio_unidad'] = $value['precio_venta'];
+                $fila = [];
+                $fila["value"] =
+                    $value["codigo"] .
+                    " | " .
+                    $value["nombre"] .
+                    " | P.Venta S/ : " .
+                    $value["precio_venta"] .
+                    " | Stock: " .
+                    $value["cantidad"];
+                $fila["codigo"] = $value["idproductosv2"];
+                $fila["codigo_pp"] = $value["codigo"];
+                $fila["descripcion"] = $value["nombre"];
+                $fila["precio"] = $value["precio_venta"];
+                $fila["cnt"] = $value["cantidad"];
+                $fila["costo"] = $value["precio"];
+                $fila["precio2"] = $value["precio_venta"];
+                $fila["precio3"] = $value["precio_venta"];
+                $fila["precio4"] = $value["precio_venta"];
+                $fila["precio_unidad"] = $value["precio_venta"];
                 array_push($array_resultado, $fila);
             }
         }
@@ -648,28 +828,38 @@ id_notas_electronicas='$idNotaElectronica',
     }
     function buscarProductoCoti()
     {
-        $searchTerm = filter_input(INPUT_GET, 'term');
-        $resultados = $this->consulta->buscarProductoCoti((isset($_SESSION['id_empresa']) ? $_SESSION['id_empresa'] : ''), $searchTerm);
+        $searchTerm = filter_input(INPUT_GET, "term");
+        $resultados = $this->consulta->buscarProductoCoti(
+            isset($_SESSION["id_empresa"]) ? $_SESSION["id_empresa"] : "",
+            $searchTerm,
+        );
         /*   echo 'asdasd';
-        die(); */
-        $array_resultado = array();
-        
+         die(); */
+        $array_resultado = [];
+
         // Verificar que $resultados sea válido antes del foreach
         if ($resultados && $resultados->num_rows > 0) {
             foreach ($resultados as $value) {
-                $fila = array();
-                $fila['value'] = $value['codigo'] .' | '. $value['nombre'] . " | P.Venta S/ : " . $value['precio_venta'] . " | Stock: " . $value['cantidad'];
-                $fila['codigo'] = $value['idproductosv2'];
-                $fila['codigo_pp'] = $value['codigo'];
-                $fila['descripcion'] = $value['nombre'];
-                $fila['precio'] = $value['precio_venta'];
-                $fila['cnt'] = $value['cantidad'];
-                $fila['costo'] = $value['precio'];
-                $fila['precio2'] = $value['precio_venta'];
-                $fila['precio3'] = $value['precio_venta'];
-                $fila['almacen'] = '1'; // Valor por defecto ya que no hay campo almacen en productosv2
-                $fila['precio4'] = $value['precio_venta'];
-                $fila['precio_unidad'] = $value['precio_venta'];
+                $fila = [];
+                $fila["value"] =
+                    $value["codigo"] .
+                    " | " .
+                    $value["nombre"] .
+                    " | P.Venta S/ : " .
+                    $value["precio_venta"] .
+                    " | Stock: " .
+                    $value["cantidad"];
+                $fila["codigo"] = $value["idproductosv2"];
+                $fila["codigo_pp"] = $value["codigo"];
+                $fila["descripcion"] = $value["nombre"];
+                $fila["precio"] = $value["precio_venta"];
+                $fila["cnt"] = $value["cantidad"];
+                $fila["costo"] = $value["precio"];
+                $fila["precio2"] = $value["precio_venta"];
+                $fila["precio3"] = $value["precio_venta"];
+                $fila["almacen"] = "1"; // Valor por defecto ya que no hay campo almacen en productosv2
+                $fila["precio4"] = $value["precio_venta"];
+                $fila["precio_unidad"] = $value["precio_venta"];
                 array_push($array_resultado, $fila);
             }
         }
@@ -679,34 +869,40 @@ id_notas_electronicas='$idNotaElectronica',
 
     function cargarPreciosProd()
     {
-        $sql = "SELECT * from productosv2 where estado = '1' AND idproductosv2='{$_POST['cod']}' order by idproductosv2 DESC";
+        $sql = "SELECT * from productosv2 where estado = '1' AND idproductosv2='{$_POST["cod"]}' order by idproductosv2 DESC";
 
-        $result =  $this->consulta->exeSQL($sql)->fetch_assoc();
+        $result = $this->consulta->exeSQL($sql)->fetch_assoc();
         echo json_encode($result);
     }
     function consultarGuiaXCoti()
     {
-        $sql = "SELECT * FROM productos_cotis WHERE id_coti = '{$_POST['cod']}'";
+        $sql = "SELECT * FROM productos_cotis WHERE id_coti = '{$_POST["cod"]}'";
         $lista = [];
         foreach ($this->consulta->exeSQL($sql) as $row) {
             /*  $lista[] = $row; */
 
             /* $listaTotal[] = ['detalle' => $row2['detalle'], 'salida' => 0, 'entrada' => $row2['entrada'], 'hora' => '-']; */
-            $sql = "SELECT * FROM productos WHERE id_producto = '{$row['id_producto']}'";
+            $sql = "SELECT * FROM productos WHERE id_producto = '{$row["id_producto"]}'";
 
             foreach ($this->consulta->exeSQL($sql) as $row2) {
-                $lista[] = ['cantidad' => $row['cantidad'], 'costo' => $row['costo'], 'id_producto' => $row['id_producto'], 'precio' => $row['precio'], 'descripcion' => $row2['descripcion']];
+                $lista[] = [
+                    "cantidad" => $row["cantidad"],
+                    "costo" => $row["costo"],
+                    "id_producto" => $row["id_producto"],
+                    "precio" => $row["precio"],
+                    "descripcion" => $row2["descripcion"],
+                ];
             }
         }
         echo json_encode($lista);
     }
     function consultarGuiaXCotiCliente()
     {
-        $sql = "SELECT c.datos,c.direccion FROM cotizaciones co JOIN clientes c ON co.id_cliente=c.id_cliente WHERE co.cotizacion_id ='{$_POST['cod']}'";
+        $sql = "SELECT c.datos,c.direccion FROM cotizaciones co JOIN clientes c ON co.id_cliente=c.id_cliente WHERE co.cotizacion_id ='{$_POST["cod"]}'";
         $result = $this->consulta->exeSQL($sql)->fetch_assoc();
         return json_encode($result);
     }
-    
+
     function getRoles()
     {
         $sql = "SELECT * FROM roles";
@@ -717,5 +913,4 @@ id_notas_electronicas='$idNotaElectronica',
         }
         return json_encode($lista);
     }
-        
 }

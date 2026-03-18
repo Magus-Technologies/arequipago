@@ -1,9 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Contrato CrediGo Autos Grupo 4</title>
+    <title>Contrato CrediYango</title>
     <style>
+      .no-margin {
+  margin: 0;
+}
       body {
         font-family: Arial, sans-serif;
         font-size: 12px;
@@ -156,7 +159,6 @@
   <body>
     <!-- PÁGINA 1: PORTADA -->
     <div class="center">
-      <!-- <h1 class="uppercase ¡FELICIDADES!</h1> -->
       <p>¡FELICIDADES!</p>
       <br />
       <p>ESTIMADO ASOCIADO,</p>
@@ -164,7 +166,7 @@
       <p>
         CELEBRAMOS TU DECISIÓN AL HABER SOLICITADO TU INGRESO A
         <strong>AREQUIPA GO E.I.R.L. – CREDI YANGO</strong>, EMPRESA
-        ADMINISTRADORA DEL SISTEMA DE AHORRO PARA CONDUCTORES.
+        ADMINISTRADORA DE UN PROGRAMA DE FINANCIAMIENTO VEHICULAR DIRIGIDO EXCLUSIVAMENTE A CONDUCTORES Y ASOCIADOS DE YANGO.
       </p>
 
       <p>
@@ -178,7 +180,7 @@
         <li><strong>CONFIRMACIÓN DE CONOCIMIENTO.</strong></li>
         <li><strong>CARTILLA PARA EL ASOCIADO.</strong></li>
         <li>
-          <strong>CONTRATO DE ADMINISTRACIÓN DEL SISTEMA DE AHORROS.</strong>
+          <strong>CONTRATO DE FINANCIAMIENTO VEHICULAR</strong>
         </li>
         <li><strong>MORA Y PENALIZACIONES</strong></li>
       </ol>
@@ -197,708 +199,593 @@
 
       <p>CORDIALMENTE,</p>
       <br />
-      <p>AREQUIPA GO E.I.R.L. – CREDI YANGO</p>
+      <p>AREQUIPA GO E.I.R.L. – CREDI GO</p>
     </div>
 
     <div class="page-break"></div>
 
-    <!-- PÁGINA 2: CONFIRMACIÓN DE CONOCIMIENTO -->
+    <!-- PÁGINA 2: CONFIRMACIÓN DE CONOCIMIENTO DEL CONTRATO -->
     <h4>
-      CONFIRMACIÓN DE CONOCIMIENTO DEL CONTRATO DEL PROGRAMA “CREDI YANGO”
+      CONFIRMACIÓN DE CONOCIMIENTO DEL CONTRATO DEL PROGRAMA "CREDI YANGO"
     </h4>
+    <p><strong>AREQUIPA GO E.I.R.L. – PROGRAMA A-1 "CREDI YANGO"</strong></p>
 
     <p>
-      <strong>YO,</strong>
-      <span class="bold uppercase">{{NOMBRE_COMPLETO}}</span>
-      <strong> IDENTIFICADO CON DNI N.°</strong> <span>{{NRO_DOCUMENTO}}</span>
-      <strong>, CON DOMICILIO REAL UBICADO EN</strong>
-      <span>{{DIRECCION}}</span>
-      <strong
-        >DECLARO HABER SIDO INFORMADO(A), COMPRENDIDO Y ACEPTAR LOS TÉRMINOS Y
-        CONDICIONES DEL PRESENTE CONTRATO DEL SISTEMA DE AHORROS ADMINISTRADO
-        POR AREQUIPA GO E.I.R.L., EN EL MARCO DEL PROGRAMA DENOMINADO “CREDI
-        YANGO”, CONFORME A LO SIGUIENTE:</strong
-      >
+      <strong>Yo,</strong>
+      <span class="bold uppercase">{{NOMBRE_COMPLETO}}</span>,
+      <strong>identificado(a) con DNI N.</strong> <span>{{NRO_DOCUMENTO}}</span>,
+      <strong>declaro haber sido debidamente informado(a), comprender y aceptar íntegramente los términos y
+        condiciones del presente contrato de FINANCIAMIENTO VEHICULAR administrado
+        por AREQUIPA GO E.I.R.L., en el marco del programa denominado "CREDI
+        YANGO", conforme a lo siguiente:</strong>
     </p>
 
     <p>
-      <strong
-        >(1) EMPRESA ADMINISTRADORA AREQUIPA GO E.I.R.L. – CREDI YANGO OFRECE UN
-        SISTEMA DE AHORRO ADMINISTRADO PARA CONDUCTORES, NO CONSTITUYENDO UN
-        CRÉDITO CONVENCIONAL NI PRODUCTO FINANCIERO DEL SISTEMA BANCARIO
-        NACIONAL.
-      </strong>
+      <strong>(1) NATURALEZA DEL PROGRAMA:</strong> AREQUIPA GO E.I.R.L. – CREDI YANGO ofrece un programa de financiamiento vehicular dirigido exclusivamente a conductores.
     </p>
+    <p>El presente programa constituye un financiamiento vehicular de trabajo, destinado única y exclusivamente a la generación de ingresos mediante la prestación de servicios de transporte en la plataforma designada, no siendo un crédito de libre disponibilidad ni un préstamo de consumo.</p>
+    <p>El programa se sustenta en el cumplimiento de condiciones operativas, contractuales y de desempeño mínimo propias de la actividad del conductor afiliado.</p>
 
     <p>
-      <strong> (2) OBJETO DEL CONTRATO:</strong> EL PROGRAMA CREDI YANGO PERMITE
-      ACCEDER A LA ADQUISICIÓN DE UN VEHÍCULO MEDIANTE UN SISTEMA DE AHORRO CON
-      UNA INICIAL DE USD 2,000 Y 200 CUOTAS SEMANALES DE USD 100. <br /><br />
-      EN NINGÚN CASO SE ENTREGA DINERO EN EFECTIVO. EL VEHÍCULO A ADQUIRIR SERÁ
-      SOLO EN LA MARCA KIA CON MODELO SOLUTO Y CHERY CON MODELO TIGGO 2 PRO
-      DISPONIBLES AL MOMENTO DEL REGISTRO
+      <strong>(2) OBJETO DEL CONTRATO:</strong> El programa <strong>CREDI YANGO</strong> permite al ASOCIADO acceder a la adquisición de un vehículo mediante un financiamiento estructurado de la siguiente manera:
     </p>
+    <p>Modelo seleccionado: <strong>{{MODELO_SELECCIONADO}}</strong></p>
+    <ul>
+      <li>
+        <strong>Inicial:</strong> {{MONEDA}} {{CUOTA_INICIAL}}
+      </li>
+      <li>
+        {{CANTIDAD_CUOTAS}} cuotas <strong>{{FRECUENCIA}}</strong> de {{MONEDA}} {{MONTO_CUOTA}}
+      </li>
+    </ul>
+    <p>En ningún caso se entrega dinero en efectivo al ASOCIADO.
+El vehículo a adquirir será seleccionado entre las marcas y modelos disponibles al momento del registro y aprobación.</p>
 
     <p>
-      <strong>(3) PLAZO DEL CONTRATO:</strong> EL PLAZO TOTAL DEL CONTRATO ES DE
-      200 SEMANAS, CONTADAS DESDE LA PRIMERA CUOTA, POSTERIOR AL PAGO DE LA
-      INICIAL. SI EL ASOCIADO INGRESA A UN GRUPO YA EN FUNCIONAMIENTO, DEBERÁ
-      PAGAR LAS CUOTAS DEVENGADAS ANTES DE LA ENTREGA DEL VEHÍCULO O
-      PRORRATEARLAS, HASTA UN MÁXIMO DE SEIS (6) SEMANAS.
+      <strong>(3) PLAZO DEL CONTRATO:</strong> El plazo total del presente contrato de financiamiento vehicular es de doscientas (200) semanas, contadas a partir de la exigibilidad de la primera cuota semanal, la cual se genera una (1) semana después de la entrega del vehículo al ASOCIADO.
     </p>
+    <p>El ASOCIADO declara conocer y aceptar que su incorporación al programa CREDI YANGO se produce de manera inmediata una vez aprobado su expediente y realizado el pago íntegro de la cuota inicial.</p>
+    <p>El plazo del contrato es único, fijo y no modificable, salvo acuerdo expreso y por escrito con <strong>AREQUIPA GO E.I.R.L.</strong>, conforme a las condiciones establecidas en el presente contrato.</p>
 
     <p>
-      <strong
-        >(4) PPAGOS: LOS PAGOS DEBERÁN REALIZARSE A TRAVÉS DEL APLICATIVO DE
-        CAJA AREQUIPA, BANCO AUTORIZADOS POR AREQUIPA GO E.I.R.L. – CREDI YANGO.
-        EL INCUMPLIMIENTO EN EL PAGO OPORTUNO DE LAS CUOTAS PODRÁ GENERAR
-        PENALIDADES Y PÉRDIDA TEMPORAL DEL DERECHO A PARTICIPAR EN
-        ADJUDICACIONES.</strong
-      >
+      <strong>(4) PAGOS:</strong> Los pagos de las cuotas deberán realizarse exclusivamente a través de <strong>CAJA AREQUIPA,</strong> siendo este el único medio de pago autorizado por AREQUIPA GO E.I.R.L. – CREDI YANGO.
     </p>
-
-    <p>
-      <strong>(5) ENTREGA DEL VEHÍCULO (ADJUDICACIONES):</strong>
-
-      LA ENTREGA DEL VEHÍCULO ES INMEDIATA UNA VEZ REALIZADO EL PAGO TOTAL DE LA
-      INICIAL DE USD 2,000 Y PRESENTADA LA DOCUMENTACIÓN REQUERIDA. EL PLAZO
-      MÁXIMO PARA LA ENTREGA DEL VEHÍCULO ADJUDICADO SERÁ DE HASTA VEINTE (20)
-      DÍAS CALENDARIO, CONTADOS DESDE LA CONFIRMACIÓN DEL PAGO DE LA INICIAL. EN
-      CASO DE INCUMPLIMIENTO DE PAGO POSTERIOR A LA ENTREGA, EL ASOCIADO SERÁ
-      PENALIZADO CON UNA (1) CUOTA CAPITAL Y PODRÁ QUEDAR INHABILITADO
-      TEMPORALMENTE.
-    </p>
-
-    <p>
-      <strong>(6) EVALUACIÓN CREDITICIA:</strong> AREQUIPA GO E.I.R.L. - CREDIGO
-      A SU JUICIO PODRÁ SOLICITAR UN AVAL Y LAS GARANTÍAS NECESARIAS PARA
-      ASEGURAR LA INTEGRIDAD DEL SISTEMA DE AHORRO ADMINISTRADO (GARANTÍA
-      MOBILIARIA SOBRE EL VEHÍCULO, GPS Y OTRAS). EL
-    </p>
+    <p>El ASOCIADO declara conocer y aceptar que:</p>
+    <ul>
+      <li>No se aceptan pagos en efectivo en oficinas</li>
+      <li>No se aceptan pagos por medios distintos a los autorizados</li>
+    </ul>
+    <p>Actualmente, el medio habilitado es Caja Arequipa; no obstante, la Administradora podrá, en cualquier momento, incorporar, modificar o reemplazar las entidades financieras o medios de pago autorizados. Cualquier cambio será comunicado oportunamente al ASOCIADO a través de los canales oficiales.</p>
+    <p>El incumplimiento en el pago oportuno de las cuotas podrá generar penalidades, restricciones operativas y la aplicación de medidas contractuales.</p>
     <div class="page-break"></div>
-    <!-- pagina 3 -->
+
     <p>
-      CLIENTE ES RESPONSABLE DE PRESENTAR PREVÍA A LA ENTREGA DEL VEHÍCULO
-      ADJUDICADO, LOS DOCUMENTOS NECESARIOS PARA CONSTITUIR LAS GARANTÍAS EN LOS
-      REGISTROS PÚBLICOS. LOS COSTOS CORRESPONDIENTES A LAS GARANTÍAS
-      (ELABORACIÓN DE MINUTAS, NOTARIALES, REGISTRALES Y GPS), SERÁN CUBIERTOS
-      POR EL ASOCIADO.
+      <strong>(5) ENTREGA DEL VEHÍCULO (ADJUDICACIÓN):</strong>
+      La entrega del vehículo se realizará una vez cumplidos los siguientes requisitos:
+    </p>
+    <ul>
+      <li>Pago total de la inicial correspondiente al modelo seleccionado, conforme a lo establecido en la cláusula (2) del presente contrato.</li>
+      <li>Presentación y validación de la documentación requerida.</li>
+    </ul>
+    <p>El ASOCIADO declara conocer y aceptar que el plazo máximo de entrega será de <strong>hasta {{PLAZO_ENTREGA_TEXTO}} días hábiles,</strong> contados desde la confirmación del pago de la inicial y aprobación de la documentación.</p>
+    <p>AREQUIPA GO E.I.R.L. se compromete a gestionar la adquisición dentro del plazo indicado; sin embargo, este podrá variar por causas ajenas a la empresa, tales como disponibilidad en concesionaria, trámites administrativos, logística o por tratarse de una compra gestionada en conjunto con aliados estratégicos.</p>
+    <p>Dicha variación no generará derecho a penalidad ni devolución de los montos abonados.</p>
+
+    <p>
+      <strong>(6) RETIRO Y CESIÓN DEL CONTRATO:</strong> El ASOCIADO que, luego de haber pagado la inicial, decida retirarse del Programa, <strong>no tendrá derecho a la devolución de los montos abonados,</strong> por cuanto dichos importes <strong>se destinan a la operatividad, asignación interna y compromisos de adquisición de vehículos del Programa,</strong> no generando derecho a entrega ni reembolso o devolución alguna.
+    </p>
+    <p>En caso de retiro, el ASOCIADO <strong>únicamente podrá:</strong></p>
+    <ol>
+      <li>
+        <strong>Ceder o transferir su contrato y cupo</strong> a un tercero que cumpla con los requisitos crediticios, administrativos y operativos exigidos por AREQUIPA GO E.I.R.L., previa evaluación y aprobación expresa de la empresa.
+      </li>
+    </ol>
+    <p>La cesión del contrato no libera al ASOCIADO de sus obligaciones hasta que dicha transferencia haya sido formalmente aprobada y suscrita por todas las partes.</p>
+    <p>No procede, bajo ninguna circunstancia, la devolución de la inicial ni de las cuotas abonadas, ni el retiro del vehículo del sistema, toda vez que los vehículos son financiados y administrados por AREQUIPA GO E.I.R.L. hasta la cancelación total del contrato.</p>
+
+    <p>
+      <strong>(7) INICIO DE PAGO DE CUOTAS:</strong> El ASOCIADO declara conocer y aceptar que el <strong>pago de la primera cuota semanal</strong> se realizará <strong>a partir de la primera semana posterior a la entrega del vehículo,</strong> y no antes.
     </p>
 
     <p>
-      <strong>(7) SEGUROS:</strong> EL VEHÍCULO ADJUDICADO DEBERÁ CONTAR CON
-      SEGURO VEHICULAR CONTRA TODO RIESGO, DONDE AREQUIPA GO E.I.R.L. FIGURARÁ
-      COMO BENEFICIARIA. EL CLIENTE DEBERÁ CONTRATAR DICHO SEGURO Y EL SERVICIO
-      DE GPS PREVIO A LA ENTREGA DEL VEHÍCULO.
-    </p>
-
-    <p>
-      <strong>(8) ADMINISTRACIÓN TEMPORAL:</strong> UNA VEZ ASIGNADO UN VEHÍCULO
-      AL PARTICIPANTE ADJUDICADO Y HASTA QUE SE HAYA PERFECCIONADO LA
-      TRANSFERENCIA TOTAL DE PROPIEDAD CONFORME A LAS DISPOSICIONES LEGALES Y A
-      LO ESTABLECIDO EN ESTE CONTRATO, Y EN CASO EL CLIENTE POR RAZONES DE
-      FUERZA MAYOR NO PUEDA USAR EL VEHÍCULO PARA PROCURARSE LAS CUOTAS
-      PENDIENTES DE PAGO, Y EN CASO EL CLIENTE NO SUSTENTE DOCUMENTALMENTE LA
-      FORMA EN LA QUE ASUMIRÁ LAS CUOTAS MENSUALES; DICHO VEHICULO PERMANECERÁ
-      BAJO LA ADMINISTRACIÓN TEMPORAL DE AREQUIPA GO E.I.R.L. DURANTE ESTE
-      PERIODO, EL VEHÍCULO PODRÁ SER ARRENDADO POR AREQUIPA GO E.I.R.L. A UNA
-      TERCERA PERSONA, QUE SE ENCONTRARÁ OBLIGADA A CONSERVARLO Y DARLE UN USO
-      ADECUADO, CONFORME A SU NATURALEZA, DESTINO Y LAS CONDICIONES ESTIPULADAS
-      POR EL ADMINISTRADOR. EL PARTICIPANTE (CLIENTE) ASUMIRÁ LOS GASTOS
-      ORDINARIOS DERIVADOS DE SU USO, TALES COMO MANTEMIENTO PREVENTIVO,
-      IMPUESTOS, SEGUROS OBLIGATORIOS Y CUALQUIER OTRO QUE SEA NECESARIO PARA LA
-      ADECUADA CONSERVACIÓN Y FUNCIONAMIENTO DEL BIEN. LAS RENTAS QUE RECIBIRÁ
-      AREQUIPA GO E.I.R.L., PRODUCTO DEL ARRENDAMIENTO PREVIAMENTE REFERIDO,
-      SERVIRAN PARA CUBRIR LAS CUOTAS PENDIENTES DE PAGO DEL CLIENTE, ESTO HASTA
-      QUE SE COMPLETE DE PAGAR TODAS LAS CUOTAS ESTIPULADAS, EN CASO EXISTA UN
-      EXCESO, ESTE MONTO NO CONSTITUIRÁ, POR NINGÚN MOTIVO, GANANCIA PARA
-      AREQUIPA GO E.I.R.L., Y DEBERÁ DE SER REINTEGRADO AL CLIENTE.
-    </p>
-
-    <!-- <p><strong>(9) PENALIDAD POR RETIRO DEL SISTEMA:</strong></p>
-    <p>
-      EL ASOCIADO QUE DESEE RETIRARSE DEL SISTEMA RECIBIRÁ LA DEVOLUCIÓN DE LOS
-      APORTES CORRESPONDIENTES, MENOS LAS PENALIDAD EQUIVALENTES Y CONCEPTOS
-      DEBIDAMENTE ACREDITADOS (DEVALUACIÓN Y ESTADO DEL VEHÍCULO ENTREGADO). LA
-      SOLICITUD DE RETIRO DEBERÁ DE SER INFORMADA DE MANERA PRESENCIAL Y ESPERAR
-      A ENCONTRAR UN SUSTITUTO QUE OCUPE LA VACANTE PARA PODER RECIBIR SUS
-      APORTES ACUMULADOS.
-    </p> -->
-    <!-- <div class="page-break"></div> -->
-    <!-- pag 4 -->
-
-    <!-- <p>
-      <strong> (10) REVERSIÓN DE LA ADJUDICACIÓN DEL VEHÍCULO</strong> LA
-      EMPRESA <strong>AREQUIPA GO E.I.R.L</strong>, EN SU CALIDAD DE TITULAR
-      REGISTRAL Y PROPIETARIA DEL VEHÍCULO ADJUDICADO AL ASOCIADO, PODRÁ
-      <strong
-        >REVERTIR LA ADJUDICACIÓN Y EXIGIR LA INMEDIATA DEVOLUCIÓN DEL
-        VEHÍCULO</strong
-      >
-      EN LOS CASOS QUE SE SEÑALAN A CONTINUACIÓN, SIN PERJUICIO DE LAS ACCIONES
-      CIVILES Y PENALES QUE CORRESPONDAN:
-    </p> -->
-    <!-- <p>
-      - SI EL ASOCIADO YA HA RECIBIDO LA UNIDAD Y PRESENTA 3 SEMANAS DE ATRASO
-      EN LOS PAGOS SE DARÁ INICIO AL PROCESO DE INCAUTACIÓN. - EN CASO DE
-      INCAUTACIÓN Y BLOQUEO POSTERIOR A LOS 2 MESES DE MORA, SE APLICARÁN CARGOS
-      ADMINISTRATIVOS Y EL ASOCIADO NO PODRÁ ACCEDER A FUTUROS PROGRAMAS DE
-      FINANCIAMIENTO
+      <strong>(8) CONDICIÓN OPERATIVA – CONEXIÓN MÍNIMA:</strong> El ASOCIADO se obliga a cumplir con una conexión mínima de treinta y seis (36) horas semanales dentro de la plataforma autorizada (YANGO).
     </p>
     <p>
-      <strong>- ARRENDAMIENTO NO AUTORIZADO:</strong> : SI EL ASOCIADO ARRIENDA,
-      CEDE, PRESTA O PERMITE EL USO DEL VEHÍCULO A TERCERAS PERSONAS SIN CONTAR
-      CON LA AUTORIZACIÓN PREVIA, EXPRESA Y POR ESCRITO DE
-      <strong> AREQUIPA GO E.I.R.L.- FALTA DE MANTENIMIENTO:</strong> SI EL
-      ASOCIADO INCUMPLE CON REALIZAR LOS MANTENIMIENTOS PREVENTIVOS O
-      CORRECTIVOS DEL VEHÍCULO EN LA CONCESIONARIA OFICIAL DE LA MARCA O EN LOS
-      PLAZOS RECOMENDADOS POR EL FABRICANTE, PONIENDO EN RIESGO LA CONSERVACIÓN,
-      SEGURIDAD O VALOR DEL BIEN. <strong>- USO INDEBIDO O ILÍCITO:</strong> :
-      SI SE ACREDITA QUE EL VEHÍCULO HA SIDO UTILIZADO, DIRECTA O
-      INDIRECTAMENTE, PARA LA COMISIÓN DE ACTOS ILÍCITOS O DELICTIVOS, O CON LA
-      INTENCIÓN DE FACILITAR TALES ACTIVIDADES.
-      <strong>- CONDUCCIÓN TEMERARIA O INFRACTORA: </strong>SI EL ASOCIADO
-      CONDUCE EL VEHÍCULO INFRINGIENDO LAS NORMAS DEL REGLAMENTO NACIONAL DE
-      TRÁNSITO, ESPECIALMENTE EN CASOS DE CONDUCCIÓN EN ESTADO DE EBRIEDAD, BAJO
-      EFECTOS DE SUSTANCIAS PROHIBIDAS, O CUANDO SU ACTUAR GENERE O PUEDA
-      GENERAR RESPONSABILIDAD CIVIL O PENAL A
-      <strong>AREQUIPA GO E.I.R.L.</strong> EN SU CALIDAD DE PROPIETARIA
-      REGISTRAL DEL VEHÍCULO. <strong>- NEGLIGENCIA O ABANDONO: </strong> SI EL
-      ASOCIADO MANTIENE EL VEHÍCULO EN ESTADO DE ABANDONO, DESCUIDO GRAVE O LO
-      EXPONE A RIESGOS QUE COMPROMETAN SU CONSERVACIÓN, VALOR O INTEGRIDAD,
-      INCLUYENDO SITUACIONES QUE PUEDAN CONLLEVAR A SU ROBO, PÉRDIDA TOTAL O
-      DETERIORO SUSTANCIAL.
-      <strong>- ALTERACIÓN O MODIFICACIÓN DEL VEHÍCULO:</strong> SI EL ASOCIADO
-      REALIZA MODIFICACIONES ESTRUCTURALES, MECÁNICAS O ELECTRÓNICAS AL VEHÍCULO
-      SIN AUTORIZACIÓN PREVIA Y ESCRITA DE
-      <strong> AREQUIPA GO E.I.R.L.,</strong> AFECTANDO SUS CONDICIONES
-      ORIGINALES DE FÁBRICA O SU VALOR COMERCIAL.
-      <strong
-        >- FALTA DE SEGURO O INCUMPLIMIENTO DE OBLIGACIONES ACCESORIAS:</strong
-      >
-      SI EL ASOCIADO OMITE CONTRATAR O RENOVAR EL SEGURO VEHICULAR EXIGIDO POR
-      LA EMPRESA O INCUMPLE OBLIGACIONES ACCESORIAS DESTINADAS A GARANTIZAR LA
-      PROTECCIÓN DEL BIEN ADJUDICADO.
-      <strong>- RIESGO DE PÉRDIDA O RESPONSABILIDAD PARA LA EMPRESA:</strong> EN
-      CUALQUIER OTRO SUPUESTO EN QUE, POR ACCIÓN U OMISIÓN DEL ASOCIADO, SE
-      PONGA EN RIESGO LA CONSERVACIÓN DEL VEHÍCULO, SU VALOR ECONÓMICO, O SE
-      GENERE LA POSIBILIDAD DE IMPUTACIÓN DE RESPONSABILIDAD CIVIL,
-      ADMINISTRATIVA O PENAL A <strong>AREQUIPA GO E.I.R.L.</strong> COMO
-      PROPIETARIA REGISTRAL DEL MISMO.
-    </p> -->
-
-    <!-- <div class="page-break"></div> -->
-
-    <!-- PÁGINA 5: REVERSIÓN DE LA ADJUDICACIÓN -->
-    <!-- <h2 class="center uppercase">PROCEDIMIENTO DE REVERSIÓN</h2>
-
-    <p>
-      LA REVERSIÓN DE LA ADJUDICACIÓN SERÁ COMUNICADA
-      <strong
-        >A MEDIANTE CARTA NOTARIAL DIRIGIDA AL DOMICILIO SEÑALADO POR EL
-        ASOCIADO</strong
-      >
-      , EN LA CUAL SE EXPONDRÁ Y FUNDAMENTARÁ LA CAUSA QUE MOTIVA DICHA
-      REVERSIÓN. RECIBIDA LA NOTIFICACIÓN, EL ASOCIADO DISPONDRÁ DE UN PLAZO
-      IMPRORROGABLE DE <strong>VEINTICUATRO (24) HORAS</strong> PARA ENTREGAR EL
-      VEHÍCULO EN LAS INSTALACIONES DE <strong>AREQUIPA GO E.I.R.L.</strong> O
-      EN EL LUGAR QUE ESTA INDIQUE EXPRESAMENTE. EL INCUMPLIMIENTO DE ESTA
-      OBLIGACIÓN FACULTARÁ A LA EMPRESA A
-      <strong>
-        INTERPONER DENUNCIA PENAL POR EL DELITO DE APROPIACIÓN ILÍCITA,</strong
-      >
-      ASÍ COMO A EJERCER LAS
-      <strong>ACCIONES CIVILES CORRESPONDIENTES</strong> PARA LA RECUPERACIÓN
-      DEL BIEN Y EL RESARCIMIENTO DE LOS DAÑOS Y PERJUICIOS OCASIONADOS.
+      El incumplimiento reiterado de este objetivo podrá ser sancionado con un incremento en la tasa de financiamiento de hasta un cinco por ciento (5%), dicho incremento no será automático y estará sujeto a evaluación por AREQUIPA GO E.I.R.L.
     </p>
-    <p>
-      EN TODOS LOS CASOS,
-      <strong
-        >LA REVERSIÓN NO EXTINGUE LA OBLIGACIÓN DEL ASOCIADO DE CONTINUAR
-        PAGANDO LAS CUOTAS PENDIENTES,</strong
-      >
-      SALVO SE DE LA RESOLUCIÓN DEL CONTRATO, NI GENERA DERECHO ALGUNO A
-      INDEMNIZACIÓN O COMPENSACIÓN.
-    </p> -->
+
+    <p><strong>(9) EVALUACIÓN Y GARANTÍAS:</strong> AREQUIPA GO E.I.R.L. – CREDI YANGO, a su solo criterio, podrá solicitar avales y constituir las garantías reales y personales necesarias para asegurar el cumplimiento del contrato, incluyendo de manera obligatoria:</p>
+    <ul>
+      <li><strong>Garantía mobiliaria sobre el vehículo adjudicado.</strong></li>
+      <li><strong>Instalación de sistema GPS.</strong></li>
+    </ul>
+    <p>El vehículo será entregado con GPS instalado, el cual deberá permanecer activo durante toda la vigencia del contrato.</p>
+    <p>Todos los costos asociados a garantías, seguro vehicular, gastos notariales y registrales serán asumidos íntegramente por el ASOCIADO.</p>
+    <div class="page-break"></div>
+
+    <p><strong>(10) SEGURO VEHICULAR:</strong> El vehículo adjudicado deberá contar obligatoriamente con <strong>seguro vehicular contra todo riesgo,</strong> figurando <strong>AREQUIPA GO E.I.R.L. como beneficiaria,</strong> el cual deberá estar vigente <strong>previo a la entrega del vehículo</strong> y mantenerse durante toda la vigencia del contrato.</p>
+
+    <p><strong>(11) CONDICIONES DE USO DEL VEHÍCULO – OBLIGACIONES DEL ASOCIADO</strong></p>
+    <p>El ASOCIADO declara conocer y aceptar expresamente que:</p>
+    <ol>
+      <li>El vehículo constituye una herramienta de trabajo financiada bajo el Programa CREDI YANGO, destinada exclusivamente a la prestación del servicio de transporte mediante la plataforma autorizada por AREQUIPA GO E.I.R.L., no siendo un bien de uso personal - particular o de libre disposición.</li>
+      <li>Está prohibido realizar viajes de ruta, servicios denominados "viajes express", colectivos informales o cualquier modalidad distinta a la autorizada por la empresa y por la normativa vigente.</li>
+      <li>El vehículo deberá operar dentro de la jurisdicción de la ciudad de Arequipa o Lima (según corresponda al registro del ASOCIADO). En caso requiera salir de dicha jurisdicción, deberá comunicarlo previamente y contar con autorización expresa de AREQUIPA GO E.I.R.L. Dicha salida no lo exime del cumplimiento de la conexión mínima semanal establecido en el presente contrato.</li>
+      <li>El ASOCIADO se obliga a mantener una conexión mínima de treinta y seis (36) horas semanales en la plataforma autorizada (YANGO). El incumplimiento reiterado podrá generar la evaluación de medidas contractuales, incluyendo la aplicación de las disposiciones previstas en la cláusula correspondiente sobre incremento de tasa.</li>
+      <li>El ASOCIADO deberá cumplir con todas las disposiciones legales, municipales y administrativas vigentes aplicables al servicio de taxi, remisse o transporte por aplicativo, así como con las políticas y términos del servicio de la plataforma autorizada.</li>
+      <li>En caso de emitirse nuevas normas, reformas o exigencias regulatorias para la prestación del servicio, el ASOCIADO será responsable de cumplirlas y asumir los costos que correspondan, sin que ello implique modificación automática del presente contrato.</li>
+    </ol>
+
+    <p><strong>(12) RESOLUCIÓN EXPRESS</strong></p>
+    <p>De conformidad con lo dispuesto por el artículo 1430 del Código Civil, las partes pactan expresamente que el presente contrato quedará resuelto de pleno derecho, sin necesidad de declaración judicial, en caso de incumplimiento por parte del ASOCIADO de cualquiera de las obligaciones establecidas en la Cláusula 11 "Condiciones de Uso del Vehículo – Obligaciones del Asociado".</p>
+    <p>Asimismo, El ASOCIADO reconoce que la vigencia del presente contrato depende del cumplimiento de los estándares y políticas de la plataforma autorizada.</p>
+    <p>Si el ASOCIADO es suspendido, bloqueado o desactivado por incumplimiento de dichas políticas, mantiene calificación insuficiente de manera reiterada, incurre en fraude documental o en conductas que afecten el Programa, AREQUIPA GO E.I.R.L. podrá resolver el contrato de forma inmediata.</p>
+    <p>En tal caso, no procederá devolución de la inicial ni de las cuotas abonadas, no habrá derecho a indemnización alguna y el ASOCIADO deberá devolver el vehículo en el plazo de veinticuatro (24) horas desde la notificación correspondiente, en caso de negativa o retención indebida, se configurará posesión precaria, quedando facultada la empresa para iniciar las acciones civiles y/o penales correspondientes.</p>
+    <p>Respecto al procedimiento, verificado el incumplimiento, AREQUIPA GO E.I.R.L. cursará carta notarial al ASOCIADO comunicando de manera expresa y objetiva la infracción y otorgándole un plazo no menor de cinco (5) días calendario para que la subsane cuando ello sea posible; vencido dicho plazo sin que se haya producido la subsanación, o tratándose de una infracción no subsanable —como el uso indebido del vehículo o la prestación de servicios informales—, la empresa remitirá segunda carta notarial comunicando la activación de la cláusula resolutoria expresa, solo en caso se trate de una infracción subsanable, produciéndose la resolución automática del contrato desde la fecha de recepción de esta última comunicación.</p>
+    <div class="page-break"></div>
+
+    <p><strong>(13) ADMINISTRACIÓN TEMPORAL DEL VEHÍCULO:</strong> Una vez entregado el vehículo al ASOCIADO y mientras no se haya completado la cancelación total del financiamiento y la transferencia definitiva de la propiedad conforme a ley y a lo establecido en el presente contrato, el vehículo podrá quedar sujeto a <strong>administración temporal por parte de AREQUIPA GO E.I.R.L. conforme a lo establecido en el contrato,</strong> en los siguientes supuestos:</p>
+    <p>Cuando el ASOCIADO, por razones debidamente justificadas de fuerza mayor, no pueda hacer uso del vehículo para generar los ingresos necesarios para el pago de las cuotas pendientes, y no sustente documentalmente la forma en que continuará cumpliendo con dichas obligaciones de pago.</p>
+    <p>Durante el período de administración temporal, <strong>AREQUIPA GO E.I.R.L. queda facultada para administrar y/o arrendar el vehículo a un tercero,</strong> quien estará obligado a conservarlo y utilizarlo de manera adecuada, conforme a su naturaleza, destino y a las condiciones establecidas por la administradora.</p>
+    <p>El ASOCIADO continuará siendo responsable de los <strong>gastos ordinarios del vehículo,</strong> tales como mantenimiento preventivo, impuestos, seguros obligatorios (SOAT y seguro vehicular), y cualquier otro gasto necesario para su adecuada conservación y funcionamiento.</p>
+    <p>Los ingresos que se generen producto de la administración o arrendamiento del vehículo serán <strong>destinados exclusivamente a la amortización de las cuotas pendientes de pago del ASOCIADO.</strong> En caso de existir un excedente, este <strong>no constituirá ganancia alguna para AREQUIPA GO E.I.R.L.</strong> y deberá ser reintegrado al ASOCIADO, previa liquidación correspondiente.</p>
+    <p>La administración temporal se mantendrá vigente hasta que el ASOCIADO regularice su situación de pago o hasta la cancelación total del financiamiento, según corresponda.</p>
+
+    <p><h3>(14) REVERSIÓN DE LA ADJUDICACIÓN DEL VEHÍCULO:</h3></p>
+    <p>La empresa AREQUIPA GO E.I.R.L., en su calidad de titular registral y propietaria del vehículo adjudicado al asociado, podrá revertir la adjudicación y exigir la inmediata devolución del vehículo en los casos que se señalan a continuación, sin perjuicio de las acciones civiles y penales que correspondan:</p>
+
+    <p><strong>- Incumplimientos de pagos:</strong> si el asociado ya ha recibido la unidad y presenta el retraso en el pago de cuatro (4) cuotas semanales consecutivas se dará inicio al proceso de incautación.</p>
+
+    <p><strong>- Arrendamiento no autorizado:</strong> si el asociado arrienda, cede, presta o permite el uso del vehículo a terceras personas sin contar con la autorización previa, expresa y por escrito de AREQUIPA GO E.I.R.L.</p>
+
+    <p><strong>- Falta de mantenimiento:</strong> si el asociado incumple con realizar los mantenimientos preventivos o correctivos del vehículo en la concesionaria oficial de la marca o en los plazos recomendados por el fabricante, poniendo en riesgo la conservación, seguridad o valor del bien.</p>
+
+    <p><strong>- Uso indebido o ilícito:</strong> si se acredita que el vehículo ha sido utilizado, directa o indirectamente, para la comisión de actos ilícitos o delictivos, o con la intención de facilitar tales actividades.</p>
+
+    <p><strong>- Conducción temeraria o infractora:</strong> si el asociado conduce el vehículo infringiendo las normas del reglamento nacional de tránsito, especialmente en casos de conducción en estado de ebriedad, bajo efectos de sustancias prohibidas, o cuando su actuar genere o pueda generar responsabilidad civil o penal a AREQUIPA GO E.I.R.L. en su calidad de propietaria registral del vehículo.</p>
+    <div class="page-break"></div>
+
+    <p><strong>- Negligencia o abandono:</strong> si el asociado mantiene el vehículo en estado de abandono, descuido grave o lo expone a riesgos que comprometan su conservación, valor o integridad, incluyendo situaciones que puedan conllevar a su robo, pérdida total o deterioro sustancial.</p>
+
+    <p><strong>- Alteración o modificación del vehículo:</strong> si el asociado realiza modificaciones estructurales, mecánicas o electrónicas al vehículo sin autorización previa y escrita de AREQUIPA GO E.I.R.L., afectando sus condiciones originales de fábrica, su valor comercial o incluso dejando sin efecto la garantía propia del vehículo.</p>
+
+    <p><strong>- Falta de seguro o incumplimiento de obligaciones accesorias:</strong> si el asociado omite contratar o renovar el seguro vehicular exigido por la empresa o incumple obligaciones accesorias destinadas a garantizar la protección del bien adjudicado.</p>
+
+    <p><strong>- Riesgo de pérdida o responsabilidad para la empresa:</strong> en cualquier otro supuesto en que, por acción u omisión del asociado, se ponga en riesgo la conservación del vehículo, su valor económico, o se genere la posibilidad de imputación de responsabilidad civil, administrativa o penal a AREQUIPA GO E.I.R.L. como propietaria registral del mismo.</p>
+
+    <p><h3>(15) INCUMPLIMIENTO, INCAUTACIÓN Y GASTOS</h3></p>
+    <p>Si el ASOCIADO incurre en el atraso de cuatro (4) cuotas semanales consecutivas, conforme a lo establecido en la cláusula (13) del presente contrato, AREQUIPA GO E.I.R.L. quedará facultada para iniciar el proceso de incautación y recuperación del vehículo.</p>
+    <p>En tal supuesto, el ASOCIADO declara y acepta expresamente que:</p>
+    <ul>
+      <li>Deberá asumir íntegramente todos los gastos derivados del proceso de incautación, incluyendo, de manera enunciativa mas no limitativa: servicio de grúa, traslado, depósito vehicular, guardianía, trámites administrativos, honorarios, costos notariales y cualquier otro gasto necesario para la recuperación del bien.</li>
+      <li>Dichos montos se adicionarán a la deuda pendiente.</li>
+      <li>Asimismo, en caso de incautación y bloqueo del vehículo por incumplimiento contractual o mora, el ASOCIADO quedará inhabilitado para acceder a futuros programas de financiamiento administrados por AREQUIPA GO E.I.R.L., sin perjuicio de las acciones civiles y penales que correspondan.</li>
+    </ul>
+
+    <p><h3>(16) PROCEDIMIENTO DE REVERSIÓN</h3></p>
+    <p>La reversión de la adjudicación será comunicada <strong>mediante carta notarial dirigida al domicilio señalado por el asociado,</strong> en la cual se expondrá y fundamentará la causa que motiva dicha reversión.</p>
+    <p>Recibida la notificación, el asociado dispondrá de un plazo improrrogable de <strong>veinticuatro (24) horas</strong> para entregar el vehículo en las instalaciones de AREQUIPA GO E.I.R.L. o en el lugar que esta indique expresamente, bajo apercibimiento de iniciarse de manera inmediata las acciones legales correspondientes para la recuperación del bien.</p>
+    <p>El incumplimiento de esta obligación facultará a la empresa a interponer denuncia penal por el delito de apropiación ilícita, así como a ejercer las acciones civiles correspondientes para la recuperación del bien y el resarcimiento de los daños y perjuicios ocasionados.</p>
+    <p>En todos los casos, la reversión no extingue la obligación del asociado de continuar pagando las cuotas pendientes, salvo se dé la resolución del contrato, ni genera derecho alguno a indemnización o compensación.</p>
+    <div class="page-break"></div>
+
+    <p><h3>(17) VARIACIÓN DE CONDICIONES Y NOTIFICACIONES</h3></p>
+    <p>El ASOCIADO declara conocer y aceptar que AREQUIPA GO E.I.R.L. podrá realizar modificaciones, actualizaciones o adecuaciones a las condiciones operativas y/o contractuales del Programa CREDI YANGO, cuando ello resulte necesario por razones operativas, regulatorias, legales o administrativas.</p>
+    <p>Dichas variaciones serán comunicadas de manera virtual mediante los canales previamente registrados por el ASOCIADO en el aplicativo CREDIGO, incluyendo de forma enunciativa mas no limitativa:</p>
+    <ul>
+      <li>Mensajes vía WhatsApp</li>
+      <li>Correo electrónico registrado</li>
+    </ul>
+    <p>El ASOCIADO declara que la información de contacto consignada en el aplicativo es válida, vigente y de su exclusiva responsabilidad mantenerla actualizada.</p>
+    <p>Las comunicaciones enviadas por dichos medios se considerarán válidamente notificadas desde el momento de su envío, no pudiendo el ASOCIADO negarse a su recepción ni desconocer su contenido alegando falta de lectura o revisión.</p>
+    <p>La continuidad en el Programa y el uso del vehículo después de comunicadas las modificaciones implicará aceptación expresa de las nuevas condiciones.</p>
+
+    <p><h3>DECLARACIÓN FINAL</h3></p>
+    <p>El ASOCIADO declara haber leído y comprendido íntegramente el presente documento, aceptando todas sus cláusulas sin reserva.</p>
+    <p>Reconoce expresamente que el Programa CREDI YANGO no contempla la devolución de la cuota inicial ni de los montos abonados, bajo ningún supuesto, por tratarse de un financiamiento directo administrado por AREQUIPA GO E.I.R.L.</p>
+    <p>Declara suscribir el presente de manera libre y voluntaria, sin mediar error, dolo o coacción.</p>
+    <p>Asimismo, deja constancia de haber recibido copia del presente documento, ya sea en formato físico o digital.</p>
+
+    <div class="firma-section">
+      <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
+      <p>NOMBRE: <span class="bold">{{NOMBRE_COMPLETO}}</span></p>
+      <p>FIRMA: _______________________________</p>
+      <p>{{TIPO_DOCUMENTO}}: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+    </div>
 
     <div class="page-break"></div>
 
-    <!-- PÁGINA 6: CONFIRMACIÓN DE CONOCIMIENTO DEL CONTRATO -->
-    <h2 class="center uppercase">CONFIRMACIÓN DE CONOCIMIENTO</h2>
-
-    <p>
-      Contrato de Administración de Sistema de Ahorro - Programa “CREDI YANGO”
-      Empresa Administradora: AREQUIPA GO E.I.R.L. – CREDI GO
-    </p>
-    <!-- <p class="center bold">
-      CONTRATO DE ADMINISTRACIÓN DE SISTEMA DE AHORRO - PROGRAMA "CREDIGO AUTOS"
-    </p> -->
-
-    <p>
-      YO, <span class="bold uppercase">{{NOMBRE_COMPLETO}}</span>, identificado
+    <!-- CONFIRMACIÓN DE CONOCIMIENTO -->
+    <h2 class="center">CONFIRMACIÓN DE CONOCIMIENTO</h2>
+    <p class="no-margin">
+  Contrato de Administración de Sistema de Ahorro - Programa "CREDI YANGO"<br>
+  Empresa Administradora: AREQUIPA GO E.I.R.L. – CREDI GO
+</p>
+    <p class="no-margin">
+      Yo, <span class="bold uppercase">{{NOMBRE_COMPLETO}}</span>, identificado
       con DNI/RUC N.° <span class="bold">{{NUMERO_DOCUMENTO}}</span>, declaro
       haber sido debidamente informado y acepto los siguientes puntos sobre el
-      funcionamiento del contrato y sistema “CREDI YANGO”:
+      funcionamiento del contrato y sistema "CREDI YANGO":
     </p>
 
     <table>
       <tr>
         <td width="80%">
-          <strong>1. Tipo de contrato:</strong> AREQUIPA GO E.I.R.L. – CREDI
-          YANGO ofrece contratos de administración de sistema de ahorro, no es
-          un crédito convencional de entrega inmediata
+          <strong>1. Naturaleza del programa:</strong> AREQUIPA GO E.I.R.L. – CREDI YANGO ofrece un programa de financiamiento a conductores.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>2. Destino del contrato:</strong> El contrato se utiliza para
-          la adquisición de vehículos para trabajo, según la marca y condiciones
-          aceptadas al momento del ingreso. No se entrega dinero en efectivo en
-          ninguna circunstancia.
+          <strong>2. Objeto del contrato:</strong> Participación en el sistema.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>3. Duración:</strong> El contrato tiene un plazo de 200
-          semanas (equivalente a 4 años ). Si el asociado ingresa a un grupo ya
-          en funcionamiento, deberá pagar las cuotas devengadas antes de la
-          entrega del vehículo o prorratearlas (hasta 6 como máximo).
+          <strong>3. Plazo del contrato:</strong> Vigencia y duración del acuerdo.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>4. Pagos:</strong> Las cuotas semanales y pagos relacionados
-          se realizan por el aplicativo “CREDI YANGO”, en la oficina principal o
-          en bancos autorizados. También incluye pagos por inscripción y otros
-          conceptos
+          <strong>4. Pagos:</strong> Condiciones de cuotas, inicial y obligaciones económicas.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>5. Entrega del vehículo (adjudicaciones):</strong> La entrega
-          del vehículo es inmediata una vez realizado el pago total de la
-          inicial de usd 2,000 y presentada la documentación requerida.
+          <strong>5. Entrega del vehículo (adjudicaciones):</strong> Requisitos y plazo de entrega.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>6. Evaluación crediticia:</strong> AREQUIPA GO E.I.R.L. –
-          CREDI GO puede requerir avales, garantías mobiliarias (como el
-          vehículo), instalación de GPS, entre otros. Todos los costos asociados
-          serán cubiertos por el asociado.
+          <strong>6. Retiro o cesión del contrato:</strong> Condiciones y limitaciones.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>7. Seguros:</strong> : Para proteger el sistema de ahorro, el
-          seguro vehicular contra todo riesgo y el seguro de desgravamen deben
-          contratarse a través de AREQUIPA GO E.I.R.L. – CREDI GO. El cliente
-          deberá cubrir el costo total, que puede exigirse por un año
-          adelantado. También es obligatorio contratar el servicio de GPS antes
-          de la entrega del vehículo.
+          <strong>7. Inicio de pago de cuotas:</strong> Fecha y forma de activación.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
         <td width="80%">
-          <strong>8. Administración Temporal:</strong>
-          <ol>
-            <li>
-              Si el cliente no puede usar el vehículo por motivos de fuerza
-              mayor y no demuestra cómo continuará pagando sus cuotas
-              <strong> AREQUIPA GO E.I.R.L.</strong>podrá
-              <strong>administrar temporalmente el vehículo.</strong>
-            </li>
-            <li>
-              El cliente seguirá siendo responsable de los
-              <strong>gastos ordinarios</strong> (mantenimiento, impuestos,
-              seguros, etc.) del vehículo hasta completar el pago total.
-            </li>
-          </ol>
+          <strong>8. Condición Operativa:</strong> Uso exclusivo para plataforma autorizada.
         </td>
         <td width="20%"></td>
       </tr>
       <tr>
-        <td>
-          <strong>9. Mora y penalizaciones:</strong> El asociado declara haber
-          sido informado y aceptar las condiciones establecidas respecto a las
-          moras y penalidades por incumplimiento en los pagos.
+        <td width="80%">
+          <strong>9. Evaluación y garantías:</strong> Revisión crediticia y obligaciones de respaldo.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>10. Seguro Vehicular:</strong> Contratación y responsabilidad.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>11. Condiciones y Obligaciones del asociado:</strong> Cumplimiento íntegro de las obligaciones contractuales, operativas, económicas y legales derivadas del programa.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>12. Resolución Express:</strong> Resolución inmediata por incumplimiento o falta a los estándares del programa, sin devolución de dinero.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>13. Administración Temporal:</strong> Facultad de la empresa para supervisar y administrar la unidad en caso corresponda.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>14. Procedimiento de reversión:</strong> Formas y ejecución.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>15. Penalidades:</strong> Incumplimientos y consecuencias.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>16. Procedimiento de reversión:</strong> Proceso de recuperación y entrega del vehículo a favor de la empresa en caso de resolución o incumplimiento del contrato.
+        </td>
+        <td width="20%"></td>
+      </tr>
+      <tr>
+        <td width="80%">
+          <strong>17. Disposiciones finales:</strong> Aceptación integral y validez legal.
         </td>
         <td width="20%"></td>
       </tr>
     </table>
 
+    <p>Declaro que todas las cláusulas han sido explicadas con la debida importancia y que firmo el presente documento en señal de conformidad voluntaria, sin presión alguna.</p>
+
     <div class="firma-section">
-      <p>{{TIPO_DOCUMENTO}}: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+      <p>D.N.I.: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
       <p>FIRMA: _______________________________</p>
       <p>DE <span class="bold">{{FECHA_ACTUAL}}</span></p>
     </div>
 
     <div class="page-break"></div>
 
-    <!-- PÁGINA 7: CARTILLA PARA EL ASOCIADO -->
+    <!-- CARTILLA PARA EL ASOCIADO -->
     <h2 class="center uppercase">CARTILLA PARA EL ASOCIADO</h2>
 
-    <p>
-      LA PRESENTE CARTILLA TIENE POR FINALIDAD EXPLICAR LOS ASPECTOS MÁS
-      IMPORTANTES DEL <strong>SISTEMA DE AHORROS CREDI YANGO</strong>(EN
-      ADELANTE, EL <strong>SISTEMA</strong>), Y DEBE SER ENTREGADA
-      OBLIGATORIAMENTE POR LA <strong>EMPRESA ADMINISTRADORA</strong> (EN
-      ADELANTE, LA <strong>ADMINISTRADORA</strong>) O QUIEN LA REPRESENTE, A LOS
-      POTENCIALES ASOCIADOS, COMO REQUISITO PREVIO A LA SUSCRIPCIÓN DEL
-      <strong>CONTRATO DE ADMINISTRACIÓN DEL SISTEMA DE AHORROS</strong> (EN
-      ADELANTE, EL <strong>CONTRATO</strong>) O DE CUALQUIER DOCUMENTO
-      RELACIONADO.
-    </p>
+    <h2>PROGRAMA DE FINANCIAMIENTO VEHICULAR "CREDI YANGO"</h2>
 
-    <h3>1. ¿QUÉ ES EL SISTEMA DE AHORROS CREDIYANGO?</h3>
     <p>
-      Es una modalidad de financiamiento que permite al asociado acceder a la
-      <strong> adquisición de un vehículo u otro bien,</strong> mediante aportes
-      semanales, con la ventaja de una <strong>entrega inmediata</strong> del
-      bien financiado.
-    </p>
-    <p>El asociado aporta semanalmente la suma de</p>
-    <strong>USD 100.00 (cien con/00 dólares americanos)</strong> durante un
-    periodo máximo de <strong>200 semanas,</strong> habiendo pagado previamente
-    una
-    <strong
-      >cuota inicial de USD 2,000.00 (dos mil con/00 dólares americanos).
-    </strong>
-    <p>
-      El objetivo del Sistema es brindar una alternativa de financiamiento
-      accesible y directa, sin necesidad de sorteos ni procesos de adjudicación.
-    </p>
-
-    <h3>2. ¿CÓMO SE ADQUIERE LA CALIDAD DE ASOCIADO?</h3>
-    <p>
-      La calidad de asociado se adquiere mediante la
-      <strong>suscripción del contrato</strong> entre el interesado y la
-      Administradora.
-    </p>
-    <p>Previamente, el interesado deberá:</p>
-    <ol>
-      <li>
-        Estar debidamente informado mediante la presente cartilla y el contrato.
-      </li>
-      <li>
-        Acreditar <strong>capacidad de pago</strong>,evaluada por la
-        Administradora.
-      </li>
-      <li>
-        Pagar la
-        <strong
-          >cuota inicial de USD 2,000.00 (dos mil con/00 dólares americanos) y
-          la primera cuota semanal de USD 100,000 (cien con/00 dólares
-          americanos)</strong
-        >
-        (compuesta por cuota capital, administración y seguro, cuando
-        corresponda).
-      </li>
-    </ol>
-    <p>
-      Una vez aprobada la solicitud, ambas partes suscribirán el contrato en dos
-      (2) ejemplares, quedando uno para el asociado y otro para la
-      Administradora.
-    </p>
-
-    <div class="page-break"></div>
-    <!-- pag 8 -->
-
-    <h3>3. ¿QUÉ PAGOS EFECTÚA EL ASOCIADO A LA ADMINISTRADORA?</h3>
-    <p>
-      El asociado, al firmar el contrato, se obliga a cancelar a la
-      Administradora lo siguiente:
+     La presente cartilla tiene por finalidad explicar de manera clara y sencilla los aspectos más importantes del programa de financiamiento vehicular CREDI YANGO (en adelante, el Programa), y deberá ser entregada obligatoriamente por AREQUIPA GO E.I.R.L. (en adelante, la Administradora) a los potenciales asociados, como requisito previo a la suscripción del contrato o de cualquier documento relacionado.
     </p>
     <ol>
-      <li>
-        <strong> Inicial:</strong> pago único de
-        <strong>USD 2,000.00 (dos mil con/00 dólares americanos)</strong
-        >,requisito indispensable para acceder a la entrega del bien.
-      </li>
-      <li>
-        <strong>Cuotas semanales:</strong> pagos periódicos de
-        <strong>USD 100,00 (cien con/00 dólares americanos) </strong> durante
-        <strong>200 semanas</strong> compuestos por cuota capital,
-        administración y seguro (cuando corresponda).
-      </li>
-    </ol>
+
+  <li>
+    <p><strong>¿QUÉ ES EL PROGRAMA CREDI YANGO?</strong></p>
+
     <p>
-      Las cuotas de administración son de libre disposición de la
-      Administradora. Los pagos de seguro se destinan a la cobertura
-      correspondiente de la póliza.
+      El Programa CREDI YANGO es una modalidad de financiamiento vehicular
+      dirigida exclusivamente a conductores, que permite acceder a la
+      adquisición de un vehículo mediante:
     </p>
 
-    <h3>4. ¿CUÁL ES LA CONDICIÓN PARA LA ENTREGA DEL BIEN?</h3>
-    <p>
-      Una vez firmados los documentos y cancelada la cuota inicial, la
-      <strong>Administradora</strong> gestionará la
-      <strong>entrega inmediata del bien,</strong> la cual se realizará en un
-      <strong>plazo máximo de veinte (20) días hábiles.</strong>
-    </p>
-    <p>Para recibir el bien, el asociado deberá:</p>
-    <ol>
-      <li>Estar al día en el pago de las cuotas pactadas.</li>
-      <li>Firmar los documentos contractuales y garantías exigidas.</li>
-      <li>
-        Cumplir los requisitos administrativos establecidos en el contrato.
-      </li>
-    </ol>
-    <p>
-      Los gastos de inscripción, trámites notariales, seguros y constitución de
-      garantías serán asumidos por el asociado.
-    </p>
-    <p>
-      El <strong>pago de la primera cuota semanal</strong>se efecturá
-      <strong>a la semana siguiente de la entrega del vehículo,</strong>según el
-      cronograma de pagos establecido por la Administradora.
-    </p>
-
-    <!-- PÁGINA 6: CONTINUACIÓN CARTILLA -->
-    <h3>5. ¿QUÉ SUCEDE SI EL ASOCIADO INCUMPLE CON LOS PAGOS?</h3>
-    <ol>
-      <li>
-        En caso de<strong>retraso en los pagos</strong> se aplicará la
-        <strong>penalidad</strong>establecida en el contrato
-      </li>
-      <li>Si el asociado incumple el pago de</li>
-      <strong>tres (3) cuotas semanales consecutivas,</strong>
-      la Administradora podrá
-      <strong>resolver el contrato;</strong>
-      y en consecuencia revertir la adjudicación entrega del vehículo.
-    </ol>
-    <p>En caso de resolución, se aplicará lo siguiente:</p>
     <ul>
-      <li>
-        La devolución de aportes se realizará dentro de los
-        <strong> 60 días posteriores</strong>a la finalización del grupo o
-        mediante sorteo interno de devolución.
-      </li>
-      <li>Se descontarán del total aportado:</li>
-      <div class="page-break"></div>
-      <!-- pag 9 -->
-      <li>Cuota de inscripción</li>
-      <li>Cuotas de administración facturadas.</li>
-      <li>Cuotas de seguro facturadas.</li>
-      <li>IGV correspondiente.</li>
-      <li>Penalidades (hasta un máximo de dos cuotas capitales).</li>
-      <p>
-        Si el bien ya fue entregado y el asociado incurre en incumplimiento, la
-        Administradora podrá
-        <strong
-          >dar por vencidos los plazos, exigir el pago total del saldo
-          pendiente, ejecutar las garantías constituidas y solicitar la
-          reversión de la adjudicación,</strong
-        >además de aplicar las penalidades estipuladas en el contrato.
-      </p>
+      <li>Pago de una inicial</li>
+      <li>Cuotas semanales fijas</li>
+      <li>Cumplimiento de condiciones operativas</li>
     </ul>
 
-    <h3>6. PLAZO DEL CONTRATO</h3>
+    <p>El asociado paga:</p>
+
+    <ul>
+      <li>Inicial: {{MONEDA}} {{CUOTA_INICIAL}}</li>
+      <li>Cuotas: {{CANTIDAD_CUOTAS}} cuotas {{FRECUENCIA}} de {{MONEDA}} {{MONTO_CUOTA}}</li>
+    </ul>
+
     <p>
-      El contrato tiene una duración máxima de
-      <strong>200 semanas</strong>(aproximadamente cuatro años), contadas desde
-      la fecha de firma
+      El objetivo del Programa es brindar una alternativa de financiamiento
+      directa, sin sorteos ni adjudicaciones aleatorias.
     </p>
+  </li>
+
+  <li>
+    <p><strong>¿CÓMO SE ADQUIERE LA CALIDAD DE ASOCIADO?</strong></p>
+
     <p>
-      Una vez canceladas todas las cuotas y obligaciones, el asociado quedará
-      libre de toda deuda frente a la Administradora.
+      La calidad de asociado se adquiere mediante la suscripción del contrato
+      con la Administradora.
     </p>
 
-    <div class="firma-section">
-      <p>FIRMA: _______________________________</p>
-      <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
-      <p class="bold">CARGO</p>
-    </div>
+    <p>Previamente, el interesado deberá:</p>
+
+    <ol>
+      <li>Haber sido informado mediante la presente cartilla y el contrato.</li>
+      <li>Aprobar la evaluación realizada por la Administradora.</li>
+      <li>Pagar la cuota inicial de {{MONEDA}} {{CUOTA_INICIAL}}.</li>
+    </ol>
+
+    <p>Una vez aprobada la solicitud, el contrato será firmado en dos (2) ejemplares, quedando uno para el asociado y otro para la Administradora.</p>
+  </li>
+
+  <li>
+    <p><strong>¿QUÉ PAGOS EFECTÚA EL ASOCIADO?</strong></p>
+    <p>El asociado se obliga a realizar los siguientes pagos:</p>
+    <ol type="a">
+  <li>
+    <p><strong>Inicial</strong></p>
+    <p>
+      Pago único de {{MONEDA}} {{CUOTA_INICIAL}}, requisito indispensable para iniciar el proceso
+      de entrega del vehículo.
+    </p>
+  </li>
+
     <div class="page-break"></div>
 
-    <!-- PÁGINA 10: MORA Y PENALIZACIONES -->
+  <li>
+    <p><strong>Cuotas semanales</strong></p>
+
+    <ul>
+      <li>Monto: {{MONEDA}} {{MONTO_CUOTA}}</li>
+      <li>Cantidad: {{CANTIDAD_CUOTAS}} {{FRECUENCIA_PERIODO}}</li>
+    </ul>
+  </li>
+</ol>
+<p>Las cuotas comprenden conceptos de capital, administración y otros cargos contractuales cuando corresponda.</p>
+<p>Todos los pagos se realizan exclusivamente a través de CAJA AREQUIPA.
+No se aceptan pagos en efectivo ni en oficinas.
+</p>
+
+  </li>
+  <li>
+    <p>
+      <strong>¿CUÁLES SON LAS CONDICIONES PARA LA ENTREGA DEL VEHÍCULO?</strong>
+    </p>
+    <p>Una vez cancelada la cuota inicial y presentada la documentación completa requerida, la Administradora gestionará la entrega del vehículo.</p>
+    <ul>
+      <li>El plazo máximo de entrega podrá ser de hasta {{PLAZO_ENTREGA_TEXTO}} días hábiles, estando este plazo subvencionado a la disponibilidad del stock de la concesionaria según corresponda y trámite de los documentos necesarios para la circulación del vehículo (tarjeta de propiedad y placas).</li>
+      <li>El vehículo será entregado con sistema GPS ya instalado, el cual deberá permanecer activo durante toda la vigencia del contrato.</li>
+    </ul>
+    <p>Para recibir el vehículo, el asociado deberá:</p>
+    <ul>
+      <li>Firmar los documentos contractuales y garantías exigidas.</li>
+      <li>Cumplir con los requisitos administrativos establecidos.</li>
+      <li>Contratar obligatoriamente el Seguro Vehicular y el SOAT con AREQUIPA GO E.I.R.L., manteniéndolos vigentes durante todo el contrato.</li>
+    </ul>
+    <p>La primera cuota semanal se paga una (1) semana después de la entrega del vehículo.</p>
+    <p>Todos los gastos notariales, registrales, de garantías, seguro vehicular y SOAT serán asumidos por el asociado.</p>
+  </li>
+  <li>
+    <p><strong>¿CÓMO Y DÓNDE SE REALIZAN LOS PAGOS?</strong></p>
+    <p>Todos los pagos del Programa CREDI YANGO se realizan exclusivamente a través de CAJA AREQUIPA, siendo este el único canal autorizado.</p>
+    <p>Los pagos incluyen:</p>
+    <ul>
+      <li>Cuota inicial</li>
+      <li>Cuotas semanales</li>
+      <li>Penalidades por mora, de corresponder</li>
+      <li>Otros conceptos contractuales</li>
+    </ul>
+    <p>El asociado podrá visualizar el estado de su financiamiento, cuotas pagadas y pendientes, a través del aplicativo <strong>CREDI GO.</strong></p>
+  </li>
+    <div class="page-break"></div>
+    <li>
+      <p><strong>CONDICIÓN OPERATIVA DEL PROGRAMA</strong></p>
+      <p>El asociado se compromete a cumplir con una conexión mínima de veinte (20) horas semanales dentro de la plataforma autorizada.</p>
+      <p>El incumplimiento reiterado podrá generar:</p>
+      <ul>
+        <li>Restricciones operativas</li>
+        <li>Incremento en la tasa de financiamiento de hasta un cinco por ciento (5%), sujeto a evaluación de la Administradora.</li>
+      </ul>
+    </li>
+    <li>
+      <p><strong>¿QUÉ SUCEDE SI EL ASOCIADO INCUMPLE CON LOS PAGOS?</strong></p>
+      <p>En caso de incumplimiento:</p>
+      <ol type="a">
+        <li>Se aplicarán las penalidades establecidas en el contrato.</li>
+        <li>El atraso reiterado podrá generar restricciones operativas.</li>
+        <li>El incumplimiento de cuatro (4) cuotas semanales consecutivas podrá dar lugar a medidas contractuales más severas, como la resolución del contrato.</li>
+      </ol>
+      <p>Si el vehículo ya fue entregado, la Administradora podrá:</p>
+      <ul>
+        <li>Exigir el pago del saldo pendiente.</li>
+        <li>Ejecutar las garantías.</li>
+        <li>Administrar temporalmente o recuperar el vehículo conforme al contrato.</li>
+      </ul>
+      <p>En caso de incautación, el asociado deberá asumir todos los gastos derivados del proceso, tales como grúa, traslado, depósito vehicular, trámites administrativos, honorarios y demás costos vinculados a la recuperación del bien.</p>
+    </li>
+    <li>
+      <p><strong>RETIRO Y CESIÓN DEL CONTRATO</strong></p>
+      <p>El asociado que decida retirarse del Programa no tiene derecho a la devolución de los montos abonados, incluido la inicial, por cuanto dichos importes se destinan a la operatividad y compromisos del Programa.</p>
+      <p>La única alternativa válida es la cesión del contrato a un tercero, quien deberá ser evaluado y aprobado por la Administradora.</p>
+    </li>
+    <li>
+      <p><strong>PLAZO DEL CONTRATO</strong></p>
+      <p>El contrato tiene una duración máxima de 200 semanas, contadas desde la primera cuota exigible posterior a la entrega del vehículo.</p>
+      <p>Una vez canceladas todas las cuotas y obligaciones, el asociado quedará libre de deuda y se procederá conforme a ley para la transferencia registral del vehículo a favor del asociado.</p>
+    </li>
+    <li>
+      <p><strong>CONDICIONES DE USO DEL VEHÍCULO</strong></p>
+      <p>El vehículo entregado a través del Programa es exclusivamente de trabajo y deberá utilizarse únicamente para la prestación del servicio mediante la plataforma autorizada por la Administradora, no constituyendo este un vehículo para uso particular del Asociado.</p>
+      <p>No está permitido:</p>
+      <ul>
+        <li>Realizar viajes de ruta, colectivos informales o servicios conocidos como "viajes express".</li>
+        <li>Ceder, alquilar o prestar el vehículo a terceros sin autorización previa y escrita.</li>
+        <li>Sacar el vehículo fuera de la ciudad de Arequipa o Lima sin autorización expresa.</li>
+        <li>Manipular o desactivar el sistema GPS instalado.</li>
+      </ul>
+      <p>El incumplimiento de estas condiciones podrá generar medidas contractuales, incluyendo la resolución del contrato y en consecuencia la reversión de la entrega del vehículo.</p>
+    </li>
+    <li>
+      <p><strong>NOTIFICACIONES Y COMUNICACIONES</strong></p>
+      <p>El asociado declara que las comunicaciones del Programa podrán realizarse mediante los canales registrados en el aplicativo CREDI GO, incluyendo WhatsApp y correo electrónico.</p>
+      <p>Las comunicaciones enviadas por dichos medios se considerarán válidamente notificadas desde su envío, siendo responsabilidad del asociado mantener actualizados sus datos de contacto.</p>
+    </li>
+</ol>
+<div class="page-break"></div>
+
+    <h3>DECLARACIÓN FINAL</h3>
+    <p>
+     El asociado declara que ha recibido la presente cartilla
+      <strong>antes de firmar el contrato,</strong> que ha comprendido su contenido y que conoce las condiciones, obligaciones y consecuencias derivadas del Programa CREDI YANGO.
+    </p>
+    <p>Asimismo, declara que ha tenido la oportunidad de realizar consultas y absolver sus dudas antes de suscribir el contrato.</p>
+      <div class="firma-section">
+      <p>FIRMA: _______________________________</p>
+      <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
+    </div>
+<div class="page-break"></div>
+
 
     <h2 class="center uppercase">MORA Y PENALIZACIONES</h2>
 
     <p>
-      EN CASO DE INCUMPLIMIENTO EN EL PAGO OPORTUNO DE LAS CUOTAS
-      CORRESPONDIENTES AL FINANCIAMIENTO, SE APLICARÁN LAS SIGUIENTES
-      <strong>PENALIDADES POR MORA</strong> SEGÚN EL TIPO DE MONEDA DEL ACUERDO:
+     En caso de incumplimiento en el pago oportuno de las cuotas correspondientes al financiamiento, se aplicarán las siguientes penalidades por mora, según la moneda pactada en el contrato:
     </p>
 
-    <p>1. FINANCIAMIENTO EN DÓLARES ESTADOUNIDENSES (USD):</p>
+    <p><strong>1. Financiamiento en dólares americanos (USD):</strong></p>
     <p>
-      EL ASOCIADO DEBERÁ ABONAR UNA PENALIDAD FIJA DE $5.00 (CINCO DÓLARES
-      AMERICANOS) POR CADA CUOTA VENCIDA, A PARTIR DEL DÍA SIGUIENTE DEL
-      VENCIMIENTO.
+     El asociado deberá abonar una penalidad fija de USD 5.00 (Cinco dólares americanos) por cada cuota vencida, a partir del día siguiente al vencimiento de la misma.
     </p>
 
     <p>
-      2. FINANCIAMIENTO EN SOLES PERUANOS (PEN): - SI EL MONTO DE LA CUOTA ES
-      MENOR O IGUAL A S/ 100.00, SE APLICARÁ UNA PENALIDAD DE S/ 5.00 (CINCO
-      SOLES) POR CADA CUOTA VENCIDA. - SI EL MONTO DE LA CUOTA ES MAYOR A S/
-      100.00, LA PENALIDAD SERÁ DE S/ 10.00 (DIEZ SOLES) POR CADA CUOTA VENCIDA.
+      Las penalidades por mora son automáticas y acumulativas por cada cuota impaga, sin necesidad de previo aviso.
     </p>
     <p>
-      ESTAS PENALIZACIONES SON AUTOMÁTICAS Y ACUMULATIVAS POR CADA CUOTA IMPAGA,
-      SIN NECESIDAD DE PREVIO AVISO.
+     <strong>PENALIZACIONES ADICIONALES</strong>
+     <ul>
+      <li>En casos de puntaje bajo, mal comportamiento operativo o incumplimientos reiterados, la Administradora podrá aplicar restricciones al acceso a nuevos beneficios, promociones o programas adicionales.</li>
+      <li>Si el asociado forma parte de un sistema de ahorro sin entrega de vehículo y presenta retraso en sus pagos por más de dos (2) meses, podrá ser descalificado o suspendido del grupo, quedando a la espera de su correspondiente liquidación, conforme a lo establecido en el contrato.</li>
+     </ul>
     </p>
     <p>
-      ESTAS PENALIZACIONES SON AUTOMÁTICAS Y ACUMULATIVAS POR CADA CUOTA IMPAGA,
-      SIN NECESIDAD DE PREVIO AVISO.
+     <strong>OBSERVACIONES IMPORTANTES</strong>
+     <ul>
+      <li>El asociado recibirá una notificación por escrito al detectarse el incumplimiento de pago.</li>
+      <li>Para continuar vigente dentro del acuerdo, el asociado deberá regularizar su situación mediante el pago de dos (2) cuotas adelantadas.</li>
+      <li>El asociado contará con un plazo máximo de cuarenta y ocho (48) horas desde la recepción de la notificación para efectuar el pago correspondiente.</li>
+     </ul>
     </p>
-
-    <h5>PENALIZACIONES</h5>
-    <p>
-      - EN CASOS DE PUNTAJE BAJO O MAL COMPORTAMIENTO (INCUMPLIMIENTOS REITERADOS), SE
-APLICARÁN RESTRICCIONES AL ACCESO A NUEVOS BENEFICIOS.
-    </p>
-    <p>
-      - SI EL ASOCIADO FORMA PARTE DE UN SISTEMA DE AHORRO SIN ENTREGA, Y PRESENTA RETRASO
-EN SUS PAGOS POR MÁS DE 2 MESES, PODRÁ SER DESCALIFICADO O SUSPENDIDO DEL GRUPO, A
-ESPERA DE SU LIQUIDACIÓN.
-    </p>
-
-    <h5>INCAUTACIONES</h5>
-
-    <p>
-     SI EL ASOCIADO YA HA RECIBIDO LA UNIDAD Y PRESENTA 2 MESES DE ATRASO EN LOS PAGOS SE
-DARÁ INICIO AL PROCESO DE INCAUTACIÓN.
-- EN CASO DE INCAUTACIÓN Y BLOQUEO POSTERIOR A LOS 2 MESES DE MORA, SE APLICARÁN
-CARGOS ADMINISTRATIVOS Y EL ASOCIADO NO PODRÁ ACCEDER A FUTUROS PROGRAMAS DE
-FINANCIAMIENTO.
-    </p>
-    <!-- <p>
-      <strong>- ARRENDAMIENTO NO AUTORIZADO:</strong>SI EL ASOCIADO ARRIENDA,
-      CEDE, PRESTA O PERMITE EL USO DEL VEHÍCULO A TERCERAS PERSONAS SIN CONTAR
-      CON LA AUTORIZACIÓN PREVIA, EXPRESA Y POR ESCRITO DE
-      <strong>AREQUIPA GO E.I.R.L.</strong>
-    </p> -->
-    <!-- <p>
-      <strong>- FALTA DE MANTENIMIENTO:</strong>SI EL ASOCIADO INCUMPLE CON
-      REALIZAR LOS MANTENIMIENTOS PREVENTIVOS O CORRECTIVOS DEL VEHÍCULO EN LA
-      CONCESIONARIA OFICIAL DE LA MARCA O EN LOS PLAZOS RECOMENDADOS POR EL
-      FABRICANTE, PONIENDO EN RIESGO LA CONSERVACIÓN, SEGURIDAD O VALOR DEL
-      BIEN.
-    </p> -->
-    <!-- <p>
-      <strong>- USO INDEBIDO O ILÍCITO:</strong>SI SE ACREDITA QUE EL VEHÍCULO
-      HA SIDO UTILIZADO, DIRECTA O INDIRECTAMENTE, PARA LA COMISIÓN DE ACTOS
-      ILÍCITOS O DELICTIVOS, O CON LA INTENCIÓN DE FACILITAR TALES ACTIVIDADES.
-    </p> -->
-
-    <!-- <div class="page-break"></div> -->
-
-    <!-- PÁGINA 11: PROCEDIMIENTO DE REVERSIÓN Y OBSERVACIONES -->
-    <!-- <p>
-      <strong>- CONDUCCIÓN TEMERARIA O INFRACTORA:</strong>SI EL ASOCIADO
-      CONDUCE EL VEHÍCULO INFRINGIENDO LAS NORMAS DEL REGLAMENTO NACIONAL DE
-      TRÁNSITO, ESPECIALMENTE EN CASOS DE CONDUCCIÓN EN ESTADO DE EBRIEDAD, BAJO
-      EFECTOS DE SUSTANCIAS PROHIBIDAS, O CUANDO SU ACTUAR GENERE O PUEDA
-      GENERAR RESPONSABILIDAD CIVIL O PENAL A
-      <strong>AREQUIPA GO E.I.R.L.</strong>EN SU CALIDAD DE PROPIETARIA
-      REGISTRAL DEL VEHÍCULO.
-    </p> -->
-
-    <!-- <p>
-      <strong>- NEGLIGENCIA O ABANDONO:</strong> SI EL ASOCIADO MANTIENE EL
-      VEHÍCULO EN ESTADO DE ABANDONO, DESCUIDO GRAVE O LO EXPONE A RIESGOS QUE
-      COMPROMETAN SU CONSERVACIÓN, VALOR O INTEGRIDAD, INCLUYENDO SITUACIONES
-      QUE PUEDAN CONLLEVAR A SU ROBO, PÉRDIDA TOTAL O DETERIORO SUSTANCIAL.
-    </p> -->
-
-    <!-- <p>
-      <strong>- ALTERACIÓN O MODIFICACIÓN DEL VEHÍCULO:</strong> SI EL ASOCIADO
-      REALIZA MODIFICACIONES ESTRUCTURALES, MECÁNICAS O ELECTRÓNICAS AL VEHÍCULO
-      SIN AUTORIZACIÓN PREVIA Y ESCRITA DE
-      <strong>AREQUIPA GO E.I.R.L.,</strong> AFECTANDO SUS CONDICIONES
-      ORIGINALES DE FÁBRICA O SU VALOR COMERCIAL.
-    </p> -->
-
-    <!-- <p>
-      <strong
-        >- FALTA DE SEGURO O INCUMPLIMIENTO DE OBLIGACIONES ACCESORIAS:</strong
-      >
-      SI EL ASOCIADO OMITE CONTRATAR O RENOVAR EL SEGURO VEHICULAR EXIGIDO POR
-      LA EMPRESA O INCUMPLE OBLIGACIONES ACCESORIAS DESTINADAS A GARANTIZAR LA
-      PROTECCIÓN DEL BIEN ADJUDICADO.
-    </p> -->
-    <!-- <p>
-      <strong>- RIESGO DE PÉRDIDA O RESPONSABILIDAD PARA LA EMPRESA:</strong>EN
-      CUALQUIER OTRO SUPUESTO EN QUE, POR ACCIÓN U OMISIÓN DEL ASOCIADO, SE
-      PONGA EN RIESGO LA CONSERVACIÓN DEL VEHÍCULO, SU VALOR ECONÓMICO, O SE
-      GENERE LA POSIBILIDAD DE IMPUTACIÓN DE RESPONSABILIDAD CIVIL,
-      ADMINISTRATIVA O PENAL A <strong>AREQUIPA GO E.I.R.L.</strong>COMO
-      PROPIETARIA REGISTRAL DEL MISMO.
-    </p> -->
-
-    <!-- <h5>PROCEDIMIENTO DE REVERSIÓN</h5> -->
-    <!-- <p>
-      LA REVERSIÓN DE LA ADJUDICACIÓN SERÁ COMUNICADA
-      <strong
-        >MEDIANTE CARTA NOTARIAL DIRIGIDA AL DOMICILIO SEÑALADO POR EL
-        ASOCIADO,</strong
-      >EN LA CUAL SE EXPONDRÁ Y FUNDAMENTARÁ LA CAUSA QUE MOTIVA DICHA
-      REVERSIÓN. RECIBIDA LA NOTIFICACIÓN, EL ASOCIADO DISPONDRÁ DE UN PLAZO
-      IMPRORROGABLE DE <strong>VEINTICUATRO (24) HORAS</strong>PARA ENTREGAR EL
-      VEHÍCULO EN LAS INSTALACIONES DE <strong>AREQUIPA GO E.I.R.L.</strong>O EN
-      EL LUGAR QUE ESTA INDIQUE EXPRESAMENTE. EL INCUMPLIMIENTO DE ESTA
-      OBLIGACIÓN FACULTARÁ A LA EMPRESA A
-      <strong
-        >INTERPONER DENUNCIA PENAL POR EL DELITO DE APROPIACIÓN ILÍCITA,</strong
-      >ASÍ COMO A EJERCER LAS
-      <strong>ACCIONES CIVILES CORRESPONDIENTES</strong>PARA LA RECUPERACIÓN DEL
-      BIEN Y EL RESARCIMIENTO DE LOS DAÑOS Y PERJUICIOS OCASIONADOS. EN TODOS
-      LOS CASOS,<strong
-        >LA REVERSIÓN NO EXTINGUE LA OBLIGACIÓN DEL ASOCIADO DE CONTINUAR
-        PAGANDO LAS CUOTAS PENDIENTES</strong
-      >SALVO DISPOSICIÓN EXPRESA EN CONTRARIO POR PARTE DE
-      <strong>AREQUIPA GO E.I.R.L.,</strong>NI GENERA DERECHO ALGUNO A
-      INDEMNIZACIÓN O COMPENSACIÓN.
-    </p> -->
-    <!-- <div class="page-break"></div> -->
-
-    <!-- PÁGINA 12: CONFIRMACIÓN DE RECEPCIÓN DE DOCUMENTACIÓN -->
-    <h5>OBSERVACIONES</h5>
-
-    <p>
-     - EL ASOCIADO RECIBIRÁ UNA NOTIFICACIÓN POR ESCRITO AL DETECTARSE INCUMPLIMIENTO DE
-PAGO.
-- PARA CONTINUAR CON EL ACUERDO DEBERÁ REGULARIZAR SU SITUACIÓN CON EL PAGO DE 2
-CUOTAS ADELANTADAS.
-- TENDRÁ UN PLAZO MÁXIMO DE 48 HORAS PARA EFECTUAR EL PAGO DESDE LA RECEPCIÓN DEL
-AVISO.
-    </p>
+      <div class="firma-section">
+    <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
+    <p>NOMBRE: <span class="bold">{{NOMBRE_COMPLETO}}</span></p>
+    <p>FIRMA: _______________________________</p>
+    <p>{{TIPO_DOCUMENTO}}: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+    </div>
     <div class="page-break"></div>
-    <p>
-      POR MEDIO DE LA PRESENTE CONFIRMAMOS LA RECEPCIÓN DE LA SIGUIENTE
-      DOCUMENTACIÓN:
-    </p>
 
-    <ul>
-      <li>CONFIRMACIÓN DE CONOCIMIENTO</li>
-      <li>CARTILLA PARA EL ASOCIADO</li>
-      <li>CONTRATO DE ADMINISTRACIÓN DEL SISTEMA DE AHORROS</li>
-      <li>MORA Y PENALIZACIONES</li>
-    </ul>
+    <p>POR MEDIO DE LA PRESENTE CONFIRMAMOS LA RECEPCIÓN DE LA SIGUIENTE DOCUMENTACIÓN: </p>
+    <ol type="a">
+      <li><strong>CONFIRMACIÓN DE CONOCIMIENTO.</strong></li>
+      <li><strong>CARTILLA PARA EL ASOCIADO.</strong></li>
+      <li><strong>CONTRATO DE FINANCIAMIENTO VEHICULAR</strong></li>
+      <li><strong>MORA Y PENALIZACIONES</strong></li>
+    </ol>
+    <p>ASIMISMO, HE TOMADO CONOCIMIENTO QUE: EL CALENDARIO DE ASAMBLEAS DE MI GRUPO</p>
+    <p>LA INFORMACIÓN RELACIONADA CON <strong>MI FINANCIAMIENTO,</strong> INCLUYENDO EL <strong>ESTADO DE MIS CUOTAS, PAGOS REALIZADOS Y OBLIGACIONES VIGENTES,</strong> SERÁ DE ACCESO PARA EL ASOCIADO A TRAVÉS DEL APLICATIVO <strong>AQP GO (CREDI GO).</strong></p>
+    <p>ASIMISMO, DECLARO QUE TODA LA INFORMACIÓN CONTRACTUAL RELEVANTE ME HA SIDO EXPLICADA PREVIAMENTE, NO EXISTIENDO SORTEOS, ASAMBLEAS, NI ENTREGA DE DINERO EN EFECTIVO DENTRO DEL PROGRAMA DE FINANCIAMIENTO OFRECIDO POR <strong>AREQUIPA GO E.I.R.L. – CREDI YANGO.</strong></p>
+    <p>EN SEÑAL DE CONFORMIDAD, SUSCRIBO LA PRESENTE.</p>
+      <div class="firma-section">
+    <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
+    <p>NOMBRE: <span class="bold">{{NOMBRE_COMPLETO}}</span></p>
+    <p>FIRMA: _______________________________</p>
+    <p>{{TIPO_DOCUMENTO}}: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+    </div>
 
-    <p>
-      ASIMISMO, HE TOMADO CONOCIMIENTO QUE: EL CALENDARIO DE ASAMBLEAS DE MI
-      GRUPO
-    </p>
+    <div class="page-break"></div>
 
-    <p>
-      SERÁ DE ACCESO A TODOS LOS ASOCIADOS MEDIANTE EL APP AQP GO (CREDI GO) ANTES DE
-REALIZARSE MI PRIMERA ASAMBLEA. DE HABER INGRESADO DENTRO DE LOS CINCO (05) DÍAS
-ANTES DE MI PRIMERA ASAMBLEA, LA FECHA SERÁ PROPORCIONADA AL MOMENTO DE LA VENTA. 
-    </p>
+    <!-- AUTORIZACIÓN DE ENVÍO VIRTUAL DE CONTRATO -->
+    <h2 class="center uppercase">AUTORIZACIÓN DE ENVÍO VIRTUAL DE CONTRATO</h2>
+
+    <p>Conste por el presente documento la Autorización de Envío Virtual de Contrato, que forma parte integrante del Contrato de Financiamiento que celebran, de una parte, <strong>AREQUIPA GO E.I.R.L.</strong>, identificada con RUC N°20612112763, con domicilio en Urb. La Esperanza Mza. L Lote 15, Urb. ADEPA, distrito de José Luis Bustamante y Rivero, provincia y departamento de Arequipa, debidamente representada por su titular, a quien en adelante se le denominará <strong>LA EMPRESA</strong>; y, de la otra parte, <strong>{{NOMBRE_COMPLETO}}</strong>, identificado(a) con DNI N° <strong>{{NUMERO_DOCUMENTO}}</strong>, con domicilio en <strong>{{DIRECCION}}</strong>, a quien en adelante se le denominará <strong>EL ASOCIADO</strong>, en los términos siguientes:</p>
+
+    <ol>
+      <li>Que autorizo de manera expresa, voluntaria e inequívoca a AREQUIPA GO E.I.R.L. a remitirme la copia del contrato suscrito y demás documentos relacionados al programa mediante medios electrónicos.</li>
+      <li>Que acepto que dicho envío se realice a través de correo electrónico, WhatsApp u otro medio digital proporcionado por mí.</li>
+      <li>Que reconozco plena validez legal a la documentación remitida por medios digitales, teniendo la misma eficacia que un documento físico.</li>
+      <li>Que declaro haber recibido explicación sobre el contenido del contrato y que podré solicitar copia física si así lo requiero.</li>
+    </ol>
+
+    <p>Firmo la presente autorización en señal de conformidad.</p>
 
     <div class="firma-section">
-      <p>FECHA: <span class="bold">{{FECHA_ACTUAL}}</span></p>
-      <p>NOMBRE: <span class="bold uppercase">{{NOMBRE_COMPLETO}}</span></p>
-      <p>FIRMA: _______________________________</p>
-      <p>{{TIPO_DOCUMENTO}}: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+      <p>Nombre completo: <span class="bold">{{NOMBRE_COMPLETO}}</span></p>
+      <p>DNI: <span class="bold">{{NUMERO_DOCUMENTO}}</span></p>
+      <p>Teléfono / Correo electrónico: ____________________________</p>
+      <p>Firma: ____________________________</p>
+      <p>Fecha: <span class="bold">{{FECHA_ACTUAL}}</span></p>
     </div>
+
   </body>
 </html>

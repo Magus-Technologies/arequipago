@@ -6,6 +6,7 @@ if (session_status() == PHP_SESSION_NONE) {
 
 // Verificamos si el usuario tiene sesión activa
 $id_rol = $_SESSION['id_rol'] ?? null;
+$usuario_id = $_SESSION['usuario_id'] ?? null; // ✅ NUEVO: Obtener ID del usuario
 
 // Obtener URL base del proyecto dinámicamente
 $baseURL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . '/arequipago';
@@ -178,6 +179,13 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                             data-bs-target="#generarContratosFrm" type="button" role="tab"
                             aria-controls="generarContratosFrm" aria-selected="false">
                             <i class="fas fa-file-contract me-2"></i>Generar Contratos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="contratosFinalizadosNav" data-bs-toggle="tab"
+                            data-bs-target="#contratosFinalizados" type="button" role="tab"
+                            aria-controls="contratosFinalizados" aria-selected="false">
+                            <i class="fas fa-check-double me-2"></i>Contratos Finalizados
                         </button>
                     </li>
 
@@ -893,7 +901,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     </div>
                                                     <small class="text-muted">
                                                         <i class="fas fa-info-circle me-1"></i>
-                                                        Los pagos iniciarán automáticamente 7 días después
+                                                        Los pagos iniciarán automáticamente 15 días después
                                                     </small>
                                                 </div>
 
@@ -905,7 +913,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                                                     </div>
                                                     <small class="text-success">
                                                         <i class="fas fa-check-circle me-1"></i>
-                                                        Se calcula automáticamente: Fecha entrega + 7 días
+                                                        Se calcula automáticamente: Fecha entrega + 15 días
                                                     </small>
                                                 </div>
 
@@ -966,6 +974,64 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             <!-- Sección de Generar Contratos -->
             <div class="tab-pane fade" id="generarContratosFrm" role="tabpanel" aria-labelledby="GContratosNav">
                 <?php include __DIR__ . '/../../components/generar-contratos.php'; ?>
+            </div>
+
+            <!-- ✅ NUEVO: Sección de Contratos Finalizados -->
+            <div class="tab-pane fade" id="contratosFinalizados" role="tabpanel" aria-labelledby="contratosFinalizadosNav">
+                <div class="card shadow-sm">
+                    <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-double me-2"></i>Contratos Finalizados
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="flex-grow-1 me-2">
+                                <input type="text" class="form-control" id="searchFinalizados"
+                                       placeholder="Buscar por nombre, DNI, código asociado...">
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-success" onclick="exportarContratosFinalizadosExcel()">
+                                    <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Cliente</th>
+                                        <th>DNI</th>
+                                        <th>Producto</th>
+                                        <th>Plan</th>
+                                        <th>Código Asociado</th>
+                                        <th>Monto Total</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Fecha Finalización</th>
+                                        <th>Finalizado Por</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaContratosFinalizados">
+                                    <tr>
+                                        <td colspan="10" class="text-center">
+                                            <div class="spinner-border text-success" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de contratos finalizados">
+                            <ul class="pagination justify-content-center" id="paginacionFinalizados">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1125,6 +1191,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
         // Cargar los clientes cuando la página se carga por primera vez
         $(document).ready(function () {
 
+            if (window.rolUsuarioActual == '3') { cargarAsesores(); }
             cargarClientes();
             vincularEventosFilas();
             vincularEventosCronograma();
@@ -1807,6 +1874,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
     <script src="<?= URL::to('public/js/financiamiento/clientesManager.js') ?>?v=<?= time() ?>"></script>
 
     <script src="<?= URL::to('public/js/financiamiento/productosManager.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/filtroProductosPorPlan.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCalculator.js') ?>?v=<?= time() ?>"></script>
 
     <!-- Pasar el rol del usuario de PHP a JavaScript -->
@@ -1819,6 +1887,8 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
     <script src="<?= URL::to('public/js/financiamiento/placaManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/numeroCorporativoManager.js') ?>?v=<?= time() ?>"></script>
     <script src="<?= URL::to('public/js/financiamiento/financiamientoCRUD.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/retiroManager.js') ?>?v=<?= time() ?>"></script>
+    <script src="<?= URL::to('public/js/financiamiento/vinculacionManager.js') ?>?v=<?= time() ?>"></script>
 
     <!-- Script para actualizar badge de pendientes (solo para directores) -->
     <?php if ($id_rol == 3): ?>
@@ -1853,6 +1923,164 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
         });
     </script>
     <?php endif; ?>
+
+    <!-- ✅ NUEVO: Script para cargar contratos finalizados -->
+    <script>
+        let paginaActualFinalizados = 1;
+        let busquedaActualFinalizados = '';
+
+        // Función para cargar contratos finalizados
+        function cargarContratosFinalizados(pagina = 1, busqueda = '') {
+            paginaActualFinalizados = pagina;
+            busquedaActualFinalizados = busqueda;
+
+            $.ajax({
+                url: _URL + '/obtenerContratosFinalizados',
+                type: 'GET',
+                data: {
+                    pagina: pagina,
+                    porPagina: 20,
+                    busqueda: busqueda
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        renderizarTablaFinalizados(response.contratos);
+                        renderizarPaginacionFinalizados(response.paginacion);
+                    } else {
+                        Swal.fire('Error', response.message || 'No se pudieron cargar los contratos', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error al cargar contratos finalizados:', error);
+                    $('#tablaContratosFinalizados').html(
+                        '<tr><td colspan="10" class="text-center text-danger">' +
+                        '<i class="fas fa-exclamation-triangle me-2"></i>Error al cargar los datos' +
+                        '</td></tr>'
+                    );
+                }
+            });
+        }
+
+        // Función para renderizar la tabla
+        function renderizarTablaFinalizados(contratos) {
+            const tbody = $('#tablaContratosFinalizados');
+            tbody.empty();
+
+            if (contratos.length === 0) {
+                tbody.html(
+                    '<tr><td colspan="10" class="text-center text-muted">' +
+                    '<i class="fas fa-inbox me-2"></i>No hay contratos finalizados' +
+                    '</td></tr>'
+                );
+                return;
+            }
+
+            contratos.forEach(function(contrato) {
+                const fechaCreacion = contrato.fecha_creacion ? new Date(contrato.fecha_creacion).toLocaleDateString('es-ES') : 'N/A';
+                const fechaFinalizacion = contrato.fecha_finalizacion_contrato ? new Date(contrato.fecha_finalizacion_contrato).toLocaleDateString('es-ES') : 'N/A';
+                const moneda = contrato.moneda || 'S/.';
+                const montoTotal = parseFloat(contrato.monto_total || 0).toFixed(2);
+
+                const row = `
+                    <tr>
+                        <td>${contrato.idfinanciamiento}</td>
+                        <td>${contrato.nombre_completo || 'N/A'}</td>
+                        <td>${contrato.documento || 'N/A'}</td>
+                        <td>${contrato.producto_nombre || 'N/A'}</td>
+                        <td>${contrato.nombre_plan || 'N/A'}</td>
+                        <td><span class="badge bg-primary">${contrato.codigo_asociado || 'N/A'}</span></td>
+                        <td><strong>${moneda} ${montoTotal}</strong></td>
+                        <td>${fechaCreacion}</td>
+                        <td><span class="badge bg-success">${fechaFinalizacion}</span></td>
+                        <td>${contrato.usuario_finalizo || 'N/A'}</td>
+                    </tr>
+                `;
+
+                tbody.append(row);
+            });
+        }
+
+        // Función para renderizar paginación
+        function renderizarPaginacionFinalizados(paginacion) {
+            const container = $('#paginacionFinalizados');
+            container.empty();
+
+            if (paginacion.totalPaginas <= 1) {
+                return;
+            }
+
+            // Botón anterior
+            if (paginacion.paginaActual > 1) {
+                container.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="cargarContratosFinalizados(${paginacion.paginaActual - 1}, '${busquedaActualFinalizados}'); return false;">
+                            Anterior
+                        </a>
+                    </li>
+                `);
+            }
+
+            // Números de página
+            for (let i = 1; i <= paginacion.totalPaginas; i++) {
+                const active = i === paginacion.paginaActual ? 'active' : '';
+                container.append(`
+                    <li class="page-item ${active}">
+                        <a class="page-link" href="#" onclick="cargarContratosFinalizados(${i}, '${busquedaActualFinalizados}'); return false;">
+                            ${i}
+                        </a>
+                    </li>
+                `);
+            }
+
+            // Botón siguiente
+            if (paginacion.paginaActual < paginacion.totalPaginas) {
+                container.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="cargarContratosFinalizados(${paginacion.paginaActual + 1}, '${busquedaActualFinalizados}'); return false;">
+                            Siguiente
+                        </a>
+                    </li>
+                `);
+            }
+        }
+
+        // Función para exportar contratos finalizados a Excel
+        function exportarContratosFinalizadosExcel() {
+            // Obtener la búsqueda actual si existe
+            const busqueda = $('#searchFinalizados').val();
+
+            // Construir URL con parámetros
+            let url = _URL + '/exportarContratosFinalizados';
+            if (busqueda) {
+                url += '?busqueda=' + encodeURIComponent(busqueda);
+            }
+
+            // Abrir en nueva ventana para descargar
+            window.open(url, '_blank');
+        }
+
+        // Event listener para búsqueda
+        $(document).ready(function() {
+            let timeoutBusqueda;
+
+            $('#searchFinalizados').on('input', function() {
+                clearTimeout(timeoutBusqueda);
+                const busqueda = $(this).val();
+
+                timeoutBusqueda = setTimeout(function() {
+                    cargarContratosFinalizados(1, busqueda);
+                }, 500);
+            });
+
+            // Cargar al abrir la pestaña
+            $('#contratosFinalizadosNav').on('click', function() {
+                if ($('#tablaContratosFinalizados tr').length === 1) {
+                    cargarContratosFinalizados(1, '');
+                }
+            });
+        });
+    </script>
 
 </body>
     

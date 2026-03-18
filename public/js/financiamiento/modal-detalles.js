@@ -63,7 +63,7 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
           financiamiento.producto.categoria || ""
         ).toLowerCase();
         esVehiculo =
-          categoria.includes("vehiculo") || categoria.includes("vehículo");
+          categoria.includes("vehiculo") || categoria.includes("vehículo") || categoria.includes("moto");
 
         // ✅ NUEVO: Verificar si ya fue entregado usando estado_entrega
         const estadoEntrega = financiamiento.financiamiento.estado_entrega;
@@ -75,6 +75,22 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
         btnDescargarContrato.style.display = "block";
       } else {
         btnDescargarContrato.style.display = "none";
+      }
+    }
+
+    // ✅ NUEVO: Verificar si es financiamiento de celular para mostrar botón de acta de entrega celular
+    const btnDescargarActaCelular = document.getElementById("btnDescargarActaCelular");
+    if (btnDescargarActaCelular) {
+      let esCelular = false;
+      if (financiamiento.producto) {
+        const categoriaProd = (financiamiento.producto.categoria || "").toLowerCase();
+        esCelular = categoriaProd.includes("celular") || categoriaProd === "celulares";
+      }
+      // Mostrar botón solo si es celular
+      if (esCelular) {
+        btnDescargarActaCelular.style.display = "block";
+      } else {
+        btnDescargarActaCelular.style.display = "none";
       }
     }
 
@@ -129,9 +145,10 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
         esVehicularConExcel = categoria.includes("vehiculo") || categoria.includes("vehículo");
       }
 
-      // Verificar que NO sea de los grupos que NO generan Excel (33, 19, 45)
+      // Verificar que NO sea de los grupos que NO generan Excel (33, 19, 45, 49)
+      // 33 = MotosYa, 19 = ?, 45 = CrediYango, 49 = Credi Ahorros Autos
       const grupoFinanciamiento = financiamiento.financiamiento.grupo_financiamiento;
-      const gruposSinExcel = [33, 19, 45];
+      const gruposSinExcel = [33, 19, 45, 49];
 
       if (gruposSinExcel.includes(parseInt(grupoFinanciamiento))) {
         esVehicularConExcel = false;
@@ -141,6 +158,45 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
         btnDescargarContratoExcel.style.display = "block";
       } else {
         btnDescargarContratoExcel.style.display = "none";
+      }
+    }
+
+    // 🚗 NUEVO: Mostrar botón para descargar contrato PDF solo para grupo 49
+    const btnDescargarContratoPDF49 = document.getElementById(
+      "btnDescargarContratoPDF49"
+    );
+    if (btnDescargarContratoPDF49) {
+      const grupoFinanciamiento = financiamiento.financiamiento.grupo_financiamiento;
+      
+      // Mostrar solo para grupo 49 (Credi Ahorros Autos)
+      if (parseInt(grupoFinanciamiento) === 49) {
+        btnDescargarContratoPDF49.style.display = "block";
+      } else {
+        btnDescargarContratoPDF49.style.display = "none";
+      }
+    }
+
+    // Mostrar botón acta de entrega de chip solo para grupo 36 (CORPORATIVO CLARO)
+    const btnDescargarActaChip = document.getElementById("btnDescargarActaChip");
+    if (btnDescargarActaChip) {
+      const grupoFin36 = parseInt(financiamiento.financiamiento.grupo_financiamiento);
+      if (grupoFin36 === 36) {
+        btnDescargarActaChip.style.display = "block";
+      } else {
+        btnDescargarActaChip.style.display = "none";
+      }
+    }
+
+    // Mostrar botón de boleta excedente para plan 49 cuando ya se entregó el vehículo
+    const btnBoletaExcedente = document.getElementById("btnDescargarBoletaExcedente");
+    if (btnBoletaExcedente) {
+      const grupoFin = parseInt(financiamiento.financiamiento.grupo_financiamiento);
+      const estadoEntrega = financiamiento.financiamiento.estado_entrega;
+
+      if (grupoFin === 49 && estadoEntrega === "entregado") {
+        btnBoletaExcedente.style.display = "block";
+      } else {
+        btnBoletaExcedente.style.display = "none";
       }
     }
 
@@ -296,6 +352,20 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
       }
     }
     
+    // Mostrar número corporativo solo para Plan 36 (CORPORATIVO CLARO)
+    const campoNumeroCorporativo = document.getElementById("campoNumeroCorporativo");
+    const modalNumeroCorporativo = document.getElementById("modalNumeroCorporativo");
+    if (campoNumeroCorporativo && modalNumeroCorporativo) {
+      const grupoFin = parseInt(financiamiento.financiamiento.grupo_financiamiento);
+      const numeroCorp = financiamiento.financiamiento.numero_corporativo;
+      if (grupoFin === 36 && numeroCorp && numeroCorp.trim() !== '') {
+        modalNumeroCorporativo.innerText = numeroCorp;
+        campoNumeroCorporativo.style.display = 'block';
+      } else {
+        campoNumeroCorporativo.style.display = 'none';
+      }
+    }
+
     // ✅ NUEVO: Mostrar placa del vehículo si existe (Plan IncaMotors - ID 44)
     const campoPlacaVehiculo = document.getElementById("campoPlacaVehiculo");
     const modalPlacaVehiculo = document.getElementById("modalPlacaVehiculo");
@@ -317,12 +387,41 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
     if (elementos.estado) {
       // ✅ NUEVO: Agregar badge con color según el estado del financiamiento
       const estadoFinanciamiento = financiamiento.financiamiento.estado || "N/A";
+      const estadoRetiro = financiamiento.financiamiento.estado_retiro;
       let estadoBadge = '';
       
-      if (estadoFinanciamiento.toLowerCase() === 'finalizado' || estadoFinanciamiento.toLowerCase() === 'pagado') {
-        estadoBadge = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Finalizado</span>';
-      } else if (estadoFinanciamiento.toLowerCase() === 'en progreso') {
-        estadoBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>En Progreso</span>';
+      // Verificar primero si está retirado
+      if (estadoRetiro === 'retirado') {
+        const montoP = financiamiento.financiamiento.monto_penalidad || 0;
+        const mesesP = financiamiento.financiamiento.meses_permanencia || 0;
+        const fechaR = financiamiento.financiamiento.fecha_retiro || 'N/A';
+        
+        estadoBadge = `
+          <div class="alert alert-danger mb-0 p-2" style="font-size: 0.9em;">
+            <div class="d-flex align-items-center mb-1">
+              <span class="badge bg-danger me-2" style="font-size: 1em;">
+                <i class="fas fa-sign-out-alt me-1"></i>RETIRADO
+              </span>
+              <small class="text-muted">${fechaR}</small>
+            </div>
+            <div class="mt-1">
+              <small>
+                <i class="fas fa-exclamation-circle me-1"></i>
+                <strong>Penalidad:</strong> $ ${parseFloat(montoP).toFixed(2)} | 
+                <strong>Permanencia:</strong> ${mesesP} meses
+              </small>
+            </div>
+          </div>
+        `;
+      } else if (financiamiento.cuotas && financiamiento.cuotas.length > 0) {
+        // Calcular estado real desde las cuotas
+        const totalCuotas = financiamiento.cuotas.length;
+        const cuotasPagadas = financiamiento.cuotas.filter(c => c.estado && c.estado.toLowerCase() === 'pagado').length;
+        if (cuotasPagadas === totalCuotas) {
+          estadoBadge = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Cuotas Completadas</span>';
+        } else {
+          estadoBadge = `<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>En Progreso (${cuotasPagadas}/${totalCuotas})</span>`;
+        }
       } else if (estadoFinanciamiento.toLowerCase() === 'vendido - pendiente de entrega') {
         estadoBadge = '<span class="badge bg-info text-dark"><i class="fas fa-truck me-1"></i>Pendiente de Entrega</span>';
       } else {
@@ -332,31 +431,169 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
       elementos.estado.innerHTML = estadoBadge;
     }
 
+    // ✅ NUEVO: Mostrar/ocultar botón y sección de "Contrato Finalizado"
+    const btnFinalizarContrato = document.getElementById("btnFinalizarContrato");
+    const seccionContratoFinalizado = document.getElementById("seccionContratoFinalizado");
+    const contratoFinalizado = financiamiento.financiamiento.contrato_finalizado;
+
+    if (btnFinalizarContrato && seccionContratoFinalizado) {
+      if (contratoFinalizado == 1) {
+        // Contrato ya finalizado - mostrar sección y ocultar botón
+        btnFinalizarContrato.style.display = "none";
+        seccionContratoFinalizado.style.display = "block";
+
+        // Llenar datos de finalización
+        const fechaFinalizacion = financiamiento.financiamiento.fecha_finalizacion_contrato || "N/A";
+        const usuarioFinalizo = financiamiento.financiamiento.nombre_usuario_finalizo || "N/A";
+
+        document.getElementById("modalFechaFinalizacion").innerText = fechaFinalizacion;
+        document.getElementById("modalUsuarioFinalizo").innerText = usuarioFinalizo;
+      } else {
+        // Contrato NO finalizado - mostrar botón y ocultar sección
+        btnFinalizarContrato.style.display = "inline-block";
+        seccionContratoFinalizado.style.display = "none";
+      }
+    }
+
+    // ✅ NUEVO: Mostrar/ocultar botón de "Procesar Retiro" (solo planes 19 y 38)
+    const btnProcesarRetiro = document.getElementById("btnProcesarRetiro");
+    const grupoFinanciamiento = parseInt(financiamiento.financiamiento.grupo_financiamiento);
+    const estadoRetiro = financiamiento.financiamiento.estado_retiro;
+    
+    if (btnProcesarRetiro) {
+      // Solo mostrar para planes 19 (CrediGo auto Grupo 3) y 38 (CrediGo Autos Grupo 4)
+      // Y solo si NO está ya retirado
+      if ((grupoFinanciamiento === 19 || grupoFinanciamiento === 38) && estadoRetiro !== 'retirado') {
+        btnProcesarRetiro.style.display = "inline-block";
+        // Guardar ID del financiamiento para usarlo en el onclick
+        window.currentFinanciamientoId = financiamiento.financiamiento.idfinanciamiento;
+      } else {
+        btnProcesarRetiro.style.display = "none";
+      }
+    }
+
+    // ✅ NUEVO: Mostrar/ocultar botones de vinculación
+    const btnVincularFinanciamiento = document.getElementById("btnVincularFinanciamiento");
+    const btnDesvincularFinanciamiento = document.getElementById("btnDesvincularFinanciamiento");
+    const idFinanciamientoVinculado = financiamiento.financiamiento.id_financiamiento_vinculado;
+    const esPrincipal = financiamiento.financiamiento.es_financiamiento_principal;
+    
+    // Guardar ID del financiamiento para usarlo en los botones
+    window.currentFinanciamientoId = financiamiento.financiamiento.idfinanciamiento;
+    
+    if (btnVincularFinanciamiento && btnDesvincularFinanciamiento) {
+      // Si NO está vinculado, mostrar botón "Vincular"
+      if (!idFinanciamientoVinculado || idFinanciamientoVinculado === null) {
+        btnVincularFinanciamiento.style.display = "inline-block";
+        btnDesvincularFinanciamiento.style.display = "none";
+      } else {
+        // Si YA está vinculado, mostrar botón "Desvincular"
+        btnVincularFinanciamiento.style.display = "none";
+        btnDesvincularFinanciamiento.style.display = "inline-block";
+      }
+    }
+
+    // ✅ NUEVO: Mostrar información de vinculación si existe
+    const seccionVinculacion = document.getElementById("seccionVinculacion");
+    if (seccionVinculacion) {
+      if (idFinanciamientoVinculado && idFinanciamientoVinculado !== null) {
+        // Mostrar sección de vinculación
+        seccionVinculacion.style.display = "block";
+        
+        // 🔍 DEBUG: Ver qué datos tenemos del vinculado
+        console.log("🔍 DEBUG - Datos de vinculación:");
+        console.log("  - id_financiamiento_vinculado:", idFinanciamientoVinculado);
+        console.log("  - vinculado_nombres:", financiamiento.financiamiento.vinculado_nombres);
+        console.log("  - vinculado_apellido_paterno:", financiamiento.financiamiento.vinculado_apellido_paterno);
+        console.log("  - vinculado_apellido_materno:", financiamiento.financiamiento.vinculado_apellido_materno);
+        console.log("  - vinculado_documento:", financiamiento.financiamiento.vinculado_documento);
+        console.log("  - Objeto financiamiento completo:", financiamiento.financiamiento);
+        
+        // Llenar datos del financiamiento vinculado
+        const nombreVinculado = `${financiamiento.financiamiento.vinculado_nombres || ''} ${financiamiento.financiamiento.vinculado_apellido_paterno || ''} ${financiamiento.financiamiento.vinculado_apellido_materno || ''}`.trim();
+        const documentoVinculado = financiamiento.financiamiento.vinculado_documento || 'N/A';
+        const tipoVinculado = financiamiento.financiamiento.vinculado_id_conductor ? 'Conductor' : 'Cliente';
+        
+        document.getElementById("modalNombreVinculado").innerText = nombreVinculado || 'No disponible';
+        document.getElementById("modalDocumentoVinculado").innerText = documentoVinculado;
+        document.getElementById("modalIdVinculado").innerText = idFinanciamientoVinculado;
+        
+        // Mostrar tipo de vinculación (Principal o Secundario)
+        const badgeTipo = document.getElementById("modalTipoVinculacion");
+        if (esPrincipal == 1) {
+          badgeTipo.className = "badge bg-success";
+          badgeTipo.innerHTML = '<i class="fas fa-star me-1"></i>Principal (Cuenta en stock)';
+        } else {
+          badgeTipo.className = "badge bg-warning text-dark";
+          badgeTipo.innerHTML = '<i class="fas fa-link me-1"></i>Secundario (No cuenta en stock)';
+        }
+      } else {
+        // Ocultar sección si no está vinculado
+        seccionVinculacion.style.display = "none";
+      }
+    }
+
     // NUEVO: Mostrar sección CrediYango si aplica
     mostrarSeccionCrediYangoModal(financiamiento);
 
-    // NUEVO: Llenar campos según tipo de plan
+    // NUEVO: Notificación flotante de fecha próxima de entrega (CrediYango)
+    mostrarNotificacionEntrega(financiamiento);
+
+    // Llenar campos según tipo de plan
     if (financiamiento.financiamiento.es_vehiculo) {
-      // Mostrar campos de vehículo
-      document.getElementById("campoCapacidadCompra").style.display = "block";
+      // Mostrar sección de vehículo
       document.getElementById("infoVehiculo").style.display = "block";
 
-      // Llenar capacidad de compra actual
+      console.log('🔍 DEBUG es_vehiculo - producto:', financiamiento.producto);
+      console.log('🔍 DEBUG es_vehiculo - precio_venta:', financiamiento.producto?.precio_venta);
+      console.log('🔍 DEBUG es_vehiculo - capacidad_compra_actual:', financiamiento.financiamiento.capacidad_compra_actual);
+
+      // Capacidad de compra actual (lo que el plan le permite comprar)
       const capacidadCompra =
         financiamiento.financiamiento.capacidad_compra_actual || 0;
       document.getElementById(
         "modalFinanciamientoCapacidadCompra"
-      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
+      ).innerText = `${simboloMoneda} ${parseFloat(capacidadCompra).toLocaleString(
         "en-US",
         { minimumFractionDigits: 2 }
       )}`;
 
-      // Llenar información del plan
+      // Costo del Vehículo (precio_venta del producto)
+      const costoVehiculo = parseFloat(financiamiento.producto.precio_venta) || 0;
+      document.getElementById(
+        "modalFinanciamientoCostoVehiculo"
+      ).innerText = `${simboloMoneda} ${costoVehiculo.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+      })}`;
+
+      // Excedente = costo del vehículo - capacidad de compra (lo que el cliente paga extra)
+      const excedente = costoVehiculo - capacidadCompra;
+      const campoExcedente = document.getElementById("campoExcedente");
+      if (excedente > 0) {
+        campoExcedente.style.display = "block";
+        document.getElementById(
+          "modalFinanciamientoExcedente"
+        ).innerText = `${simboloMoneda} ${excedente.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+        })}`;
+      } else {
+        campoExcedente.style.display = "none";
+      }
+
+      // Monto de Compra = precio_venta del vehículo
+      document.getElementById(
+        "modalFinanciamientoMontoCompra"
+      ).innerText = `${simboloMoneda} ${costoVehiculo.toLocaleString(
+        "en-US",
+        { minimumFractionDigits: 2 }
+      )}`;
+
+      // Plan Original
       const planOriginal =
         financiamiento.financiamiento.plan_capacidad_original || 0;
       document.getElementById(
         "modalFinanciamientoPlanOriginal"
-      ).innerText = `${simboloMoneda} ${planOriginal.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(planOriginal).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
 
@@ -368,30 +605,21 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
       const dineroPerdido = financiamiento.financiamiento.dinero_perdido || 0;
       document.getElementById(
         "modalFinanciamientoDineroPerdido"
-      ).innerText = `${simboloMoneda} ${dineroPerdido.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(dineroPerdido).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
-
-      // Llenar monto de compra (capacidad actual)
-      document.getElementById(
-        "modalFinanciamientoMontoCompra"
-      ).innerText = `${simboloMoneda} ${capacidadCompra.toLocaleString(
-        "en-US",
-        { minimumFractionDigits: 2 }
-      )}`;
     } else {
       // Ocultar campos de vehículo para otros productos
-      document.getElementById("campoCapacidadCompra").style.display = "none";
       document.getElementById("infoVehiculo").style.display = "none";
 
-      // Llenar monto de compra normal
-      const montoCompra =
+      // Llenar monto de compra normal (precio_venta del producto)
+      const montoCompra = parseFloat(financiamiento.producto.precio_venta) ||
         financiamiento.financiamiento.monto_sin_interes ||
         financiamiento.financiamiento.monto_total ||
         0;
       document.getElementById(
         "modalFinanciamientoMontoCompra"
-      ).innerText = `${simboloMoneda} ${montoCompra.toLocaleString("en-US", {
+      ).innerText = `${simboloMoneda} ${parseFloat(montoCompra).toLocaleString("en-US", {
         minimumFractionDigits: 2,
       })}`;
     }
@@ -626,6 +854,15 @@ function mostrarDetallesCliente(idConductor) {
                         <td>${moneda} ${parseFloat(montoCompra).toLocaleString('es-PE', {minimumFractionDigits: 2})}</td>
                         <td>${moneda} ${parseFloat(montoTotal).toLocaleString('es-PE', {minimumFractionDigits: 2})}</td>
                         <td>${producto.categoria || 'Sin categoría'}</td>
+                        <td>${(() => {
+                            const estado = financiamiento.estado || '';
+                            if (financiamiento.contrato_finalizado == 1) return '<span class="badge bg-success"><i class="fas fa-check-double me-1"></i>Contrato Finalizado</span>';
+                            if (estado === 'Finalizado') return '<span class="badge bg-success"><i class="fas fa-check-double me-1"></i>Finalizado</span>';
+                            if (estado === 'En Progreso') return '<span class="badge bg-primary"><i class="fas fa-spinner me-1"></i>En Progreso</span>';
+                            if (estado === 'Pendiente') return '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendiente</span>';
+                            if (estado === 'Cancelado') return '<span class="badge bg-danger"><i class="fas fa-times me-1"></i>Cancelado</span>';
+                            return '<span class="badge bg-primary">' + (estado || 'N/A') + '</span>';
+                        })()}</td>
                         <td>${estadoEntregaBadge}</td>
                     </tr>`;
                     tbody.append(row); // Agregar la fila a la tabla correcta
@@ -887,3 +1124,170 @@ window.descargarCronogramaDesdeModal = function() {
     }
   });
 };
+
+// ✅ NUEVO: Función para finalizar un contrato
+function finalizarContrato() {
+  // Validar que haya un financiamiento seleccionado
+  if (!idFinanciamientoSeleccionado) {
+    Swal.fire('Error', 'No hay financiamiento seleccionado', 'error');
+    return;
+  }
+
+  // Confirmar con el usuario
+  Swal.fire({
+    title: '¿Finalizar Contrato?',
+    html: `
+      <p>¿Estás seguro que deseas marcar este contrato como <strong>FINALIZADO</strong>?</p>
+      <p class="text-muted">Esta acción quedará registrada con tu usuario y la fecha actual.</p>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#28a745',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: '<i class="fas fa-check-double me-2"></i>Sí, Finalizar',
+    cancelButtonText: '<i class="fas fa-times me-2"></i>Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Mostrar loader
+      Swal.fire({
+        title: 'Finalizando contrato...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // Llamar al endpoint para finalizar el contrato
+      $.ajax({
+        url: _URL + '/finalizarContrato',
+        type: 'POST',
+        data: {
+          idfinanciamiento: idFinanciamientoSeleccionado
+        },
+        dataType: 'json',
+        success: function(response) {
+          Swal.close();
+
+          if (response.success) {
+            Swal.fire({
+              title: 'Contrato Finalizado',
+              text: response.message,
+              icon: 'success',
+              showConfirmButton: true,
+              confirmButtonText: 'Aceptar'
+            }).then(() => {
+              // Recargar los detalles del modal para mostrar los cambios
+              if (idConductorClienteActual) {
+                mostrarDetallesCliente(idConductorClienteActual);
+              }
+            });
+          } else {
+            Swal.fire('Error', response.message || 'No se pudo finalizar el contrato', 'error');
+          }
+        },
+        error: function(xhr, status, error) {
+          Swal.close();
+          Swal.fire('Error', 'Ocurrió un error al finalizar el contrato: ' + error, 'error');
+          console.error('Error al finalizar contrato:', error);
+        }
+      });
+    }
+  });
+}
+
+// NUEVO: Notificación flotante de fecha próxima de entrega (solo CrediYango ID 45)
+function mostrarNotificacionEntrega(financiamiento) {
+  // Eliminar notificación anterior si existe
+  const notifAnterior = document.getElementById('notifEntregaFlotante');
+  if (notifAnterior) notifAnterior.remove();
+
+  const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == 45;
+  if (!esCrediYango) return;
+
+  const fechaProxima = financiamiento.financiamiento.fecha_proxima_entrega;
+  if (!fechaProxima) return;
+
+  // Calcular días restantes
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fechaEntrega = new Date(fechaProxima + 'T00:00:00');
+  const diffMs = fechaEntrega - hoy;
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  let colorFondo, icono, textoTiempo;
+  if (diffDias < 0) {
+    colorFondo = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+    icono = 'fas fa-exclamation-triangle';
+    textoTiempo = `Hace ${Math.abs(diffDias)} día(s) - ¡Entrega atrasada!`;
+  } else if (diffDias === 0) {
+    colorFondo = 'linear-gradient(135deg, #f9ca24 0%, #f0932b 100%)';
+    icono = 'fas fa-bell';
+    textoTiempo = '¡HOY es la entrega!';
+  } else if (diffDias <= 3) {
+    colorFondo = 'linear-gradient(135deg, #f9ca24 0%, #f0932b 100%)';
+    icono = 'fas fa-clock';
+    textoTiempo = `En ${diffDias} día(s)`;
+  } else {
+    colorFondo = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)';
+    icono = 'fas fa-calendar-day';
+    textoTiempo = `En ${diffDias} días`;
+  }
+
+  const fechaFormateada = fechaEntrega.toLocaleDateString('es-PE', {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  });
+
+  const notif = document.createElement('div');
+  notif.id = 'notifEntregaFlotante';
+  notif.innerHTML = `
+    <div style="
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      background: ${colorFondo}; color: white;
+      padding: 15px 20px; border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      max-width: 320px; animation: slideInRight 0.4s ease-out;
+      font-family: Arial, sans-serif;
+    ">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="${icono}" style="font-size: 24px;"></i>
+        <div>
+          <div style="font-weight: 700; font-size: 14px;">🚗 Entrega de Vehículo</div>
+          <div style="font-size: 13px; opacity: 0.95;">${fechaFormateada}</div>
+          <div style="font-size: 12px; font-weight: 600; margin-top: 2px;">${textoTiempo}</div>
+        </div>
+        <button onclick="this.closest('#notifEntregaFlotante').remove()" 
+          style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: auto; opacity: 0.8;">
+          ✕
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Agregar animación CSS si no existe
+  if (!document.getElementById('notifEntregaStyles')) {
+    const style = document.createElement('style');
+    style.id = 'notifEntregaStyles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(notif);
+
+  // Auto-ocultar después de 8 segundos (excepto si está atrasada)
+  if (diffDias >= 0) {
+    setTimeout(() => {
+      if (notif.parentNode) {
+        notif.style.transition = 'opacity 0.5s ease';
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 500);
+      }
+    }, 8000);
+  }
+}

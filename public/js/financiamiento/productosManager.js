@@ -1,11 +1,17 @@
 
-        function cargarProductos(categoriaFiltro = null) {
+        function cargarProductos(categoriaFiltro = null, idPlanFiltro = null) {
             let url = `/arequipago/obtenerProductos?pagina=${currentPage}`;
 
             // ✅ NUEVO: Agregar filtro de categoría si se especifica (para CrediYango)
             if (categoriaFiltro) {
                 url += `&categoria=${encodeURIComponent(categoriaFiltro)}`;
                 console.log(`🔍 Cargando productos con filtro de categoría: ${categoriaFiltro}`);
+            }
+
+            // ✅ NUEVO: Agregar filtro por id_plan si se especifica (para SOAT, etc.)
+            if (idPlanFiltro) {
+                url += `&id_plan=${idPlanFiltro}`;
+                console.log(`🔍 Cargando productos con filtro de plan: ${idPlanFiltro}`);
             }
 
             $.ajax({
@@ -21,8 +27,8 @@
                     resaltarProductoSeleccionado(); // Ensure selection is maintained after loading products
 
                     // ✅ NUEVO: Mostrar mensaje si hay filtro activo
-                    if (categoriaFiltro) {
-                        console.log(`✅ Productos cargados con filtro: ${categoriaFiltro} (${data.productos.length} resultados)`);
+                    if (categoriaFiltro || idPlanFiltro) {
+                        console.log(`✅ Productos cargados con filtro (${data.productos.length} resultados)`);
                     }
                 },
                 error: function () {
@@ -35,7 +41,14 @@
         function cargarProductosPorCategoria(categoria) {
             console.log(`🚗 cargarProductosPorCategoria('${categoria}') llamada`);
             currentPage = 1; // Resetear a página 1
-            cargarProductos(categoria);
+            cargarProductos(categoria, null);
+        }
+
+        // ✅ NUEVA FUNCIÓN: Cargar productos por plan (para SOAT, etc.)
+        function cargarProductosPorPlan(idPlan) {
+            console.log(`📋 cargarProductosPorPlan(${idPlan}) llamada`);
+            currentPage = 1; // Resetear a página 1
+            cargarProductos(null, idPlan);
         }
 
         function buscarProductos() {

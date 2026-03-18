@@ -123,25 +123,27 @@ require_once "app/models/Distrito.php";
 
                         <!-- Fila 3 -->
                         <div class="form-field">
-                            <label for="licencia">Nº de Licencia <span style="color: red;">*</span></label>
+                            <label for="licencia">Nº de Licencia <span v-if="vehiculo.tipoVehiculo !== 'tuktuk'" style="color: red;">*</span></label>
                             <input v-model="conductor.licencia" type="text" name="licencia" id="licencia"
-                                   :class="['form-control', {'field-error': errorCampos.licencia}]" required>
+                                   :class="['form-control', {'field-error': errorCampos.licencia}]" 
+                                   :required="vehiculo.tipoVehiculo !== 'tuktuk'">
                             <span v-if="errorCampos.licencia" class="error-message">Este campo es requerido</span>
                         </div>
 
                         <div class="form-field">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label for="licenciaCa">Lic. Categoría <span style="color: red;">*</span></label>
+                                <label for="licenciaCa">Lic. Categoría <span v-if="vehiculo.tipoVehiculo !== 'tuktuk'" style="color: red;">*</span></label>
                                 <div style="display: inline-block;">
-                                    <input v-model="vehiculo.esMoto" type="checkbox" id="toggle_tipo_vehiculo_small" />
-                                    <label for="toggle_tipo_vehiculo_small" id="toggle_label_small">
-                                        <span id="label_auto_small">Auto</span>
-                                        <span id="label_moto_small">Moto</span>
-                                    </label>
+                                    <select v-model="vehiculo.tipoVehiculo" id="select_tipo_vehiculo_small" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                        <option value="auto">🚕 Auto</option>
+                                        <option value="moto">🏍️ Moto</option>
+                                        <option value="tuktuk">🛺 Tuktuk</option>
+                                    </select>
                                 </div>
                             </div>
                             <select v-model="conductor.licenciaCa" name="licenciaCa" id="licenciaCa"
-                                    :class="['form-select', 'custom-select', {'field-error': errorCampos.licenciaCa}]" required>
+                                    :class="['form-select', 'custom-select', {'field-error': errorCampos.licenciaCa}]" 
+                                    :required="vehiculo.tipoVehiculo !== 'tuktuk'">
                                 <option value="notLicCategoria">Seleccionar</option>
                                 <template v-if="!vehiculo.esMoto">
                                     <option value="AIIB">AI</option>
@@ -295,19 +297,18 @@ require_once "app/models/Distrito.php";
 
 
                 <div id="toggle_tipo_vehiculo_container" style="margin-bottom: 1rem;">
-                    <label for="toggle_tipo_vehiculo" style="display: block; margin-bottom: 0.5rem;">Tipo de Vehículo</label>
-
-                    <input v-model="vehiculo.esMoto" type="checkbox" id="toggle_tipo_vehiculo" />
-
-                    <label for="toggle_tipo_vehiculo" id="toggle_label">
-                        <span id="label_auto">Auto</span>
-                        <span id="label_moto">Moto</span>
-                    </label>
+                    <label for="select_tipo_vehiculo" style="display: block; margin-bottom: 0.5rem;">Tipo de Vehículo <span style="color: red;">*</span></label>
+                    <select v-model="vehiculo.tipoVehiculo" id="select_tipo_vehiculo" class="form-select" required>
+                        <option value="">Seleccione tipo de vehículo</option>
+                        <option value="auto">Auto 🚕</option>
+                        <option value="moto">Moto 🏍️</option>
+                        <option value="tuktuk">Tuktuk 🛺</option>
+                    </select>
                 </div>
 
                     <div id="formularios_vehiculo">
                         <form>
-                            <h5 id="titulo_formulario">{{ vehiculo.esMoto ? 'Datos de la Moto' : 'Datos del Auto' }}</h5>
+                            <h5 id="titulo_formulario">{{ vehiculo.tipoVehiculo === 'moto' ? 'Datos de la Moto' : vehiculo.tipoVehiculo === 'tuktuk' ? 'Datos del Tuktuk' : 'Datos del Auto' }}</h5>
                             <div class="row mb-4">
                                 <div class="col-md-3">
                                     <label for="n_placa" id="label_n_placa">N° Placa <span style="color: red;">*</span></label>
@@ -523,11 +524,12 @@ require_once "app/models/Distrito.php";
                         <!-- Licencia -->
                         <div class="row mb-3 align-items-center">
                             <div class="col-md-3">
-                                <label for="licenciadoc" class="form-label mb-0">Licencia</label>
+                                <label for="licenciadoc" class="form-label mb-0">Licencia <span v-if="vehiculo.tipoVehiculo !== 'tuktuk'" style="color: red;">*</span></label>
                             </div>
                             <div class="col-md-5">
                                 <input type="file" id="licenciadoc" name="licenciadoc" class="form-control file-input-custom"
-                                    @change="handleFileChange('licenciadoc', $event)" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    @change="handleFileChange('licenciadoc', $event)" accept=".pdf,.jpg,.jpeg,.png" 
+                                    :required="vehiculo.tipoVehiculo !== 'tuktuk'">
                             </div>
                             <div class="col-md-4">
                                 <span v-if="archivos.licenciadoc" class="badge bg-success">
@@ -734,7 +736,7 @@ require_once "app/models/Distrito.php";
                     parentesco: ''
                 },
                 vehiculo: {
-                    esMoto: false,
+                    tipoVehiculo: 'auto',
                     placa: '',
                     marca: '',
                     modelo: '',
@@ -822,8 +824,11 @@ require_once "app/models/Distrito.php";
                     if (shouldShow('nombre') && !this.conductor.nombre) errors.nombre = true;
                     if (shouldShow('apellidoPaterno') && !this.conductor.apellidoPaterno) errors.apellidoPaterno = true;
                     if (shouldShow('apellidoMaterno') && !this.conductor.apellidoMaterno) errors.apellidoMaterno = true;
-                    if (shouldShow('licencia') && !this.conductor.licencia) errors.licencia = true;
-                    if (shouldShow('licenciaCa') && (!this.conductor.licenciaCa || this.conductor.licenciaCa === 'notLicCategoria')) errors.licenciaCa = true;
+                    // Licencia solo es requerida si NO es tuktuk
+                    if (this.vehiculo.tipoVehiculo !== 'tuktuk') {
+                        if (shouldShow('licencia') && !this.conductor.licencia) errors.licencia = true;
+                        if (shouldShow('licenciaCa') && (!this.conductor.licenciaCa || this.conductor.licenciaCa === 'notLicCategoria')) errors.licenciaCa = true;
+                    }
                     if (shouldShow('nacionalidad') && !this.conductor.nacionalidad) errors.nacionalidad = true;
                     if (shouldShow('fechaNac') && !this.conductor.fechaNac) errors.fechaNac = true;
                     if (shouldShow('telefono') && !this.conductor.telefono) errors.telefono = true;
@@ -918,6 +923,16 @@ require_once "app/models/Distrito.php";
                     this.actualizarNumeroUnidadConDepartamento();
                     // Reset licencia category si no es compatible
                     if (newVal && !['B-I', 'B-IIa', 'B-IIb', 'B-IIc'].includes(this.conductor.licenciaCa)) {
+                        this.conductor.licenciaCa = 'notLicCategoria';
+                    }
+                },
+                'vehiculo.tipoVehiculo'(newVal) {
+                    // Actualizar número de unidad cuando cambia tipo de vehículo (auto/moto/tuktuk)
+                    this.actualizarNumeroUnidadConDepartamento();
+                    // Reset licencia category si no es compatible con el tipo
+                    if (newVal === 'moto' && !['B-I', 'B-IIa', 'B-IIb', 'B-IIc'].includes(this.conductor.licenciaCa)) {
+                        this.conductor.licenciaCa = 'notLicCategoria';
+                    } else if (newVal === 'auto' && ['B-I', 'B-IIa', 'B-IIb', 'B-IIc'].includes(this.conductor.licenciaCa)) {
                         this.conductor.licenciaCa = 'notLicCategoria';
                     }
                 },
@@ -1093,7 +1108,7 @@ require_once "app/models/Distrito.php";
                     });
                 },
                 actualizarNumeroUnidadConDepartamento() {
-                    const tipoVehiculo = this.vehiculo.esMoto ? 'moto' : 'auto';
+                    const tipoVehiculo = this.vehiculo.tipoVehiculo || 'auto';
                     // Comparar con == para que funcione con string o número
                     if (this.direccion.departamento == 19) {
                         this.obtenerNumeroUnidadLima(tipoVehiculo);
@@ -1261,7 +1276,7 @@ require_once "app/models/Distrito.php";
                     formData.append('parentesco', this.emergencia.parentesco);
 
                     // Agregar vehículo
-                    const tipoVehiculo = this.vehiculo.esMoto ? 'moto' : 'auto';
+                    const tipoVehiculo = this.vehiculo.tipoVehiculo || 'auto';
                     formData.append('tipo_vehiculo', tipoVehiculo);
                     formData.append('placa', this.vehiculo.placa);
                     formData.append('marca', this.vehiculo.marca);

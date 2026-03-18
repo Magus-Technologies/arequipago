@@ -132,7 +132,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                         <div class="col-md-2">
                             <label for="filtroOficina" class="form-label">Filtrar por Oficina</label>
                             <select id="filtroOficina" class="form-select form-select-sm" onchange="cambiarOficina();">
-                                <option value="1" selected>Oficina 1</option>
+                                <option value="" selected>Todas las oficinas</option>
+                                <option value="1">Oficina 1</option>
                                 <option value="2">Oficina 2</option>
                                 <option value="3">Oficina Lima</option>
                             </select>
@@ -618,6 +619,18 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             </div>
                         </div>
                         <hr class="my-3">
+                        <h6 class="text-muted small mb-3">Especificaciones Técnicas</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Memoria RAM</label>
+                                <p class="mb-0" id="detalle-memoria-ram"></p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small">Almacenamiento</label>
+                                <p class="mb-0" id="detalle-almacenamiento"></p>
+                            </div>
+                        </div>
+                        <hr class="my-3">
                         <h6 class="text-muted small mb-3">Accesorios Incluidos</h6>
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -812,6 +825,34 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
+                                    <label for="memoria_ram" class="form-label">Memoria RAM</label>
+                                    <select id="memoria_ram" name="memoria_ram" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="2GB">2 GB</option>
+                                        <option value="3GB">3 GB</option>
+                                        <option value="4GB">4 GB</option>
+                                        <option value="6GB">6 GB</option>
+                                        <option value="8GB">8 GB</option>
+                                        <option value="12GB">12 GB</option>
+                                        <option value="16GB">16 GB</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="almacenamiento" class="form-label">Almacenamiento</label>
+                                    <select id="almacenamiento" name="almacenamiento" class="form-control">
+                                        <option value="">Seleccionar</option>
+                                        <option value="16GB">16 GB</option>
+                                        <option value="32GB">32 GB</option>
+                                        <option value="64GB">64 GB</option>
+                                        <option value="128GB">128 GB</option>
+                                        <option value="256GB">256 GB</option>
+                                        <option value="512GB">512 GB</option>
+                                        <option value="1TB">1 TB</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
                                     <label for="nro_imei" class="form-label">Nº IMEI</label>
                                     <input id="nro_imei" name="nro_imei" class="form-control">
                                 </div>
@@ -901,7 +942,28 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 </div>
                             </div>
 
-                            <!-- Fila 5: Fechas de Vencimiento -->
+                            <!-- Fila 5: Kilometraje -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="kilometraje" class="form-label">Kilometraje</label>
+                                    <input id="kilometraje" name="kilometraje" type="number" min="0" class="form-control" placeholder="Ej: 15000">
+                                    <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+
+                            <!-- Fila GPS -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="gps_activo" name="gps_activo" value="1">
+                                        <label class="form-check-label" for="gps_activo">
+                                            <i class="fas fa-map-marker-alt me-1"></i> GPS Activo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 6: Fechas de Vencimiento -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="fecha_venc_soat" class="form-label">Fecha Vencimiento SOAT</label>
@@ -1075,7 +1137,9 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         var chipPlanMovilWrapper = document.getElementById('chip_plan_movil_wrapper');
         var vehiculoWrapper = document.getElementById('vehiculo_wrapper');
 
-        if (select.value === 'soat' || select.value === 'seguro') {
+        const selectedTextRaw = select.options[select.selectedIndex].text.toLowerCase().trim();
+
+        if (selectedTextRaw === 'soat' || selectedTextRaw === 'seguro') {
             label.style.display = 'block';
             dateInput.style.display = 'block';
         } else {
@@ -1083,14 +1147,13 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             dateInput.style.display = 'none';
         }
 
-        const categoriaSelect = document.getElementById("categoria_producto");
         const llantasWrapper = document.getElementById("llantas_wrapper");
 
-        // Verificar la opción seleccionada
-        if (categoriaSelect.value === "llantas") {
-            llantasWrapper.style.display = "block"; // Mostrar el div
+        // Verificar la opción seleccionada usando el TEXTO, no el value (que es un ID numérico)
+        if (selectedTextRaw === "llantas") {
+            llantasWrapper.style.display = "block";
         } else {
-            llantasWrapper.style.display = "none"; // Ocultar el div
+            llantasWrapper.style.display = "none";
         }
 
         // Mostrar/ocultar campos para Celular
@@ -1108,12 +1171,12 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         }
 
         // Mostrar/ocultar campos para Vehículo de manera flexible (ignorar mayúsculas, acentos, espacios)
-        const vehiculoRegex = /veh[íi]cul[o]?[s]?/i; // Expresión regular flexible
-        const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim(); // Convertir a minúscula y eliminar espacios
-        if (vehiculoRegex.test(selectedText)) { // Validación flexible con regex
-            vehiculoWrapper.style.display = 'block'; // Mostrar el div para vehículo si la opción coincide
+        const vehiculoRegex = /veh[íi]cul[o]?[s]?|moto\s*lineal|motokar|trimovil|cuatrimoto/i;
+        const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim();
+        if (vehiculoRegex.test(selectedText)) {
+            vehiculoWrapper.style.display = 'block';
         } else {
-            vehiculoWrapper.style.display = 'none'; // Ocultar si no es vehículo
+            vehiculoWrapper.style.display = 'none';
         }
     }
 
@@ -1746,6 +1809,8 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             formData.append('cable_usb', document.getElementById('cable_usb').value);
             formData.append('manual_usuario', document.getElementById('manual_usuario').value);
             formData.append('estuche', document.getElementById('estuche').value);
+            formData.append('memoria_ram', document.getElementById('memoria_ram').value);
+            formData.append('almacenamiento', document.getElementById('almacenamiento').value);
         }
 
         // Obtener el wrapper de vehículo
@@ -1773,6 +1838,10 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             formData.append('vin', vin);
             formData.append('color', document.getElementById('color').value);  // Color añadido
             formData.append('anio', document.getElementById('anio').value);    // Año añadido
+            formData.append('placa_vehiculo', document.getElementById('placa_vehiculo').value);  // Placa añadido
+            formData.append('transmision_vehiculo', document.getElementById('transmision_vehiculo').value);  // Transmisión añadido
+            formData.append('kilometraje', document.getElementById('kilometraje').value);  // Kilometraje añadido
+            formData.append('gps_activo', document.getElementById('gps_activo').checked ? '1' : '0');  // GPS añadido
         }
 
         $.ajax({
@@ -2069,6 +2138,8 @@ function mostrarDetallesProducto(idProducto) {
                     $('#detalle-cable-usb').text(producto.cable_usb || 'No disponible');
                     $('#detalle-manual').text(producto.manual_usuario || 'No disponible');
                     $('#detalle-estuche').text(producto.estuche || 'No disponible');
+                    $('#detalle-memoria-ram').text(producto.memoria_ram || 'No disponible');
+                    $('#detalle-almacenamiento').text(producto.almacenamiento || 'No disponible');
                 }
 
                 // Mostrar/ocultar sección de chip/plan móvil
@@ -2089,12 +2160,15 @@ function mostrarDetallesProducto(idProducto) {
                     
                     // Ordenar características
                     const ordenCaracteristicas = {
-                        'anio': 1,
-                        'color': 2,
-                        'fecha_venc_soat': 3,
-                        'fecha_venc_seguro': 4,
-                        'chasis': 5,
-                        'vin': 6
+                        'placa': 1,
+                        'transmision': 2,
+                        'kilometraje': 3,
+                        'anio': 4,
+                        'color': 5,
+                        'fecha_venc_soat': 6,
+                        'fecha_venc_seguro': 7,
+                        'chasis': 8,
+                        'vin': 9
                     };
                     
                     producto.caracteristicas.sort(function(a, b) {
@@ -2114,10 +2188,13 @@ function mostrarDetallesProducto(idProducto) {
                         
                         // Nombres más amigables
                         const nombresAmigables = {
+                            'placa': 'Placa',
+                            'transmision': 'Transmisión',
+                            'kilometraje': 'Kilometraje',
                             'fecha_venc_soat': 'Vencimiento SOAT',
                             'fecha_venc_seguro': 'Vencimiento Seguro',
                             'anio': 'Año',
-                            'chasis': 'Chasis',
+                            'chasis': 'Nº de Motor',
                             'vin': 'VIN',
                             'color': 'Color'
                         };
@@ -2385,10 +2462,24 @@ function cargarCategoriaProductos() {
     }    
 
     function downloadReport() {
-        fetch('/arequipago/downloadReport', { // URL del controlador y función
-            method: 'GET', // Método GET para solicitar el archivo
+        // Recopilar filtros activos
+        var params = new URLSearchParams();
+        var oficina = $('#filtroOficina').val() || 1;
+        params.set('oficina', oficina);
+        params.set('filtroStock', filtroStockActual || 'todos');
+        params.set('filtroTipo', $('#filtroTipoProducto').val() || 'todos');
+        if (categoriasSeleccionadas.length > 0) {
+            params.set('categorias', categoriasSeleccionadas.join(','));
+        }
+        var busqueda = $('#buscadorProductos').val().trim();
+        if (busqueda) {
+            params.set('busqueda', busqueda);
+        }
+
+        fetch('/arequipago/downloadReport?' + params.toString(), {
+            method: 'GET',
             headers: {
-                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // Indicar que se espera un archivo Excel
+                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             },
         })
         .then(response => {

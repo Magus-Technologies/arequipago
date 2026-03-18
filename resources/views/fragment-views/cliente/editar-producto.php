@@ -599,14 +599,18 @@
                     { nombre: 'Plan Mensual', campo: 'plan_mensual', tipo: 'text' },
                     { nombre: 'Operadora', campo: 'operadora', tipo: 'text' }
                 ];
-            } else if (categoriaNorm.includes('vehiculo')) {
+            } else if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto lineal') || categoriaNorm.includes('motolineal') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                 todasLasCaracteristicas = [
-                    { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat', tipo: 'date' },  // ✅ TIPO DATE
-                    { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro', tipo: 'date' },  // ✅ TIPO DATE
+                    { nombre: 'Placa', campo: 'placa_vehiculo', tipo: 'text' },
+                    { nombre: 'Transmisión', campo: 'transmision_vehiculo', tipo: 'text' },
+                    { nombre: 'Kilometraje', campo: 'kilometraje', tipo: 'number' },
+                    { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat', tipo: 'date' },
+                    { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro', tipo: 'date' },
                     { nombre: 'Nº de Motor', campo: 'chasis', tipo: 'text' },
                     { nombre: 'VIN (Número de identificación del Vehículo)', campo: 'vin', tipo: 'text' },
                     { nombre: 'Color', campo: 'color', tipo: 'text' },
-                    { nombre: 'Año del vehículo', campo: 'anio', tipo: 'number' }
+                    { nombre: 'Año del vehículo', campo: 'anio', tipo: 'number' },
+                    { nombre: 'GPS Activo', campo: 'gps_activo', tipo: 'checkbox' }
                 ];
             }
             
@@ -642,13 +646,15 @@
                 'cargador': 'cargador',
                 'cable_usb': 'cable_usb',
                 'manual_usuario': 'manual_usuario',
-                'estuche': 'estuche'
+                'estuche': 'estuche',
+                'memoria_ram': 'memoria_ram',
+                'almacenamiento': 'almacenamiento'
             };
 
             // Si no es nueva categoría y tenemos una categoría específica, cargar campos completos
             if (!esNuevaCategoria && categoriaOriginal) {
                 const categoriaNorm = normalizarTexto(categoriaOriginal);
-                if (categoriaNorm.includes('llanta') || categoriaNorm.includes('chip') || categoriaNorm.includes('vehiculo')) {
+                if (categoriaNorm.includes('llanta') || categoriaNorm.includes('chip') || categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                     caracteristicas = cargarCaracteristicasCompletasPorCategoria(categoriaOriginal, caracteristicas);
                 }
             }
@@ -681,15 +687,38 @@
                         tipo = 'number';
                     }
 
-                    html += `
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-cog text-primary"></i>
-                                ${nombre}
-                            </label>
-                            <input type="${tipo}" class="form-control" name="${campo}" value="${valor}"${tipo === 'date' ? '' : ' placeholder="Ingrese ' + nombre.toLowerCase() + '"'}>
-                        </div>
-                    `;
+                    // Campos con select para RAM y Almacenamiento
+                    if (campo === 'memoria_ram') {
+                        const opcionesRam = ['2GB','3GB','4GB','6GB','8GB','12GB','16GB'];
+                        html += `<div class="mb-3"><label class="form-label"><i class="fas fa-memory text-primary"></i> Memoria RAM</label><select class="form-control" name="${campo}"><option value="">Seleccionar</option>`;
+                        opcionesRam.forEach(op => { html += `<option value="${op}"${valor===op?' selected':''}>${op}</option>`; });
+                        html += `</select></div>`;
+                    } else if (campo === 'almacenamiento') {
+                        const opcionesAlm = ['16GB','32GB','64GB','128GB','256GB','512GB','1TB'];
+                        html += `<div class="mb-3"><label class="form-label"><i class="fas fa-hdd text-primary"></i> Almacenamiento</label><select class="form-control" name="${campo}"><option value="">Seleccionar</option>`;
+                        opcionesAlm.forEach(op => { html += `<option value="${op}"${valor===op?' selected':''}>${op}</option>`; });
+                        html += `</select></div>`;
+                    } else if (tipo === 'checkbox') {
+                        const isChecked = valor === '1' || valor === 'Si' || valor === 'true' ? 'checked' : '';
+                        html += `<div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="${campo}" id="${campo}" value="1" ${isChecked}>
+                                <label class="form-check-label" for="${campo}">
+                                    <i class="fas fa-map-marker-alt text-primary me-1"></i> ${nombre}
+                                </label>
+                            </div>
+                        </div>`;
+                    } else {
+                        html += `
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-cog text-primary"></i>
+                                    ${nombre}
+                                </label>
+                                <input type="${tipo}" class="form-control" name="${campo}" value="${valor}"${tipo === 'date' ? '' : ' placeholder="Ingrese ' + nombre.toLowerCase() + '"'}>
+                            </div>
+                        `;
+                    }
 
                 });
             } else {
@@ -953,14 +982,18 @@
                     { nombre: 'Plan Mensual', campo: 'plan_mensual' },
                     { nombre: 'Operadora', campo: 'operadora' }
                 ];
-            } else if (categoriaNorm.includes('vehiculo')) {
+            } else if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto lineal') || categoriaNorm.includes('motolineal') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                 todasLasCaracteristicas = [
+                    { nombre: 'Placa', campo: 'placa_vehiculo' },
+                    { nombre: 'Transmisión', campo: 'transmision_vehiculo' },
+                    { nombre: 'Kilometraje', campo: 'kilometraje' },
                     { nombre: 'Fecha de vencimiento', campo: 'fecha_venc_soat' },
                     { nombre: 'Fechas de Vencimiento del Seguro', campo: 'fecha_venc_seguro' },
                     { nombre: 'Nº de Motor', campo: 'chasis' },
                     { nombre: 'VIN (Número de identificación del Vehículo)', campo: 'vin' },
                     { nombre: 'Color', campo: 'color' },
-                    { nombre: 'Año del vehículo', campo: 'anio' }
+                    { nombre: 'Año del vehículo', campo: 'anio' },
+                    { nombre: 'GPS Activo', campo: 'gps_activo' }
                 ];
             }
             

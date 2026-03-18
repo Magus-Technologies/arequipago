@@ -142,12 +142,21 @@ class RegistrarConductorController extends Controller
             $conductor->setApellidoPaterno($_POST['apellido_paterno']);
             $conductor->setApellidoMaterno($_POST['apellido_materno']);
             $conductor->setNacionalidad($_POST['nacionalidad']);
-            $conductor->setNroLicencia($_POST['licencia']);
+            
+            // Licencia es opcional para tuktuk
+            $tipoVehiculo = isset($_POST['tipo_vehiculo']) ? $_POST['tipo_vehiculo'] : 'auto';
+            if ($tipoVehiculo === 'tuktuk') {
+                $conductor->setNroLicencia(isset($_POST['licencia']) && !empty($_POST['licencia']) ? $_POST['licencia'] : null);
+                $conductor->setCategoriaLicencia(isset($_POST['licenciaCa']) && $_POST['licenciaCa'] !== 'notLicCategoria' ? $_POST['licenciaCa'] : null);
+            } else {
+                $conductor->setNroLicencia($_POST['licencia']);
+                $conductor->setCategoriaLicencia($_POST['licenciaCa']);
+            }
+            
             $conductor->setTelefono($_POST['telefono']);
             $conductor->setCorreo(isset($_POST['correo']) ? $_POST['correo'] : '');
             $conductor->setNumUnidad($_POST['numUnidad']);
             $conductor->setNumeroCodFi($_POST['numerocodfi']);
-            $conductor->setCategoriaLicencia($_POST['licenciaCa']);
             
             // Formatear la fecha antes de guardarla
             $fecha = date('Y-m-d', strtotime($_POST['fechaNac']));
@@ -473,6 +482,7 @@ public function buscarConductor()
             $numeroCuotas = null;
 
             if ($esLima) {
+                // ✅ MODIFICADO: 150 soles para Lima (tanto contado como financiado)
                 $montoDefecto = 150;
                 $tasaInteres = 0;
                 $numeroCuotas = 3;
@@ -518,8 +528,8 @@ public function buscarConductor()
             // Obtener el tipo de vehículo del parámetro GET
             $tipoVehiculo = isset($_GET['tipo']) ? $_GET['tipo'] : 'auto';
             
-            // Validar que el tipo sea válido
-            if (!in_array($tipoVehiculo, ['auto', 'moto'])) {
+            // Validar que el tipo sea válido (agregado tuktuk)
+            if (!in_array($tipoVehiculo, ['auto', 'moto', 'tuktuk'])) {
                 $tipoVehiculo = 'auto';
             }
             
@@ -547,8 +557,8 @@ public function buscarConductor()
             // Obtener el tipo de vehículo del parámetro GET
             $tipoVehiculo = isset($_GET['tipo']) ? $_GET['tipo'] : 'auto';
 
-            // Validar que el tipo sea válido
-            if (!in_array($tipoVehiculo, ['auto', 'moto'])) {
+            // Validar que el tipo sea válido (agregado tuktuk)
+            if (!in_array($tipoVehiculo, ['auto', 'moto', 'tuktuk'])) {
                 $tipoVehiculo = 'auto';
             }
 

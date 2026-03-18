@@ -588,6 +588,31 @@ if (!in_array($rol_usuario, [1, 3,2])) {
 
             let fechaEntrega = item.fecha_entrega ? new Date(item.fecha_entrega).toLocaleDateString('es-PE') : 'N/A';
 
+            // ✅ NUEVO: Construir nombre del cliente con vinculado si existe
+            let nombreCliente = item.cliente_nombre || 'N/A';
+            let documentoCliente = item.documento || 'N/A';
+            
+            if (item.vinculado_nombre) {
+                // Hay un financiamiento vinculado - mostrar ambos
+                nombreCliente = `
+                    <div>
+                        <strong>${item.cliente_nombre}</strong>
+                        <span class="badge bg-success ms-1" style="font-size: 0.7em;">Principal</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.85em; margin-top: 3px;">
+                        <i class="fas fa-link me-1"></i>${item.vinculado_nombre}
+                        <span class="badge bg-warning text-dark ms-1" style="font-size: 0.7em;">Vinculado</span>
+                    </div>
+                `;
+                
+                documentoCliente = `
+                    <div>${item.documento || 'N/A'}</div>
+                    <div class="text-muted" style="font-size: 0.85em; margin-top: 3px;">
+                        ${item.vinculado_documento || 'N/A'}
+                    </div>
+                `;
+            }
+
             let acciones = '';
             if (item.id_constatacion) {
                 // Obtener teléfono del cliente
@@ -613,8 +638,8 @@ if (!in_array($rol_usuario, [1, 3,2])) {
 
             let fila = `
                 <tr data-estado="${item.id_constatacion ? 'verificado' : 'pendiente'}">
-                    <td>${item.cliente_nombre || 'N/A'}</td>
-                    <td>${item.documento || 'N/A'}</td>
+                    <td>${nombreCliente}</td>
+                    <td>${documentoCliente}</td>
                     <td><span class="badge bg-${item.tipo_persona === 'conductor' ? 'primary' : 'info'}">${item.tipo_persona}</span></td>
                     <td>${item.producto_nombre || 'N/A'}</td>
                     <td>${fechaEntrega}</td>

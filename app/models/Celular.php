@@ -26,8 +26,10 @@ class Celular {
             cargador, 
             cable_usb, 
             manual_usuario,
-            estuche -- AÑADIDO: campo 'estuche' incluido en la consulta
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; // CAMBIADO: ahora hay 11 signos de interrogación (antes estaban bien)
+            estuche,
+            memoria_ram,
+            almacenamiento
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
         // Preparar la sentencia
         $stmt = $this->conectar->prepare($query);
@@ -39,7 +41,7 @@ class Celular {
     
         // Vincular parámetros
         $stmt->bind_param(
-            "issssssssss", // CAMBIADO: antes era "isssssssss", ahora se agregaron 11 tipos (1 entero y 10 strings)
+            "issssssssssss",
             $data['idproductosv2'],
             $data['chip_linea'],
             $data['marca'],
@@ -50,7 +52,9 @@ class Celular {
             $data['cargador'],
             $data['cable_usb'],
             $data['manual_usuario'],
-            $data['estuche'] // AÑADIDO: se agregó 'estuche' en el bind
+            $data['estuche'],
+            $data['memoria_ram'],
+            $data['almacenamiento']
         );
     
         // Ejecutar la consulta
@@ -91,22 +95,24 @@ class Celular {
                     $row = $result->fetch_assoc();
                     $idCelular = $row['idcelulares'];
                     
-                    $query = "UPDATE celulares SET 
-                        chip_linea = ?, 
-                        marca = ?, 
-                        modelo = ?, 
-                        imei = ?, 
-                        imei2 = ?, 
-                        color = ?, 
-                        cargador = ?, 
-                        cable_usb = ?, 
+                    $query = "UPDATE celulares SET
+                        chip_linea = ?,
+                        marca = ?,
+                        modelo = ?,
+                        imei = ?,
+                        imei2 = ?,
+                        color = ?,
+                        cargador = ?,
+                        cable_usb = ?,
                         manual_usuario = ?,
-                        estuche = ?
+                        estuche = ?,
+                        memoria_ram = ?,
+                        almacenamiento = ?
                         WHERE idcelulares = ?";
-                    
+
                     $stmt = $this->conectar->prepare($query);
                     $stmt->bind_param(
-                        "ssssssssssi",
+                        "ssssssssssssi",
                         $celular['chip_linea'],
                         $celular['marca'],
                         $celular['modelo'],
@@ -117,27 +123,31 @@ class Celular {
                         $celular['cable_usb'],
                         $celular['manual_usuario'],
                         $celular['estuche'],
+                        $celular['memoria_ram'],
+                        $celular['almacenamiento'],
                         $idCelular
                     );
                 } else {
                     // Insertar nuevo registro
                     $query = "INSERT INTO celulares (
-                        idproductosv2, 
-                        chip_linea, 
-                        marca, 
-                        modelo, 
-                        imei, 
-                        imei2, 
-                        color, 
-                        cargador, 
-                        cable_usb, 
+                        idproductosv2,
+                        chip_linea,
+                        marca,
+                        modelo,
+                        imei,
+                        imei2,
+                        color,
+                        cargador,
+                        cable_usb,
                         manual_usuario,
-                        estuche
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                    
+                        estuche,
+                        memoria_ram,
+                        almacenamiento
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
                     $stmt = $this->conectar->prepare($query);
                     $stmt->bind_param(
-                        "issssssssss",
+                        "issssssssssss",
                         $celular['idproductosv2'],
                         $celular['chip_linea'],
                         $celular['marca'],
@@ -148,7 +158,9 @@ class Celular {
                         $celular['cargador'],
                         $celular['cable_usb'],
                         $celular['manual_usuario'],
-                        $celular['estuche']
+                        $celular['estuche'],
+                        $celular['memoria_ram'],
+                        $celular['almacenamiento']
                     );
                 }
                 
@@ -214,13 +226,13 @@ class Celular {
     private function insertarCelular($datos) {
         try {
             $query = "INSERT INTO celulares (
-                idproductosv2, chip_linea, marca, modelo, imei, imei2, 
-                color, cargador, cable_usb, manual_usuario, estuche
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            
+                idproductosv2, chip_linea, marca, modelo, imei, imei2,
+                color, cargador, cable_usb, manual_usuario, estuche,
+                memoria_ram, almacenamiento
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
             $stmt = $this->conectar->prepare($query);
-            
-            // Asegurarse de que todos los campos existan, si no usar NULL
+
             $idProducto = intval($datos['idproductosv2']);
             $chipLinea = $datos['chip_linea'] ?? null;
             $marca = $datos['marca'] ?? null;
@@ -232,11 +244,14 @@ class Celular {
             $cableUsb = $datos['cable_usb'] ?? null;
             $manualUsuario = $datos['manual_usuario'] ?? null;
             $estuche = $datos['estuche'] ?? null;
-            
+            $memoriaRam = $datos['memoria_ram'] ?? null;
+            $almacenamiento = $datos['almacenamiento'] ?? null;
+
             $stmt->bind_param(
-                "issssssssss", 
+                "issssssssssss",
                 $idProducto, $chipLinea, $marca, $modelo, $imei, $imei2,
-                $color, $cargador, $cableUsb, $manualUsuario, $estuche
+                $color, $cargador, $cableUsb, $manualUsuario, $estuche,
+                $memoriaRam, $almacenamiento
             );
             
             $resultado = $stmt->execute();
@@ -260,14 +275,14 @@ class Celular {
      */
     private function actualizarCelular($idCelular, $datos) {
         try {
-            $query = "UPDATE celulares SET 
+            $query = "UPDATE celulares SET
                 chip_linea = ?, marca = ?, modelo = ?, imei = ?, imei2 = ?,
-                color = ?, cargador = ?, cable_usb = ?, manual_usuario = ?, estuche = ?
+                color = ?, cargador = ?, cable_usb = ?, manual_usuario = ?, estuche = ?,
+                memoria_ram = ?, almacenamiento = ?
                 WHERE idcelulares = ?";
-            
+
             $stmt = $this->conectar->prepare($query);
-            
-            // Asegurarse de que todos los campos existan, si no usar NULL
+
             $chipLinea = $datos['chip_linea'] ?? null;
             $marca = $datos['marca'] ?? null;
             $modelo = $datos['modelo'] ?? null;
@@ -278,11 +293,14 @@ class Celular {
             $cableUsb = $datos['cable_usb'] ?? null;
             $manualUsuario = $datos['manual_usuario'] ?? null;
             $estuche = $datos['estuche'] ?? null;
-            
+            $memoriaRam = $datos['memoria_ram'] ?? null;
+            $almacenamiento = $datos['almacenamiento'] ?? null;
+
             $stmt->bind_param(
-                "ssssssssssi", 
+                "ssssssssssssi",
                 $chipLinea, $marca, $modelo, $imei, $imei2,
-                $color, $cargador, $cableUsb, $manualUsuario, $estuche, $idCelular
+                $color, $cargador, $cableUsb, $manualUsuario, $estuche,
+                $memoriaRam, $almacenamiento, $idCelular
             );
             
             $resultado = $stmt->execute();
@@ -410,6 +428,14 @@ class Celular {
                 [
                     'nombre_caracteristicas' => 'estuche',
                     'valor_caracteristica' => $celular['estuche'] ?? ''
+                ],
+                [
+                    'nombre_caracteristicas' => 'memoria_ram',
+                    'valor_caracteristica' => $celular['memoria_ram'] ?? ''
+                ],
+                [
+                    'nombre_caracteristicas' => 'almacenamiento',
+                    'valor_caracteristica' => $celular['almacenamiento'] ?? ''
                 ]
             ];
             

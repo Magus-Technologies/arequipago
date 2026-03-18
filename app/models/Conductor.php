@@ -157,9 +157,17 @@ class Conductor
     {
         try {
             // Búsqueda exacta y parcial para número de documento
-            $sql = 'SELECT id_conductor, nro_documento, nombres, apellido_paterno, apellido_materno, numeroCodFi
-                    FROM conductores
-                    WHERE nro_documento = ? OR nro_documento LIKE ?
+            $sql = 'SELECT c.id_conductor, c.nro_documento, c.nombres, c.apellido_paterno, c.apellido_materno,
+                    c.desvinculado,
+                    COALESCE(
+                        NULLIF(NULLIF(c.numeroCodFi, ""), "0"),
+                        NULLIF(NULLIF(MAX(f.codigo_asociado), ""), "0")
+                    ) as numeroCodFi,
+                    (SELECT pc.puntaje_actual FROM puntaje_crediticio pc WHERE pc.id_conductor = c.id_conductor AND pc.tipo_cliente = "conductor" LIMIT 1) AS puntaje_actual
+                    FROM conductores c
+                    LEFT JOIN financiamiento f ON f.id_conductor = c.id_conductor AND f.estado_eliminado = 0
+                    WHERE c.nro_documento = ? OR c.nro_documento LIKE ?
+                    GROUP BY c.id_conductor
                     LIMIT 10';
 
             $stmt = $this->conectar->prepare($sql);
@@ -228,7 +236,7 @@ class Conductor
         }
     }
 
-    public function obtenerTodosConductores($pagina, $cantidadPorPagina, $sortField = null, $sortDirection = null)
+    public function obtenerTodosConductores($pagina, $cantidadPorPagina, $sortField = null, $sortDirection = null, $asesorId = null)
     {
         $offset = ($pagina - 1) * $cantidadPorPagina;
 
@@ -241,12 +249,19 @@ class Conductor
                     c.numUnidad,
                     COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
                     COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+                    MAX(f.id_variante) AS id_variante,
+                    MAX(f.nombre_personalizado) AS nombre_personalizado,
                     COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
                     MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
                 FROM conductores c
                 INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)
-                GROUP BY c.id_conductor, c.nombres, c.apellido_paterno, c.apellido_materno";
+                WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)";
+
+        if ($asesorId) {
+            $query .= " AND f.usuario_id = " . (int)$asesorId;
+        }
+
+        $query .= " GROUP BY c.id_conductor, c.nombres, c.apellido_paterno, c.apellido_materno";
 
         // 🔴 Aplicar ordenamiento si se proporciona
         if ($sortField && $sortDirection) {
@@ -277,6 +292,24 @@ class Conductor
                 $stmtPlan->close();
             }
 
+            // Si es plan editable (ID 42) y tiene nombre personalizado, concatenar
+            if ($grupoFinanciamiento == 42 && !empty($row['nombre_personalizado'])) {
+                $nombrePlan = 'F. EDITABLE (' . strtoupper($row['nombre_personalizado']) . ')';
+            }
+
+            // ✅ NUEVO: Obtener nombre de variante si existe
+            if ($grupoFinanciamiento && !empty($row['id_variante'])) {
+                $queryVariante = 'SELECT nombre_variante FROM grupos_variantes WHERE idgrupos_variantes = ?';
+                $stmtVariante = $this->conectar->prepare($queryVariante);
+                $stmtVariante->bind_param('i', $row['id_variante']);
+                $stmtVariante->execute();
+                $stmtVariante->bind_result($nombreVariante);
+                if ($stmtVariante->fetch() && !empty($nombreVariante)) {
+                    $nombrePlan .= ' (' . strtoupper($nombreVariante) . ')';
+                }
+                $stmtVariante->close();
+            }
+
             $row['grupo_financiamiento'] = $nombrePlan;
 
             $conductores[] = $row;
@@ -291,12 +324,19 @@ class Conductor
             NULL AS numUnidad,
             COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
             COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+            MAX(f.id_variante) AS id_variante,
+            MAX(f.nombre_personalizado) AS nombre_personalizado,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
-        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)
-        GROUP BY cl.id, cl.nombres, cl.apellido_paterno, cl.apellido_materno";
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)";
+
+        if ($asesorId) {
+            $queryClientes .= " AND f.usuario_id = " . (int)$asesorId;
+        }
+
+        $queryClientes .= " GROUP BY cl.id, cl.nombres, cl.apellido_paterno, cl.apellido_materno";
 
         // 🔴 Aplicar ordenamiento a la consulta de clientes
         if ($sortField && $sortDirection) {
@@ -326,6 +366,23 @@ class Conductor
                 $stmtPlan->close();
             }
 
+            if ($grupoFinanciamiento == 42 && !empty($row['nombre_personalizado'])) {
+                $nombrePlan = 'F. EDITABLE (' . strtoupper($row['nombre_personalizado']) . ')';
+            }
+
+            // ✅ NUEVO: Obtener nombre de variante si existe
+            if ($grupoFinanciamiento && !empty($row['id_variante'])) {
+                $queryVariante = 'SELECT nombre_variante FROM grupos_variantes WHERE idgrupos_variantes = ?';
+                $stmtVariante = $this->conectar->prepare($queryVariante);
+                $stmtVariante->bind_param('i', $row['id_variante']);
+                $stmtVariante->execute();
+                $stmtVariante->bind_result($nombreVariante);
+                if ($stmtVariante->fetch() && !empty($nombreVariante)) {
+                    $nombrePlan .= ' (' . strtoupper($nombreVariante) . ')';
+                }
+                $stmtVariante->close();
+            }
+
             $row['grupo_financiamiento'] = $nombrePlan;
 
             $conductores[] = $row;
@@ -348,12 +405,13 @@ class Conductor
         return $conductores;
     }
 
-    public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPagina, $sortField = null, $sortDirection = null)
+    public function obtenerConductoresFiltrados($searchTerm, $pagina, $cantidadPorPagina, $sortField = null, $sortDirection = null, $asesorId = null)
     {
         $offset = ($pagina - 1) * $cantidadPorPagina;
-        $searchTermLike = "%$searchTerm%";
+        $searchTermLike = "%" . str_replace(' ', '%', trim($searchTerm)) . "%";
 
         $grupo_id = null;
+        $variante_ids = []; // ✅ NUEVO: Array para almacenar IDs de variantes encontradas
 
         // 🐱 Agregado: Consulta para buscar si el término coincide exactamente con algún nombre de plan
         $queryGrupo = 'SELECT idplan_financiamiento FROM planes_financiamiento WHERE nombre_plan = ?';
@@ -383,6 +441,20 @@ class Conductor
             $stmtGrupoLike->close();
         }
 
+        // ✅ NUEVO: Buscar por nombre de variante
+        if (!$grupo_id) {
+            $queryVariante = 'SELECT idgrupos_variantes FROM grupos_variantes WHERE nombre_variante LIKE ?';
+            $stmtVariante = $this->conectar->prepare($queryVariante);
+            $stmtVariante->bind_param('s', $searchTermLike);
+            $stmtVariante->execute();
+            $resultVariante = $stmtVariante->get_result();
+
+            while ($rowVariante = $resultVariante->fetch_assoc()) {
+                $variante_ids[] = $rowVariante['idgrupos_variantes'];
+            }
+            $stmtVariante->close();
+        }
+
         // 🔴 Consulta base para conductores con búsqueda
         $queryConductores = "SELECT
             c.id_conductor,
@@ -392,26 +464,38 @@ class Conductor
             c.numUnidad,
             COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
             COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+            MAX(f.id_variante) AS id_variante,
+            MAX(f.nombre_personalizado) AS nombre_personalizado,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM conductores c
         INNER JOIN financiamiento f ON c.id_conductor = f.id_conductor
-        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) ";
+
+        if ($asesorId) {
+            $queryConductores .= " AND f.usuario_id = " . (int)$asesorId;
+        }
+
+        $queryConductores .= " AND ";
 
         // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
         if ($grupo_id) {
             $queryConductores .= 'f.grupo_financiamiento = ? ';
+        } else if (!empty($variante_ids)) {
+            // ✅ NUEVO: Buscar por IDs de variantes
+            $placeholders = implode(',', array_fill(0, count($variante_ids), '?'));
+            $queryConductores .= "f.id_variante IN ($placeholders) ";
         } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
             // 🐱 Agregado: Caso especial para buscar financiamientos sin grupo
             $queryConductores .= "f.grupo_financiamiento = 'notGrupo' ";
         } else {
-            // 🐱 Mantenemos la lógica original de búsqueda + búsqueda por documento
-            $queryConductores .= '(c.nombres LIKE ? 
-           OR c.apellido_paterno LIKE ? 
+            $queryConductores .= '(c.nombres LIKE ?
+           OR c.apellido_paterno LIKE ?
            OR c.apellido_materno LIKE ?
            OR f.codigo_asociado LIKE ?
            OR c.numUnidad LIKE ?
-           OR c.nro_documento LIKE ?) ';  // ✅ AGREGADO: Búsqueda por número de documento
+           OR c.nro_documento LIKE ?
+           OR CONCAT(c.nombres, \' \', c.apellido_paterno, \' \', c.apellido_materno) LIKE ?) ';
         }
 
         // 🔴 Aplicar ordenamiento a conductores
@@ -437,19 +521,23 @@ class Conductor
         } else {
             if ($grupo_id) {
                 $stmt->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Bind para búsqueda por variantes
+                $types = str_repeat('i', count($variante_ids)) . 'ii';
+                $params = array_merge($variante_ids, [$cantidadPorPagina, $offset]);
+                $stmt->bind_param($types, ...$params);
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 $stmt->bind_param('ii', $cantidadPorPagina, $offset);
             } else {
-                $stmt->bind_param('ssssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);  // ✅ MODIFICADO: Ahora son 6 parámetros 's' (agregado nro_documento)
+                $stmt->bind_param('sssssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
             }
 
             $stmt->execute();
             $result = $stmt->get_result();
 
             // ☁️ Añadida verificación para asegurar que $result no es booleano
-            if ($result && $result !== true) {  // ☁️ Verificar que $result no es booleano (false o true)
+            if ($result && $result !== true) {
                 while ($row = $result->fetch_assoc()) {
-                    // Procesar grupo de financiamiento igual que antes
                     $grupoFinanciamiento = $row['grupo_financiamiento'];
 
                     $nombrePlan = '';
@@ -461,6 +549,23 @@ class Conductor
                         $stmtPlan->bind_result($nombrePlan);
                         $stmtPlan->fetch();
                         $stmtPlan->close();
+                    }
+
+                    if ($grupoFinanciamiento == 42 && !empty($row['nombre_personalizado'])) {
+                        $nombrePlan = 'F. EDITABLE (' . strtoupper($row['nombre_personalizado']) . ')';
+                    }
+
+                    // ✅ NUEVO: Obtener nombre de variante si existe
+                    if ($grupoFinanciamiento && !empty($row['id_variante'])) {
+                        $queryVariante = 'SELECT nombre_variante FROM grupos_variantes WHERE idgrupos_variantes = ?';
+                        $stmtVariante = $this->conectar->prepare($queryVariante);
+                        $stmtVariante->bind_param('i', $row['id_variante']);
+                        $stmtVariante->execute();
+                        $stmtVariante->bind_result($nombreVariante);
+                        if ($stmtVariante->fetch() && !empty($nombreVariante)) {
+                            $nombrePlan .= ' (' . strtoupper($nombreVariante) . ')';
+                        }
+                        $stmtVariante->close();
                     }
 
                     $row['grupo_financiamiento'] = $nombrePlan;
@@ -478,25 +583,37 @@ class Conductor
             NULL AS numUnidad,
             COALESCE(MAX(f.codigo_asociado), '') AS codigo_asociado,
             COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+            MAX(f.id_variante) AS id_variante,
+            MAX(f.nombre_personalizado) AS nombre_personalizado,
             COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
             MAX(f.fecha_creacion) AS fecha_ultimo_financiamiento
         FROM clientes_financiar cl
         INNER JOIN financiamiento f ON cl.id = f.id_cliente
-        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ";
+        WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) ";
+
+        if ($asesorId) {
+            $queryClientes .= " AND f.usuario_id = " . (int)$asesorId;
+        }
+
+        $queryClientes .= " AND ";
 
         // 🐱 Modificado: Agregar condición de búsqueda por grupo si se encontró uno
         if ($grupo_id) {
             $queryClientes .= 'f.grupo_financiamiento = ? ';
+        } else if (!empty($variante_ids)) {
+            // ✅ NUEVO: Buscar por IDs de variantes
+            $placeholders = implode(',', array_fill(0, count($variante_ids), '?'));
+            $queryClientes .= "f.id_variante IN ($placeholders) ";
         } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
             // 🐱 Agregado: Caso especial para buscar financiamientos sin grupo
             $queryClientes .= "f.grupo_financiamiento = 'notGrupo' ";
         } else {
-            // 🐱 Mantenemos la lógica original de búsqueda + búsqueda por documento
-            $queryClientes .= '(cl.nombres LIKE ? 
-           OR cl.apellido_paterno LIKE ? 
+            $queryClientes .= '(cl.nombres LIKE ?
+           OR cl.apellido_paterno LIKE ?
            OR cl.apellido_materno LIKE ?
            OR f.codigo_asociado LIKE ?
-           OR cl.n_documento LIKE ?) ';  // ✅ AGREGADO: Búsqueda por número de documento (campo n_documento en clientes_financiar)
+           OR cl.n_documento LIKE ?
+           OR CONCAT(cl.nombres, \' \', cl.apellido_paterno, \' \', cl.apellido_materno) LIKE ?) ';
         }
 
         $queryClientes .= ' GROUP BY cl.id ';  // ☁️ Añadido GROUP BY que faltaba
@@ -521,19 +638,23 @@ class Conductor
             // 🐱 Modificado: Diferentes bind_param según el tipo de búsqueda
             if ($grupo_id) {
                 $stmtClientes->bind_param('sii', $grupo_id, $cantidadPorPagina, $offset);
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Bind para búsqueda por variantes
+                $types = str_repeat('i', count($variante_ids)) . 'ii';
+                $params = array_merge($variante_ids, [$cantidadPorPagina, $offset]);
+                $stmtClientes->bind_param($types, ...$params);
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 $stmtClientes->bind_param('ii', $cantidadPorPagina, $offset);
             } else {
-                $stmtClientes->bind_param('sssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);  // ✅ MODIFICADO: Ahora son 5 parámetros 's' (agregado nro_documento)
+                $stmtClientes->bind_param('ssssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
             }
 
             $stmtClientes->execute();
             $resultClientes = $stmtClientes->get_result();
 
             // ☁️ Añadida verificación para asegurar que $resultClientes no es booleano
-            if ($resultClientes && $resultClientes !== true) {  // ☁️ Verificar que $resultClientes no es booleano (false o true)
+            if ($resultClientes && $resultClientes !== true) {
                 while ($row = $resultClientes->fetch_assoc()) {
-                    // Procesar igual que antes
                     $grupoFinanciamiento = $row['grupo_financiamiento'];
 
                     $nombrePlan = '';
@@ -549,6 +670,23 @@ class Conductor
                             $stmtPlan->fetch();
                             $stmtPlan->close();
                         }
+                    }
+
+                    if ($grupoFinanciamiento == 42 && !empty($row['nombre_personalizado'])) {
+                        $nombrePlan = 'F. EDITABLE (' . strtoupper($row['nombre_personalizado']) . ')';
+                    }
+
+                    // ✅ NUEVO: Obtener nombre de variante si existe
+                    if ($grupoFinanciamiento && !empty($row['id_variante'])) {
+                        $queryVariante = 'SELECT nombre_variante FROM grupos_variantes WHERE idgrupos_variantes = ?';
+                        $stmtVariante = $this->conectar->prepare($queryVariante);
+                        $stmtVariante->bind_param('i', $row['id_variante']);
+                        $stmtVariante->execute();
+                        $stmtVariante->bind_result($nombreVariante);
+                        if ($stmtVariante->fetch() && !empty($nombreVariante)) {
+                            $nombrePlan .= ' (' . strtoupper($nombreVariante) . ')';
+                        }
+                        $stmtVariante->close();
                     }
 
                     $row['grupo_financiamiento'] = $nombrePlan;
@@ -593,22 +731,29 @@ class Conductor
             $sql = "SELECT 
                         c.id_conductor, 
                         c.nro_documento, 
+                        c.desvinculado,
                         CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS datos, 
-                        COALESCE(c.numeroCodFi, '') AS codigo_asociado, 
-                        COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento, 
-                        COUNT(f.idfinanciamiento) AS cantidad_financiamientos
+                        COALESCE(
+                            NULLIF(NULLIF(c.numeroCodFi, ''), '0'),
+                            NULLIF(NULLIF(MAX(f.codigo_asociado), ''), '0'),
+                            ''
+                        ) AS codigo_asociado,
+                        COALESCE(MAX(f.grupo_financiamiento), '') AS grupo_financiamiento,
+                        COUNT(f.idfinanciamiento) AS cantidad_financiamientos,
+                        (SELECT pc.puntaje_actual FROM puntaje_crediticio pc WHERE pc.id_conductor = c.id_conductor AND pc.tipo_cliente = 'conductor' LIMIT 1) AS puntaje_actual
                     FROM conductores c
-                    LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                    WHERE c.nombres LIKE ? 
-                    OR c.apellido_paterno LIKE ? 
-                    OR c.apellido_materno LIKE ? 
+                    LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor AND f.estado_eliminado = 0
+                    WHERE (c.nombres LIKE ?
+                    OR c.apellido_paterno LIKE ?
+                    OR c.apellido_materno LIKE ?
                     OR c.numeroCodFi LIKE ?
+                    OR CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ?)
                     GROUP BY c.id_conductor, c.nro_documento, c.nombres, c.apellido_paterno, c.apellido_materno, c.numeroCodFi
                     LIMIT ? OFFSET ?";
 
             $stmt = $this->conectar->prepare($sql);
-            $searchTermLike = "%$searchTerm%";
-            $stmt->bind_param('ssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
+            $searchTermLike = "%" . str_replace(' ', '%', trim($searchTerm)) . "%";
+            $stmt->bind_param('sssssii', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $cantidadPorPagina, $offset);
             $stmt->execute();
             $result = $stmt->get_result();
 
@@ -624,12 +769,14 @@ class Conductor
         }
     }
 
-    public function obtenerTotalClientesBusqueda($searchTerm = '')
+    public function obtenerTotalClientesBusqueda($searchTerm = '', $asesorId = null)
     {
         try {
-            $searchTermLike = "%$searchTerm%";
+            $searchTermLike = "%" . str_replace(' ', '%', trim($searchTerm)) . "%";
+            $asesorFilter = $asesorId ? " AND f.usuario_id = " . (int)$asesorId : "";
 
             $grupo_id = null;
+            $variante_ids = []; // ✅ NUEVO: Array para almacenar IDs de variantes encontradas
 
             if ($searchTerm) {
                 $queryGrupo = 'SELECT idplan_financiamiento FROM planes_financiamiento WHERE nombre_plan = ?';
@@ -657,25 +804,44 @@ class Conductor
                     }
                     $stmtGrupoLike->close();
                 }
+
+                // ✅ NUEVO: Buscar por nombre de variante
+                if (!$grupo_id) {
+                    $queryVariante = 'SELECT idgrupos_variantes FROM grupos_variantes WHERE nombre_variante LIKE ?';
+                    $stmtVariante = $this->conectar->prepare($queryVariante);
+                    $stmtVariante->bind_param('s', $searchTermLike);
+                    $stmtVariante->execute();
+                    $resultVariante = $stmtVariante->get_result();
+
+                    while ($rowVariante = $resultVariante->fetch_assoc()) {
+                        $variante_ids[] = $rowVariante['idgrupos_variantes'];
+                    }
+                    $stmtVariante->close();
+                }
             }
 
             $sqlConductores = 'SELECT COUNT(*) AS total FROM (
                     SELECT c.id_conductor
                     FROM conductores c
                     LEFT JOIN financiamiento f ON c.id_conductor = f.id_conductor
-                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ';
+                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)' . $asesorFilter . ' AND ';
 
             if ($grupo_id) {
                 $sqlConductores .= 'f.grupo_financiamiento = ? ';
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Buscar por IDs de variantes
+                $placeholders = implode(',', array_fill(0, count($variante_ids), '?'));
+                $sqlConductores .= "f.id_variante IN ($placeholders) ";
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 $sqlConductores .= "f.grupo_financiamiento = 'notGrupo' ";
             } else {
-                $sqlConductores .= '(c.nombres LIKE ? 
-                    OR c.apellido_paterno LIKE ? 
-                    OR c.apellido_materno LIKE ? 
+                $sqlConductores .= '(c.nombres LIKE ?
+                    OR c.apellido_paterno LIKE ?
+                    OR c.apellido_materno LIKE ?
                     OR f.codigo_asociado LIKE ?
                     OR c.numUnidad LIKE ?
-                    OR c.nro_documento LIKE ?) ';  // ✅ AGREGADO: Búsqueda por número de documento
+                    OR c.nro_documento LIKE ?
+                    OR CONCAT(c.nombres, \' \', c.apellido_paterno, \' \', c.apellido_materno) LIKE ?) ';
             }
 
             $sqlConductores .= 'GROUP BY c.id_conductor
@@ -686,10 +852,14 @@ class Conductor
 
             if ($grupo_id) {
                 $stmtConductores->bind_param('s', $grupo_id);
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Bind para búsqueda por variantes
+                $types = str_repeat('i', count($variante_ids));
+                $stmtConductores->bind_param($types, ...$variante_ids);
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 // No necesita parámetros
             } else {
-                $stmtConductores->bind_param('ssssss', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);  // ✅ MODIFICADO: Ahora son 6 parámetros
+                $stmtConductores->bind_param('sssssss', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);
             }
 
             $stmtConductores->execute();
@@ -701,18 +871,23 @@ class Conductor
                     SELECT cl.id
                     FROM clientes_financiar cl
                     LEFT JOIN financiamiento f ON cl.id = f.id_cliente
-                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL) AND ';
+                    WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)' . $asesorFilter . ' AND ';
 
             if ($grupo_id) {
                 $sqlClientes .= 'f.grupo_financiamiento = ? ';
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Buscar por IDs de variantes
+                $placeholders = implode(',', array_fill(0, count($variante_ids), '?'));
+                $sqlClientes .= "f.id_variante IN ($placeholders) ";
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 $sqlClientes .= "f.grupo_financiamiento = 'notGrupo' ";
             } else {
-                $sqlClientes .= '(cl.nombres LIKE ? 
-                    OR cl.apellido_paterno LIKE ? 
+                $sqlClientes .= '(cl.nombres LIKE ?
+                    OR cl.apellido_paterno LIKE ?
                     OR cl.apellido_materno LIKE ?
                     OR f.codigo_asociado LIKE ?
-                    OR cl.n_documento LIKE ?) ';  // ✅ AGREGADO: Búsqueda por número de documento (campo n_documento en clientes_financiar)
+                    OR cl.n_documento LIKE ?
+                    OR CONCAT(cl.nombres, \' \', cl.apellido_paterno, \' \', cl.apellido_materno) LIKE ?) ';
             }
 
             $sqlClientes .= 'GROUP BY cl.id
@@ -723,10 +898,14 @@ class Conductor
 
             if ($grupo_id) {
                 $stmtClientes->bind_param('s', $grupo_id);
+            } else if (!empty($variante_ids)) {
+                // ✅ NUEVO: Bind para búsqueda por variantes
+                $types = str_repeat('i', count($variante_ids));
+                $stmtClientes->bind_param($types, ...$variante_ids);
             } else if ($searchTerm === 'Sin Grupo' || $searchTerm === 'sin grupo') {
                 // No necesita parámetros
             } else {
-                $stmtClientes->bind_param('sssss', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);  // ✅ MODIFICADO: Ahora son 5 parámetros
+                $stmtClientes->bind_param('ssssss', $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike, $searchTermLike);
             }
 
             $stmtClientes->execute();
@@ -742,8 +921,20 @@ class Conductor
     }
 
     // Método para obtener el total de conductores
-    public function obtenerTotalConductores()
+    public function obtenerTotalConductores($asesorId = null)
     {
+        if ($asesorId) {
+            $query = "SELECT COUNT(DISTINCT COALESCE(f.id_conductor, 0), COALESCE(f.id_cliente, 0)) as total
+                      FROM financiamiento f
+                      WHERE f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)
+                      AND f.usuario_id = ?";
+            $stmt = $this->conectar->prepare($query);
+            $stmt->bind_param('i', $asesorId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result->fetch_assoc();
+            return (int) $row['total'];
+        }
         $query = 'SELECT COUNT(*) as total FROM conductores';
         $result = $this->conectar->query($query);
         $row = $result->fetch_assoc();
@@ -1549,7 +1740,8 @@ class Conductor
 
         // Si el tipo de pago es "Financiamiento", buscar más detalles en conductor_regfinanciamiento
         if ($tipoPago === 'Financiamiento') {
-            $sqlFinanciamiento = "SELECT * FROM conductor_regfinanciamiento WHERE id_conductor = $id_conductor";
+            // MODIFICADO: Ordenar por ID descendente y tomar solo el último registro
+            $sqlFinanciamiento = "SELECT * FROM conductor_regfinanciamiento WHERE id_conductor = $id_conductor ORDER BY idconductor_regfinanciamiento DESC LIMIT 1";
             $resultadoFinanciamiento = $this->conectar->query($sqlFinanciamiento);
 
             if ($resultadoFinanciamiento->num_rows > 0) {
@@ -1558,7 +1750,7 @@ class Conductor
 
                 // Buscar las cuotas en conductor_cuotas
                 $idFinanciamiento = $datosFinanciamiento['idconductor_regfinanciamiento'];
-                $sqlCuotas = "SELECT * FROM conductor_cuotas WHERE idconductor_Financiamiento = $idFinanciamiento";
+                $sqlCuotas = "SELECT * FROM conductor_cuotas WHERE idconductor_Financiamiento = $idFinanciamiento ORDER BY numero_cuota ASC";
                 $resultadoCuotas = $this->conectar->query($sqlCuotas);
 
                 $datosPago['cuotas'] = [];

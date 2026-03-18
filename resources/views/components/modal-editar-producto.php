@@ -286,6 +286,25 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
+                                    <label for="edit_kilometraje" class="form-label">
+                                        <i class="fas fa-tachometer-alt text-primary"></i> Kilometraje
+                                    </label>
+                                    <input type="number" class="form-control" id="edit_kilometraje" name="kilometraje" min="0" placeholder="Ej: 15000">
+                                    <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="edit_gps_activo" name="gps_activo" value="1">
+                                        <label class="form-check-label" for="edit_gps_activo">
+                                            <i class="fas fa-map-marker-alt text-primary me-1"></i> GPS Activo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
                                     <label for="edit_fecha_venc_soat" class="form-label">
                                         <i class="fas fa-calendar-check text-primary"></i> Fecha Vencimiento SOAT
                                     </label>
@@ -559,7 +578,7 @@ function evaluarCategoriaEdit() {
     }
     
     // Mostrar/ocultar tabs según categoría
-    if (categoriaNorm.includes('vehiculo')) {
+    if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
         $('#tab-vehiculo-nav').show();
         $('#tab-caracteristicas-nav').hide();
     } else if (categoriaNorm.includes('celular') || categoriaNorm.includes('llanta') || categoriaNorm.includes('chip')) {
@@ -574,7 +593,7 @@ function evaluarCategoriaEdit() {
 // Renderizar características
 function renderizarCaracteristicasEdit(caracteristicas) {
     const categoriaNorm = normalizarTextoEdit(categoriaOriginalEdit);
-    const esVehiculo = categoriaNorm.includes('vehiculo');
+    const esVehiculo = categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto');
     
     // Si es vehículo, llenar los campos específicos de vehículo y mostrar tab
     if (esVehiculo) {
@@ -582,7 +601,8 @@ function renderizarCaracteristicasEdit(caracteristicas) {
         $('#tab-caracteristicas-nav').hide();
         
         // Limpiar campos de vehículo primero
-        $('#edit_vin, #edit_chasis, #edit_placa, #edit_color, #edit_anio, #edit_transmision, #edit_fecha_venc_soat, #edit_fecha_venc_seguro').val('');
+        $('#edit_vin, #edit_chasis, #edit_placa, #edit_color, #edit_anio, #edit_transmision, #edit_kilometraje, #edit_fecha_venc_soat, #edit_fecha_venc_seguro').val('');
+        $('#edit_gps_activo').prop('checked', false);
         
         // Llenar campos de vehículo desde las características
         if (Array.isArray(caracteristicas) && caracteristicas.length > 0) {
@@ -615,6 +635,9 @@ function renderizarCaracteristicasEdit(caracteristicas) {
                     case 'transmisión':
                         $('#edit_transmision').val(valor);
                         break;
+                    case 'kilometraje':
+                        $('#edit_kilometraje').val(valor);
+                        break;
                     case 'fecha_venc_soat':
                     case 'fecha de vencimiento':
                     case 'soat':
@@ -624,6 +647,10 @@ function renderizarCaracteristicasEdit(caracteristicas) {
                     case 'fechas de vencimiento del seguro':
                     case 'fecha vencimiento seguro':
                         $('#edit_fecha_venc_seguro').val(valor);
+                        break;
+                    case 'gps_activo':
+                    case 'gps activo':
+                        $('#edit_gps_activo').prop('checked', valor === '1' || valor === 'Si');
                         break;
                 }
             });
@@ -768,14 +795,14 @@ function guardarCambiosProducto() {
         const name = element.attr('name');
         
         // Excluir campos que se manejarán por separado
-        if (name && name !== 'ID_PRODUCTO' && 
-            !['vin', 'chasis', 'placa', 'color', 'anio', 'transmision', 'fecha_venc_soat', 'fecha_venc_seguro'].includes(name)) {
+        if (name && name !== 'ID_PRODUCTO' &&
+            !['vin', 'chasis', 'placa', 'color', 'anio', 'transmision', 'kilometraje', 'fecha_venc_soat', 'fecha_venc_seguro', 'gps_activo'].includes(name)) {
             formData.append(name, element.val());
         }
     });
     
     // Manejar características según el tipo de categoría
-    if (categoriaNorm.includes('vehiculo')) {
+    if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
         // Para vehículos, enviar marca y modelo directamente
         formData.append('MARCA', $('#edit_marca').val());
         formData.append('MODELO', $('#edit_modelo').val());
@@ -790,13 +817,20 @@ function guardarCambiosProducto() {
             'edit_color': 'color',
             'edit_anio': 'anio',
             'edit_transmision': 'transmision',
+            'edit_kilometraje': 'kilometraje',
             'edit_fecha_venc_soat': 'fecha_venc_soat',
-            'edit_fecha_venc_seguro': 'fecha_venc_seguro'
+            'edit_fecha_venc_seguro': 'fecha_venc_seguro',
+            'edit_gps_activo': 'gps_activo'
         };
         
         Object.keys(camposVehiculo).forEach(function(campoId) {
-            const valor = $('#' + campoId).val();
-            if (valor) {  // Solo agregar si tiene valor
+            let valor;
+            if ($('#' + campoId).is(':checkbox')) {
+                valor = $('#' + campoId).is(':checked') ? '1' : '0';
+            } else {
+                valor = $('#' + campoId).val();
+            }
+            if (valor !== null && valor !== undefined && valor !== '') {
                 caracteristicasVehiculo.push({
                     nombre_caracteristica: camposVehiculo[campoId],
                     valor_caracteristica: valor

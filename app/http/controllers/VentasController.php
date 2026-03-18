@@ -28,7 +28,6 @@ class VentasController extends Controller
         $this->conexion = (new Conexion())->getConexion();
     }
 
-
     public function ingresosEgresosRender()
     {
         $lista = [];
@@ -36,7 +35,7 @@ class VentasController extends Controller
                 	ingreso_egreso.*,
                 	productos.descripcion,
                 	productos.codigo,
-                	usuario 
+                	usuario
                 FROM
                 	ingreso_egreso
                 	JOIN productos ON ingreso_egreso.id_producto = productos.id_producto
@@ -51,64 +50,69 @@ class VentasController extends Controller
         return $result;
     }
 
-
     /*  public function  */
     public function ingresoAlmacen()
     {
-        $respuesta['res'] = false;
-        $sql = "INSERT INTO ingreso_egreso set id_producto = '{$_POST['productoid']}', tipo = '{$_POST['tipo']}',cantidad = '{$_POST['cantidad']}', id_usuario = '{$_SESSION['usuario_fac']}', almacen_ingreso = '{$_POST['almacen']}'";
+        $respuesta["res"] = false;
+        $sql = "INSERT INTO ingreso_egreso set id_producto = '{$_POST["productoid"]}', tipo = '{$_POST["tipo"]}',cantidad = '{$_POST["cantidad"]}', id_usuario = '{$_SESSION["usuario_fac"]}', almacen_ingreso = '{$_POST["almacen"]}'";
         if ($this->conexion->query($sql)) {
-            $sql = "update productos set cantidad=cantidad+'{$_POST['cantidad']}' where id_producto= '{$_POST['productoid']}'";
+            $sql = "update productos set cantidad=cantidad+'{$_POST["cantidad"]}' where id_producto= '{$_POST["productoid"]}'";
             $this->conexion->query($sql);
-            $respuesta['res'] = true;
+            $respuesta["res"] = true;
         }
         echo json_encode($respuesta);
     }
     public function egresoAlmacen()
     {
-        $respuesta['res'] = false;
-        $sql = "INSERT INTO ingreso_egreso set id_producto = '{$_POST['productoid']}', tipo = '{$_POST['tipo']}',cantidad = '{$_POST['cantidad']}', id_usuario = '{$_SESSION['usuario_fac']}', almacen_ingreso = '{$_POST['alAlmacen']}', almacen_egreso = '{$_POST['almacen']}', estado = 0";
+        $respuesta["res"] = false;
+        $sql = "INSERT INTO ingreso_egreso set id_producto = '{$_POST["productoid"]}', tipo = '{$_POST["tipo"]}',cantidad = '{$_POST["cantidad"]}', id_usuario = '{$_SESSION["usuario_fac"]}', almacen_ingreso = '{$_POST["alAlmacen"]}', almacen_egreso = '{$_POST["almacen"]}', estado = 0";
         if ($this->conexion->query($sql)) {
             //$sql="select  * from productos where id_producto= '{$_POST['productoid']}'";
             //$result =  $this->conexion->query($sql)->fetch_assoc();
-//
+            //
             //$sql="update productos set cantidad=cantidad-'{$_POST['cantidad']}' where id_producto= '{$_POST['productoid']}'";
             //$this->conexion->query($sql);
             //$sql="update productos set cantidad=cantidad+'{$_POST['cantidad']}' where codigo= '{$result['codigo']}' and almacen='{$_POST['alAlmacen']}'";
             //$this->conexion->query($sql);
-            $respuesta['res'] = true;
+            $respuesta["res"] = true;
         }
         echo json_encode($respuesta);
     }
     public function envioComunicacionBajaPorEmpresa()
     {
         $listaBoletas = [];
-        foreach (json_decode($_POST['boletas'], true) as $bol) {
+        foreach (json_decode($_POST["boletas"], true) as $bol) {
             $listaBoletas[] = "v.id_venta='$bol'";
         }
 
-        $sql = "select v.id_venta, v.enviado_sunat,vs.nombre_xml from ventas v
+        $sql =
+            "select v.id_venta, v.enviado_sunat,vs.nombre_xml from ventas v
         join ventas_sunat vs on v.id_venta = vs.id_venta
         where " . implode(" OR ", $listaBoletas);
 
         $listaPorEnviar = $this->venta->exeSQL($sql);
 
         foreach ($listaPorEnviar as $vpr) {
-            if ($vpr['enviado_sunat'] == '0') {
-                if ($this->sunatApi->envioIndividualDocumentoVPorEmpresa($vpr['nombre_xml'], $_POST['empresa'])) {
-                    $sql = "update ventas set enviado_sunat='1' where id_venta='{$vpr['id_venta']}'";
+            if ($vpr["enviado_sunat"] == "0") {
+                if (
+                    $this->sunatApi->envioIndividualDocumentoVPorEmpresa(
+                        $vpr["nombre_xml"],
+                        $_POST["empresa"],
+                    )
+                ) {
+                    $sql = "update ventas set enviado_sunat='1' where id_venta='{$vpr["id_venta"]}'";
                     $this->venta->exeSQL($sql);
                 }
                 sleep(2);
             }
         }
         $respuesta = [];
-        $respuesta['msg_resumen'] = $this->sunatApi->comunicacionBajaPorEmpresa(
+        $respuesta["msg_resumen"] = $this->sunatApi->comunicacionBajaPorEmpresa(
             $listaBoletas,
-            $_POST['empresa'],
-            $_POST['fecharesumen'],
+            $_POST["empresa"],
+            $_POST["fecharesumen"],
             $_POST["fechagen"],
-            $_POST['correlativo1']
+            $_POST["correlativo1"],
         );
 
         return json_encode($respuesta);
@@ -117,24 +121,24 @@ class VentasController extends Controller
     public function envioResumenDiarioPorEmpresa()
     {
         $listaBoletas = [];
-        foreach (json_decode($_POST['boletas'], true) as $bol) {
+        foreach (json_decode($_POST["boletas"], true) as $bol) {
             $listaBoletas[] = "v.id_venta='$bol'";
         }
         return json_encode([
             $this->sunatApi->resumenDiarioPorEmpresa(
                 $listaBoletas,
-                $_POST['empresa'],
-                $_POST['fechagen'],
-                $_POST['fecharesumen'],
-                $_POST['correlativo1']
+                $_POST["empresa"],
+                $_POST["fechagen"],
+                $_POST["fecharesumen"],
+                $_POST["correlativo1"],
             ),
             $this->sunatApi->resumenDiarioBajaPorEmpresa(
                 $listaBoletas,
-                $_POST['empresa'],
-                $_POST['fechagen'],
-                $_POST['fecharesumen'],
-                $_POST['correlativo2']
-            )
+                $_POST["empresa"],
+                $_POST["fechagen"],
+                $_POST["fecharesumen"],
+                $_POST["correlativo2"],
+            ),
         ]);
     }
 
@@ -145,13 +149,18 @@ class VentasController extends Controller
         where vs.id_venta = '{$_POST["cod"]}'";
         $resultado = ["res" => false];
         if ($row = $this->venta->exeSQL($sql)->fetch_assoc()) {
-            if ($this->sunatApi->envioIndividualDocumentoVPorEmpresa($row["nombre_xml"], $row['id_empresa'])) {
+            if (
+                $this->sunatApi->envioIndividualDocumentoVPorEmpresa(
+                    $row["nombre_xml"],
+                    $row["id_empresa"],
+                )
+            ) {
                 $sql = "update ventas set  enviado_sunat='1'
                 where id_venta = '{$_POST["cod"]}'";
                 $this->venta->exeSQL($sql);
-                $resultado['res'] = true;
+                $resultado["res"] = true;
             } else {
-                $resultado['msg'] = $this->sunatApi->getMensaje();
+                $resultado["msg"] = $this->sunatApi->getMensaje();
             }
         }
         return json_encode($resultado);
@@ -163,48 +172,53 @@ class VentasController extends Controller
 
         $sql = "SELECT * from ventas where id_venta='$venta'";
         $ventaData = $this->venta->exeSQL($sql)->fetch_assoc();
-        $empresa = $this->venta->exeSQL("select * from empresas where id_empresa='{$ventaData['id_empresa']}'")->fetch_assoc();
-        $cliente = $this->venta->exeSQL("select * from clientes where id_cliente='{$ventaData['id_cliente']}'")->fetch_assoc();
-
+        $empresa = $this->venta
+            ->exeSQL(
+                "select * from empresas where id_empresa='{$ventaData["id_empresa"]}'",
+            )
+            ->fetch_assoc();
+        $cliente = $this->venta
+            ->exeSQL(
+                "select * from clientes where id_cliente='{$ventaData["id_cliente"]}'",
+            )
+            ->fetch_assoc();
 
         $dataSend = [];
         $dataSend["certGlobal"] = false;
 
         $direccionselk = $cliente["direccion"];
 
-
-
         if (strlen(trim($direccionselk)) == "") {
-            $direccionselk = '-';
+            $direccionselk = "-";
         }
         if (trim($cliente["datos"]) == "") {
-            $cliente["datos"] = '-';
+            $cliente["datos"] = "-";
         }
 
-        $dataSend['cliente'] = json_encode([
-            'doc_num' => $cliente["documento"],
-            'nom_RS' => $cliente["datos"],
-            'direccion' => $direccionselk
+        $dataSend["cliente"] = json_encode([
+            "doc_num" => $cliente["documento"],
+            "nom_RS" => $cliente["datos"],
+            "direccion" => $direccionselk,
         ]);
-        $dataSend['productos'] = [];
-        $dataSend['apli_igv'] = $ventaData['apli_igv'] == 1;
-        $dataSend['total'] = $ventaData["total"];
-        $dataSend['serie'] = $ventaData["serie"];
-        $dataSend['numero'] = $ventaData["numero"];
-        $dataSend['fechaE'] = $ventaData["fecha_emision"];
-        $dataSend['fechaV'] = $ventaData["fecha_vencimiento"];
-        $dataSend['tipo_pago'] = $ventaData["id_tipo_pago"];
-        $dataSend['igv_venta'] = $ventaData["igv"];
-        $dataSend['dias_pagos'] = [];
-        $dataSend['moneda'] = "PEN";
+        $dataSend["productos"] = [];
+        $dataSend["apli_igv"] = $ventaData["apli_igv"] == 1;
+        $dataSend["total"] = $ventaData["total"];
+        $dataSend["serie"] = $ventaData["serie"];
+        $dataSend["numero"] = $ventaData["numero"];
+        $dataSend["fechaE"] = $ventaData["fecha_emision"];
+        $dataSend["fechaV"] = $ventaData["fecha_vencimiento"];
+        $dataSend["tipo_pago"] = $ventaData["id_tipo_pago"];
+        $dataSend["igv_venta"] = $ventaData["igv"];
+        $dataSend["dias_pagos"] = [];
+        $dataSend["moneda"] = "PEN";
 
         $sql = "select * from dias_ventas where id_venta='$venta'";
         $cuotasVentas = $this->venta->exeSQL($sql);
 
         foreach ($cuotasVentas as $cuotas) {
-            $dataSend['dias_pagos'][] = [
-                "monto" => $cuotas['monto'],
-                "fecha" => $cuotas['fecha']
+            $dataSend["dias_pagos"][] = [
+                "monto" => $cuotas["monto"],
+                "fecha" => $cuotas["fecha"],
             ];
         }
 
@@ -213,48 +227,51 @@ class VentasController extends Controller
         where pv.id_venta='$venta'";
         $listaProductos = $this->venta->exeSQL($sql);
         foreach ($listaProductos as $prod) {
-            $dataSend['productos'][] = [
-                "precio" => number_format($prod['precio'], 2, ".", ""),
-                "cantidad" => number_format($prod['cantidad'], 0),
-                "cod_pro" => $prod['id_producto'],
+            $dataSend["productos"][] = [
+                "precio" => number_format($prod["precio"], 2, ".", ""),
+                "cantidad" => number_format($prod["cantidad"], 0),
+                "cod_pro" => $prod["id_producto"],
                 "cod_sunat" => "",
-                "descripcion" => $prod['descripcion']
+                "descripcion" => $prod["descripcion"],
             ];
         }
 
         $sql = "select * from ventas_servicios where  id_venta='$venta'";
         $listaProductos = $this->venta->exeSQL($sql);
         foreach ($listaProductos as $prod) {
-            $dataSend['productos'][] = [
-                "precio" => number_format($prod['monto'], 2, ".", ""),
-                "cantidad" => number_format($prod['cantidad'], 0),
-                "cod_pro" => $prod['id_item'],
-                "cod_sunat" => $prod['codsunat'],
-                "descripcion" => $prod['descripcion']
+            $dataSend["productos"][] = [
+                "precio" => number_format($prod["monto"], 2, ".", ""),
+                "cantidad" => number_format($prod["cantidad"], 0),
+                "cod_pro" => $prod["id_item"],
+                "cod_sunat" => $prod["codsunat"],
+                "descripcion" => $prod["descripcion"],
             ];
         }
 
-        $dataSend["endpoints"] = $empresa['modo'];
+        $dataSend["endpoints"] = $empresa["modo"];
 
-        $dataSend['empresa'] = json_encode([
-            'ruc' => $empresa['ruc'],
-            'razon_social' => $empresa['razon_social'],
-            'direccion' => $empresa['direccion'],
-            'ubigeo' => $empresa['ubigeo'],
-            'distrito' => $empresa['distrito'],
-            'provincia' => $empresa['provincia'],
-            'departamento' => $empresa['departamento'],
-            'clave_sol' => $empresa['clave_sol'],
-            'usuario_sol' => $empresa['user_sol']
+        $dataSend["empresa"] = json_encode([
+            "ruc" => $empresa["ruc"],
+            "razon_social" => $empresa["razon_social"],
+            "direccion" => $empresa["direccion"],
+            "ubigeo" => $empresa["ubigeo"],
+            "distrito" => $empresa["distrito"],
+            "provincia" => $empresa["provincia"],
+            "departamento" => $empresa["departamento"],
+            "clave_sol" => $empresa["clave_sol"],
+            "usuario_sol" => $empresa["user_sol"],
         ]);
         $respuesta = ["res" => false];
 
-        if ($ventaData['id_tido'] == 1 || $ventaData['id_tido'] == 2) {
-            $dataSend['dias_pagos'] = json_encode($dataSend['dias_pagos']);
+        if ($ventaData["id_tido"] == 1 || $ventaData["id_tido"] == 2) {
+            $dataSend["dias_pagos"] = json_encode($dataSend["dias_pagos"]);
 
-            $dataSend['productos'] = json_encode($dataSend['productos']);
-            file_put_contents("Dataaaaaaaaaaaaaaaaaaaa.json", json_encode($dataSend));
-            if ($ventaData['id_tido'] == 1) {
+            $dataSend["productos"] = json_encode($dataSend["productos"]);
+            file_put_contents(
+                "Dataaaaaaaaaaaaaaaaaaaa.json",
+                json_encode($dataSend),
+            );
+            if ($ventaData["id_tido"] == 1) {
                 $dataResp = $this->sunatApi->genBoletaXML($dataSend);
             } else {
                 $dataResp = $this->sunatApi->genFacturaXML($dataSend);
@@ -263,14 +280,14 @@ class VentasController extends Controller
                 $respuesta["res"] = true;
                 $sql = "select * from ventas_sunat where id_venta = '$venta'";
                 if ($rrroooo = $this->venta->exeSQL($sql)->fetch_assoc()) {
-                    $sql = "update ventas_sunat set hash='{$dataResp['data']['hash']}',
-                      nombre_xml='{$dataResp['data']['nombre_archivo']}',
-                      qr_data='{$dataResp['data']['qr']}' where id_venta = '$venta' ";
+                    $sql = "update ventas_sunat set hash='{$dataResp["data"]["hash"]}',
+                      nombre_xml='{$dataResp["data"]["nombre_archivo"]}',
+                      qr_data='{$dataResp["data"]["qr"]}' where id_venta = '$venta' ";
                     $this->venta->exeSQL($sql);
                 } else {
-                    $sql = "insert into ventas_sunat set hash='{$dataResp['data']['hash']}',
-                      nombre_xml='{$dataResp['data']['nombre_archivo']}',
-                      qr_data='{$dataResp['data']['qr']}',  id_venta = '$venta' ";
+                    $sql = "insert into ventas_sunat set hash='{$dataResp["data"]["hash"]}',
+                      nombre_xml='{$dataResp["data"]["nombre_archivo"]}',
+                      qr_data='{$dataResp["data"]["qr"]}',  id_venta = '$venta' ";
                     $this->venta->exeSQL($sql);
                 }
             }
@@ -281,37 +298,65 @@ class VentasController extends Controller
 
     public function listaVentasPorEmpresa()
     {
-        return json_encode($this->venta->verFilasPorEmpresas($_POST["empresa"], $_POST["sucursal"]));
+        return json_encode(
+            $this->venta->verFilasPorEmpresas(
+                $_POST["empresa"],
+                $_POST["sucursal"],
+            ),
+        );
     }
-
 
     public function enviarDocumentoSunat()
     {
-        $sql = "select * from ventas_sunat where id_venta = '{$_POST["cod"]}'";
-        $resultado = ["res" => false];
-        if ($row = $this->venta->exeSQL($sql)->fetch_assoc()) {
-            if ($this->sunatApi->envioIndividualDocumentoV($row["nombre_xml"])) {
-                $sql = "update ventas set  enviado_sunat='1' where id_venta = '{$_POST["cod"]}'";
-                $this->venta->exeSQL($sql);
-                $resultado['res'] = true;
-            } else {
-                $resultado['msg'] = $this->sunatApi->getMensaje();
+        try {
+            // Validar que se recibió el código
+            if (empty($_POST["cod"])) {
+                return json_encode([
+                    "res" => false,
+                    "msg" => "No se recibió el código del comprobante"
+                ]);
             }
+
+            $sql = "select * from ventas_sunat where id_venta = '{$_POST["cod"]}'";
+            $resultado = ["res" => false];
+            
+            if ($row = $this->venta->exeSQL($sql)->fetch_assoc()) {
+                if (
+                    $this->sunatApi->envioIndividualDocumentoV($row["nombre_xml"])
+                ) {
+                    $sql = "update ventas set  enviado_sunat='1' where id_venta = '{$_POST["cod"]}'";
+                    $this->venta->exeSQL($sql);
+                    $resultado["res"] = true;
+                    $resultado["msg"] = "Comprobante enviado exitosamente a SUNAT";
+                } else {
+                    $resultado["msg"] = $this->sunatApi->getMensaje() ?? "Error desconocido al enviar a SUNAT";
+                }
+            } else {
+                $resultado["msg"] = "No se encontró el XML del comprobante. Debe regenerar el XML primero.";
+            }
+            
+            return json_encode($resultado);
+            
+        } catch (Exception $e) {
+            error_log("Error en enviarDocumentoSunat: " . $e->getMessage());
+            return json_encode([
+                "res" => false,
+                "msg" => "Error al procesar: " . $e->getMessage()
+            ]);
         }
-        return json_encode($resultado);
     }
 
     public function anularVenta()
     {
         // CORREGIDO: Validar que iventa no esté vacío
-        if (empty($_POST['iventa']) || !is_numeric($_POST['iventa'])) {
+        if (empty($_POST["iventa"]) || !is_numeric($_POST["iventa"])) {
             return json_encode([
                 "res" => false,
-                "mensaje" => "ID de venta inválido o vacío"
+                "mensaje" => "ID de venta inválido o vacío",
             ]);
         }
 
-        $this->venta->setIdVenta($_POST['iventa']);
+        $this->venta->setIdVenta($_POST["iventa"]);
         $c_anulada = new VentaAnulada();
         $c_producto = new ProductoVenta();
 
@@ -331,151 +376,224 @@ class VentasController extends Controller
             // Devolver el stock a productosv2
             if ($productos_venta && $productos_venta->num_rows > 0) {
                 while ($producto = $productos_venta->fetch_assoc()) {
-                    $id_producto = $producto['id_producto'];
-                    $cantidad = $producto['cantidad'];
+                    $id_producto = $producto["id_producto"];
+                    $cantidad = $producto["cantidad"];
 
                     // Actualizar stock en productosv2
                     $sql_update = "UPDATE productosv2 SET cantidad = cantidad + {$cantidad} WHERE idproductosv2 = {$id_producto}";
                     if (!$this->venta->exeSQL($sql_update)) {
-                        throw new Exception("Error al devolver stock del producto ID: {$id_producto}");
+                        throw new Exception(
+                            "Error al devolver stock del producto ID: {$id_producto}",
+                        );
                     }
                 }
+            }
+
+            // ✅ NUEVO: Desmarcar como facturado en pagos_caja_arequipa si existe
+            $sql_check_pago = "SELECT id FROM pagos_caja_arequipa WHERE id_venta = '{$this->venta->getIdVenta()}' AND facturado = 1";
+            $pago_result = $this->venta->exeSQL($sql_check_pago);
+            
+            if ($pago_result && $pago_result->num_rows > 0) {
+                $sql_update_pago = "UPDATE pagos_caja_arequipa 
+                                   SET facturado = 0, 
+                                       id_venta = NULL, 
+                                       fecha_facturacion = NULL 
+                                   WHERE id_venta = '{$this->venta->getIdVenta()}'";
+                
+                if (!$this->venta->exeSQL($sql_update_pago)) {
+                    throw new Exception("Error al desmarcar pago como facturado");
+                }
+                
+                error_log("✅ Pago desmarcado como facturado para venta ID: {$this->venta->getIdVenta()}");
             }
 
             // Anular la venta
             if ($this->venta->anular()) {
                 $c_anulada->insertar();
                 $this->conexion->commit();
-                $resultado['res'] = true;
+                $resultado["res"] = true;
             } else {
                 throw new Exception("Error al anular la venta");
             }
-
         } catch (Exception $e) {
             $this->conexion->rollback();
             error_log("Error en anularVenta: " . $e->getMessage());
-            $resultado['res'] = false;
-            $resultado['mensaje'] = $e->getMessage();
+            $resultado["res"] = false;
+            $resultado["mensaje"] = $e->getMessage();
         }
 
         return json_encode($resultado);
     }
-  
-    public function listarVentas() {
+
+    public function listarVentas()
+    {
         try {
-            header('Pragma: no-cache');
-            header('Cache-Control: no-store, no-cache, must-revalidate');
-            header('Content-Type: application/json');
-    
+            header("Pragma: no-cache");
+            header("Cache-Control: no-store, no-cache, must-revalidate");
+            header("Content-Type: application/json");
+
             // Verificar sesión
-            if (!isset($_SESSION['id_rol']) || !isset($_SESSION['sucursal'])) {
+            if (!isset($_SESSION["id_rol"]) || !isset($_SESSION["sucursal"])) {
                 echo json_encode([
-                    "sEcho" => isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 1,
+                    "sEcho" => isset($_GET["sEcho"])
+                        ? intval($_GET["sEcho"])
+                        : 1,
                     "iTotalRecords" => 0,
                     "iTotalDisplayRecords" => 0,
-                    "aaData" => []
+                    "aaData" => [],
                 ]);
-                exit;
+                exit();
             }
-    
-            $id_rol = intval($_SESSION['id_rol']);
-            $sucursal = intval($_SESSION['sucursal']);
-            
+
+            $id_rol = intval($_SESSION["id_rol"]);
+            $sucursal = intval($_SESSION["sucursal"]);
+
             // CORREGIDO: Verificar correctamente los parámetros de DataTables
-            $searchTerm = isset($_GET['search']['value']) ? $_GET['search']['value'] : ''; 
-            
+            $searchTerm = isset($_GET["search"]["value"])
+                ? $_GET["search"]["value"]
+                : "";
+
             // CORREGIDO: Usar los nombres de parámetros correctos y verificar ambos formatos
-            $start = isset($_GET['start']) ? intval($_GET['start']) : 
-                    (isset($_GET['iDisplayStart']) ? intval($_GET['iDisplayStart']) : 0);
-            
-            $length = isset($_GET['length']) ? intval($_GET['length']) : 
-                     (isset($_GET['iDisplayLength']) ? intval($_GET['iDisplayLength']) : 10);
-            
-            $orderColumn = isset($_GET['order'][0]['column']) ? intval($_GET['order'][0]['column']) : 
-                          (isset($_GET['iSortCol_0']) ? intval($_GET['iSortCol_0']) : 0);
-            
-            $orderDir = isset($_GET['order'][0]['dir']) ? $_GET['order'][0]['dir'] : 
-                       (isset($_GET['sSortDir_0']) ? $_GET['sSortDir_0'] : 'DESC');
-            
+            $start = isset($_GET["start"])
+                ? intval($_GET["start"])
+                : (isset($_GET["iDisplayStart"])
+                    ? intval($_GET["iDisplayStart"])
+                    : 0);
+
+            $length = isset($_GET["length"])
+                ? intval($_GET["length"])
+                : (isset($_GET["iDisplayLength"])
+                    ? intval($_GET["iDisplayLength"])
+                    : 10);
+
+            $orderColumn = isset($_GET["order"][0]["column"])
+                ? intval($_GET["order"][0]["column"])
+                : (isset($_GET["iSortCol_0"])
+                    ? intval($_GET["iSortCol_0"])
+                    : 0);
+
+            $orderDir = isset($_GET["order"][0]["dir"])
+                ? $_GET["order"][0]["dir"]
+                : (isset($_GET["sSortDir_0"])
+                    ? $_GET["sSortDir_0"]
+                    : "DESC");
+
             // CORREGIDO: Añadir depuración para verificar los parámetros recibidos
-            error_log("Búsqueda: '$searchTerm', Start: $start, Length: $length, OrderCol: $orderColumn, OrderDir: $orderDir");
-            
+            error_log(
+                "Búsqueda: '$searchTerm', Start: $start, Length: $length, OrderCol: $orderColumn, OrderDir: $orderDir",
+            );
+
             // MODIFICADO: Siempre usamos nuestro modelo personalizado
             $ventasModel = new Venta();
 
-            // MODIFICADO: Determinar si aplicar filtro de sucursal (roles 1, 2, 3 y 4 pueden ver todas las ventas)
-            $sucursalFiltro = ($id_rol === 1 || $id_rol === 2 || $id_rol === 3 || $id_rol === 4) ? null : $sucursal;
-            
+            // MODIFICADO: Determinar si aplicar filtro de sucursal (roles 1, 3 y 4 pueden ver todas las ventas)
+            $sucursalFiltro =
+                $id_rol === 1 || $id_rol === 3 || $id_rol === 4
+                    ? null
+                    : $sucursal;
+
+            // Filtros para asesores (rol 2): solo ven sus propias NOTAS DE VENTA
+            $usuarioFiltro = null;
+            $tipoDocFiltro = null;
+
+            if ($id_rol === 2) {
+                $usuarioFiltro = isset($_SESSION["usuario_id"])
+                    ? intval($_SESSION["usuario_id"])
+                    : null;
+                $tipoDocFiltro = 6; // NOTA DE VENTA
+            }
+
+            // Filtro por tipo de documento desde el frontend (no aplica para asesores)
+            if ($id_rol !== 2 && isset($_GET["tipo_doc"]) && $_GET["tipo_doc"] !== "") {
+                $tipoDocFiltro = intval($_GET["tipo_doc"]);
+            }
+
             // MODIFICADO: Obtener datos usando el modelo
-            $resultado = $ventasModel->buscarVentas($searchTerm, $start, $length, $orderColumn, $orderDir, $sucursalFiltro);
-            
+            $resultado = $ventasModel->buscarVentas(
+                $searchTerm,
+                $start,
+                $length,
+                $orderColumn,
+                $orderDir,
+                $sucursalFiltro,
+                $usuarioFiltro,
+                $tipoDocFiltro,
+            );
+
             // CORREGIDO: Usar los nombres de parámetros correctos en la respuesta
             $ventas = [
-                "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 
-                        (isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 1),
-                "recordsTotal" => $resultado['recordsTotal'],
-                "recordsFiltered" => $resultado['recordsFiltered'],
-                "data" => $resultado['data']
+                "draw" => isset($_GET["draw"])
+                    ? intval($_GET["draw"])
+                    : (isset($_GET["sEcho"])
+                        ? intval($_GET["sEcho"])
+                        : 1),
+                "recordsTotal" => $resultado["recordsTotal"],
+                "recordsFiltered" => $resultado["recordsFiltered"],
+                "data" => $resultado["data"],
             ];
-            
+
             // CORREGIDO: Para compatibilidad con versiones anteriores
-            if (isset($_GET['sEcho'])) {
-                $ventas["sEcho"] = intval($_GET['sEcho']);
-                $ventas["iTotalRecords"] = $resultado['recordsTotal'];
-                $ventas["iTotalDisplayRecords"] = $resultado['recordsFiltered'];
-                $ventas["aaData"] = $resultado['data'];
+            if (isset($_GET["sEcho"])) {
+                $ventas["sEcho"] = intval($_GET["sEcho"]);
+                $ventas["iTotalRecords"] = $resultado["recordsTotal"];
+                $ventas["iTotalDisplayRecords"] = $resultado["recordsFiltered"];
+                $ventas["aaData"] = $resultado["data"];
             }
-            
+
             echo json_encode($ventas);
-            
         } catch (Exception $e) {
             error_log("Error en listarVentas: " . $e->getMessage());
             echo json_encode([
-                "draw" => isset($_GET['draw']) ? intval($_GET['draw']) : 
-                        (isset($_GET['sEcho']) ? intval($_GET['sEcho']) : 1),
+                "draw" => isset($_GET["draw"])
+                    ? intval($_GET["draw"])
+                    : (isset($_GET["sEcho"])
+                        ? intval($_GET["sEcho"])
+                        : 1),
                 "recordsTotal" => 0,
                 "recordsFiltered" => 0,
                 "data" => [],
-                "error" => "Error al procesar la solicitud: " . $e->getMessage()
+                "error" =>
+                    "Error al procesar la solicitud: " . $e->getMessage(),
             ]);
         }
-        exit;
+        exit();
     }
-    
+
     public function detalleVenta()
     {
         //echo $_POST['iventa'];
-        $this->venta->setIdVenta($_POST['iventa']);
+        $this->venta->setIdVenta($_POST["iventa"]);
         return $this->venta->verDetalle();
     }
     public function tipoVenta()
     {
         //echo $_POST['iventa'];
-        $idVenta = $_POST['iventa'];
+        $idVenta = $_POST["iventa"];
         $sqlProducto = "SELECT * FROM productos_ventas WHERE id_venta = $idVenta";
         $sqlServicio = "SELECT * FROM ventas_servicios WHERE id_venta = $idVenta";
         $returnFetch = $this->venta->exeSQL($sqlProducto)->fetch_assoc();
-        $respuesta['tipo'] = '';
-        $respuesta['res'] = false;
+        $respuesta["tipo"] = "";
+        $respuesta["res"] = false;
         if (empty($returnFetch)) {
-            $returnFetchServicios = $this->venta->exeSQL($sqlServicio)->fetch_assoc();
-            $respuesta['tipo'] = 'servicio';
-            $respuesta['data'] = $returnFetchServicios;
-            $respuesta['res'] = true;
+            $returnFetchServicios = $this->venta
+                ->exeSQL($sqlServicio)
+                ->fetch_assoc();
+            $respuesta["tipo"] = "servicio";
+            $respuesta["data"] = $returnFetchServicios;
+            $respuesta["res"] = true;
             return json_encode($respuesta);
         } else {
-            $respuesta['tipo'] = 'productos';
-            $respuesta['data'] = $returnFetch;
-            $respuesta['res'] = true;
+            $respuesta["tipo"] = "productos";
+            $respuesta["data"] = $returnFetch;
+            $respuesta["res"] = true;
             return json_encode($respuesta);
         }
     }
 
-
     public function detalleVenta2()
     {
         //echo $_POST['iventa'];
-        $this->venta->setIdVenta($_POST['iventa']);
+        $this->venta->setIdVenta($_POST["iventa"]);
         return $this->venta->verDetalle2();
     }
 
@@ -483,11 +601,8 @@ class VentasController extends Controller
     {
         $resultado = ["res" => false];
 
-
-
         $dataSend = [];
         $dataSend["certGlobal"] = false;
-
 
         $c_cliente = new Cliente();
         $c_venta = new Venta();
@@ -498,31 +613,34 @@ class VentasController extends Controller
         $c_sunat = new VentaSunat();
         $c_varios = new Varios();
 
-        $id_empresa = $_SESSION['id_empresa'];
+        $id_empresa = $_SESSION["id_empresa"];
 
         $sql = "SELECT * from empresas where id_empresa = " . $id_empresa;
 
         $respEmpre = $c_venta->exeSQL($sql)->fetch_assoc();
 
-        $igv_empr_sel = $respEmpre['igv'];
-
+        $igv_empr_sel = $respEmpre["igv"];
 
         $c_cliente->setIdEmpresa($id_empresa);
-        $c_cliente->setDocumento(filter_input(INPUT_POST, 'num_doc'));
-        $c_cliente->setDatos(filter_input(INPUT_POST, 'nom_cli'));
-        $c_cliente->setDireccion(filter_input(INPUT_POST, 'dir_cli'));
-        $c_cliente->setDireccion2(filter_input(INPUT_POST, 'dir2_cli'));
+        $c_cliente->setDocumento(filter_input(INPUT_POST, "num_doc"));
+        $c_cliente->setDatos(filter_input(INPUT_POST, "nom_cli"));
+        $c_cliente->setDireccion(filter_input(INPUT_POST, "dir_cli"));
+        $c_cliente->setDireccion2(filter_input(INPUT_POST, "dir2_cli"));
 
         if ($c_cliente->getDocumento() == "") {
-            $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
-            $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
-            $c_cliente->modificar("SD" . $c_varios->generarCodigo(5), $nombre, $_POST['id_cliente']);
+            $numDoc = $_POST["num_doc"] == "" ? "" : $_POST["num_doc"];
+            $nombre = $_POST["nom_cli"] == "" ? "" : $_POST["nom_cli"];
+            $c_cliente->modificar(
+                "SD" . $c_varios->generarCodigo(5),
+                $nombre,
+                $_POST["id_cliente"],
+            );
             /*             $c_cliente->setDocumento("SD" . $c_varios->generarCodigo(5));
-            $c_cliente->insertar(); */
+             $c_cliente->insertar(); */
         } else {
-            $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
-            $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
-            $c_cliente->modificar($numDoc, $nombre, $_POST['id_cliente']);
+            $numDoc = $_POST["num_doc"] == "" ? "" : $_POST["num_doc"];
+            $nombre = $_POST["nom_cli"] == "" ? "" : $_POST["nom_cli"];
+            $c_cliente->modificar($numDoc, $nombre, $_POST["id_cliente"]);
             /*  $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
             $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
             $c_cliente->modificar($numDoc, $nombre, $_POST['id_cliente']); */
@@ -538,49 +656,54 @@ class VentasController extends Controller
         $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
         $c_cliente->modificar($numDoc, $nombre, $_POST['id_cliente']); */
 
+        $resultado["email"] = $c_cliente->getEmail()
+            ? $c_cliente->getEmail()
+            : "";
+        $resultado["cel"] = $c_cliente->getTelefono()
+            ? $c_cliente->getTelefono()
+            : "";
 
-        $resultado["email"] = $c_cliente->getEmail() ? $c_cliente->getEmail() : '';
-        $resultado["cel"] = $c_cliente->getTelefono() ? $c_cliente->getTelefono() : '';
-
-        $direccionselk = '';
-        if ($_POST['dir_pos'] == 1) {
-            $direccionselk = $_POST['dir_cli'];
-        } elseif ($_POST['dir_pos'] == 2) {
-            $direccionselk = $_POST['dir2_cli'];
+        $direccionselk = "";
+        if ($_POST["dir_pos"] == 1) {
+            $direccionselk = $_POST["dir_cli"];
+        } elseif ($_POST["dir_pos"] == 2) {
+            $direccionselk = $_POST["dir2_cli"];
         }
 
         if (trim($c_cliente->getDocumento()) == "") {
-            $c_cliente->setDocumento('');
+            $c_cliente->setDocumento("");
         }
         if (strlen(trim($direccionselk)) == "") {
-            $direccionselk = '-';
+            $direccionselk = "-";
         }
         if (trim($c_cliente->getDatos()) == "") {
-            $c_cliente->setDatos('-');
+            $c_cliente->setDatos("-");
         }
 
-        $dataSend['cliente'] = json_encode([
-            'doc_num' => $c_cliente->getDocumento(),
-            'nom_RS' => $c_cliente->getDatos(),
-            'direccion' => $direccionselk
+        $dataSend["cliente"] = json_encode([
+            "doc_num" => $c_cliente->getDocumento(),
+            "nom_RS" => $c_cliente->getDatos(),
+            "direccion" => $direccionselk,
         ]);
         $c_venta->setDireccion($direccionselk);
         /*   $dataSend['productos'] = []; */
 
-        $c_venta->setApliIgv($_POST['apli_igv']);
+        $c_venta->setApliIgv($_POST["apli_igv"]);
         $c_venta->setIdEmpresa($id_empresa);
-        $c_venta->setFecha($_POST['fecha']);
-        $c_venta->setFechaVenc($_POST['tipo_pago'] == '1' ? $_POST['fecha'] : $_POST['fechaVen']);
-        $c_venta->setDiasPagos($_POST['dias_pago']);
-        $c_venta->setIdTipoPago($_POST['tipo_pago']);
-        $c_venta->setObserva($_POST['observ']);
+        $c_venta->setFecha($_POST["fecha"]);
+        $c_venta->setFechaVenc(
+            $_POST["tipo_pago"] == "1" ? $_POST["fecha"] : $_POST["fechaVen"],
+        );
+        $c_venta->setDiasPagos($_POST["dias_pago"]);
+        $c_venta->setIdTipoPago($_POST["tipo_pago"]);
+        $c_venta->setObserva($_POST["observ"]);
 
-        $c_venta->setIdCliente($_POST['id_cliente']);
+        $c_venta->setIdCliente($_POST["id_cliente"]);
         $c_venta->setIgv($igv_empr_sel);
-        $c_venta->setTotal(filter_input(INPUT_POST, 'total'));
+        $c_venta->setTotal(filter_input(INPUT_POST, "total"));
         /*     $c_venta->setIdVenta(); */
-        $tipoventa = filter_input(INPUT_POST, 'tipoventa');
-        /* 
+        $tipoventa = filter_input(INPUT_POST, "tipoventa");
+        /*
 
         $dataSend['apli_igv'] = $_POST['apli_igv'] == 1;
         $dataSend['total'] = $c_venta->getTotal();
@@ -593,15 +716,14 @@ class VentasController extends Controller
         $dataSend['dias_pagos'] = [];
         $dataSend['moneda'] = "PEN"; */
 
-        $listaPagos = json_decode($_POST['dias_lista'], true);
+        $listaPagos = json_decode($_POST["dias_lista"], true);
 
-        if ($c_venta->editar($_POST['idVenta'])) {
-
+        if ($c_venta->editar($_POST["idVenta"])) {
             $resultado["res"] = true;
-            $array_detalle = json_decode($_POST['listaPro'], true);
+            $array_detalle = json_decode($_POST["listaPro"], true);
             foreach ($listaPagos as $diaP) {
                 $sql = "insert into dias_ventas set id_venta='{$c_venta->getIdVenta()}',
-                    monto='{$diaP['monto']}',fecha='{$diaP['fecha']}',estado='0'";
+                    monto='{$diaP["monto"]}',fecha='{$diaP["fecha"]}',estado='0'";
                 $c_venta->exeSQL($sql);
                 /*  $dataSend['dias_pagos'][] = [
                     "monto" => $diaP['monto'],
@@ -612,18 +734,19 @@ class VentasController extends Controller
 
             $nroitem = 1;
 
-
             /*  $c_servicio->setIdventa(); */
-            $c_servicio->eliminar($_POST['idVenta']);
+            $c_servicio->eliminar($_POST["idVenta"]);
 
             foreach ($array_detalle as $fila) {
-                $c_servicio->setDescripcion($fila['descripcion']);
-                $c_servicio->setCantidad($fila['cantidad']);
-                $c_servicio->setMonto($fila['precioVenta']);
-                $c_servicio->setCodsunat(isset($fila['codsunat']) ? $fila['codsunat'] : '');
+                $c_servicio->setDescripcion($fila["descripcion"]);
+                $c_servicio->setCantidad($fila["cantidad"]);
+                $c_servicio->setMonto($fila["precioVenta"]);
+                $c_servicio->setCodsunat(
+                    isset($fila["codsunat"]) ? $fila["codsunat"] : "",
+                );
                 $c_servicio->setIditem($nroitem);
                 /*  $c_servicio->setIdventa($_POST['idVenta']); */
-                $c_servicio->editar($_POST['idVenta']);
+                $c_servicio->editar($_POST["idVenta"]);
                 $nroitem++;
                 /*     $dataSend['productos'][] = [
                     "precio" => $fila['precio'],
@@ -644,7 +767,7 @@ class VentasController extends Controller
 
             /*   if ($c_venta->getIdTido() == 1 || $c_venta->getIdTido() == 2) { */
 
-            /* 
+            /*
                 $dataSend["endpoints"] = $respEmpre['modo'];
 
                 $dataSend['empresa'] = json_encode([
@@ -662,7 +785,7 @@ class VentasController extends Controller
 
 
                 $dataSend['productos'] = json_encode($dataSend['productos']); */
-            /* 
+            /*
                 if ($c_venta->getIdTido() == 1) {
                     $dataResp = $this->sunatApi->genBoletaXML($dataSend);
                 } else {
@@ -694,23 +817,22 @@ class VentasController extends Controller
         } */
         }
         /*  $_REQUEST */
-        $resultado["nomFact"] = '2020' . ".pdf";
-        $resultado["urlFact"] = URL::to('/venta/comprobante/pdf/' . $_POST['idVenta'] . '/' . '2020');
-        $resultado["urlFactd"] = URL::to('/venta/comprobante/pdfd/' . $_POST['idVenta'] . '/2020');
+        $resultado["nomFact"] = "2020" . ".pdf";
+        $resultado["urlFact"] = URL::to(
+            "/venta/comprobante/pdf/" . $_POST["idVenta"] . "/" . "2020",
+        );
+        $resultado["urlFactd"] = URL::to(
+            "/venta/comprobante/pdfd/" . $_POST["idVenta"] . "/2020",
+        );
 
         return json_encode($resultado);
     }
     public function editVentaProducto()
     {
-
-
         $resultado = ["res" => false];
-
-
 
         $dataSend = [];
         $dataSend["certGlobal"] = false;
-
 
         $c_cliente = new Cliente();
         $c_venta = new Venta();
@@ -721,32 +843,34 @@ class VentasController extends Controller
         $c_sunat = new VentaSunat();
         $c_varios = new Varios();
 
-        $id_empresa = $_SESSION['id_empresa'];
+        $id_empresa = $_SESSION["id_empresa"];
 
         $sql = "SELECT * from empresas where id_empresa = " . $id_empresa;
 
         $respEmpre = $c_venta->exeSQL($sql)->fetch_assoc();
 
-        $igv_empr_sel = $respEmpre['igv'];
-
+        $igv_empr_sel = $respEmpre["igv"];
 
         $c_cliente->setIdEmpresa($id_empresa);
-        $c_cliente->setDocumento(filter_input(INPUT_POST, 'num_doc'));
-        $c_cliente->setDatos(filter_input(INPUT_POST, 'nom_cli'));
-        $c_cliente->setDireccion(filter_input(INPUT_POST, 'dir_cli'));
-        $c_cliente->setDireccion2(filter_input(INPUT_POST, 'dir2_cli'));
-
+        $c_cliente->setDocumento(filter_input(INPUT_POST, "num_doc"));
+        $c_cliente->setDatos(filter_input(INPUT_POST, "nom_cli"));
+        $c_cliente->setDireccion(filter_input(INPUT_POST, "dir_cli"));
+        $c_cliente->setDireccion2(filter_input(INPUT_POST, "dir2_cli"));
 
         if ($c_cliente->getDocumento() == "") {
-            $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
-            $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
-            $c_cliente->modificar("SD" . $c_varios->generarCodigo(5), $nombre, $_POST['id_cliente']);
+            $numDoc = $_POST["num_doc"] == "" ? "" : $_POST["num_doc"];
+            $nombre = $_POST["nom_cli"] == "" ? "" : $_POST["nom_cli"];
+            $c_cliente->modificar(
+                "SD" . $c_varios->generarCodigo(5),
+                $nombre,
+                $_POST["id_cliente"],
+            );
             /*             $c_cliente->setDocumento("SD" . $c_varios->generarCodigo(5));
-            $c_cliente->insertar(); */
+             $c_cliente->insertar(); */
         } else {
-            $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
-            $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
-            $c_cliente->modificar($numDoc, $nombre, $_POST['id_cliente']);
+            $numDoc = $_POST["num_doc"] == "" ? "" : $_POST["num_doc"];
+            $nombre = $_POST["nom_cli"] == "" ? "" : $_POST["nom_cli"];
+            $c_cliente->modificar($numDoc, $nombre, $_POST["id_cliente"]);
             /*  $numDoc = $_POST['num_doc'] == '' ? '' : $_POST['num_doc'];
             $nombre = $_POST['nom_cli'] == '' ? '' : $_POST['nom_cli'];
             $c_cliente->modificar($numDoc, $nombre, $_POST['id_cliente']); */
@@ -759,24 +883,28 @@ class VentasController extends Controller
             } */
         }
 
-        $resultado["email"] = $c_cliente->getEmail() ? $c_cliente->getEmail() : '';
-        $resultado["cel"] = $c_cliente->getTelefono() ? $c_cliente->getTelefono() : '';
+        $resultado["email"] = $c_cliente->getEmail()
+            ? $c_cliente->getEmail()
+            : "";
+        $resultado["cel"] = $c_cliente->getTelefono()
+            ? $c_cliente->getTelefono()
+            : "";
 
-        $direccionselk = '';
-        if ($_POST['dir_pos'] == 1) {
-            $direccionselk = $_POST['dir_cli'];
-        } elseif ($_POST['dir_pos'] == 2) {
-            $direccionselk = $_POST['dir2_cli'];
+        $direccionselk = "";
+        if ($_POST["dir_pos"] == 1) {
+            $direccionselk = $_POST["dir_cli"];
+        } elseif ($_POST["dir_pos"] == 2) {
+            $direccionselk = $_POST["dir2_cli"];
         }
 
         if (trim($c_cliente->getDocumento()) == "") {
-            $c_cliente->setDocumento('');
+            $c_cliente->setDocumento("");
         }
         if (strlen(trim($direccionselk)) == "") {
-            $direccionselk = '-';
+            $direccionselk = "-";
         }
         if (trim($c_cliente->getDatos()) == "") {
-            $c_cliente->setDatos('-');
+            $c_cliente->setDatos("-");
         }
 
         /*  $dataSend['cliente'] = json_encode([
@@ -786,22 +914,23 @@ class VentasController extends Controller
         ]); */
         $c_venta->setDireccion($direccionselk);
         $c_tido->setIdEmpresa($id_empresa);
-        $c_tido->setIdTido(filter_input(INPUT_POST, 'tipo_doc'));
+        $c_tido->setIdTido(filter_input(INPUT_POST, "tipo_doc"));
         $c_tido->obtenerDatos();
-        $c_venta->setApliIgv($_POST['apli_igv']);
+        $c_venta->setApliIgv($_POST["apli_igv"]);
         $c_venta->setIdEmpresa($id_empresa);
-        $c_venta->setFecha($_POST['fecha']);
-        $c_venta->setFechaVenc($_POST['tipo_pago'] == '1' ? $_POST['fecha'] : $_POST['fechaVen']);
-        $c_venta->setDiasPagos($_POST['dias_pago']);
-        $c_venta->setIdTipoPago($_POST['tipo_pago']);
-        $c_venta->setObserva($_POST['observ']);
+        $c_venta->setFecha($_POST["fecha"]);
+        $c_venta->setFechaVenc(
+            $_POST["tipo_pago"] == "1" ? $_POST["fecha"] : $_POST["fechaVen"],
+        );
+        $c_venta->setDiasPagos($_POST["dias_pago"]);
+        $c_venta->setIdTipoPago($_POST["tipo_pago"]);
+        $c_venta->setObserva($_POST["observ"]);
         $c_venta->setIdTido($c_tido->getIdTido());
         $c_venta->setSerie($c_tido->getSerie());
         $c_venta->setNumero($c_tido->getNumero());
-        $c_venta->setIdCliente($_POST['id_cliente']);
+        $c_venta->setIdCliente($_POST["id_cliente"]);
         $c_venta->setIgv($igv_empr_sel);
-        $c_venta->setTotal(filter_input(INPUT_POST, 'total'));
-
+        $c_venta->setTotal(filter_input(INPUT_POST, "total"));
 
         /*      $dataSend['apli_igv'] = $_POST['apli_igv'] == 1;
         $dataSend['total'] = $c_venta->getTotal();
@@ -814,15 +943,14 @@ class VentasController extends Controller
         $dataSend['dias_pagos'] = [];
         $dataSend['moneda'] = "PEN"; */
 
-        $listaPagos = json_decode($_POST['dias_lista'], true);
+        $listaPagos = json_decode($_POST["dias_lista"], true);
 
-        if ($c_venta->editar($_POST['idVenta'])) {
-
+        if ($c_venta->editar($_POST["idVenta"])) {
             $resultado["res"] = true;
-            $array_detalle = json_decode($_POST['listaPro'], true);
+            $array_detalle = json_decode($_POST["listaPro"], true);
             foreach ($listaPagos as $diaP) {
                 $sql = "insert into dias_ventas set id_venta='{$c_venta->getIdVenta()}',
-                    monto='{$diaP['monto']}',fecha='{$diaP['fecha']}',estado='0'";
+                    monto='{$diaP["monto"]}',fecha='{$diaP["fecha"]}',estado='0'";
                 $c_venta->exeSQL($sql);
                 /*  $dataSend['dias_pagos'][] = [
                     "monto" => $diaP['monto'],
@@ -831,19 +959,20 @@ class VentasController extends Controller
             }
             /*  $dataSend['dias_pago'] = json_encode($dataSend['dias_pagos']); */
 
-
             /* $c_detalle->setIdVenta($c_venta->getIdVenta()); */
-            $c_detalle->eliminar($_POST['idVenta']);
+            $c_detalle->eliminar($_POST["idVenta"]);
 
             /*  $c_servicio->eliminar($_POST['idVenta']);   */
 
             foreach ($array_detalle as $fila) {
-                $c_detalle->setIdProducto($fila['productoid']);
-                $c_detalle->setCantidad($fila['cantidad']);
-                $c_detalle->setCosto($fila['costo']);
-                $c_detalle->setPrecio($fila['precio']);
-                $c_detalle->setIdVenta($_POST['idVenta']);
-                $c_detalle->setPrecioUsado(isset($fila['precio_usado']) ? $fila['precio_usado'] : 1);
+                $c_detalle->setIdProducto($fila["productoid"]);
+                $c_detalle->setCantidad($fila["cantidad"]);
+                $c_detalle->setCosto($fila["costo"]);
+                $c_detalle->setPrecio($fila["precio"]);
+                $c_detalle->setIdVenta($_POST["idVenta"]);
+                $c_detalle->setPrecioUsado(
+                    isset($fila["precio_usado"]) ? $fila["precio_usado"] : 1,
+                );
                 $c_detalle->insertar();
                 /*   $dataSend['productos'][] = [
                     "precio" => $fila['precio'],
@@ -853,7 +982,6 @@ class VentasController extends Controller
                     "descripcion" => $fila['descripcion']
                 ]; */
             }
-
 
             //definir url segun el tipo de documento sunat
             /*   if ($c_venta->getIdTido() == 1) {
@@ -909,9 +1037,13 @@ class VentasController extends Controller
 
                 $resultado["valor"] = $c_venta->getIdVenta();
             } */
-            $resultado["nomFact"] = '2020' . ".pdf";
-            $resultado["urlFact"] = URL::to('/venta/comprobante/pdf/' . $_POST['idVenta'] . '/' . '2020');
-            $resultado["urlFactd"] = URL::to('/venta/comprobante/pdfd/' . $_POST['idVenta'] . '/2020');
+            $resultado["nomFact"] = "2020" . ".pdf";
+            $resultado["urlFact"] = URL::to(
+                "/venta/comprobante/pdf/" . $_POST["idVenta"] . "/" . "2020",
+            );
+            $resultado["urlFactd"] = URL::to(
+                "/venta/comprobante/pdfd/" . $_POST["idVenta"] . "/2020",
+            );
         }
 
         return json_encode($resultado);
@@ -920,23 +1052,56 @@ class VentasController extends Controller
     public function guardarVentas()
     {
         try {
-            if (!isset($_SESSION['usuario_fac'])) {
+            if (!isset($_SESSION["usuario_fac"])) {
                 return json_encode([
                     "res" => false,
-                    "mensaje" => "Sesión no iniciada"
+                    "mensaje" => "Sesión no iniciada",
                 ]);
             }
-    
+
             $resultado = ["res" => false];
-    
-            // Validar productos
-            if (!isset($_POST['listaPro']) || empty($_POST['listaPro'])) {
+
+            // VALIDACIÓN 1: Verificar permisos de asesores (rol 2)
+            $rol_usuario = $_SESSION["id_rol"] ?? null;
+            $tipo_doc = $_POST["tipo_doc"] ?? null;
+
+            if ($rol_usuario == 2 && $tipo_doc != 6) {
                 return json_encode([
                     "res" => false,
-                    "mensaje" => "No hay productos agregados a la lista"
+                    "mensaje" =>
+                        "Los asesores solo pueden emitir Notas de Venta",
                 ]);
             }
-    
+
+            // VALIDACIÓN 2: Verificar fecha de emisión (máximo 5 días atrás)
+            $fecha_emision = $_POST["fecha"] ?? date("Y-m-d");
+            $fecha_minima = date("Y-m-d", strtotime("-5 days"));
+            $fecha_actual = date("Y-m-d");
+
+            if ($fecha_emision < $fecha_minima) {
+                return json_encode([
+                    "res" => false,
+                    "mensaje" =>
+                        "Solo puede emitir comprobantes con fecha de hasta 5 días atrás",
+                ]);
+            }
+
+            if ($fecha_emision > $fecha_actual) {
+                return json_encode([
+                    "res" => false,
+                    "mensaje" =>
+                        "No puede emitir comprobantes con fecha futura",
+                ]);
+            }
+
+            // Validar productos
+            if (!isset($_POST["listaPro"]) || empty($_POST["listaPro"])) {
+                return json_encode([
+                    "res" => false,
+                    "mensaje" => "No hay productos agregados a la lista",
+                ]);
+            }
+
             // Inicializar componentes
             $c_cliente = new Cliente();
             $c_venta = new Venta();
@@ -946,21 +1111,21 @@ class VentasController extends Controller
             $c_sunat = new VentaSunat();
             $c_varios = new Varios();
             $c_guia = new GuiaRemision();
-    
-            $id_empresa = $_SESSION['id_empresa'];
-    
+
+            $id_empresa = $_SESSION["id_empresa"];
+
             // Obtener datos de empresa
             $sql = "SELECT * from empresas where id_empresa = " . $id_empresa;
             $respEmpre = $c_venta->exeSQL($sql)->fetch_assoc();
-            $igv_empr_sel = $respEmpre['igv'];
-    
+            $igv_empr_sel = $respEmpre["igv"];
+
             // Configurar cliente
             $c_cliente->setIdEmpresa($id_empresa);
-            $c_cliente->setDocumento(filter_input(INPUT_POST, 'num_doc'));
-            $c_cliente->setDatos(filter_input(INPUT_POST, 'nom_cli'));
-            $c_cliente->setDireccion(filter_input(INPUT_POST, 'dir_cli'));
-            $c_cliente->setDireccion2(filter_input(INPUT_POST, 'dir2_cli'));
-    
+            $c_cliente->setDocumento(filter_input(INPUT_POST, "num_doc"));
+            $c_cliente->setDatos(filter_input(INPUT_POST, "nom_cli"));
+            $c_cliente->setDireccion(filter_input(INPUT_POST, "dir_cli"));
+            $c_cliente->setDireccion2(filter_input(INPUT_POST, "dir2_cli"));
+
             // Procesar cliente
             if ($c_cliente->getDocumento() == "") {
                 $c_cliente->setDocumento("SD" . $c_varios->generarCodigo(5));
@@ -974,9 +1139,9 @@ class VentasController extends Controller
                         $c_cliente->getEmail(),
                         $c_cliente->getTelefono(),
                         $c_cliente->getDireccion(),
-                        $id_empresa
+                        $id_empresa,
                     );
-                    
+
                     if ($nuevo_id) {
                         $c_cliente->setIdCliente($nuevo_id);
                     } else {
@@ -984,66 +1149,73 @@ class VentasController extends Controller
                     }
                 }
             }
-    
-            $resultado["email"] = $c_cliente->getEmail() ?: '';
-            $resultado["cel"] = $c_cliente->getTelefono() ?: '';
-    
+
+            $resultado["email"] = $c_cliente->getEmail() ?: "";
+            $resultado["cel"] = $c_cliente->getTelefono() ?: "";
+
             // Configurar dirección
-            $direccionselk = '';
-            if ($_POST['dir_pos'] == 1) {
-                $direccionselk = $_POST['dir_cli'];
-            } elseif ($_POST['dir_pos'] == 2) {
-                $direccionselk = $_POST['dir2_cli'];
+            $direccionselk = "";
+            if ($_POST["dir_pos"] == 1) {
+                $direccionselk = $_POST["dir_cli"];
+            } elseif ($_POST["dir_pos"] == 2) {
+                $direccionselk = $_POST["dir2_cli"];
             }
-    
+
             if (trim($c_cliente->getDocumento()) == "") {
-                $c_cliente->setDocumento('');
+                $c_cliente->setDocumento("");
             }
             if (strlen(trim($direccionselk)) == "") {
-                $direccionselk = '-';
+                $direccionselk = "-";
             }
             if (trim($c_cliente->getDatos()) == "") {
-                $c_cliente->setDatos('-');
+                $c_cliente->setDatos("-");
             }
-    
+
             // Configurar documento
             $c_tido->setIdEmpresa($id_empresa);
-            $c_tido->setIdTido(filter_input(INPUT_POST, 'tipo_doc'));
+            $c_tido->setIdTido(filter_input(INPUT_POST, "tipo_doc"));
             $c_tido->obtenerDatos();
-    
+
             // Configurar venta
             $c_venta->setDireccion($direccionselk);
-            $c_venta->setApliIgv($_POST['apli_igv']);
+            $c_venta->setApliIgv($_POST["apli_igv"]);
             $c_venta->setIdEmpresa($id_empresa);
-            $c_venta->setFecha($_POST['fecha']);
-            $c_venta->setFechaVenc($_POST['tipo_pago'] == '1' ? $_POST['fecha'] : $_POST['fechaVen']);
-            $c_venta->setDiasPagos($_POST['dias_pago']);
-            $c_venta->setIdTipoPago($_POST['tipo_pago']);
-            $metodo = intval($_POST['metodo']);
+            $c_venta->setFecha($_POST["fecha"]);
+            $c_venta->setFechaVenc(
+                $_POST["tipo_pago"] == "1"
+                    ? $_POST["fecha"]
+                    : $_POST["fechaVen"],
+            );
+            $c_venta->setDiasPagos($_POST["dias_pago"]);
+            $c_venta->setIdTipoPago($_POST["tipo_pago"]);
+            $metodo = intval($_POST["metodo"]);
             $c_venta->setMetodo($metodo);
-            $c_venta->setObserva($_POST['observ']);
+            $c_venta->setObserva($_POST["observ"]);
             $c_venta->setIdTido($c_tido->getIdTido());
             $c_venta->setSerie($c_tido->getSerie());
             $c_venta->setNumero($c_tido->getNumero());
             $c_venta->setIdCliente($c_cliente->getIdCliente());
             $c_venta->setIgv($igv_empr_sel);
-            $c_venta->setTotal(filter_input(INPUT_POST, 'total'));
-            $c_venta->setIdCoti($_POST['idCoti'] ?? null);
-            $tipoventa = filter_input(INPUT_POST, 'tipoventa') ?: 1;
-    
+            $c_venta->setTotal(filter_input(INPUT_POST, "total"));
+            $c_venta->setIdCoti($_POST["idCoti"] ?? null);
+            $tipoventa = filter_input(INPUT_POST, "tipoventa") ?: 1;
+
             // Iniciar transacción
             $this->conexion->begin_transaction();
-    
+
             try {
                 // Insertar venta
                 if (!$c_venta->insertar()) {
                     throw new Exception("Error al insertar la venta");
                 }
-    
+
                 // Procesar pagos
-                if (isset($_POST["cantidadPagos"]) && intval($_POST["cantidadPagos"]) > 0) {
+                if (
+                    isset($_POST["cantidadPagos"]) &&
+                    intval($_POST["cantidadPagos"]) > 0
+                ) {
                     $cantidadPagos = intval($_POST["cantidadPagos"]);
-    
+
                     // Verificar si existe el array de pagos
                     if (isset($_POST["pagos"]) && is_array($_POST["pagos"])) {
                         for ($i = 0; $i < $cantidadPagos; $i++) {
@@ -1055,16 +1227,21 @@ class VentasController extends Controller
                                 !empty($_POST["pagos"][$i]["metodoPago"]) &&
                                 !empty($_POST["pagos"][$i]["montoPago"])
                             ) {
-    
-                                $metodoPago = $this->conexion->real_escape_string($_POST["pagos"][$i]["metodoPago"]);
-                                $montoPago = floatval($_POST["pagos"][$i]["montoPago"]);
+                                $metodoPago = $this->conexion->real_escape_string(
+                                    $_POST["pagos"][$i]["metodoPago"],
+                                );
+                                $montoPago = floatval(
+                                    $_POST["pagos"][$i]["montoPago"],
+                                );
                                 $npago = $i + 1;
-    
+
                                 $sql = "INSERT INTO ventas_pagos SET id_venta='{$c_venta->getIdVenta()}',
                                         metodo_pago='{$metodoPago}', monto='{$montoPago}', npago='{$npago}'";
-    
+
                                 if (!$c_venta->exeSQL($sql)) {
-                                    throw new Exception("Error al registrar pago #{$npago}");
+                                    throw new Exception(
+                                        "Error al registrar pago #{$npago}",
+                                    );
                                 }
                             }
                         }
@@ -1072,7 +1249,7 @@ class VentasController extends Controller
                         // Si no hay array de pagos pero se especificó cantidad, usar método principal
                         $sql = "INSERT INTO ventas_pagos SET id_venta='{$c_venta->getIdVenta()}',
                                 metodo_pago='{$metodo}', monto='{$c_venta->getTotal()}', npago='1'";
-    
+
                         if (!$c_venta->exeSQL($sql)) {
                             throw new Exception("Error al registrar pago #1");
                         }
@@ -1081,55 +1258,102 @@ class VentasController extends Controller
                     // Si no se especificó cantidad de pagos, usar método principal
                     $sql = "INSERT INTO ventas_pagos SET id_venta='{$c_venta->getIdVenta()}',
                             metodo_pago='{$metodo}', monto='{$c_venta->getTotal()}', npago='1'";
-    
+
                     if (!$c_venta->exeSQL($sql)) {
                         throw new Exception("Error al registrar pago #1");
                     }
                 }
-    
+
                 // Procesar días de pago
                 $listaPagos = [];
-                if (isset($_POST['dias_lista']) && !empty($_POST['dias_lista'])) {
-                    $listaPagos = json_decode($_POST['dias_lista'], true);
+                if (
+                    isset($_POST["dias_lista"]) &&
+                    !empty($_POST["dias_lista"])
+                ) {
+                    $listaPagos = json_decode($_POST["dias_lista"], true);
                     if (is_array($listaPagos)) {
                         foreach ($listaPagos as $diaP) {
-                            if (isset($diaP['monto']) && isset($diaP['fecha'])) {
+                            if (
+                                isset($diaP["monto"]) &&
+                                isset($diaP["fecha"])
+                            ) {
                                 $sql = "INSERT INTO dias_ventas SET id_venta='{$c_venta->getIdVenta()}',
-                                        monto='{$diaP['monto']}',fecha='{$diaP['fecha']}',estado='0'";
+                                        monto='{$diaP["monto"]}',fecha='{$diaP["fecha"]}',estado='0'";
                                 if (!$c_venta->exeSQL($sql)) {
-                                    throw new Exception("Error al registrar día de pago");
+                                    throw new Exception(
+                                        "Error al registrar día de pago",
+                                    );
                                 }
                             }
                         }
                     }
                 }
-    
+
                 // Procesar productos
-                $array_detalle = json_decode($_POST['listaPro'], true);
-    
+                $array_detalle = json_decode($_POST["listaPro"], true);
+
                 // NUEVO: Validación para Logo YANGO usando código del producto
                 foreach ($array_detalle as $fila) {
                     // Buscar el ID real del producto usando el código
-                    $sql_producto = "SELECT idproductosv2 FROM productosv2 WHERE codigo = '" . $fila['productoid'] . "' OR codigo_barra = '" . $fila['productoid'] . "'";
+                    $sql_producto =
+                        "SELECT idproductosv2 FROM productosv2 WHERE codigo = '" .
+                        $fila["productoid"] .
+                        "' OR codigo_barra = '" .
+                        $fila["productoid"] .
+                        "'";
                     $resultado_producto = $this->venta->exeSQL($sql_producto);
-                    
-                    if ($resultado_producto && $resultado_producto->num_rows > 0) {
+
+                    if (
+                        $resultado_producto &&
+                        $resultado_producto->num_rows > 0
+                    ) {
                         $producto_data = $resultado_producto->fetch_assoc();
-                        $id_producto_real = $producto_data['idproductosv2'];
-                        
-                        if ($id_producto_real == '27') { // ID del producto LOGO YANGO
-                            $documento_cliente = trim($this->venta->exeSQL("SELECT documento FROM clientes WHERE id_cliente = '{$c_cliente->getIdCliente()}'")->fetch_assoc()['documento']);
-                            
+                        $id_producto_real = $producto_data["idproductosv2"];
+
+                        if ($id_producto_real == "27") {
+                            // ID del producto LOGO YANGO
+                            $documento_cliente = trim(
+                                $this->venta
+                                    ->exeSQL(
+                                        "SELECT documento FROM clientes WHERE id_cliente = '{$c_cliente->getIdCliente()}'",
+                                    )
+                                    ->fetch_assoc()["documento"],
+                            );
+
                             if (!empty($documento_cliente)) {
-                                $sql_conductor = "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = '" . trim($documento_cliente) . "'";
-                                
-                                $resultado_conductor = $this->venta->exeSQL($sql_conductor);
-                                
-                                if ($resultado_conductor && $resultado_conductor->num_rows > 0) {
+                                $sql_conductor =
+                                    "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = '" .
+                                    trim($documento_cliente) .
+                                    "'";
+
+                                $resultado_conductor = $this->venta->exeSQL(
+                                    $sql_conductor,
+                                );
+
+                                if (
+                                    $resultado_conductor &&
+                                    $resultado_conductor->num_rows > 0
+                                ) {
                                     $conductor_data = $resultado_conductor->fetch_assoc();
-                                    
-                                    if (!is_null($conductor_data['logo_yango_asignado_cod']) && !empty($conductor_data['logo_yango_asignado_cod'])) {
-                                        throw new Exception("Conductor ya tiene Logo YANGO asignado: " . $conductor_data['logo_yango_asignado_cod']);
+
+                                    if (
+                                        !is_null(
+                                            $conductor_data[
+                                                "logo_yango_asignado_cod"
+                                            ],
+                                        ) &&
+                                        !empty(
+                                            $conductor_data[
+                                                "logo_yango_asignado_cod"
+                                            ]
+                                        )
+                                    ) {
+                                        throw new Exception(
+                                            "Conductor ya tiene Logo YANGO asignado: " .
+                                                $conductor_data[
+                                                    "logo_yango_asignado_cod"
+                                                ],
+                                        );
                                     }
                                 }
                             }
@@ -1140,15 +1364,56 @@ class VentasController extends Controller
                 if ($tipoventa == 1) {
                     // Venta de productos
                     foreach ($array_detalle as $fila) {
-
                         // 🔹 Buscar por ID numérico O por código
-                        $productoid = $this->conexion->real_escape_string($fila['productoid']);
+                        $productoid = $this->conexion->real_escape_string(
+                            $fila["productoid"],
+                        );
 
+                        // ✅ SI productoid está vacío → Guardar como SERVICIO (entrada manual)
+                        if (empty($productoid)) {
+                            // Calcular precio según moneda
+                            $precio = isset($fila["precioVenta"])
+                                ? $fila["precioVenta"]
+                                : 0;
+
+                            // Verificar si el tipo de pago es 3 (gratis)
+                            if ($c_venta->getIdTipoPago() == 3) {
+                                $precio = 0;
+                            }
+
+                            if (
+                                isset($_POST["moneda"]) &&
+                                $_POST["moneda"] == 2 &&
+                                isset($_POST["tc"]) &&
+                                !empty($_POST["tc"])
+                            ) {
+                                $precio = $precio / floatval($_POST["tc"]);
+                            }
+
+                            // Insertar como servicio
+                            $c_servicio->setIdVenta($c_venta->getIdVenta());
+                            $c_servicio->setIdItem(1);
+                            $c_servicio->setDescripcion($fila["descripcion"]);
+                            $c_servicio->setMonto($precio);
+                            $c_servicio->setCantidad($fila["cantidad"]);
+                            $c_servicio->setCodSunat('');
+
+                            if (!$c_servicio->insertar()) {
+                                throw new Exception(
+                                    "Error al insertar servicio: " .
+                                        $c_servicio->getSqlError(),
+                                );
+                            }
+
+                            continue; // Pasar al siguiente item
+                        }
+
+                        // ✅ SI productoid tiene valor → Guardar como PRODUCTO (del inventario)
                         // Si es numérico, buscar por ID, sino por código
                         if (is_numeric($productoid)) {
-                            $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE idproductosv2 = '{$productoid}'";
+                            $sql = "SELECT idproductosv2, cantidad, tipo_producto FROM productosv2 WHERE idproductosv2 = '{$productoid}'";
                         } else {
-                            $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE codigo = '{$productoid}' OR codigo_barra = '{$productoid}'";
+                            $sql = "SELECT idproductosv2, cantidad, tipo_producto FROM productosv2 WHERE codigo = '{$productoid}' OR codigo_barra = '{$productoid}'";
                         }
 
                         $result = $c_venta->exeSQL($sql);
@@ -1157,78 +1422,107 @@ class VentasController extends Controller
                             $stockData = $result->fetch_assoc();
 
                             // Obtener el ID numérico real del producto
-                            $idProductoReal = $stockData['idproductosv2'];
+                            $idProductoReal = $stockData["idproductosv2"];
 
-                            if ($stockData['cantidad'] < $fila['cantidad']) {
-                                throw new Exception("Stock insuficiente para el producto: {$fila['descripcion']}");
+                            // 🔹 NUEVO: Solo validar stock si NO es producto Intangible
+                            if ($stockData["tipo_producto"] !== 'Intangible' && $stockData["cantidad"] < $fila["cantidad"]) {
+                                throw new Exception(
+                                    "Stock insuficiente para el producto: {$fila["descripcion"]}",
+                                );
                             }
-                            
+
                             // Insertar detalle de venta con el ID numérico real
                             $c_detalle->setIdVenta($c_venta->getIdVenta());
                             $c_detalle->setIdProducto($idProductoReal); // Usar el ID numérico real
-                            $c_detalle->setCantidad($fila['cantidad']);
-                            $c_detalle->setCosto(isset($fila['costo']) ? $fila['costo'] : 0);
-                            $c_detalle->setDescripcion($fila['descripcion']);
+                            $c_detalle->setCantidad($fila["cantidad"]);
+                            $c_detalle->setCosto(
+                                isset($fila["costo"]) ? $fila["costo"] : 0,
+                            );
+                            $c_detalle->setDescripcion($fila["descripcion"]);
 
-                           
                             // Calcular precio según moneda
-                            $precio = isset($fila['precioVenta']) ? $fila['precioVenta'] : 0;
+                            $precio = isset($fila["precioVenta"])
+                                ? $fila["precioVenta"]
+                                : 0;
 
                             // Verificar si el tipo de pago es 3 (gratis), si es así, poner el precio a 0
-                            if ($c_venta->getIdTipoPago() == 3) { // Modificado: Comprobación del tipo de pago 3 (Gratis)
+                            if ($c_venta->getIdTipoPago() == 3) {
+                                // Modificado: Comprobación del tipo de pago 3 (Gratis)
                                 $precio = 0; // Modificado: Asignar precio 0 si es tipo de pago 3 (Gratis)
                             }
-                         
-                            if (isset($_POST['moneda']) && $_POST['moneda'] == 2 && isset($_POST['tc']) && !empty($_POST['tc'])) {
-                                $precio = $precio / floatval($_POST['tc']);
+
+                            if (
+                                isset($_POST["moneda"]) &&
+                                $_POST["moneda"] == 2 &&
+                                isset($_POST["tc"]) &&
+                                !empty($_POST["tc"])
+                            ) {
+                                $precio = $precio / floatval($_POST["tc"]);
                             }
                             $c_detalle->setPrecio($precio);
-                            
-                            $c_detalle->setPrecioUsado(isset($fila['precio_usado']) ? $fila['precio_usado'] : '1');
-                
+
+                            $c_detalle->setPrecioUsado(
+                                isset($fila["precio_usado"])
+                                    ? $fila["precio_usado"]
+                                    : "1",
+                            );
+
                             if (!$c_detalle->insertar()) {
-                                throw new Exception("Error al insertar detalle de producto: " . $c_detalle->getSqlError());
+                                throw new Exception(
+                                    "Error al insertar detalle de producto: " .
+                                        $c_detalle->getSqlError(),
+                                );
                             }
 
                             // Obtener el nombre del producto desde Productov2.php
                             $c_producto = new Productov2(); // Modificado: Instancia del modelo Productov2
-                            $productoInfo = $c_producto->obtenerProductoPorId($idProductoReal); // Modificado: Obtener datos del producto
+                            $productoInfo = $c_producto->obtenerProductoPorId(
+                                $idProductoReal,
+                            ); // Modificado: Obtener datos del producto
 
                             if (!$productoInfo) {
-                                throw new Exception("No se pudo obtener la información del producto con ID: {$idProductoReal}");
+                                throw new Exception(
+                                    "No se pudo obtener la información del producto con ID: {$idProductoReal}",
+                                );
                             }
 
                             // Insertar movimiento en Reportes.php
                             $c_reporte = new Reportes(); // Modificado: Instancia del modelo Reportes
 
                             // Obtener usuario_id de la sesión
-                            $user_id = $_SESSION['usuario_id'] ?? null;
+                            $user_id = $_SESSION["usuario_id"] ?? null;
                             if (!$user_id) {
-                                echo json_encode(['status' => 'error', 'message' => 'No se pudo obtener el ID del usuario.']);
+                                echo json_encode([
+                                    "status" => "error",
+                                    "message" =>
+                                        "No se pudo obtener el ID del usuario.",
+                                ]);
                                 return;
                             }
 
                             $c_reporte->RegistrarMovimiento(
                                 $user_id, // Usuario desde la sesión
                                 $idProductoReal, // ID del producto
-                                $productoInfo['CODIGO'], // 🔹 Código del producto desde la BD
-                                $productoInfo['NOMBRE'], // Nombre del producto
+                                $productoInfo["CODIGO"], // 🔹 Código del producto desde la BD
+                                $productoInfo["NOMBRE"], // Nombre del producto
                                 "Salida", // Tipo de movimiento "Salida"
                                 "Venta", // Subtipo de movimiento "Venta"
-                                $fila['cantidad'], // Cantidad vendida
-                                $productoInfo['RAZON_SOCIAL'] // Razon social del proveedor
+                                $fila["cantidad"], // Cantidad vendida
+                                $productoInfo["RAZON_SOCIAL"], // Razon social del proveedor
                             );
-                
+
                             // ELIMINADO: No actualizar stock aquí, ya se actualiza en ProductoVenta::insertar()
                         } else {
                             // 🔹 Si no se encuentra el producto, intentar buscar por otros campos
-                            $productoid = $this->conexion->real_escape_string($fila['productoid']);
+                            $productoid = $this->conexion->real_escape_string(
+                                $fila["productoid"],
+                            );
 
                             // Si es numérico, buscar por ID, sino por código/nombre
                             if (is_numeric($productoid)) {
                                 $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE idproductosv2 = '{$productoid}'";
                             } else {
-                                $sql = "SELECT idproductosv2, cantidad FROM productosv2 WHERE
+                                $sql = "SELECT idproductosv2, cantidad, tipo_producto FROM productosv2 WHERE
                                        codigo = '{$productoid}' OR
                                        codigo_barra = '{$productoid}' OR
                                        nombre LIKE '%{$productoid}%'";
@@ -1240,50 +1534,76 @@ class VentasController extends Controller
                                 $stockData = $result->fetch_assoc();
 
                                 // Continuar con el mismo proceso que arriba...
-                                $idProductoReal = $stockData['idproductosv2'];
+                                $idProductoReal = $stockData["idproductosv2"];
 
-                                if ($stockData['cantidad'] < $fila['cantidad']) {
-                                    throw new Exception("Stock insuficiente para el producto: {$fila['descripcion']}");
+                                // 🔹 NUEVO: Solo validar stock si NO es producto Intangible
+                                if (
+                                    $stockData["tipo_producto"] !== 'Intangible' &&
+                                    $stockData["cantidad"] < $fila["cantidad"]
+                                ) {
+                                    throw new Exception(
+                                        "Stock insuficiente para el producto: {$fila["descripcion"]}",
+                                    );
                                 }
-                                
+
                                 // Insertar detalle de venta con el ID numérico real
-                                $c_detalle->setDescripcion($fila['descripcion']);
+                                $c_detalle->setDescripcion(
+                                    $fila["descripcion"],
+                                );
                                 $c_detalle->setIdVenta($c_venta->getIdVenta());
                                 $c_detalle->setIdProducto($idProductoReal);
-                                $c_detalle->setCantidad($fila['cantidad']);
-                                $c_detalle->setCosto(isset($fila['costo']) ? $fila['costo'] : 0);
-                                
-                                
-                                $precio = isset($fila['precioVenta']) ? $fila['precioVenta'] : 0;
-                                if (isset($_POST['moneda']) && $_POST['moneda'] == 2 && isset($_POST['tc']) && !empty($_POST['tc'])) {
-                                    $precio = $precio / floatval($_POST['tc']);
+                                $c_detalle->setCantidad($fila["cantidad"]);
+                                $c_detalle->setCosto(
+                                    isset($fila["costo"]) ? $fila["costo"] : 0,
+                                );
+
+                                $precio = isset($fila["precioVenta"])
+                                    ? $fila["precioVenta"]
+                                    : 0;
+                                if (
+                                    isset($_POST["moneda"]) &&
+                                    $_POST["moneda"] == 2 &&
+                                    isset($_POST["tc"]) &&
+                                    !empty($_POST["tc"])
+                                ) {
+                                    $precio = $precio / floatval($_POST["tc"]);
                                 }
                                 $c_detalle->setPrecio($precio);
-                                
-                                $c_detalle->setPrecioUsado(isset($fila['precio_usado']) ? $fila['precio_usado'] : '1');
-                
+
+                                $c_detalle->setPrecioUsado(
+                                    isset($fila["precio_usado"])
+                                        ? $fila["precio_usado"]
+                                        : "1",
+                                );
+
                                 if (!$c_detalle->insertar()) {
-                                    throw new Exception("Error al insertar detalle de producto: " . $c_detalle->getSqlError());
+                                    throw new Exception(
+                                        "Error al insertar detalle de producto: " .
+                                            $c_detalle->getSqlError(),
+                                    );
                                 }
-                
+
                                 // ELIMINADO: No actualizar stock aquí, ya se actualiza en ProductoVenta::insertar()
                             } else {
-                                throw new Exception("No se encontró el producto con ID: {$fila['productoid']}");
+                                throw new Exception(
+                                    "No se encontró el producto con ID: {$fila["productoid"]}",
+                                );
                             }
                         }
                     }
-                
                 } elseif ($tipoventa == 2) {
                     // Venta de servicios
                     $nroitem = 1;
                     foreach ($array_detalle as $fila) {
                         $c_servicio->setIdventa($c_venta->getIdVenta());
-                        $c_servicio->setDescripcion($fila['descripcion']);
-                        $c_servicio->setCantidad($fila['cantidad']);
-                        $c_servicio->setMonto($fila['precioVenta']);
-                        $c_servicio->setCodsunat(isset($fila['codsunat']) ? $fila['codsunat'] : '');
+                        $c_servicio->setDescripcion($fila["descripcion"]);
+                        $c_servicio->setCantidad($fila["cantidad"]);
+                        $c_servicio->setMonto($fila["precioVenta"]);
+                        $c_servicio->setCodsunat(
+                            isset($fila["codsunat"]) ? $fila["codsunat"] : "",
+                        );
                         $c_servicio->setIditem($nroitem);
-    
+
                         if (!$c_servicio->insertar()) {
                             throw new Exception("Error al insertar servicio");
                         }
@@ -1292,167 +1612,246 @@ class VentasController extends Controller
                 }
                 // MODIFICADO: Añadida condición para omitir generación SUNAT cuando tipo_pago es 3 (Gratis)
                 // Procesar documentos SUNAT si aplica
-                if (($c_venta->getIdTido() == 1 || $c_venta->getIdTido() == 2) && $c_venta->getIdTipoPago() != 3) {
+                if (
+                    ($c_venta->getIdTido() == 1 ||
+                        $c_venta->getIdTido() == 2) &&
+                    $c_venta->getIdTipoPago() != 3
+                ) {
                     $dataSend = [];
                     $dataSend["certGlobal"] = false;
-                
+
                     // Configurar datos del cliente
                     if (strlen(trim($direccionselk)) == "") {
-                        $direccionselk = '-';
+                        $direccionselk = "-";
                     }
                     if (trim($c_cliente->getDatos()) == "") {
-                        $c_cliente->setDatos('-');
+                        $c_cliente->setDatos("-");
                     }
-                
-                    $dataSend['cliente'] = json_encode([
-                        'doc_num' => $c_cliente->getDocumento(),
-                        'nom_RS' => $c_cliente->getDatos(),
-                        'direccion' => $direccionselk
+
+                    $dataSend["cliente"] = json_encode([
+                        "doc_num" => $c_cliente->getDocumento(),
+                        "nom_RS" => $c_cliente->getDatos(),
+                        "direccion" => $direccionselk,
                     ]);
-                
+
                     // Configurar datos de la venta
-                    $dataSend['apli_igv'] = $_POST['apli_igv'] == 1;
-                    $dataSend['total'] = number_format($c_venta->getTotal(), 2, '.', '');
-                    $dataSend['serie'] = $c_venta->getSerie();
-                    $dataSend['numero'] = $c_venta->getNumero();
-                    $dataSend['fechaE'] = $c_venta->getFecha();
-                    $dataSend['fechaV'] = $c_venta->getFechaVenc();
-                    $dataSend['tipo_pago'] = $c_venta->getIdTipoPago();
-                    $dataSend['igv_venta'] = $igv_empr_sel;
-                    $dataSend['moneda'] = isset($_POST['moneda']) && $_POST['moneda'] == 2 ? "USD" : "PEN";
-                    
+                    $dataSend["apli_igv"] = $_POST["apli_igv"] == 1;
+                    $dataSend["total"] = number_format(
+                        $c_venta->getTotal(),
+                        2,
+                        ".",
+                        "",
+                    );
+                    $dataSend["serie"] = $c_venta->getSerie();
+                    $dataSend["numero"] = $c_venta->getNumero();
+                    $dataSend["fechaE"] = $c_venta->getFecha();
+                    $dataSend["fechaV"] = $c_venta->getFechaVenc();
+                    $dataSend["tipo_pago"] = $c_venta->getIdTipoPago();
+                    $dataSend["igv_venta"] = $igv_empr_sel;
+                    $dataSend["moneda"] =
+                        isset($_POST["moneda"]) && $_POST["moneda"] == 2
+                            ? "USD"
+                            : "PEN";
+
                     // IMPORTANTE: Inicializar dias_pagos como array vacío para evitar el error
-                    $dataSend['dias_pagos'] = [];
-                    
+                    $dataSend["dias_pagos"] = [];
+
                     // Agregar días de pago si existen
                     if (!empty($listaPagos) && is_array($listaPagos)) {
                         foreach ($listaPagos as $diaP) {
-                            if (isset($diaP['monto']) && isset($diaP['fecha'])) {
-                                $dataSend['dias_pagos'][] = [
-                                    "monto" => $diaP['monto'],
-                                    "fecha" => $diaP['fecha']
+                            if (
+                                isset($diaP["monto"]) &&
+                                isset($diaP["fecha"])
+                            ) {
+                                $dataSend["dias_pagos"][] = [
+                                    "monto" => $diaP["monto"],
+                                    "fecha" => $diaP["fecha"],
                                 ];
                             }
                         }
                     }
-                    
+
                     // Convertir a JSON (incluso si está vacío)
-                    $dataSend['dias_pagos'] = json_encode($dataSend['dias_pagos']);
-                    
+                    $dataSend["dias_pagos"] = json_encode(
+                        $dataSend["dias_pagos"],
+                    );
+
                     // Configurar productos
-                    $dataSend['productos'] = [];
+                    $dataSend["productos"] = [];
                     if ($tipoventa == 1) {
                         foreach ($array_detalle as $fila) {
-                           
-                            $dataSend['productos'][] = [
-                                "precio" => number_format($fila['precioVenta'], 2, ".", ""),
-                                "cantidad" => number_format($fila['cantidad'], 0),
-                                "cod_pro" => $fila['productoid'],
+                            $dataSend["productos"][] = [
+                                "precio" => number_format(
+                                    $fila["precioVenta"],
+                                    2,
+                                    ".",
+                                    "",
+                                ),
+                                "cantidad" => number_format(
+                                    $fila["cantidad"],
+                                    0,
+                                ),
+                                "cod_pro" => $fila["productoid"],
                                 "cod_sunat" => "",
-                                "descripcion" => $fila['descripcion']
+                                "descripcion" => $fila["descripcion"],
                             ];
                         }
                     } else {
                         foreach ($array_detalle as $fila) {
-                           
-                            $dataSend['productos'][] = [
-                                "precio" => number_format($fila['precioVenta'], 2, ".", ""),
-                                "cantidad" => number_format($fila['cantidad'], 0),
-                                "cod_pro" => isset($fila['id_item']) ? $fila['id_item'] : $nroitem,
-                                "cod_sunat" => isset($fila['codsunat']) ? $fila['codsunat'] : '',
-                                "descripcion" => $fila['descripcion']
+                            $dataSend["productos"][] = [
+                                "precio" => number_format(
+                                    $fila["precioVenta"],
+                                    2,
+                                    ".",
+                                    "",
+                                ),
+                                "cantidad" => number_format(
+                                    $fila["cantidad"],
+                                    0,
+                                ),
+                                "cod_pro" => isset($fila["id_item"])
+                                    ? $fila["id_item"]
+                                    : $nroitem,
+                                "cod_sunat" => isset($fila["codsunat"])
+                                    ? $fila["codsunat"]
+                                    : "",
+                                "descripcion" => $fila["descripcion"],
                             ];
                         }
                     }
-                
+
                     // Configurar datos de la empresa
-                    $dataSend["endpoints"] = $respEmpre['modo'];
-                    
+                    $dataSend["endpoints"] = $respEmpre["modo"];
+
                     // Usar datos de sucursal si no es la principal
-                    if (isset($_SESSION['sucursal']) && $_SESSION['sucursal'] != '1') {
-                        $datoSucursal = $this->conexion->query("SELECT * FROM sucursales WHERE cod_sucursal ='{$_SESSION['sucursal']}' AND empresa_id=" . $_SESSION['id_empresa'])->fetch_assoc();
-                        $dataSend['empresa'] = json_encode([
-                            'ruc' => $respEmpre['ruc'],
-                            'razon_social' => $respEmpre['razon_social'],
-                            'direccion' => $datoSucursal['direccion'],
-                            'ubigeo' => $datoSucursal['ubigeo'],
-                            'distrito' => $datoSucursal['distrito'],
-                            'provincia' => $datoSucursal['provincia'],
-                            'departamento' => $datoSucursal['departamento'],
-                            'clave_sol' => $respEmpre['clave_sol'],
-                            'usuario_sol' => $respEmpre['user_sol']
+                    if (
+                        isset($_SESSION["sucursal"]) &&
+                        $_SESSION["sucursal"] != "1"
+                    ) {
+                        $datoSucursal = $this->conexion
+                            ->query(
+                                "SELECT * FROM sucursales WHERE cod_sucursal ='{$_SESSION["sucursal"]}' AND empresa_id=" .
+                                    $_SESSION["id_empresa"],
+                            )
+                            ->fetch_assoc();
+                        $dataSend["empresa"] = json_encode([
+                            "ruc" => $respEmpre["ruc"],
+                            "razon_social" => $respEmpre["razon_social"],
+                            "direccion" => $datoSucursal["direccion"],
+                            "ubigeo" => $datoSucursal["ubigeo"],
+                            "distrito" => $datoSucursal["distrito"],
+                            "provincia" => $datoSucursal["provincia"],
+                            "departamento" => $datoSucursal["departamento"],
+                            "clave_sol" => $respEmpre["clave_sol"],
+                            "usuario_sol" => $respEmpre["user_sol"],
                         ]);
                     } else {
-                        $dataSend['empresa'] = json_encode([
-                            'ruc' => $respEmpre['ruc'],
-                            'razon_social' => $respEmpre['razon_social'],
-                            'direccion' => $respEmpre['direccion'],
-                            'ubigeo' => $respEmpre['ubigeo'],
-                            'distrito' => $respEmpre['distrito'],
-                            'provincia' => $respEmpre['provincia'],
-                            'departamento' => $respEmpre['departamento'],
-                            'clave_sol' => $respEmpre['clave_sol'],
-                            'usuario_sol' => $respEmpre['user_sol']
+                        $dataSend["empresa"] = json_encode([
+                            "ruc" => $respEmpre["ruc"],
+                            "razon_social" => $respEmpre["razon_social"],
+                            "direccion" => $respEmpre["direccion"],
+                            "ubigeo" => $respEmpre["ubigeo"],
+                            "distrito" => $respEmpre["distrito"],
+                            "provincia" => $respEmpre["provincia"],
+                            "departamento" => $respEmpre["departamento"],
+                            "clave_sol" => $respEmpre["clave_sol"],
+                            "usuario_sol" => $respEmpre["user_sol"],
                         ]);
                     }
-                
-                    $dataSend['productos'] = json_encode($dataSend['productos']);
-                    
+
+                    $dataSend["productos"] = json_encode(
+                        $dataSend["productos"],
+                    );
+
                     // Generar XML según tipo de documento
                     if ($c_venta->getIdTido() == 1) {
                         $dataResp = $this->sunatApi->genBoletaXML($dataSend);
                     } else {
                         $dataResp = $this->sunatApi->genFacturaXML($dataSend);
                     }
-                
+
                     if ($dataResp["res"]) {
                         $c_sunat->setIdVenta($c_venta->getIdVenta());
-                        $c_sunat->setHash($dataResp['data']['hash']);
-                        $c_sunat->setNombreXml($dataResp['data']['nombre_archivo']);
-                        $c_sunat->setQrData($dataResp['data']['qr']);
-                        
+                        $c_sunat->setHash($dataResp["data"]["hash"]);
+                        $c_sunat->setNombreXml(
+                            $dataResp["data"]["nombre_archivo"],
+                        );
+                        $c_sunat->setQrData($dataResp["data"]["qr"]);
+
                         if (!$c_sunat->insertar()) {
-                            throw new Exception("Error al guardar datos de SUNAT: " . $c_sunat->getSqlError());
+                            throw new Exception(
+                                "Error al guardar datos de SUNAT: " .
+                                    $c_sunat->getSqlError(),
+                            );
                         }
-                        
-                        $nom_xmlFac = $dataResp['data']['nombre_archivo'];
+
+                        $nom_xmlFac = $dataResp["data"]["nombre_archivo"];
                     } else {
-                        throw new Exception("Error al generar XML: " . ($dataResp['mensaje'] ?? 'Error desconocido'));
+                        throw new Exception(
+                            "Error al generar XML: " .
+                                ($dataResp["mensaje"] ?? "Error desconocido"),
+                        );
                     }
                 } else {
                     // Para documentos que no son SUNAT
                     $c_sunat->setIdVenta($c_venta->getIdVenta());
                     $c_sunat->setHash("-");
                     $c_sunat->setNombreXml("-");
-                    $c_sunat->setQrData('-');
+                    $c_sunat->setQrData("-");
                     if (!$c_sunat->insertar()) {
-                        throw new Exception("Error al guardar datos de documento: " . $c_sunat->getSqlError());
+                        throw new Exception(
+                            "Error al guardar datos de documento: " .
+                                $c_sunat->getSqlError(),
+                        );
                     }
-                    
+
                     $nom_xmlFac = "-";
                 }
-    
+
+                // ============================================
+                // GENERAR COMISIÓN AUTOMÁTICA PARA ASESORES
+                // ============================================
+                if ($_SESSION["id_rol"] == 2 && $c_venta->getIdTido() == 6) {
+                    try {
+                        // Convertir moneda numérica a texto
+                        $moneda_texto =
+                            isset($_POST["moneda"]) && $_POST["moneda"] == 2
+                                ? '$'
+                                : "S/.";
+
+                        $this->generarComisionVenta(
+                            $c_venta->getIdVenta(),
+                            $_SESSION["usuario_id"],
+                            $c_venta->getTotal(),
+                            $moneda_texto,
+                        );
+                    } catch (Exception $e) {
+                        error_log(
+                            "Error al generar comisión: " . $e->getMessage(),
+                        );
+                        // No lanzar excepción para no bloquear la venta
+                    }
+                }
+
                 $this->conexion->commit();
                 $resultado["res"] = true;
                 $resultado["venta"] = $c_venta->getIdVenta();
                 $resultado["nomxml"] = $nom_xmlFac;
-    
             } catch (Exception $e) {
                 $this->conexion->rollback();
                 error_log("Error en guardarVentas: " . $e->getMessage());
                 return json_encode([
                     "res" => false,
-                    "mensaje" => $e->getMessage()
+                    "mensaje" => $e->getMessage(),
                 ]);
             }
-    
+
             return json_encode($resultado);
-    
         } catch (Exception $e) {
             error_log("Error general en guardarVentas: " . $e->getMessage());
             return json_encode([
                 "res" => false,
-                "mensaje" => "Error interno del servidor"
+                "mensaje" => "Error interno del servidor",
             ]);
         }
     }
@@ -1460,65 +1859,303 @@ class VentasController extends Controller
     {
         try {
             // Verificar si se recibió el término de búsqueda
-            if (!isset($_GET['searchTerm']) || empty(trim($_GET['searchTerm']))) {
-                echo json_encode(["error" => "No se proporcionó un término de búsqueda."]);
+            if (
+                !isset($_GET["searchTerm"]) ||
+                empty(trim($_GET["searchTerm"]))
+            ) {
+                echo json_encode([
+                    "error" => "No se proporcionó un término de búsqueda.",
+                ]);
                 return;
             }
 
-            $searchTerm = trim($_GET['searchTerm']); // Obtener el término de búsqueda
+            $searchTerm = trim($_GET["searchTerm"]); // Obtener el término de búsqueda
 
             // Instanciar el modelo
             $productoModel = new Productov2();
 
             // Llamar al método del modelo
-            $productos = $productoModel->buscarProductosPorNombreOCodigo($searchTerm);
+            $productos = $productoModel->buscarProductosPorNombreOCodigo(
+                $searchTerm,
+            );
 
             // Devolver la respuesta en JSON
             echo json_encode(["success" => true, "productos" => $productos]);
         } catch (Exception $e) {
             // Manejo de errores
-            echo json_encode(["error" => "Ocurrió un error al buscar productos."]);
+            echo json_encode([
+                "error" => "Ocurrió un error al buscar productos.",
+            ]);
         }
     }
 
     public function validarConductorLogoYango()
     {
-        $respuesta = ['res' => false, 'tiene_logo' => false, 'codigo_logo' => ''];
-        
+        $respuesta = [
+            "res" => false,
+            "tiene_logo" => false,
+            "codigo_logo" => "",
+        ];
+
         try {
-            if (!isset($_POST['documento']) || empty(trim($_POST['documento']))) {
+            if (
+                !isset($_POST["documento"]) ||
+                empty(trim($_POST["documento"]))
+            ) {
                 echo json_encode($respuesta);
                 return;
             }
-            
-            $documento = trim($_POST['documento']);
-            
-            $sql = "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = ?";
+
+            $documento = trim($_POST["documento"]);
+
+            $sql =
+                "SELECT logo_yango_asignado_cod FROM conductores WHERE TRIM(nro_documento) = ?";
             $stmt = $this->conexion->prepare($sql);
-            
+
             if ($stmt) {
                 $stmt->bind_param("s", $documento);
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
+
                 if ($result && $result->num_rows > 0) {
                     $conductor = $result->fetch_assoc();
-                    $respuesta['res'] = true;
-                    
-                    if (!is_null($conductor['logo_yango_asignado_cod']) && !empty($conductor['logo_yango_asignado_cod'])) {
-                        $respuesta['tiene_logo'] = true;
-                        $respuesta['codigo_logo'] = $conductor['logo_yango_asignado_cod'];
+                    $respuesta["res"] = true;
+
+                    if (
+                        !is_null($conductor["logo_yango_asignado_cod"]) &&
+                        !empty($conductor["logo_yango_asignado_cod"])
+                    ) {
+                        $respuesta["tiene_logo"] = true;
+                        $respuesta["codigo_logo"] =
+                            $conductor["logo_yango_asignado_cod"];
                     }
                 }
-                
+
                 $stmt->close();
             }
-            
         } catch (Exception $e) {
-            error_log("Error en validarConductorLogoYango: " . $e->getMessage());
+            error_log(
+                "Error en validarConductorLogoYango: " . $e->getMessage(),
+            );
         }
-        
+
         echo json_encode($respuesta);
     }
 
+    /**
+     * Genera comisión automática para una venta de asesor
+     *
+     * @param int $id_venta ID de la venta
+     * @param int $usuario_id ID del asesor
+     * @param float $monto_venta Monto total de la venta
+     * @param string $moneda Moneda de la venta
+     * @throws Exception Si hay error al generar la comisión
+     */
+    private function generarComisionVenta(
+        $id_venta,
+        $usuario_id,
+        $monto_venta,
+        $moneda = "S/."
+    ) {
+        // 1. Obtener configuración de comisiones de ventas
+        $queryConfig = "SELECT * FROM configuracion_comisiones
+                        WHERE tipo_comision = 'venta' AND estado = 1
+                        LIMIT 1";
+        $resultConfig = $this->conexion->query($queryConfig);
+
+        // Si no hay configuración, no generar comisión (es opcional)
+        if (!$resultConfig || $resultConfig->num_rows == 0) {
+            error_log("No hay configuración de comisiones para ventas - Comisión no generada");
+            return; // Salir sin error
+        }
+
+        $config = $resultConfig->fetch_assoc();
+        $modo_calculo = $config["modo_calculo"];
+
+        $monto_comision = 0;
+        $porcentaje_aplicado = null;
+        $tipo_calculo = "";
+
+        // 2. Calcular comisión según el modo configurado
+        if ($modo_calculo == "fijo") {
+            // Usar porcentaje fijo o monto fijo
+            if (
+                $config["porcentaje_fijo"] !== null &&
+                $config["porcentaje_fijo"] > 0
+            ) {
+                $porcentaje_aplicado = $config["porcentaje_fijo"];
+                $monto_comision = $monto_venta * ($porcentaje_aplicado / 100);
+            } elseif (
+                $config["monto_comision"] !== null &&
+                $config["monto_comision"] > 0
+            ) {
+                $monto_comision = $config["monto_comision"];
+            } else {
+                // No hay configuración válida
+                error_log("Configuración de comisión sin valores válidos");
+                return;
+            }
+            $tipo_calculo = "manual";
+        } else {
+            // Modo no soportado (escalas ya no se usan)
+            error_log("Modo de cálculo '$modo_calculo' no soportado - Solo se usa 'fijo'");
+            return;
+        }
+
+        // 3. Insertar comisión en la tabla comisiones
+        $queryInsert = "INSERT INTO comisiones
+                       (usuario_id, tipo_comision, referencia_id, monto_comision,
+                        fecha_comision, estado_comision, moneda,
+                        porcentaje_aplicado, tipo_calculo)
+                       VALUES (?, 'venta', ?, ?, NOW(), 'pendiente', ?, ?, ?)";
+
+        $stmtInsert = $this->conexion->prepare($queryInsert);
+        $stmtInsert->bind_param(
+            "iidsds",
+            $usuario_id,
+            $id_venta,
+            $monto_comision,
+            $moneda,
+            $porcentaje_aplicado,
+            $tipo_calculo,
+        );
+
+        if (!$stmtInsert->execute()) {
+            throw new Exception(
+                "Error al insertar comisión: " . $stmtInsert->error,
+            );
+        }
+
+        $stmtInsert->close();
+
+        error_log(
+            "Comisión generada: Usuario $usuario_id, Venta $id_venta, Monto $monto_comision $moneda",
+        );
+    }
+
+    /**
+     * Obtiene la configuración actual de comisiones de ventas
+     */
+    public function obtenerConfiguracionComisionesVentas()
+    {
+        try {
+            $query = "SELECT * FROM configuracion_comisiones
+                      WHERE tipo_comision = 'venta'
+                      LIMIT 1";
+            $result = $this->conexion->query($query);
+
+            if ($result && $result->num_rows > 0) {
+                $config = $result->fetch_assoc();
+                echo json_encode([
+                    "res" => true,
+                    "data" => $config,
+                ]);
+            } else {
+                // Devolver valores por defecto si no existe configuración
+                echo json_encode([
+                    "res" => true,
+                    "data" => [
+                        "modo_calculo" => "fijo",
+                        "porcentaje_fijo" => null,
+                        "monto_comision" => null,
+                        "estado" => 0
+                    ],
+                    "mensaje" => "No hay configuración. Configure las comisiones para activarlas."
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                "res" => false,
+                "mensaje" =>
+                    "Error al obtener configuración: " . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Obtiene las escalas de comisión configuradas
+     */
+    public function obtenerEscalasComision()
+    {
+        try {
+            $query = "SELECT * FROM comisiones_escalas
+                      ORDER BY monto_desde ASC";
+            $result = $this->conexion->query($query);
+
+            $escalas = [];
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $escalas[] = $row;
+                }
+            }
+
+            echo json_encode([
+                "res" => true,
+                "data" => $escalas,
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                "res" => false,
+                "mensaje" => "Error al obtener escalas: " . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Guarda la configuración de comisiones de ventas
+     */
+    public function guardarConfiguracionComisionesVentas()
+    {
+        try {
+            // Validar que sea director
+            if (!isset($_SESSION["id_rol"]) || $_SESSION["id_rol"] != 3) {
+                echo json_encode([
+                    "res" => false,
+                    "mensaje" =>
+                        "No tienes permisos para modificar esta configuración",
+                ]);
+                return;
+            }
+
+            $modo_calculo = $_POST["modo_calculo"] ?? "escala";
+            $porcentaje_fijo = !empty($_POST["porcentaje_fijo"])
+                ? floatval($_POST["porcentaje_fijo"])
+                : null;
+            $monto_comision = !empty($_POST["monto_comision"])
+                ? floatval($_POST["monto_comision"])
+                : 0;
+
+            // Actualizar configuración existente
+            $query = "UPDATE configuracion_comisiones
+                      SET modo_calculo = ?,
+                          porcentaje_fijo = ?,
+                          monto_comision = ?
+                      WHERE tipo_comision = 'venta'";
+
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bind_param(
+                "sdd",
+                $modo_calculo,
+                $porcentaje_fijo,
+                $monto_comision,
+            );
+
+            if ($stmt->execute()) {
+                echo json_encode([
+                    "res" => true,
+                    "mensaje" => "Configuración guardada exitosamente",
+                ]);
+            } else {
+                throw new Exception("Error al actualizar configuración");
+            }
+
+            $stmt->close();
+        } catch (Exception $e) {
+            echo json_encode([
+                "res" => false,
+                "mensaje" =>
+                    "Error al guardar configuración: " . $e->getMessage(),
+            ]);
+        }
+    }
 }

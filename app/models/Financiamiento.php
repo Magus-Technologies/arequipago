@@ -120,12 +120,17 @@ class Financiamiento
         
         $fechaInicioPagosCalculada = null;
         if ($fechaEntrega) {
-            // Calcular fecha de inicio de pagos: fecha_entrega + 7 días
+            // Calcular fecha de inicio de pagos: fecha_entrega + 15 días
             $fechaEntregaObj = new DateTime($fechaEntrega);
-            $fechaEntregaObj->add(new DateInterval('P7D')); // Agregar 7 días
+            $fechaEntregaObj->add(new DateInterval('P15D')); // ✅ MODIFICADO: Cambiar de P7D a P15D (15 días)
             $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
         }
         
+        // ✅ NUEVO: Fecha próxima de entrega (recordatorio CrediYango)
+        $fechaProximaEntrega = isset($datos['fecha_proxima_entrega']) && $datos['fecha_proxima_entrega'] !== ''
+            ? $datos['fecha_proxima_entrega']
+            : null;
+
         // ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
         $placaVehiculo = isset($datos['placa_vehiculo']) && $datos['placa_vehiculo'] !== ''
             ? strtoupper(trim($datos['placa_vehiculo']))
@@ -136,7 +141,12 @@ class Financiamiento
             ? trim($datos['numero_corporativo'])
             : null;
 
-        // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado y campos CrediYango
+        // ✅ CORREGIDO: Capturar id_variante
+        $idVariante = isset($datos['id_variante']) && $datos['id_variante'] !== '' && $datos['id_variante'] != 0
+            ? intval($datos['id_variante'])
+            : null;
+
+        // 💥 Modificado: Preparar la consulta SQL, ahora incluye usuario_id, aprobado, id_variante y campos CrediYango
         $query = 'INSERT INTO financiamiento (
                 id_conductor,
                 id_cliente,
@@ -144,6 +154,7 @@ class Financiamiento
                 id_coti,
                 codigo_asociado,
                 grupo_financiamiento,
+                id_variante,          -- ✅ CORREGIDO: Campo agregado
                 nombre_personalizado,
                 cantidad_producto,
                 monto_total,
@@ -166,10 +177,11 @@ class Financiamiento
                 estado_entrega,       -- ✅ NUEVO: Campo para trackear entrega CrediYango
                 es_entrega_especial,  -- ✅ NUEVO: Flag de entrega especial (plan 42)
                 fecha_entrega,        -- NUEVO: Campo para CrediYango
+                fecha_proxima_entrega, -- ✅ NUEVO: Recordatorio de entrega CrediYango
                 fecha_inicio_pagos_calculada,  -- NUEVO: Campo para CrediYango
                 placa_vehiculo,       -- ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
                 numero_corporativo    -- ✅ NUEVO: Número corporativo (CORPORATIVO CLARO - Plan 36)
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -207,6 +219,14 @@ class Financiamiento
             }
         }
 
+        // Para Credi Ahorros Autos (grupo 49), DEBE ser 'pendiente', nunca NULL
+        if ($datos['grupo_financiamiento'] == '49' || $datos['grupo_financiamiento'] == 49) {
+            if ($estadoEntrega === null || $estadoEntrega === '') {
+                $estadoEntrega = 'pendiente';
+                error_log("⚠️ FORZANDO estado_entrega='pendiente' para Credi Ahorros Autos");
+            }
+        }
+
         // ✅ NUEVO: Para CORPORATIVO CLARO (Plan 36), estado_entrega SIEMPRE debe ser NULL
         // Ya que es financiamiento de chips, no de vehículos
         if ($datos['grupo_financiamiento'] == '36' || $datos['grupo_financiamiento'] == 36) {
@@ -216,25 +236,28 @@ class Financiamiento
 
         // ✅ CORREGIDO: Tipos de bind_param
         // i=integer, d=double, s=string
-        // Posición 17: second_product = 's' (string)
-        // Posición 18: monto_inscrip = 'd' (double)
-        // Posición 19: moneda = 's' (string)
-        // Posición 22: tasa = 'd' (double)
-        // Posición 25: cobrar_mora = 'i' (integer) ✅
-        // Posición 26: estado_entrega = 's' (string/ENUM) ✅
-        // Posición 27: es_entrega_especial = 'i' (integer) ✅
-        // Posición 28: fecha_entrega = 's' (string/date) ✅
-        // Posición 29: fecha_inicio_pagos_calculada = 's' (string/date) ✅
-        // Posición 30: placa_vehiculo = 's' (string) ✅ NUEVO
-        // Posición 31: numero_corporativo = 's' (string) ✅ NUEVO
+        // Posición 7: id_variante = 'i' (integer) ✅ NUEVO
+        // Posición 18: second_product = 's' (string)
+        // Posición 19: monto_inscrip = 'd' (double)
+        // Posición 20: moneda = 's' (string)
+        // Posición 23: tasa = 'd' (double)
+        // Posición 26: cobrar_mora = 'i' (integer) ✅
+        // Posición 27: estado_entrega = 's' (string/ENUM) ✅
+        // Posición 28: es_entrega_especial = 'i' (integer) ✅
+        // Posición 29: fecha_entrega = 's' (string/date) ✅
+        // Posición 30: fecha_inicio_pagos_calculada = 's' (string/date) ✅
+        // Posición 31: placa_vehiculo = 's' (string) ✅ NUEVO
+        // Posición 32: numero_corporativo = 's' (string) ✅ NUEVO
+        // Total: 32 parámetros
         $stmt->bind_param(
-            'iiiiissddiissssssdsdddiiisisss' . 's',
+            'iiiiisissdiissssssdsdddiiisiss' . 'sss',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
             $idCoti,
             $datos['codigo_asociado'],
             $datos['grupo_financiamiento'],
+            $idVariante,
             $nombrePersonalizado,
             $datos['cantidad_producto'],
             $datos['monto_total'],
@@ -257,6 +280,7 @@ class Financiamiento
             $estadoEntrega,
             $esEntregaEspecial,
             $fechaEntrega,
+            $fechaProximaEntrega,
             $fechaInicioPagosCalculada,
             $placaVehiculo,
             $numeroCorporativo
@@ -279,32 +303,38 @@ class Financiamiento
 
     private function crearCuotas($id_financiamiento, $cantidad_cuotas, $valor_cuota, $fecha_inicio, $grupo_financiamiento = null)
     {
-        $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento);
         $estado = 'Pendiente';  // Estado por defecto
 
         for ($i = 1; $i <= $cantidad_cuotas; $i++) {
+            // Calcular siempre desde la fecha original + i meses para evitar desborde acumulativo
+            $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento, $i);
+
             // Insertar cada cuota
             $sql = 'INSERT INTO cuotas_financiamiento (id_financiamiento, numero_cuota, monto, fecha_vencimiento, estado)
                     VALUES (?, ?, ?, ?, ?)';
             $stmt = $this->conectar->prepare($sql);
             $stmt->bind_param('iiiss', $id_financiamiento, $i, $valor_cuota, $fecha_vencimiento, $estado);
             $stmt->execute();
-
-            // Incrementar fecha de vencimiento para la siguiente cuota
-            $fecha_vencimiento = $this->calcularFechaVencimiento($fecha_vencimiento, $grupo_financiamiento);
         }
     }
 
-    private function calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento = null)
+    private function calcularFechaVencimiento($fecha_inicio, $grupo_financiamiento = null, $meses = 1)
     {
         $fecha = new DateTime($fecha_inicio);
+        $diaOriginal = (int) $fecha->format('d');
 
         // Si es el plan corporativo de chips (ID 36), fijar el día 24
         if ($grupo_financiamiento == 36) {
-            $fecha->modify('+1 month');
+            $fecha->modify("+{$meses} month");
             $fecha->setDate($fecha->format('Y'), $fecha->format('n'), 24);
         } else {
-            $fecha->modify('+1 month');  // Añadir un mes a la fecha de inicio para la fecha de vencimiento
+            // Avanzar al día 1 antes de sumar meses para evitar desborde de PHP
+            $fecha->setDate($fecha->format('Y'), $fecha->format('n'), 1);
+            $fecha->modify("+{$meses} month");
+            // Obtener el último día del mes destino
+            $ultimoDiaMes = (int) $fecha->format('t');
+            // Usar el día original o el último día del mes si el original no existe
+            $fecha->setDate($fecha->format('Y'), $fecha->format('n'), min($diaOriginal, $ultimoDiaMes));
         }
 
         return $fecha->format('Y-m-d');
@@ -436,11 +466,22 @@ class Financiamiento
 
     public function getFinanciamientoById($id)
     {
-        // ✅ MODIFICADO: Agregamos JOIN con usuarios para traer el nombre del usuario que registró
+        // ✅ MODIFICADO: Agregamos JOIN con usuarios y datos del financiamiento vinculado
         $sql = "SELECT f.*,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro
+                       CONCAT(u.nombres, ' ', u.apellidos) AS usuario_registro,
+                       fv.idfinanciamiento AS id_vinculado,
+                       fv.es_financiamiento_principal AS vinculado_es_principal,
+                       COALESCE(cv.nombres, clv.nombres) AS vinculado_nombres,
+                       COALESCE(cv.apellido_paterno, clv.apellido_paterno) AS vinculado_apellido_paterno,
+                       COALESCE(cv.apellido_materno, clv.apellido_materno) AS vinculado_apellido_materno,
+                       COALESCE(cv.nro_documento, clv.n_documento) AS vinculado_documento,
+                       fv.id_conductor AS vinculado_id_conductor,
+                       fv.id_cliente AS vinculado_id_cliente
                 FROM financiamiento f
                 LEFT JOIN usuarios u ON f.usuario_id = u.usuario_id
+                LEFT JOIN financiamiento fv ON f.id_financiamiento_vinculado = fv.idfinanciamiento
+                LEFT JOIN conductores cv ON fv.id_conductor = cv.id_conductor
+                LEFT JOIN clientes_financiar clv ON fv.id_cliente = clv.id
                 WHERE f.idfinanciamiento = ? AND f.estado_eliminado = 0 AND (f.aprobado = 1 OR f.aprobado IS NULL)";
 
         $stmt = $this->conectar->prepare($sql);
@@ -946,42 +987,68 @@ class Financiamiento
         }
 
         // Verificar si todas las cuotas del financiamiento están pagadas
+        // Obtener los financiamientos reales de las cuotas actualizadas (no confiar solo en $idFinanciamiento)
         if ($idFinanciamiento) {
-            $sqlVerificar = "SELECT COUNT(*) as total_pendientes 
-                            FROM cuotas_financiamiento 
-                            WHERE id_financiamiento = ? AND estado != 'pagado' AND estado_eliminado = 0";
-            $stmtVerificar = $this->conectar->prepare($sqlVerificar);
+            $placeholdersFinan = implode(',', array_fill(0, count($ids), '?'));
+            $sqlFinanciamientos = "SELECT DISTINCT id_financiamiento FROM cuotas_financiamiento WHERE idcuotas_financiamiento IN ({$placeholdersFinan})";
+            $stmtFinan = $this->conectar->prepare($sqlFinanciamientos);
             
-            if (!$stmtVerificar) {
-                error_log("Error preparando verificación: " . $this->conectar->error);
-                return ['success' => false, 'message' => 'Error al verificar estado del financiamiento'];
+            if ($stmtFinan) {
+                $typesFinan = str_repeat('i', count($ids));
+                $bindParamsFinan = [$typesFinan];
+                foreach ($ids as $key => $value) {
+                    $bindParamsFinan[] = &$ids[$key];
+                }
+                call_user_func_array([$stmtFinan, 'bind_param'], $bindParamsFinan);
+                $stmtFinan->execute();
+                $resultFinan = $stmtFinan->get_result();
+                
+                $idsFinanciamientos = [];
+                while ($rowFinan = $resultFinan->fetch_assoc()) {
+                    $idsFinanciamientos[] = $rowFinan['id_financiamiento'];
+                }
+                $stmtFinan->close();
+            } else {
+                $idsFinanciamientos = [$idFinanciamiento];
             }
-            
-            $stmtVerificar->bind_param('i', $idFinanciamiento);
-            $stmtVerificar->execute();
-            $resultVerificar = $stmtVerificar->get_result();
-            $rowVerificar = $resultVerificar->fetch_assoc();
-            $stmtVerificar->close();
 
-            // Si no hay cuotas pendientes, marcar financiamiento como finalizado
-            if ($rowVerificar && $rowVerificar['total_pendientes'] == 0) {
-                $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
-                $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
+            foreach ($idsFinanciamientos as $idFinan) {
+                $sqlVerificar = "SELECT COUNT(*) as total_pendientes 
+                                FROM cuotas_financiamiento 
+                                WHERE id_financiamiento = ? AND estado != 'pagado' AND estado_eliminado = 0";
+                $stmtVerificar = $this->conectar->prepare($sqlVerificar);
                 
-                if (!$stmtFinal) {
-                    error_log("Error preparando finalización: " . $this->conectar->error);
-                    return ['success' => false, 'message' => 'Error al preparar finalización del financiamiento'];
+                if (!$stmtVerificar) {
+                    error_log("Error preparando verificación: " . $this->conectar->error);
+                    continue;
                 }
                 
-                $stmtFinal->bind_param('i', $idFinanciamiento);
+                $stmtVerificar->bind_param('i', $idFinan);
+                $stmtVerificar->execute();
+                $resultVerificar = $stmtVerificar->get_result();
+                $rowVerificar = $resultVerificar->fetch_assoc();
+                $stmtVerificar->close();
 
-                if (!$stmtFinal->execute()) {
-                    error_log("Error finalizando financiamiento: " . $stmtFinal->error);
+                // Si no hay cuotas pendientes, marcar financiamiento como finalizado
+                if ($rowVerificar && $rowVerificar['total_pendientes'] == 0) {
+                    $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
+                    $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
+                    
+                    if (!$stmtFinal) {
+                        error_log("Error preparando finalización: " . $this->conectar->error);
+                        continue;
+                    }
+                    
+                    $stmtFinal->bind_param('i', $idFinan);
+
+                    if (!$stmtFinal->execute()) {
+                        error_log("Error finalizando financiamiento: " . $stmtFinal->error);
+                        $stmtFinal->close();
+                        continue;
+                    }
                     $stmtFinal->close();
-                    return ['success' => false, 'message' => 'Error al finalizar el financiamiento'];
+                    error_log("Financiamiento {$idFinan} marcado como Finalizado");
                 }
-                $stmtFinal->close();
-                error_log("Financiamiento {$idFinanciamiento} marcado como Finalizado");
             }
         }
 
@@ -991,7 +1058,7 @@ class Financiamiento
         return ['success' => true];
     }
 
-    public function newPago($idConductor, $idAsesor, $monto, $concepto = null, $efectivoRecibido, $vuelto, $monedaEfectivo, $idFinanciamiento = null, $idCliente = null, $metodoPago = null, $estado = 1)
+    public function newPago($idConductor, $idAsesor, $monto, $concepto = null, $efectivoRecibido, $vuelto, $monedaEfectivo, $idFinanciamiento = null, $idCliente = null, $metodoPago = null, $estado = 1, $entidadFinanciera = null, $numeroOperacion = null)
     {
         try {
             $fechaPago = date('Y-m-d H:i:s');  // ✅ OK
@@ -1010,23 +1077,27 @@ class Financiamiento
 
             $metodoPagoParam = $metodoPago ?? '';  // ✅ OK
             $conceptoParam = $concepto ?? '';  // ✅ OK
+            $entidadFinancieraParam = $entidadFinanciera ?? '';
+            $numeroOperacionParam = $numeroOperacion ?? '';
 
             // ✅ QUERY corregida con el nuevo campo estado 🌎
             $query = 'INSERT INTO pagos_financiamiento 
-            (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, concepto, fecha_pago, efectivo_recibido, vuelto, moneda, estado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            (id_financiamiento, id_conductor, id_cliente, id_asesor, monto, metodo_pago, entidad_financiera, numero_operacion, concepto, fecha_pago, efectivo_recibido, vuelto, moneda, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $stmt = $this->conectar->prepare($query);  // ✅ OK
 
             // ✅ TIPO DE DATOS CORREGIDOS: 12 variables = 12 letras
             $stmt->bind_param(
-                'iiiidsssddsi',  // ⚠️ CORREGIDO: 12 variables, 12 tipos
+                'iiiidsssssddsi',
                 $idFinanciamientoParam,
                 $idConductorParam,
                 $idClienteParam,
                 $idAsesor,
                 $monto,
                 $metodoPagoParam,
+                $entidadFinancieraParam,
+                $numeroOperacionParam,
                 $conceptoParam,
                 $fechaPago,
                 $efectivoRecibido,
@@ -1039,8 +1110,8 @@ class Financiamiento
                 $idPago = $stmt->insert_id;
                 return ['success' => true, 'message' => 'Pago registrado con éxito', 'id_pago' => $idPago];  // ✅ OK
             } else {
-                var_dump($stmt->error);  // ⚠️ DEBUG: Mostrar error SQL
-                return ['success' => false, 'message' => 'Error al registrar el pago en la base de datos'];
+                error_log("Error SQL en newPago: " . $stmt->error);
+                return ['success' => false, 'message' => 'Error: ' . $stmt->error];
             }
         } catch (Exception $e) {
             return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
@@ -1112,7 +1183,8 @@ class Financiamiento
             c.numUnidad AS numUnidad,
             CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno) AS cliente,
             c.nro_documento AS nro_documento_conductor,
-            cf.n_documento AS nro_documento_cliente
+            cf.n_documento AS nro_documento_cliente,
+            COALESCE(c.nro_documento, cf.n_documento) AS nro_documento
         FROM pagos_financiamiento p
         LEFT JOIN conductores c ON p.id_conductor = c.id_conductor  
         LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
@@ -1318,6 +1390,56 @@ class Financiamiento
         $row = $result->fetch_assoc();
 
         return $row['total'];
+    }
+
+    // ========== FACTURACIÓN DE PAGOS DE FINANCIAMIENTO ==========
+
+    public function obtenerPagoConDatos($idPago)
+    {
+        $sql = "SELECT
+                    p.*,
+                    COALESCE(
+                        CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno),
+                        CONCAT(cf.nombres, ' ', cf.apellido_paterno, ' ', cf.apellido_materno)
+                    ) AS nombre_cliente,
+                    COALESCE(c.nro_documento, cf.n_documento) AS dni_cliente,
+                    COALESCE(c.telefono, cf.telefono) AS celular_cliente,
+                    f.codigo_asociado,
+                    pf.nombre_plan,
+                    f.idfinanciamiento
+                FROM pagos_financiamiento p
+                LEFT JOIN conductores c ON p.id_conductor = c.id_conductor
+                LEFT JOIN clientes_financiar cf ON p.id_cliente = cf.id
+                LEFT JOIN financiamiento f ON p.id_financiamiento = f.idfinanciamiento
+                LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
+                WHERE p.idpagos_financiamiento = ?";
+
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param('i', $idPago);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function estaFacturadoPago($idPago)
+    {
+        $sql = "SELECT facturado FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param('i', $idPago);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return $row && (bool)$row['facturado'];
+    }
+
+    public function marcarPagoComoFacturado($idPago, $idVenta)
+    {
+        $sql = "UPDATE pagos_financiamiento
+                SET id_venta = ?, facturado = 1, fecha_facturacion = NOW()
+                WHERE idpagos_financiamiento = ?";
+        $stmt = $this->conectar->prepare($sql);
+        $stmt->bind_param('ii', $idVenta, $idPago);
+        return $stmt->execute();
     }
 
     public function deleteReportFinance($idPago)
@@ -1608,6 +1730,42 @@ class Financiamiento
             return 'No identificado';
         } catch (Exception $e) {
             error_log('Error en Financiamiento::obtenerUsuarioRegistro(): ' . $e->getMessage());
+            return 'No identificado';
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener nombre de usuario por ID
+     */
+    public function obtenerNombreUsuario($id_usuario)
+    {
+        try {
+            $sql = 'SELECT nombres, apellidos FROM usuarios WHERE usuario_id = ?';
+
+            $stmt = $this->conectar->prepare($sql);
+            $stmt->bind_param('i', $id_usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            $usuario = $result->fetch_assoc();
+
+            if ($usuario) {
+                // Construir el nombre completo con validaciones
+                $nombre = trim($usuario['nombres'] ?? '');
+                $apellidos = trim($usuario['apellidos'] ?? '');
+
+                if (!empty($nombre) && !empty($apellidos)) {
+                    return $nombre . ' ' . $apellidos;
+                } elseif (!empty($nombre)) {
+                    return $nombre;
+                } elseif (!empty($apellidos)) {
+                    return $apellidos;
+                }
+            }
+
+            return 'No identificado';
+        } catch (Exception $e) {
+            error_log('Error en Financiamiento::obtenerNombreUsuario(): ' . $e->getMessage());
             return 'No identificado';
         }
     }

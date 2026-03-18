@@ -78,9 +78,16 @@ class Consultas
         return $this->conectar->query($sql);
     }
     
-    function buscarSNdoc($doc)
+    function buscarSNdoc($doc, $serie = null)
     {
-        $sql = "SELECT * FROM documentos_empresas WHERE id_tido='$doc'";
+        // ✅ Si se proporciona serie, buscar por serie específica
+        if ($serie) {
+            $sql = "SELECT * FROM documentos_empresas 
+                    WHERE id_tido='$doc' AND serie='$serie'";
+        } else {
+            $sql = "SELECT * FROM documentos_empresas WHERE id_tido='$doc'";
+        }
+        
         $resp = $this->conectar->query($sql);
 
         // Valores por defecto según el tipo de documento
@@ -91,7 +98,7 @@ class Consultas
         ];
 
         // Valor por defecto genérico si el doc no está en la lista
-        $result = $defaultValues[$doc] ?? ["serie" => "X001", "numero" => "1"];
+        $result = $defaultValues[$doc] ?? ["serie" => $serie ?? "X001", "numero" => "1"];
 
         if ($row = $resp->fetch_assoc()) {
             $result["serie"] = $row["serie"];

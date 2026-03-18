@@ -249,7 +249,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                         <td>${item.idfinanciamiento}</td>
                         <td>${item.cliente ? `${item.cliente.n_documento} - ${item.cliente.nombres} ${item.cliente.apellido_paterno} ${item.cliente.apellido_materno}` : (item.conductor ? `${item.conductor.nro_documento} - ${item.conductor.nombre_completo}` : 'No disponible')}</td>
                         <td>${item.producto ? `${item.producto.NOMBRE} (${item.producto.CATEGORIA})` : 'No disponible'}</td>
-                        <td>${parseFloat(item.monto_total).toFixed(2)}</td>
+                        <td>${item.moneda || 'S/.'} ${parseFloat(item.monto_total).toFixed(2)}</td>
                         <td>${formatearFecha(item.fecha_creacion)}</td>
                         <td><span class="badge bg-warning">Pendiente</span></td>
                         <td>${botones}</td>  <!-- 😊 -->
@@ -279,7 +279,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                         <td>${item.idfinanciamiento}</td>
                         <td>${item.cliente ? `${item.cliente.n_documento} - ${item.cliente.nombres} ${item.cliente.apellido_paterno} ${item.cliente.apellido_materno}` : (item.conductor ? `${item.conductor.nro_documento} - ${item.conductor.nombre_completo}` : 'No disponible')}</td>
                         <td>${item.producto ? `${item.producto.NOMBRE} (${item.producto.CATEGORIA})` : 'No disponible'}</td>
-                        <td>${parseFloat(item.monto_total).toFixed(2)}</td>
+                        <td>${item.moneda || 'S/.'} ${parseFloat(item.monto_total).toFixed(2)}</td>
                         <td>${formatearFecha(item.fecha_creacion)}</td>
                         <td><span class="badge bg-danger">Rechazado</span></td>
                         <td>${botones}</td> 
@@ -392,10 +392,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             `;
         }
 
+        // Determinar símbolo de moneda
+        const simboloMoneda = data.moneda || 'S/.';
+        
         let detalleFinanciamiento = `
             <div class="mb-2"><i class="fas fa-fingerprint text-warning me-2"></i><strong>ID Financiamiento:</strong> <span class="text-muted">${data.idfinanciamiento}</span></div>
-            <div class="mb-2"><i class="fas fa-money-bill-wave text-warning me-2"></i><strong>Monto Total:</strong> <span class="text-muted">S/ ${parseFloat(data.monto_total).toFixed(2)}</span></div>
-            <div class="mb-2"><i class="fas fa-hand-holding-usd text-warning me-2"></i><strong>Cuota Inicial:</strong> <span class="text-muted">S/ ${parseFloat(data.cuota_inicial).toFixed(2)}</span></div>
+            <div class="mb-2"><i class="fas fa-money-bill-wave text-warning me-2"></i><strong>Monto Total:</strong> <span class="text-muted">${simboloMoneda} ${parseFloat(data.monto_total).toFixed(2)}</span></div>
+            <div class="mb-2"><i class="fas fa-hand-holding-usd text-warning me-2"></i><strong>Cuota Inicial:</strong> <span class="text-muted">${simboloMoneda} ${parseFloat(data.cuota_inicial).toFixed(2)}</span></div>
             <div class="mb-2"><i class="fas fa-list-ol text-warning me-2"></i><strong>Número de Cuotas:</strong> <span class="text-muted">${data.cuotas}</span></div>
             <div class="mb-2"><i class="fas fa-calendar-check text-warning me-2"></i><strong>Frecuencia:</strong> <span class="text-muted">${data.frecuencia}</span></div>
             <div class="mb-2"><i class="fas fa-calendar-alt text-warning me-2"></i><strong>Fecha Inicio:</strong> <span class="text-muted">${data.fecha_inicio}</span></div>

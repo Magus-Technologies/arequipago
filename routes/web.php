@@ -189,6 +189,7 @@ Route::get('/obtenerVehiculos', 'ProductosController@obtenerVehiculos');
 
 route::post('/busquedaPorDni', 'ConductorController@buscarPorDni');
 route::post('/paymentMade', 'ConductorController@paymentMade');
+Route::get('/verComprobanteContado/:id', 'ConductorController@verComprobanteContado');
 
 Route::post('/generarEnlacePDF', 'ConductorController@generarEnlacePDF');
 Route::get('/obtenerReportesPagos', 'ConductorController@obtenerReportesPagos');
@@ -236,12 +237,15 @@ Route::post('/generarContratoCliente', 'GenerarContratosController@generarContra
 // rutas de GruposFinanciamientoController
 Route::post('/getVariantesGrupo', 'GruposFinanciamientoController@obtenerVariantesGrupo');
 Route::post('/updateVariante', 'GruposFinanciamientoController@actualizarVariante');
+Route::post('/eliminarVariante', 'GruposFinanciamientoController@eliminarVariante');
 route::post('/save-newGroupFinance', 'GruposFinanciamientoController@guardarPlanFinanciamiento');
 route::get('/getAllPlanes', 'GruposFinanciamientoController@getAllPlanes');
 route::post('/asociar', 'GruposFinanciamientoController@asociarProducto');
 Route::post('/editGroup', 'GruposFinanciamientoController@editarGrupo');
 Route::post('/getTipoVehicular', 'GruposFinanciamientoController@obtenerTipoVehicular');
 Route::post('/deleteGroup', 'GruposFinanciamientoController@deleteGroup');
+Route::post('/cambiarEstadoGrupo', 'GruposFinanciamientoController@cambiarEstadoGrupo'); // ✅ NUEVO
+Route::get('/obtenerGruposInactivos', 'GruposFinanciamientoController@obtenerGruposInactivos'); // ✅ NUEVO
 Route::post('/getDetallesPlan', 'GruposFinanciamientoController@obtenerDetallesPlan');
 
 // RUTAS DE GenerarReporte
@@ -355,13 +359,21 @@ Route::post('/generarCronogramaPDF', 'FinanciamientoController@generarCronograma
 Route::get('/TipoCambio', 'FinanciamientoController@obtenerTipoCambio');
 
 Route::get('/obtenerClientesFinanciamiento', 'FinanciamientoController@obtenerClientesFinanciamiento');
+Route::get('/obtenerAsesoresFinanciamiento', 'FinanciamientoController@obtenerAsesoresFinanciamiento');
+Route::get('/exportarFinanciamientosExcel', 'ExportFinanciamientosController@exportarFinanciamientosExcel');
 Route::get('/obtenerClientesBuscados', 'FinanciamientoController@obtenerClientesFiltrados');
 Route::get('/obtenerFinanciamientoPorCliente', 'FinanciamientoController@obtenerFinanciamientoPorCliente');
+
+// Rutas de vinculación de financiamientos
+Route::get('/obtenerFinanciamientosDisponibles', 'VinculacionFinanciamientoController@obtenerFinanciamientosDisponibles');
+Route::post('/vincularFinanciamientos', 'VinculacionFinanciamientoController@vincularFinanciamientos');
+Route::post('/desvincularFinanciamientos', 'VinculacionFinanciamientoController@desvincularFinanciamientos');
 Route::get('/obtenerCuotasPorCliente', 'FinanciamientoController@obtenerCuotasPorCliente');
 Route::get('/obtenerClienteDetalle', 'FinanciamientoController@obtenerClienteDetalle');
 Route::get('/obtenerClientesAutocompletado', 'FinanciamientoController@obtenerClientesAutocompletado');
 Route::get('/obtenerNumDocClientesAutocompletado', 'FinanciamientoController@obtenerNumDocClientesAutocompletado');
 Route::get('/obtenerNumDocAutocompletado', 'FinanciamientoController@obtenerNumDocAutocompletado');
+Route::get('/obtenerSiguienteCodigoAsociado', 'FinanciamientoController@obtenerSiguienteCodigoAsociado');
 
 Route::get('/obtenerProductos', 'FinanciamientoController@obtenerProductos');
 Route::get('/busquedaProductos', 'FinanciamientoController@searchProductos');
@@ -369,6 +381,9 @@ Route::get('/tipoProducto', 'FinanciamientoController@obtenerTipoProducto');
 Route::post('/buscarPlanesMensuales', 'FinanciamientoController@buscarPlanesMensuales');
 Route::post('/obtener-plan-financiamiento', 'FinanciamientoController@obtenerPlanFinanciamiento');
 route::post('/deleteFinance', 'FinanciamientoController@deleteFinance');
+Route::post('/finalizarContrato', 'FinanciamientoController@finalizarContrato');
+Route::get('/obtenerContratosFinalizados', 'FinanciamientoController@obtenerContratosFinalizados');
+Route::get('/exportarContratosFinalizados', 'ExportContratosFinalizadosController@exportarContratosFinalizados');
 Route::post('/obtenerPlanFinanciamiento', 'FinanciamientoController@getPlanFinanciamiento');
 Route::post('/newPagofinance', 'FinanciamientoController@newPagofinance');
 Route::post('/getReportFinance', 'FinanciamientoController@getReportFinance');
@@ -388,6 +403,7 @@ Route::post('deleteFinanceRechazado', 'FinanciamientoController@deleteFinanciami
 Route::get('contarFinanciamientosRechazados', 'FinanciamientoController@contarFinanciamientosRechazados');
 Route::post('/verificarCodigoAsociado', 'FinanciamientoController@verificarCodigoAsociado');
 Route::post('/toggleDesvincularConductor', 'ConductorController@toggleDesvincularConductor');
+Route::post('/guardarMotivoDesvinculacion', 'ConductorController@guardarMotivoDesvinculacion');
 
 Route::post('verificar-stock-logo', 'ProductosController@verificarStockLogo');
 Route::post('/validar-conductor-logo-yango', 'VentasController@validarConductorLogoYango');
@@ -432,6 +448,8 @@ Route::PostBase('vehiculos', 'FragmentController@viewVehiculos');
 Route::postBase('/resumen-financiamientos', 'FragmentController@resumenFinanciamientos');
 Route::get('/obtenerVehiculosEntregados', 'FinanciamientoController@obtenerVehiculosEntregados');
 Route::get('/ajs/exportarVehiculosEntregados', 'ReportesResumenFinanciamientoController@exportarVehiculosEntregados');
+
+Route::get('/ajs/adjudicaciones/exportar-excel', 'AdjudicacionesController@exportarAdjudicadosExcel');
 
 // ============ RUTAS DEL EDITOR DE CONTRATOS ============
 // Gestión de plantillas de contratos

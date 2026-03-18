@@ -1,0 +1,166 @@
+﻿vue.js:8542 Download the Vue Devtools extension for a better development experience:
+https://github.com/vuejs/vue-devtools
+vue.js:8553 You are running Vue in development mode.
+Make sure to turn on production mode when deploying for production.
+See more tips at https://vuejs.org/guide/deployment.html
+module-financiamiento:1124 {"res":true}
+VM3500:3 reversion de estilos
+VM3500:66 🔓 Frecuencia de pago desbloqueada en revertirEstilosInputs para plan vehicular o Credi Ahorros Autos
+VM3511:2702 📋 Campo de verificación domiciliaria ocultado (no es vehicular)
+VM3501:328 Asignando event listeners nuevamente
+VM3515:1402 Fecha y hora seteadas: 2026-03-11T17:51
+VM3513:139 ✅ Formateo automático de placa configurado
+VM3513:145 ✅ placaManager.js inicializado
+VM3514:123 ✅ Formateo automático de número corporativo configurado
+VM3514:129 ✅ numeroCorporativoManager.js inicializado
+VM3511:2760 🔒 Frecuencia de pago bloqueada (no es vehicular)
+VM3502:373 ➕ Click en Nuevo Financiamiento - Ocultando papelera
+VM3506:242 Datos recibidos en searchNumDoc: (14) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+VM3506:338 Registro seleccionado: {id_conductor: 84, nro_documento: '47451776', nombres: 'BELISARIO VICTOR', apellido_paterno: 'YUCRA', apellido_materno: 'VILCAHUAMAN', …}
+VM3511:56 🔒 selectPlan BLOQUEADO - Iniciando procesamiento
+VM3511:2402 ID de variante limpiado
+VM3511:2920 🗑️ Valores originales del plan limpiados
+VM3511:141 ✅ Cuota inicial restaurada como OBLIGATORIA para otros planes
+VM3511:165 ✅ Sección de productos mostrada
+VM3511:4317 🔍 Plan 45 - Aplicando filtro de categoría: Vehículo
+VM3507:42 🚗 cargarProductosPorCategoria('Vehículo') llamada
+VM3507:8 🔍 Cargando productos con filtro de categoría: Vehículo
+VM3511:4436 ✅ Resumen actualizado: FINANCIAMIENTO VEHICULAR (CrediYango)
+VM3511:183 🚗 CREDIYANGO - Mostrando mensaje y cargando vehículos
+VM3511:221 🔒 Campo Cantidad bloqueado para CrediYango en 0
+VM3511:244 ✅ Mensaje informativo agregado debajo del campo Cantidad
+VM3511:256 🚗 Cargando solo vehículos para CrediYango
+VM3507:42 🚗 cargarProductosPorCategoria('vehiculos') llamada
+VM3507:8 🔍 Cargando productos con filtro de categoría: vehiculos
+VM3499:254 Valor seleccionado en grupo: 45
+VM3511:51 ⚠️ selectPlan ya está en ejecución, evitando bucle
+VM3508:11 📋 Plan seleccionado: 45
+VM3508:22 📦 Cargando todos los productos
+VM3511:313 💾 Guardando cantidad_cuotas_original: 200.00
+VM3511:2740 🔓 Frecuencia de pago desbloqueada para tipo vehicular: null
+VM3511:2702 📋 Campo de verificación domiciliaria ocultado (no es vehicular)
+VM3514:9 🔍 Verificando si mostrar campo número corporativo...
+VM3514:18 📋 Plan seleccionado: 45 - Es Corporativo CLARO: false
+VM3511:505 el plan seleccionado es:  {idplan_financiamiento: 45, nombre_plan: 'Credit Yango', cuota_inicial: '2000.00', monto_cuota: '100.00', cantidad_cuotas: '200.00', …}
+VM3500:3 reversion de estilos
+VM3500:66 🔓 Frecuencia de pago desbloqueada en revertirEstilosInputs para plan vehicular o Credi Ahorros Autos
+VM3511:899 🚗 CREDIYANGO - Fecha fin calculada al seleccionar plan: 2030-01-09
+7VM3511:921 bloqueo de inputs
+VM3511:2465 Monto de inscripción habilitado para edición manual (no vehicular)
+VM3511:1042 📅 Plan sin cantidad_cuotas - Fecha fin vacía (edición manual)
+VM3511:3085 ✅ Usuario con permisos (Director/Asesor) - fechas COMPLETAMENTE habilitadas (plan sin fechas definidas)
+VM3511:3315 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+2VM3507:31 ✅ Productos cargados con filtro (5 resultados)
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM3511:3199 🛡️ Observer de protección activado para fechaInicio
+VM3511:3739 🛡️ Observer de protección activado para cuotaInicial
+VM3511:1315 la variante global es:  {idgrupos_variantes: 47, idplan_financiamiento: 45, nombre_variante: 'CREDIYANGO JETOUR', cuota_inicial: '3000.00', monto_inscripcion: null, …}
+VM3511:1319 ID de variante seleccionada: 47
+VM3511:2920 🗑️ Valores originales del plan limpiados
+VM3511:1355 ✅ Variante seleccionada - Preservando cantidad_cuotas_original: 200.00
+VM3511:2702 📋 Campo de verificación domiciliaria ocultado (no es vehicular)
+VM3511:1448 planGlobal actualizado con la variante seleccionada: {cuota_inicial: '3000.00', tasa_interes: '0.81', frecuencia_pago: 'semanal', monto_sin_interes: '13900.00', monto: '25000.00', …}
+VM3511:2465 Monto de inscripción habilitado para edición manual (no vehicular)
+VM3511:1621 📅 Fecha de inicio establecida automáticamente en seleccionarVariante: 2026-03-11
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM3511:1843 ✅ Select de método de pago actualizado para variante
+VM3511:1848 habilitando campos marcados vacíos
+VM3511:1852 🔍 Nombre del plan obtenido: 
+VM3511:1855 🔍 Es plan especial (llantas/aceite/baterías): false
+VM3511:1870 🔍 Campos a resaltar: []
+VM3511:1942 🔍 Procesando campo: cuotaInicial
+VM3511:1983 🔒 BLOQUEANDO campo: cuotaInicial (bloqueo por defecto)
+VM3511:1994 ✅ Campo cuotaInicial - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: montoRecalculado
+VM3511:1983 🔒 BLOQUEANDO campo: montoRecalculado (bloqueo por defecto)
+VM3511:1994 ✅ Campo montoRecalculado - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: tasaInteres
+VM3511:1983 🔒 BLOQUEANDO campo: tasaInteres (bloqueo por defecto)
+VM3511:1994 ✅ Campo tasaInteres - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: valorCuota
+VM3511:1983 🔒 BLOQUEANDO campo: valorCuota (bloqueo por defecto)
+VM3511:1994 ✅ Campo valorCuota - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: fechaInicio
+VM3511:1983 🔒 BLOQUEANDO campo: fechaInicio (bloqueo por defecto)
+VM3511:1994 ✅ Campo fechaInicio - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: fechaFin
+VM3511:1983 🔒 BLOQUEANDO campo: fechaFin (bloqueo por defecto)
+VM3511:1994 ✅ Campo fechaFin - disabled: true, readOnly: true
+VM3511:1942 🔍 Procesando campo: cuotas
+VM3511:1983 🔒 BLOQUEANDO campo: cuotas (bloqueo por defecto)
+VM3511:1994 ✅ Campo cuotas - disabled: true, readOnly: true
+VM3501:328 Asignando event listeners nuevamente
+VM3507:276 funciona calcularMonto
+VM3507:280 ⚠️ No hay producto seleccionado o no tiene precio
+VM3511:2495 Nombre del plan actual: 
+VM3511:3175 🛡️ PROTECCIÓN: Restaurados estilos de interacción (Director)
+VM3511:3161 🛡️ PROTECCIÓN: Revertido intento de bloqueo en fechaInicio (Director)
+VM3511:3712 🛡️ PROTECCIÓN: Restaurados estilos de interacción en cuotaInicial
+VM3511:3699 🛡️ PROTECCIÓN: Revertido intento de bloqueo en cuotaInicial
+VM3511:3085 ✅ Usuario con permisos (Director/Asesor) - fechas COMPLETAMENTE habilitadas (plan sin fechas definidas)
+VM3511:3315 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM3509:803 🚀 EJECUTANDO: calcularCronogramaDinamico() - Función dinámica
+VM3509:804 📍 STACK TRACE:     at calcularCronogramaDinamico (<anonymous>:804:34)
+    at <anonymous>:1093:13
+VM3509:805 🔍 Plan actual en calcularCronogramaDinamico: ID 45
+VM3509:834 🚗 CREDIYANGO - SALTANDO calcularCronogramaDinamico(), cronograma se generará al entregar vehículo
+VM3507:135 📦 Producto seleccionado con categoría: {id: '1', nombre: 'CASACA FLOTA AQPGO S', codigo: 'C000000001', cantidad: '0', unidad_medida: 'N/A', …}
+VM3511:4472 ✅ Producto actualizado en resumen: CASACA FLOTA AQPGO S
+VM3513:11 🔍 Verificando si mostrar campo placa...
+VM3513:20 📋 Plan seleccionado: 45 - Es IncaMotors: false
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM3511:3085 ✅ Usuario con permisos (Director/Asesor) - fechas COMPLETAMENTE habilitadas (plan sin fechas definidas)
+VM3511:3199 🛡️ Observer de protección activado para fechaInicio
+VM3511:3315 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM3511:3739 🛡️ Observer de protección activado para cuotaInicial
+VM3509:803 🚀 EJECUTANDO: calcularCronogramaDinamico() - Función dinámica
+VM3509:804 📍 STACK TRACE:     at calcularCronogramaDinamico (<anonymous>:804:34)
+    at <anonymous>:1738:9
+VM3509:805 🔍 Plan actual en calcularCronogramaDinamico: ID 45
+VM3509:834 🚗 CREDIYANGO - SALTANDO calcularCronogramaDinamico(), cronograma se generará al entregar vehículo
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM3511:3085 ✅ Usuario con permisos (Director/Asesor) - fechas COMPLETAMENTE habilitadas (plan sin fechas definidas)
+VM3511:3199 🛡️ Observer de protección activado para fechaInicio
+VM3511:3315 ✅ Usuario con permisos (Director/Asesor) - cuota inicial COMPLETAMENTE habilitada
+VM3511:3739 🛡️ Observer de protección activado para cuotaInicial
+VM3507:276 funciona calcularMonto
+VM3507:284 el valor obtenido es: 70.00
+VM3507:288 el valor del precio de la variable precio es:
+VM3507:289 70
+VM3507:292 Valor crudo del input cantidad: 0
+VM3507:294 Cantidad ingresada: 0
+VM3509:2 🚀 EJECUTANDO: calcularFinanciamiento() - Función principal
+VM3509:3 📍 STACK TRACE:     at HTMLInputElement.calcularFinanciamiento (<anonymous>:3:34)
+    at calcularMonto (<anonymous>:306:44)
+VM3509:4 Entrando a calcularFinanciamiento...
+VM3509:72 🚗 CREDIYANGO - El cronograma se generará al entregar el vehículo
+VM3509:118 🚗 CREDIYANGO - Fecha fin calculada: 2030-01-09
+VM3507:308 Monto calculado para plan NO celular: 0
+VM3509:1763 🔄 INICIANDO recalcularMonto()
+VM3509:1764 🔍 productoSeleccionado: {id: '1', nombre: 'CASACA FLOTA AQPGO S', codigo: 'C000000001', cantidad: '0', unidad_medida: 'N/A', …}
+VM3509:1765 🔍 planGlobal: {cuota_inicial: '3000.00', tasa_interes: '0.81', frecuencia_pago: 'semanal', monto_sin_interes: '13900.00', monto: '25000.00', …}
+VM3509:1788 🔄 Frecuencia utilizada en recalcularMonto: semanal - Select habilitado: true
+VM3509:1794 🔍 Valores iniciales recalcularMonto: {precioVenta: 70, montoSinIntereses: 13900, montoTotal: 25000, cantidadCuotas: 200, valorCuota: 110, …}
+VM3515:82 0.81
+VM3515:245 🚗 CrediYango - Cantidad de producto establecida en 1
+VM3515:250 🚗 CrediYango - Se asignará producto ID 37 por defecto (vehículo no entregado)
+VM3515:476 Este es el monto total 25000.00
+VM3514:73 🔍 obtenerNumeroCorporativo() llamado
+VM3514:74 📦 Container existe: true
+VM3514:75 📦 Container visible: false
+VM3514:76 📦 Input existe: true
+VM3514:85 ❌ Campo no visible o no existe - retornando null
+VM3515:694 🔍 DEBUG JS (2da llamada) - Input cuotaInicial existe: true
+VM3515:695 🔍 DEBUG JS (2da llamada) - Modo adelantadas: null
+VM3515:696 🔍 DEBUG JS (2da llamada) - Valor input: 3000.00
+VM3515:697 🔍 DEBUG JS (2da llamada) - Cantidad a enviar: 3000
+VM3515:703 ⚠️ DEBUG JS (2da llamada) - NO es modo cuotas adelantadas, enviando 0
+VM3500:3 reversion de estilos
+VM3500:66 🔓 Frecuencia de pago desbloqueada en revertirEstilosInputs para plan vehicular o Credi Ahorros Autos
+VM3500:3 reversion de estilos
+VM3500:66 🔓 Frecuencia de pago desbloqueada en revertirEstilosInputs para plan vehicular o Credi Ahorros Autos
+VM3511:2702 📋 Campo de verificación domiciliaria ocultado (no es vehicular)
+VM3511:2925 🔒 Verificando y manteniendo campos especiales según configuración del plan
+VM3511:3175 🛡️ PROTECCIÓN: Restaurados estilos de interacción (Director)
+VM3511:3712 🛡️ PROTECCIÓN: Restaurados estilos de interacción en cuotaInicial

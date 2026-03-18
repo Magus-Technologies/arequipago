@@ -4,25 +4,29 @@
 // Este archivo maneja la lógica de "Cuotas Adelantadas" para:
 // - Plan ID 22: CREDI MOTOS
 // - Plan ID 38: CrediGo Autos Grupo 4
+// - Plan ID 49: Credi Ahorros Autos
 // En lugar de ingresar un monto, el usuario ingresa cantidad de cuotas
 // ========================================
 
 /**
  * Configurar el campo "Cuota Inicial" como "Cuotas Adelantadas"
- * Se activa para planes: 22 (CREDI MOTOS), 38 (CrediGo Autos Grupo 4)
+ * Se activa para planes: 22 (CREDI MOTOS), 38 (CrediGo Autos Grupo 4), 49 (Credi Ahorros Autos)
  */
 function configurarCuotasAdelantadasCrediMotos() {
     const planId = planGlobal ? parseInt(planGlobal.idplan_financiamiento) : null;
-    const nombrePlan = planId === 22 ? "CREDI MOTOS" : planId === 38 ? "CrediGo Autos Grupo 4" : "Plan Especial";
+    const nombrePlan = planId === 22 ? "CREDI MOTOS" : planId === 38 ? "CrediGo Autos Grupo 4" : planId === 49 ? "Credi Ahorros Autos" : "Plan Especial";
     
     console.log(`🚗 ${nombrePlan} - Configurando campo de Cuotas Adelantadas`);
 
     // 1. Cambiar el label del campo
     const label = document.querySelector('label[for="cuotaInicial"]');
     if (label) {
+        const textoAdicional = planId === 49 
+            ? '(cuotas a pagar, se aplican al final)' 
+            : '(cantidad de cuotas a pagar ahora)';
         label.innerHTML = `
             Cuotas Adelantadas
-            <small class="text-muted">(cantidad de cuotas a pagar ahora)</small>
+            <small class="text-muted">${textoAdicional}</small>
         `;
         label.setAttribute('data-original-text', 'Cuota Inicial'); // Guardar texto original
     }

@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/EMER/Documents/Nueva carpeta (2)/**)"
+      "Read(//c/Users/EMER/Documents/Nueva carpeta (2)/**)",
+      "Bash(mysql:*)",
+      "mcp__acp__Write",
+      "mcp__acp__Edit",
+      "mcp__acp__Bash",
+      "Bash(C:/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root magusqao_arequipa -e \"DESCRIBE financiamiento;\")"
     ],
     "deny": [],
     "ask": []

@@ -45,6 +45,10 @@ class GruposFinanciamientoController extends Controller
             $aplicaComision = isset($_POST['aplica_comision']) ? (int) $_POST['aplica_comision'] : 1;
             $montoComision = isset($_POST['monto_comision']) && $_POST['monto_comision'] !== '' ? $_POST['monto_comision'] : null;
             $monedaComision = $_POST['moneda_comision'] ?? 'S/.';
+            $penalizacionMora = isset($_POST['penalizacion_mora']) && $_POST['penalizacion_mora'] !== '' ? $_POST['penalizacion_mora'] : null;
+            $moraSemanal = isset($_POST['mora_semanal']) && $_POST['mora_semanal'] !== '' ? $_POST['mora_semanal'] : null;
+            $moraQuincenal = isset($_POST['mora_quincenal']) && $_POST['mora_quincenal'] !== '' ? $_POST['mora_quincenal'] : null;
+            $moraMensual = isset($_POST['mora_mensual']) && $_POST['mora_mensual'] !== '' ? $_POST['mora_mensual'] : null;
 
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
@@ -60,7 +64,7 @@ class GruposFinanciamientoController extends Controller
             }
 
             $grupoFinanciamiento = new GrupoFinanciamientoModel();
-            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision);
+            $idPlan = $grupoFinanciamiento->insertarPlan($nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $tasaInteres, $monto, $montoSinInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision, $penalizacionMora, $moraSemanal, $moraQuincenal, $moraMensual);
 
             if ($idPlan) {
                 // Verificar si hay variantes para guardar
@@ -145,6 +149,10 @@ class GruposFinanciamientoController extends Controller
             $aplicaComision = isset($_POST['aplica_comision']) ? (int) $_POST['aplica_comision'] : 1;
             $montoComision = isset($_POST['monto_comision']) && $_POST['monto_comision'] !== '' ? $_POST['monto_comision'] : null;
             $monedaComision = $_POST['moneda_comision'] ?? 'S/.';
+            $penalizacionMora = isset($_POST['penalizacion_mora']) && $_POST['penalizacion_mora'] !== '' ? $_POST['penalizacion_mora'] : null;
+            $moraSemanal = isset($_POST['mora_semanal']) && $_POST['mora_semanal'] !== '' ? $_POST['mora_semanal'] : null;
+            $moraQuincenal = isset($_POST['mora_quincenal']) && $_POST['mora_quincenal'] !== '' ? $_POST['mora_quincenal'] : null;
+            $moraMensual = isset($_POST['mora_mensual']) && $_POST['mora_mensual'] !== '' ? $_POST['mora_mensual'] : null;
 
             // Si es Yango, configurar campos específicos
             if ($esYango === 1) {
@@ -159,7 +167,7 @@ class GruposFinanciamientoController extends Controller
 
                 $modelo->editarGrupo(
                     $id, $nombrePlan, $cuotaInicial, $montoCuota, $cantidadCuotas, $frecuenciaPago,
-                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision  // ✅ Agregado campos de comisión
+                    $moneda, $monto, $montoSinInteres, $tasaInteres, $fechaInicio, $fechaFin, $tipoVehicular, $estado, $cobrarMora, $esYango, $aplicaComision, $montoComision, $monedaComision, $penalizacionMora, $moraSemanal, $moraQuincenal, $moraMensual
                 );
 
                 // Modificación para variantes: Manejar actualización de variantes si están presentes
@@ -277,16 +285,42 @@ class GruposFinanciamientoController extends Controller
             $tasaInteres = isset($_POST['tasa_interes']) ? $_POST['tasa_interes'] : null;
             $fechaInicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : null;
             $fechaFin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : null;
+            
+            // ✅ NUEVO: Campos de comisión
+            $montoComision = isset($_POST['monto_comision']) ? $_POST['monto_comision'] : null;
+            $monedaComision = isset($_POST['moneda_comision']) ? $_POST['moneda_comision'] : 'S/.';
 
             try {
                 $modelo = new GrupoFinanciamientoModel();
                 $modelo->actualizarVariante(
                     $id, $idPlanFinanciamiento, $nombreVariante, $cuotaInicial, $montoInscripcion,
                     $montoCuota, $cantidadCuotas, $frecuenciaPago, $moneda, $monto, $montoSinInteres,
-                    $tasaInteres, $fechaInicio, $fechaFin
+                    $tasaInteres, $fechaInicio, $fechaFin, $montoComision, $monedaComision
                 );
 
                 echo json_encode(['status' => 'success', 'message' => 'Variante actualizada correctamente']);
+            } catch (Exception $e) {
+                echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Método de solicitud no permitido']);
+        }
+    }
+
+    public function eliminarVariante()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = isset($_POST['id']) ? (int) $_POST['id'] : null;
+
+            if (!$id) {
+                echo json_encode(['status' => 'error', 'message' => 'ID de variante no especificado']);
+                return;
+            }
+
+            try {
+                $modelo = new GrupoFinanciamientoModel();
+                $modelo->eliminarVariante($id);
+                echo json_encode(['status' => 'success', 'message' => 'Variante eliminada correctamente']);
             } catch (Exception $e) {
                 echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
             }
@@ -305,6 +339,49 @@ class GruposFinanciamientoController extends Controller
             echo json_encode(['success' => $resultado]);
         } else {
             echo json_encode(['success' => false]);
+        }
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Cambiar estado de un grupo (activo/inactivo)
+     */
+    public function cambiarEstadoGrupo()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && isset($_POST['estado'])) {
+            $id = $_POST['id'];
+            $estado = $_POST['estado'];
+            
+            // Validar que el estado sea válido
+            if (!in_array($estado, ['activo', 'inactivo'])) {
+                echo json_encode(['success' => false, 'message' => 'Estado no válido']);
+                return;
+            }
+            
+            $model = new GrupoFinanciamientoModel();
+            $resultado = $model->cambiarEstadoGrupo($id, $estado);
+
+            echo json_encode(['success' => $resultado]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Parámetros faltantes']);
+        }
+    }
+
+    /**
+     * ✅ NUEVA FUNCIÓN: Obtener grupos inactivos (eliminados)
+     */
+    public function obtenerGruposInactivos()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            try {
+                $model = new GrupoFinanciamientoModel();
+                $grupos = $model->obtenerGruposInactivos();
+
+                echo json_encode(['success' => true, 'grupos' => $grupos]);
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
         }
     }
 

@@ -111,6 +111,7 @@ class GenerarContratosController extends controller
         $input = json_decode(file_get_contents('php://input'), true);
         $ids = $input['ids'] ?? [];
         $soloExcel = $input['soloExcel'] ?? false;  // ✅ Nuevo parámetro para indicar si solo se quiere Excel
+        $soloActa = $input['soloActa'] ?? false;   // Parámetro para generar solo el acta de entrega
 
         if (empty($ids)) {
             echo json_encode(['success' => false, 'errores' => ['No se enviaron IDs.']]);
@@ -224,8 +225,8 @@ class GenerarContratosController extends controller
 
                 $cuotas = $cuotaModel->obtenerCuotasPorFinanciamiento($idFinanciamiento);
 
-                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33, 45)
-                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 45) {
+                // 😊 Generar contrato de Excel para vehículos (excluir grupo 19, 33, 45, 49)
+                if ($esVehiculo && $financiamiento['grupo_financiamiento'] != 33 && $financiamiento['grupo_financiamiento'] != 19 && $financiamiento['grupo_financiamiento'] != 36 && $financiamiento['grupo_financiamiento'] != 45 && $financiamiento['grupo_financiamiento'] != 49) {
                     try {
                         $excelFile = $this->generarContratoExcelVehiculo(
                             $financiamiento,
@@ -297,7 +298,7 @@ class GenerarContratosController extends controller
                 // NUEVO: Generar contrato PDF para CrediYango (grupo 45)
                 if ($financiamiento['grupo_financiamiento'] == 45) {
                     try {
-                        $htmlContrato = $this->generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona);
+                        $htmlContrato = $this->generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona, $cuotas);
 
                         $mpdf = new \Mpdf\Mpdf([
                             'format' => 'A4',
@@ -322,14 +323,69 @@ class GenerarContratosController extends controller
                     }
                 }
 
-                // MODIFICADO: Excluir CrediYango (grupo 45) de la lógica de categorías
-                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33 || $financiamiento['grupo_financiamiento'] == 19 || $financiamiento['grupo_financiamiento'] == 45) {
-                    // Si es CrediYango (45), ya se procesó arriba, saltar esta lógica
-                    if ($financiamiento['grupo_financiamiento'] == 45) {
+                // ✅ NUEVO: Generar contrato PDF para Credi Ahorros Autos (grupo 49)
+                if ($financiamiento['grupo_financiamiento'] == 49) {
+                    try {
+                        error_log("🚗 Generando contrato PDF para grupo 49, ID: $idFinanciamiento");
+                        
+                        $htmlContrato = $this->generarContratoGrupo49($financiamiento, $persona, $tipoPersona, $nombrePersona);
+                        
+                        error_log("✅ HTML generado correctamente para grupo 49");
+
+                        // ✅ CRÍTICO: Iniciar buffer de salida ANTES de suprimir errores
+                        ob_start();
+                        
+                        // Suprimir warnings de MPDF y PHP
+                        $previousErrorReporting = error_reporting();
+                        error_reporting(0);
+                        ini_set('display_errors', '0');
+                        
+                        $mpdf = new \Mpdf\Mpdf([
+                            'format' => 'A4',
+                            'margin_left' => 15,
+                            'margin_right' => 15,
+                            'margin_top' => 15,
+                            'margin_bottom' => 15,
+                            'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf'
+                        ]);
+
+                        $mpdf->WriteHTML($htmlContrato);
+                        $pdfContent = $mpdf->Output('', 'S');
+                        
+                        // ✅ CRÍTICO: Limpiar buffer de salida (eliminar warnings)
+                        ob_end_clean();
+                        
+                        // Restaurar error reporting
+                        error_reporting($previousErrorReporting);
+                        ini_set('display_errors', '1');
+                        
+                        error_log("✅ PDF generado correctamente para grupo 49, tamaño: " . strlen($pdfContent) . " bytes");
+
+                        $pdfs[] = [
+                            'content' => base64_encode($pdfContent),
+                            'nombre' => "contrato_credi_ahorros_autos_{$idFinanciamiento}_{$nombrePersona}.pdf"
+                        ];
+
+                        continue;
+                    } catch (\Exception $e) {
+                        // ✅ Limpiar buffer en caso de error
+                        if (ob_get_level() > 0) {
+                            ob_end_clean();
+                        }
+                        error_log("❌ Error generando contrato PDF Credi Ahorros Autos ID $idFinanciamiento: " . $e->getMessage());
+                        error_log("❌ Stack trace: " . $e->getTraceAsString());
+                        continue;
+                    }
+                }
+
+                // MODIFICADO: Excluir CrediYango (grupo 45) y Credi Ahorros Autos (grupo 49) de la lógica de categorías
+                if (!$esVehiculo || $financiamiento['grupo_financiamiento'] == 33 || $financiamiento['grupo_financiamiento'] == 19 || $financiamiento['grupo_financiamiento'] == 36 || $financiamiento['grupo_financiamiento'] == 45 || $financiamiento['grupo_financiamiento'] == 49) {
+                    // Si es CrediYango (45) o Credi Ahorros Autos (49), ya se procesó arriba, saltar esta lógica
+                    if ($financiamiento['grupo_financiamiento'] == 45 || $financiamiento['grupo_financiamiento'] == 49) {
                         continue;
                     }
 
-                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 22, 19])) {
+                    if (!in_array($producto['categoria'], ['Llantas', 'Aceites', 'Celular', 'Chip (Linea corporativa)', 'Baterías']) && !in_array($financiamiento['grupo_financiamiento'], [33, 35, 36, 22, 19, 47, 49])) {
                         throw new Exception('No hay un modelo de contrato para este producto.');
                     }
 
@@ -340,7 +396,8 @@ class GenerarContratosController extends controller
                         $tipoPersona,
                         $producto,
                         $caracteristicas,
-                        $cuotas
+                        $cuotas,
+                        $soloActa
                     );
 
                     foreach ($plantillas as $nombrePlantilla => $html) {
@@ -365,7 +422,14 @@ class GenerarContratosController extends controller
                         $mpdf->WriteHTML($html);
 
                         // Crear un nombre único para cada archivo
-                        $nombreArchivo = "contrato_{$idFinanciamiento}_{$nombrePersona}_{$nombrePlantilla}.pdf";
+                        if ($soloActa && $producto['categoria'] === 'Celular') {
+                            $prefijoArchivo = 'acta_entrega';
+                        } elseif ($soloActa && $financiamiento['grupo_financiamiento'] == 36) {
+                            $prefijoArchivo = 'acta_entrega_chip';
+                        } else {
+                            $prefijoArchivo = 'contrato';
+                        }
+                        $nombreArchivo = "{$prefijoArchivo}_{$idFinanciamiento}_{$nombrePersona}_{$nombrePlantilla}.pdf";
 
                         $pdfContent = $mpdf->Output('', 'S');  // Devuelve el contenido directamente
                         $pdfs[] = [
@@ -375,17 +439,26 @@ class GenerarContratosController extends controller
                     }
                 }
             } catch (\Exception $e) {
-                $errores[] = $idFinanciamiento;
+                $errores[] = [
+                    'id' => $idFinanciamiento,
+                    'mensaje' => $e->getMessage()
+                ];
                 error_log("Error generando contrato ID $idFinanciamiento: " . $e->getMessage());
             }
         }
 
+        // Limpiar cualquier salida previa (warnings, etc.) antes de enviar JSON
+        if (ob_get_length()) {
+            ob_clean();
+        }
+        
+        header('Content-Type: application/json');
         echo json_encode([
             'success' => empty($errores),
             'errores' => $errores,
             'pdfs' => $pdfs,
             'excels' => $excels,
-            'mensaje' => !empty($errores) ? 'Error' : null
+            'mensaje' => !empty($errores) ? $errores[0]['mensaje'] : null
         ]);
     }
 
@@ -698,7 +771,7 @@ class GenerarContratosController extends controller
         }
     }
 
-    private function generarPlantillaContrato($categoria, $financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas)
+    private function generarPlantillaContrato($categoria, $financiamiento, $persona, $tipoPersona, $producto, $caracteristicas, $cuotas, $soloActa = false)
     {
         $idPersona = $tipoPersona === 'conductor' ? $financiamiento['id_conductor'] : $financiamiento['id_cliente'];
 
@@ -752,18 +825,24 @@ class GenerarContratosController extends controller
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 35) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 36) {
-            // ✅ NUEVO: Plan 36 - CORPORATIVO CLARO
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
+            // Plan 36 - CORPORATIVO CLARO
+            $rutaArchivo = $soloActa
+                ? $rutaBase . DIRECTORY_SEPARATOR . 'acta_entrega_chip.html'
+                : $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 19) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigo_autos.html';
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigo_AutosGrupo3.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_Motos.html';
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_CrediMotos.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_incamotors.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 45) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'crediYango.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 46) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contratoGPS.html';
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 49) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigoCredigoAutos.html';
+        } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 47) {
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato-revision-tecnica.html';
         } elseif ($categoria === 'Llantas') {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_llantas.html';
         } elseif ($categoria === 'Aceites') {
@@ -773,7 +852,9 @@ class GenerarContratosController extends controller
         } elseif (in_array(strtolower($categoria), ['chip (linea corporativa)', 'chip', 'chip corporativo'])) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
         } elseif ($categoria === 'Celular') {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_celular.html';
+            $rutaArchivo = $soloActa
+                ? $rutaBase . DIRECTORY_SEPARATOR . 'acta_entrega_celular.html'
+                : $rutaBase . DIRECTORY_SEPARATOR . 'contrato_celulares.html';
             if (isset($financiamiento['second_product']) && $financiamiento['second_product'] !== null) {
                 $rutaArchivoChip = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_chipLinea.html';
                 if (!file_exists($rutaArchivoChip)) {
@@ -957,10 +1038,11 @@ class GenerarContratosController extends controller
             'numero_corporativo' => ''  // ✅ NUEVO: Para Plan 36 (CORPORATIVO CLARO)
         ];
 
-        // ✅ NUEVO: Lógica para Plan 36 (CORPORATIVO CLARO)
+        // Lógica para Plan 36 (CORPORATIVO CLARO)
         if (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 36) {
-            // Para plan 36, el número corporativo viene del financiamiento, NO de características del producto
-            $reemplazos['numero_corporativo'] = $financiamiento['numero_corporativo'] ?? '';
+            $numeroCorp = $financiamiento['numero_corporativo'] ?? '';
+            $reemplazos['numero_corporativo'] = $numeroCorp;
+            $reemplazos['chip_linea'] = $numeroCorp;
         }
 
         // Lógica para Plan Chip Movil (ID 35)
@@ -1033,6 +1115,18 @@ class GenerarContratosController extends controller
             $plantilla = str_replace('{{DIRECCION}}', $direccion, $plantilla);
 
             // Fechas
+            $plantilla = str_replace('{{DIA}}', $dia, $plantilla);
+            $plantilla = str_replace('{{MES}}', $this->obtenerNombreMes($mes), $plantilla);
+            $plantilla = str_replace('{{ANIO}}', $anio, $plantilla);
+            $plantilla = str_replace('{{FECHA_ACTUAL}}', "$dia/" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "/$anio", $plantilla);
+        }
+
+        // Reemplazos específicos para contrato de Celular (dobles llaves)
+        if ($categoria === 'Celular') {
+            $plantilla = str_replace('{{NOMBRE_COMPLETO}}', strtoupper($nombrePersona), $plantilla);
+            $plantilla = str_replace('{{NRO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            $plantilla = str_replace('{{NUMERO_DOCUMENTO}}', $persona['nro_documento'] ?? $persona['n_documento'] ?? '', $plantilla);
+            $plantilla = str_replace('{{TIPO_DOCUMENTO}}', strtoupper($persona['tipo_doc'] ?? 'DNI'), $plantilla);
             $plantilla = str_replace('{{DIA}}', $dia, $plantilla);
             $plantilla = str_replace('{{MES}}', $this->obtenerNombreMes($mes), $plantilla);
             $plantilla = str_replace('{{ANIO}}', $anio, $plantilla);
@@ -1782,7 +1876,13 @@ class GenerarContratosController extends controller
      */
     private function cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo)
     {
-        $rutaTemplate = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'entrga_vehiculo.html';
+        // Seleccionar template según la categoría del producto
+        $templateFile = 'entrga_vehiculo.html';
+        $categoriaProducto = strtolower(trim($vehiculo['producto']['categoria'] ?? ''));
+        if (preg_match('/moto\s*lineal|motokar/i', $categoriaProducto)) {
+            $templateFile = 'acta_credimotos.html';
+        }
+        $rutaTemplate = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . $templateFile;
 
         if (!file_exists($rutaTemplate)) {
             throw new Exception("Template no encontrado: $rutaTemplate");
@@ -1796,10 +1896,12 @@ class GenerarContratosController extends controller
             'nombre_producto' => isset($vehiculo['producto']['nombre']) ? strtoupper($vehiculo['producto']['nombre']) : 'N/A',
             'marca' => $vehiculo['marca'] ?? 'N/A',
             'modelo' => $vehiculo['modelo'] ?? 'N/A',
+            'vin' => $vehiculo['vin'] ?? 'N/A',
             'chasis' => $vehiculo['numero_chasis'] ?? $vehiculo['chasis'] ?? 'N/A',
             'placa' => $vehiculo['placa'] ?? 'N/A',
             'color' => $vehiculo['color'] ?? 'N/A',
             'anio' => $vehiculo['anio'] ?? 'N/A',
+            'kilometraje' => isset($vehiculo['kilometraje']) ? $vehiculo['kilometraje'] . ' KM' : '0 KM',
             // Datos del asociado
             'nombre_asociado' => trim(
                 ($cliente['nombres'] ?? '') . ' '
@@ -1965,8 +2067,35 @@ class GenerarContratosController extends controller
         return $html;
     }
 
+    // ✅ NUEVO: Método específico para generar contrato Credi Ahorros Autos (grupo 49)
+    private function generarContratoGrupo49($financiamiento, $persona, $tipoPersona, $nombrePersona)
+    {
+        // Cargar la plantilla HTML de Credi Ahorros Autos
+        $templatePath = 'app/contratos/credigoCredigoAutos.html';
+
+        if (!file_exists($templatePath)) {
+            throw new Exception('No se encontró la plantilla del contrato para el grupo 49 (Credi Ahorros Autos)');
+        }
+
+        $html = file_get_contents($templatePath);
+
+        // Preparar los datos para reemplazar
+        $nombreCompleto = strtoupper($nombrePersona);
+        $tipoDocumento = strtoupper($persona['tipo_doc'] ?? 'DNI');
+        $numeroDocumento = $persona['nro_documento'] ?? $persona['n_documento'] ?? '';
+        $fechaActual = date('d') . ' DE ' . strtoupper($this->obtenerNombreMes(date('m'))) . ' DE ' . date('Y');
+
+        // Reemplazar los placeholders en el HTML
+        $html = str_replace('{{NOMBRE_COMPLETO}}', $nombreCompleto, $html);
+        $html = str_replace('{{TIPO_DOCUMENTO}}', $tipoDocumento, $html);
+        $html = str_replace('{{NUMERO_DOCUMENTO}}', $numeroDocumento, $html);
+        $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
+
+        return $html;
+    }
+
     // NUEVO: Método específico para generar contrato CrediYango (grupo 45)
-    private function generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona)
+    private function generarContratoCrediYango($financiamiento, $persona, $tipoPersona, $nombrePersona, $cuotas = [])
     {
         // Cargar la plantilla HTML de CrediYango
         $templatePath = 'app/contratos/crediYango.html';
@@ -1976,6 +2105,30 @@ class GenerarContratosController extends controller
         }
 
         $html = file_get_contents($templatePath);
+
+        // Obtener datos de la variante si existe
+        $datosVariante = null;
+        if (!empty($financiamiento['id_variante'])) {
+            $sqlVariante = 'SELECT * FROM grupos_variantes WHERE idgrupos_variantes = ?';
+            $stmtVariante = $this->conexion->prepare($sqlVariante);
+            if ($stmtVariante) {
+                $stmtVariante->bind_param('i', $financiamiento['id_variante']);
+                $stmtVariante->execute();
+                $datosVariante = $stmtVariante->get_result()->fetch_assoc();
+            }
+        }
+
+        // Obtener datos del plan como fallback cuando no hay variante
+        $datosPlan = null;
+        if (!$datosVariante && !empty($financiamiento['grupo_financiamiento'])) {
+            $sqlPlan = 'SELECT * FROM planes_financiamiento WHERE idplan_financiamiento = ?';
+            $stmtPlan = $this->conexion->prepare($sqlPlan);
+            if ($stmtPlan) {
+                $stmtPlan->bind_param('i', $financiamiento['grupo_financiamiento']);
+                $stmtPlan->execute();
+                $datosPlan = $stmtPlan->get_result()->fetch_assoc();
+            }
+        }
 
         // Preparar los datos para reemplazar
         $nombreCompleto = strtoupper($nombrePersona);
@@ -1994,6 +2147,27 @@ class GenerarContratosController extends controller
             $direccion = $datosDireccion['direccion_detalle'] ?? 'Dirección no registrada';
         }
 
+        // Datos financieros: priorizar variante > plan > financiamiento > cuotas
+        $modeloSeleccionado = $datosVariante['nombre_variante'] ?? 'Según modelo disponible';
+        $cuotaInicial = number_format($datosVariante['cuota_inicial'] ?? $datosPlan['cuota_inicial'] ?? $financiamiento['cuota_inicial'] ?? 0, 2);
+        $cantidadCuotas = $datosVariante['cantidad_cuotas'] ?? $datosPlan['cantidad_cuotas'] ?? $financiamiento['cuotas'] ?? '200';
+        // Priorizar: variante > plan > cuotas generadas > 0
+        $montoCuotaRaw = $datosVariante['monto_cuota'] ?? $datosPlan['monto_cuota'] ?? (!empty($cuotas) ? $cuotas[0]['monto'] : 0);
+        $montoCuota = number_format($montoCuotaRaw, 2);
+        $moneda = $datosVariante['moneda'] ?? $datosPlan['moneda'] ?? $financiamiento['tipo_moneda'] ?? 'USD';
+
+        // Frecuencia
+        $frecuenciaPago = $datosVariante['frecuencia_pago'] ?? $datosPlan['frecuencia_pago'] ?? $financiamiento['frecuencia'] ?? 'semanal';
+        $frecuenciaTexto = 'semanales';
+        $frecuenciaPeriodo = 'semanas';
+        if ($frecuenciaPago === 'mensual') {
+            $frecuenciaTexto = 'mensuales';
+            $frecuenciaPeriodo = 'meses';
+        } elseif ($frecuenciaPago === 'quincenal') {
+            $frecuenciaTexto = 'quincenales';
+            $frecuenciaPeriodo = 'quincenas';
+        }
+
         // Reemplazar todos los placeholders en el HTML
         $html = str_replace('{{NOMBRE_COMPLETO}}', $nombreCompleto, $html);
         $html = str_replace('{{NRO_DOCUMENTO}}', $numeroDocumento, $html);
@@ -2001,6 +2175,25 @@ class GenerarContratosController extends controller
         $html = str_replace('{{TIPO_DOCUMENTO}}', $tipoDocumento, $html);
         $html = str_replace('{{DIRECCION}}', $direccion, $html);
         $html = str_replace('{{FECHA_ACTUAL}}', $fechaActual, $html);
+
+        // Plazo de entrega: solo para variantes específicas hardcodeadas
+        $idVariante = $financiamiento['id_variante'] ?? null;
+        $plazoEntregaTexto = 'treinta (30)'; // default
+        if ($idVariante == 47) {
+            $plazoEntregaTexto = 'cuarenta (40)';
+        } elseif ($idVariante == 48) {
+            $plazoEntregaTexto = 'treinta (30)';
+        }
+
+        // Reemplazar datos financieros según variante
+        $html = str_replace('{{MODELO_SELECCIONADO}}', $modeloSeleccionado, $html);
+        $html = str_replace('{{CUOTA_INICIAL}}', $cuotaInicial, $html);
+        $html = str_replace('{{CANTIDAD_CUOTAS}}', $cantidadCuotas, $html);
+        $html = str_replace('{{MONTO_CUOTA}}', $montoCuota, $html);
+        $html = str_replace('{{MONEDA}}', $moneda, $html);
+        $html = str_replace('{{FRECUENCIA}}', $frecuenciaTexto, $html);
+        $html = str_replace('{{FRECUENCIA_PERIODO}}', $frecuenciaPeriodo, $html);
+        $html = str_replace('{{PLAZO_ENTREGA_TEXTO}}', $plazoEntregaTexto, $html);
 
         return $html;
     }
@@ -2129,7 +2322,7 @@ class GenerarContratosController extends controller
                 break;
 
             case 22:  // CrediGo Motos (Grupo 1)
-                $templatePath = 'app/contratos/contrato_Motos.html';
+                $templatePath = 'app/contratos/contrato_CrediMotos.html';
                 break;
 
             case 33:  // MotosYa

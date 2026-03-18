@@ -12,6 +12,14 @@ class Reportes
     {
         // Fecha actual en formato DATETIME (YYYY-MM-DD HH:MM:SS)
         $fecha_actual = date('Y-m-d H:i:s');
+
+        // Truncar valores largos para evitar "Data too long"
+        if ($razon_social !== null) {
+            $razon_social = mb_substr($razon_social, 0, 100);
+        }
+        if ($nombre_producto !== null) {
+            $nombre_producto = mb_substr($nombre_producto, 0, 200);
+        }
         
         // Preparar la consulta
         $sql = "INSERT INTO movimientos_almacen (usuario_id, id_producto, codigo_producto, nombre_producto, tipo_movimiento, subtipo_movimiento, cantidad_producto, proveedor, fecha) 
@@ -28,12 +36,17 @@ class Reportes
             // Ejecutar la consulta
             $resultado = $stmt->execute();
 
+            if (!$resultado) {
+                error_log("Error en registrarMovimiento: " . $stmt->error);
+            }
+
             // Cerrar la sentencia
             $stmt->close();
 
-            return $resultado; // Retorna true si se insertó correctamente, false si hubo un error
+            return $resultado;
         } else {
-            return false; // Error al preparar la consulta
+            error_log("Error al preparar consulta registrarMovimiento: " . $this->conectar->error);
+            return false;
         }
     }
 

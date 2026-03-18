@@ -19,10 +19,16 @@ require_once "app/models/GrupoFinanciamientoModel.php";
 require_once "app/http/controllers/ReportFinanciamientoController.php";
 require_once 'app/models/Financiamiento.php';
 require_once "app/models/Comision.php";
+require_once 'app/models/Venta.php';
+require_once 'app/models/VentaServicio.php';
+require_once 'app/models/VentaSunat.php';
+require_once 'app/models/DocumentoEmpresa.php';
+require_once 'app/clases/SunatApi.php';
 
 class FinanciamientoController extends Controller
 {
     private $conexion;
+    private $sunatApi;
     private $financiamientoModel;
     private $conductorModel;
     private $clienteModel;
@@ -39,7 +45,8 @@ class FinanciamientoController extends Controller
         $this->conductorModel = new Conductor();
         $this->clienteModel = new Cliente();
         $this->productoModel = new Productov2();
-        $this->reportesModel = new Reportes();  
+        $this->reportesModel = new Reportes();
+        $this->sunatApi = new SunatApi();
     }
     
     public function obtenerClientesFinanciamiento()
@@ -54,18 +61,22 @@ class FinanciamientoController extends Controller
              // 🔴 Obtener parámetros de ordenamiento
             $sortField = isset($_GET['sortField']) ? $_GET['sortField'] : null;
             $sortDirection = isset($_GET['sortDirection']) ? $_GET['sortDirection'] : null;
-            
+
+            // Obtener filtro por asesor
+            $asesorId = isset($_GET['asesor_id']) ? (int)$_GET['asesor_id'] : null;
+
             // 🔴 Pasar los parámetros de ordenamiento al modelo
             $conductores = $conductorModel->obtenerTodosConductores(
-                $pagina, 
-                $cantidadPorPagina, 
-                $sortField, 
-                $sortDirection
+                $pagina,
+                $cantidadPorPagina,
+                $sortField,
+                $sortDirection,
+                $asesorId
             );
-            
-                
+
+
             // Obtener el total de conductores (sin contar financiamientos repetidos)
-            $totalConductores = $conductorModel->obtenerTotalConductores();
+            $totalConductores = $conductorModel->obtenerTotalConductores($asesorId);
             $totalPaginas = ceil($totalConductores / $cantidadPorPagina);
 
             // Devuelve los datos en formato JSON
@@ -95,21 +106,25 @@ class FinanciamientoController extends Controller
             $sortField = isset($_GET['sortField']) ? $_GET['sortField'] : null;
             $sortDirection = isset($_GET['sortDirection']) ? $_GET['sortDirection'] : null;
 
+            // Obtener filtro por asesor
+            $asesorId = isset($_GET['asesor_id']) ? (int)$_GET['asesor_id'] : null;
+
         // 🔴 Pasar los parámetros de ordenamiento al modelo
         $clientes = $clienteModel->obtenerConductoresFiltrados(
-            $searchTerm, 
-            $pagina, 
+            $searchTerm,
+            $pagina,
             $cantidadPorPagina,
             $sortField,
-            $sortDirection
+            $sortDirection,
+            $asesorId
         );
 
 
             // Transformar los datos para que sean compatibles con la estructura original
             $conductores = $this->transformarClientesAConductores($clientes);
-           
+
             // Obtener el total de conductores únicos para la paginación
-            $totalClientes = $clienteModel->obtenerTotalClientesBusqueda($searchTerm);
+            $totalClientes = $clienteModel->obtenerTotalClientesBusqueda($searchTerm, $asesorId);
             $totalPaginas = ceil($totalClientes / $cantidadPorPagina);
 
             // Responder en formato JSON - MODIFICADO: ahora devuelve 'conductores' en lugar de 'clientes'
@@ -123,6 +138,34 @@ class FinanciamientoController extends Controller
             exit;
         } catch (Exception $e) {
             echo json_encode(['error' => 'Hubo un error al obtener los datos']);
+            exit;
+        }
+    }
+
+    public function obtenerAsesoresFinanciamiento()
+    {
+        try {
+            $query = "SELECT u.usuario_id,
+                        CONCAT(COALESCE(u.nombres, ''), ' ', COALESCE(u.apellidos, '')) AS nombre_completo
+                      FROM usuarios u
+                      WHERE u.estado = '1'
+                        AND EXISTS (SELECT 1 FROM financiamiento f WHERE f.usuario_id = u.usuario_id AND f.estado_eliminado = 0)
+                      ORDER BY u.nombres ASC";
+            $result = $this->conexion->query($query);
+            $asesores = [];
+            while ($row = $result->fetch_assoc()) {
+                $row['nombre_completo'] = trim($row['nombre_completo']);
+                if (empty($row['nombre_completo'])) {
+                    $row['nombre_completo'] = 'Usuario #' . $row['usuario_id'];
+                }
+                $asesores[] = $row;
+            }
+            header('Content-Type: application/json');
+            echo json_encode(['asesores' => $asesores]);
+            exit;
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Error al obtener asesores: ' . $e->getMessage()]);
             exit;
         }
     }
@@ -296,78 +339,116 @@ class FinanciamientoController extends Controller
         if ($id_conductor > 0) {
             // Obtener financiamientos del conductor
             $financiamientos = $financiamientoModel->getFinanciamientoList($id_conductor);
-            
+
             // Obtener información del conductor
             $conductorModel = new Conductor();
             $persona = $conductorModel->getConductorFinanceList($id_conductor);
-            
+
             // Obtener dirección del conductor
             $direccionModel = new DireccionConductor();
             $direccion = $direccionModel->obtenerDatosDireccion($id_conductor);
-            
-            // NUEVO: Procesar cada financiamiento para agregar información del plan
-            if ($financiamientos) {
-                foreach ($financiamientos as &$financiamiento) {
-                    // Obtener información del plan
-                    $planQuery = "SELECT 
-                        p.nombre_plan,
-                        p.tipo_vehicular,
-                        p.monto_sin_interes as plan_capacidad_original,
-                        p.monto_cuota,
-                        p.cantidad_cuotas,
-                        p.fecha_inicio as plan_fecha_inicio
-                    FROM planes_financiamiento p 
-                    WHERE p.idplan_financiamiento = ?";
-                    
-                    $conexion = $this->conexion; 
-                    $planStmt = $conexion->prepare($planQuery);
-                    $planStmt->bind_param("i", $financiamiento['grupo_financiamiento']);
-                    $planStmt->execute();
-                    $planResult = $planStmt->get_result();
-                    $planData = $planResult->fetch_assoc();
-                    
-                    // NUEVO: Calcular capacidad de compra actual si es vehículo
-                    // Verificar si es vehículo por tipo_vehicular O por nombre del plan
-                    $esVehiculo = ($planData && (
-                        $planData['tipo_vehicular'] === 'vehiculo' || 
-                        stripos($planData['nombre_plan'], 'vehicular') !== false
-                    ));
-                    
-                    if ($esVehiculo) {
-                        $semanasPerdidas = 0;
-                        $dineroPerdido = 0;
-                        $capacidadCompraActual = $planData['plan_capacidad_original'];
-                        
-                        if ($planData['plan_fecha_inicio'] && $financiamiento['fecha_creacion']) {
-                            $fechaInicio = new DateTime($planData['plan_fecha_inicio']);
-                            $fechaEntrada = new DateTime($financiamiento['fecha_creacion']);
-                            $diferencia = $fechaEntrada->diff($fechaInicio);
-                            $semanasPerdidas = floor($diferencia->days / 7);
-                            $dineroPerdido = $semanasPerdidas * $planData['monto_cuota'];
-                            $capacidadCompraActual = $planData['plan_capacidad_original'] - $dineroPerdido;
-                        }
-                        
-                        $financiamiento['es_vehiculo'] = true;
-                        $financiamiento['plan_capacidad_original'] = $planData['plan_capacidad_original'];
-                        $financiamiento['semanas_perdidas'] = $semanasPerdidas;
-                        $financiamiento['dinero_perdido'] = $dineroPerdido;
-                        $financiamiento['capacidad_compra_actual'] = $capacidadCompraActual;
-                    } else {
-                        $financiamiento['es_vehiculo'] = false;
-                    }
-                    
-                    $planStmt->close();
-                }
-            }
         } elseif ($id_cliente > 0) {
             // Obtener financiamientos del cliente
             $financiamientos = $financiamientoModel->getFinanciamientoListCliente($id_cliente);
-            
+
             // Obtener información del cliente
             $clienteModel = new Cliente();
             $persona = $clienteModel->getClienteList($id_cliente);
-            
+
             $direccion = $clienteModel->obtenerDatosDireccionCliente($id_cliente);
+        }
+
+        // Procesar cada financiamiento para agregar información del plan (aplica tanto a conductores como a clientes)
+        if (!empty($financiamientos)) {
+            foreach ($financiamientos as &$financiamiento) {
+                // Obtener información del plan
+                $planQuery = "SELECT
+                    p.nombre_plan,
+                    p.tipo_vehicular,
+                    p.monto_sin_interes as plan_capacidad_original,
+                    p.monto_cuota,
+                    p.cantidad_cuotas,
+                    p.fecha_inicio as plan_fecha_inicio
+                FROM planes_financiamiento p
+                WHERE p.idplan_financiamiento = ?";
+
+                $conexion = $this->conexion;
+                $planStmt = $conexion->prepare($planQuery);
+                $planStmt->bind_param("i", $financiamiento['grupo_financiamiento']);
+                $planStmt->execute();
+                $planResult = $planStmt->get_result();
+                $planData = $planResult->fetch_assoc();
+
+                // Calcular capacidad de compra actual si es vehículo
+                // Verificar si es vehículo por tipo_vehicular, nombre del plan O categoría del producto
+                $esVehiculo = ($planData && (
+                    $planData['tipo_vehicular'] === 'vehiculo' ||
+                    stripos($planData['nombre_plan'], 'vehicular') !== false
+                ));
+
+                // Si no se detectó por plan, verificar por categoría del producto
+                if (!$esVehiculo && !empty($financiamiento['idproductosv2'])) {
+                    $catQuery = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
+                    $catStmt = $conexion->prepare($catQuery);
+                    $catStmt->bind_param("i", $financiamiento['idproductosv2']);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    $catData = $catResult->fetch_assoc();
+                    $catStmt->close();
+
+                    if ($catData && (
+                        stripos($catData['categoria'], 'vehiculo') !== false ||
+                        stripos($catData['categoria'], 'vehículo') !== false
+                    )) {
+                        $esVehiculo = true;
+                    }
+                }
+
+                if ($esVehiculo) {
+                    $semanasPerdidas = 0;
+                    $dineroPerdido = 0;
+
+                    // Capacidad original: usar del plan, si no tiene usar del financiamiento
+                    $planCapacidadOriginal = (floatval($planData['plan_capacidad_original']) > 0)
+                        ? $planData['plan_capacidad_original']
+                        : $financiamiento['monto_sin_interes'];
+
+                    $capacidadCompraActual = $planCapacidadOriginal;
+
+                    // Monto cuota: usar del plan, si no tiene calcular del financiamiento
+                    $montoCuota = (floatval($planData['monto_cuota']) > 0)
+                        ? $planData['monto_cuota']
+                        : ($financiamiento['cuotas'] > 0 ? $financiamiento['monto_sin_interes'] / $financiamiento['cuotas'] : 0);
+
+                    // Calcular semanas perdidas usando el número de la primera cuota del cronograma
+                    // Si la primera cuota es #21, significa que perdió 20 cuotas (21 - 1)
+                    $primeraCuotaQuery = "SELECT MIN(numero_cuota) as primera_cuota FROM cuotas_financiamiento WHERE id_financiamiento = ?";
+                    $pcStmt = $conexion->prepare($primeraCuotaQuery);
+                    $pcStmt->bind_param("i", $financiamiento['idfinanciamiento']);
+                    $pcStmt->execute();
+                    $pcResult = $pcStmt->get_result();
+                    $pcData = $pcResult->fetch_assoc();
+                    $pcStmt->close();
+
+                    $primeraCuota = $pcData ? intval($pcData['primera_cuota']) : 1;
+                    if ($primeraCuota > 1) {
+                        $semanasPerdidas = $primeraCuota - 1;
+                        $dineroPerdido = $semanasPerdidas * $montoCuota;
+                        $capacidadCompraActual = $planCapacidadOriginal - $dineroPerdido;
+                    }
+
+                    $financiamiento['es_vehiculo'] = true;
+                    $financiamiento['plan_capacidad_original'] = $planCapacidadOriginal;
+                    $financiamiento['semanas_perdidas'] = $semanasPerdidas;
+                    $financiamiento['dinero_perdido'] = $dineroPerdido;
+                    $financiamiento['capacidad_compra_actual'] = $capacidadCompraActual;
+                } else {
+                    $financiamiento['es_vehiculo'] = false;
+                }
+
+                $planStmt->close();
+            }
+            unset($financiamiento); // romper referencia del foreach
         }
         
         if (empty($financiamientos)) {
@@ -389,10 +470,53 @@ class FinanciamientoController extends Controller
             
             // Obtener nombre del usuario que registró el financiamiento
             $financiamiento['usuario_registro'] = $financiamientoModel->obtenerUsuarioRegistro($id_financiamiento);
-            
+
+            // ✅ NUEVO: Obtener nombre del usuario que finalizó el contrato (si aplica)
+            if ($financiamiento['contrato_finalizado'] == 1 && $financiamiento['usuario_finalizo_contrato']) {
+                $financiamiento['nombre_usuario_finalizo'] = $financiamientoModel->obtenerNombreUsuario($financiamiento['usuario_finalizo_contrato']);
+            } else {
+                $financiamiento['nombre_usuario_finalizo'] = null;
+            }
+
             // NUEVO: Asegurar que se incluya el monto_sin_interes (Monto de Compra)
             if (!isset($financiamiento['monto_sin_interes']) || $financiamiento['monto_sin_interes'] === null) {
                 $financiamiento['monto_sin_interes'] = $financiamiento['monto_total'] ?? 0;
+            }
+
+            // ✅ NUEVO: Obtener información del financiamiento vinculado
+            if (isset($financiamiento['id_financiamiento_vinculado']) && $financiamiento['id_financiamiento_vinculado']) {
+                $idVinculado = $financiamiento['id_financiamiento_vinculado'];
+                
+                $queryVinculado = "SELECT 
+                    f.idfinanciamiento,
+                    f.es_financiamiento_principal,
+                    COALESCE(c.nombres, cl.nombres) AS vinculado_nombres,
+                    COALESCE(c.apellido_paterno, cl.apellido_paterno) AS vinculado_apellido_paterno,
+                    COALESCE(c.apellido_materno, cl.apellido_materno) AS vinculado_apellido_materno,
+                    COALESCE(c.nro_documento, cl.n_documento) AS vinculado_documento,
+                    f.id_conductor AS vinculado_id_conductor,
+                    f.id_cliente AS vinculado_id_cliente
+                FROM financiamiento f
+                LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+                LEFT JOIN clientes_financiar cl ON f.id_cliente = cl.id
+                WHERE f.idfinanciamiento = ?";
+                
+                $stmtVinculado = $this->conexion->prepare($queryVinculado);
+                $stmtVinculado->bind_param('i', $idVinculado);
+                $stmtVinculado->execute();
+                $resultVinculado = $stmtVinculado->get_result();
+                $datosVinculado = $resultVinculado->fetch_assoc();
+                
+                if ($datosVinculado) {
+                    $financiamiento['vinculado_nombres'] = $datosVinculado['vinculado_nombres'];
+                    $financiamiento['vinculado_apellido_paterno'] = $datosVinculado['vinculado_apellido_paterno'];
+                    $financiamiento['vinculado_apellido_materno'] = $datosVinculado['vinculado_apellido_materno'];
+                    $financiamiento['vinculado_documento'] = $datosVinculado['vinculado_documento'];
+                    $financiamiento['vinculado_id_conductor'] = $datosVinculado['vinculado_id_conductor'];
+                    $financiamiento['vinculado_id_cliente'] = $datosVinculado['vinculado_id_cliente'];
+                }
+                
+                $stmtVinculado->close();
             }
         }
 
@@ -589,6 +713,76 @@ class FinanciamientoController extends Controller
                 exit;
             }
         }
+
+        /**
+         * Obtiene el siguiente código de asociado correlativo disponible
+         * Busca el máximo entre conductores y clientes_financiar y retorna el siguiente
+         */
+        public function obtenerSiguienteCodigoAsociado()
+        {
+            try {
+                // Obtener el máximo código de conductores
+                $sqlConductores = "SELECT MAX(CAST(numeroCodFi AS UNSIGNED)) as max_cod 
+                                   FROM conductores 
+                                   WHERE numeroCodFi IS NOT NULL 
+                                   AND numeroCodFi != '' 
+                                   AND numeroCodFi != '0'
+                                   AND numeroCodFi REGEXP '^[0-9]+$'";
+                
+                $resultConductores = $this->conexion->query($sqlConductores);
+                $maxConductores = 0;
+                if ($resultConductores && $row = $resultConductores->fetch_assoc()) {
+                    $maxConductores = intval($row['max_cod']) ?: 0;
+                }
+
+                // Obtener el máximo código de clientes_financiar
+                $sqlClientes = "SELECT MAX(CAST(num_cod_finan AS UNSIGNED)) as max_cod 
+                                FROM clientes_financiar 
+                                WHERE num_cod_finan IS NOT NULL 
+                                AND num_cod_finan != '' 
+                                AND num_cod_finan != '0'
+                                AND num_cod_finan REGEXP '^[0-9]+$'";
+                
+                $resultClientes = $this->conexion->query($sqlClientes);
+                $maxClientes = 0;
+                if ($resultClientes && $row = $resultClientes->fetch_assoc()) {
+                    $maxClientes = intval($row['max_cod']) ?: 0;
+                }
+
+                // Obtener el máximo código de financiamiento
+                $sqlFinanciamiento = "SELECT MAX(CAST(codigo_asociado AS UNSIGNED)) as max_cod
+                                      FROM financiamiento
+                                      WHERE codigo_asociado IS NOT NULL
+                                      AND codigo_asociado != ''
+                                      AND codigo_asociado != '0'
+                                      AND codigo_asociado REGEXP '^[0-9]+$'
+                                      AND estado_eliminado = 0";
+
+                $resultFinanciamiento = $this->conexion->query($sqlFinanciamiento);
+                $maxFinanciamiento = 0;
+                if ($resultFinanciamiento && $row = $resultFinanciamiento->fetch_assoc()) {
+                    $maxFinanciamiento = intval($row['max_cod']) ?: 0;
+                }
+
+                // El siguiente código es el máximo + 1
+                $siguienteCodigo = max($maxConductores, $maxClientes, $maxFinanciamiento) + 1;
+
+                echo json_encode([
+                    'success' => true,
+                    'siguiente_codigo' => $siguienteCodigo,
+                    'max_conductores' => $maxConductores,
+                    'max_clientes' => $maxClientes
+                ]);
+                exit;
+            } catch (Exception $e) {
+                error_log("Error en obtenerSiguienteCodigoAsociado: " . $e->getMessage());
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Error al obtener el siguiente código: ' . $e->getMessage()
+                ]);
+                exit;
+            }
+        }
         
         public function obtenerProductos()
         {
@@ -600,14 +794,17 @@ class FinanciamientoController extends Controller
                 // ✅ NUEVO: Obtener filtro de categoría si existe (para CrediYango)
                 $categoria = isset($_GET['categoria']) ? trim($_GET['categoria']) : null;
 
+                // ✅ NUEVO: Obtener filtro de id_plan si existe (para SOAT, etc.)
+                $idPlan = isset($_GET['id_plan']) ? (int)$_GET['id_plan'] : null;
+
                 // Mostrar los valores de entrada
-                //var_dump(['pagina' => $pagina, 'productosPorPagina' => $productosPorPagina, 'categoria' => $categoria]);
+                //var_dump(['pagina' => $pagina, 'productosPorPagina' => $productosPorPagina, 'categoria' => $categoria, 'idPlan' => $idPlan]);
 
                 // Crear una instancia del modelo ProductoV2
                 $productoV2 = new ProductoV2();
 
-                // ✅ NUEVO: Obtener los productos con paginación y filtro de categoría
-                $productos = $productoV2->obtenerProductos($pagina, $productosPorPagina, $categoria);
+                // ✅ MODIFICADO: Obtener los productos con paginación y filtros
+                $productos = $productoV2->obtenerProductos($pagina, $productosPorPagina, $categoria, $idPlan);
 
                 // Mostrar los datos obtenidos del modelo
                 //var_dump($productos);
@@ -1080,6 +1277,8 @@ class FinanciamientoController extends Controller
                 $monedaEfectivo = $_POST['moneda_efectivo'] ?? null;
                 $vuelto = $_POST['vuelto'] ?? null;
                 $cuotasJson = $_POST['cuotas'] ?? '[]';
+                $entidadFinanciera = $_POST['entidad_financiera'] ?? null;
+                $numeroOperacion = $_POST['numero_operacion'] ?? null;
                 $cuotasSeleccionadas = json_decode($cuotasJson, true);
 
                 error_log("🔍 [TIMING] Después de parsear datos: " . round((microtime(true) - $tiempoInicio) * 1000, 2) . "ms");
@@ -1198,9 +1397,11 @@ class FinanciamientoController extends Controller
                         $vuelto,
                         $monedaEfectivo,
                         null,
-                        $idCliente, // MODIFICADO: Agregado el idCliente
+                        $idCliente,
                         $metodoPago,
-                        $estado 
+                        $estado,
+                        $entidadFinanciera,
+                        $numeroOperacion
                     );
                     // *** NUEVO: Registrar las cuotas seleccionadas en detalle_pago_financiamiento ***
                     if ($pagoResult['success'] && isset($pagoResult['id_pago'])) {  
@@ -1287,19 +1488,21 @@ class FinanciamientoController extends Controller
             $fechaFin = isset($_POST['fechaFin']) ? trim($_POST['fechaFin']) : '';
 
             // Parámetros de ordenamiento
-            $orderColumnIndex = isset($_POST['order'][0]['column']) ? (int)$_POST['order'][0]['column'] : 5;
+            $orderColumnIndex = isset($_POST['order'][0]['column']) ? (int)$_POST['order'][0]['column'] : 7;
             $orderDir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : 'desc';
             
             // Mapeo de índices de columnas a nombres de campos en la BD
             $columns = [
                 0 => null,  // # (no ordenable)
                 1 => 'conductor',
-                2 => 'numUnidad',
-                3 => 'asesor',
-                4 => 'monto',
-                5 => 'fecha_pago',
-                6 => 'estado',
-                7 => null  // Acciones (no ordenable)
+                2 => 'nro_documento',
+                3 => 'numUnidad',
+                4 => 'asesor',
+                5 => 'monto',
+                6 => 'concepto',
+                7 => 'fecha_pago',
+                8 => 'estado',
+                9 => null  // Acciones (no ordenable)
             ];
             
             $orderColumn = isset($columns[$orderColumnIndex]) ? $columns[$orderColumnIndex] : 'fecha_pago';
@@ -1712,54 +1915,58 @@ class FinanciamientoController extends Controller
             $idProducto = $financiamiento['idproductosv2'];
             $cantidadProducto = $financiamiento['cantidad_producto'];
             $usuarioId = $financiamiento['usuario_id'];
+            $esPrincipal = $financiamiento['es_financiamiento_principal'] ?? 1; // Por defecto es principal
 
-            // Consultar datos del producto
-            $queryProducto = "SELECT nombre, codigo, codigo_barra, razon_social, cantidad FROM productosv2 WHERE idproductosv2 = $idProducto";
-            $resultProducto = $this->conexion->query($queryProducto);
-            $producto = $resultProducto->fetch_assoc();
+            // Solo descontar stock si es financiamiento principal
+            if ($esPrincipal == 1) {
+                // Consultar datos del producto
+                $queryProducto = "SELECT nombre, codigo, codigo_barra, razon_social, cantidad FROM productosv2 WHERE idproductosv2 = $idProducto";
+                $resultProducto = $this->conexion->query($queryProducto);
+                $producto = $resultProducto->fetch_assoc();
 
-            if (!$producto) {
-            
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Producto no encontrado']);
-                return;
-            }
-
-            // Verificar si hay stock suficiente
-            if ($producto['cantidad'] < $cantidadProducto) {
-            
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Stock insuficiente para aprobar el financiamiento']);
-                return;
-            }
-
-            // Preparar datos para registrar movimiento
-            $codigoProducto = $producto['codigo'] ?: $producto['codigo_barra'];
-            $nombreProducto = $producto['nombre'];
-            $razonSocial = $producto['razon_social'];
-
-            // Registrar movimiento
-            $this->reportesModel->registrarMovimiento(
-                $usuarioId,
-                $idProducto, 
-                $codigoProducto, 
-                $nombreProducto, 
-                "Salida", 
-                "financiamiento", 
-                $cantidadProducto, 
-                $razonSocial
-            );
-
-            // Descontar stock del producto
-            $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
-            $queryUpdateStock = "UPDATE productosv2 SET cantidad = $nuevaCantidad WHERE idproductosv2 = $idProducto";
-            $resultUpdateStock = $this->conexion->query($queryUpdateStock);
-
-            if (!$resultUpdateStock) {
+                if (!$producto) {
                 
-                header('Content-Type: application/json');
-                echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el stock del producto']);
-                return;
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Producto no encontrado']);
+                    return;
+                }
+
+                // Verificar si hay stock suficiente
+                if ($producto['cantidad'] < $cantidadProducto) {
+                
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Stock insuficiente para aprobar el financiamiento']);
+                    return;
+                }
+
+                // Preparar datos para registrar movimiento
+                $codigoProducto = $producto['codigo'] ?: $producto['codigo_barra'];
+                $nombreProducto = $producto['nombre'];
+                $razonSocial = $producto['razon_social'];
+
+                // Registrar movimiento
+                $this->reportesModel->registrarMovimiento(
+                    $usuarioId,
+                    $idProducto, 
+                    $codigoProducto, 
+                    $nombreProducto, 
+                    "Salida", 
+                    "financiamiento", 
+                    $cantidadProducto, 
+                    $razonSocial
+                );
+
+                // Descontar stock del producto
+                $nuevaCantidad = $producto['cantidad'] - $cantidadProducto;
+                $queryUpdateStock = "UPDATE productosv2 SET cantidad = $nuevaCantidad WHERE idproductosv2 = $idProducto";
+                $resultUpdateStock = $this->conexion->query($queryUpdateStock);
+
+                if (!$resultUpdateStock) {
+                    
+                    header('Content-Type: application/json');
+                    echo json_encode(['status' => 'error', 'message' => 'Error al actualizar el stock del producto']);
+                    return;
+                }
             }
 
             // Actualizar estado del financiamiento a aprobado
@@ -2176,6 +2383,8 @@ class FinanciamientoController extends Controller
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                             INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                             WHERE f.id_conductor = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso'
+                            AND f.estado_eliminado = 0
+                            AND (f.aprobado = 1 OR f.aprobado IS NULL)
                             AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                             ORDER BY cf.fecha_vencimiento ASC
@@ -2198,6 +2407,8 @@ class FinanciamientoController extends Controller
                             INNER JOIN financiamiento f ON cf.id_financiamiento = f.idfinanciamiento
                             INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                             WHERE f.id_cliente = ? AND cf.fecha_vencimiento < CURDATE() AND cf.estado = 'En Progreso'
+                            AND f.estado_eliminado = 0
+                            AND (f.aprobado = 1 OR f.aprobado IS NULL)
                             AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                             ORDER BY cf.fecha_vencimiento ASC
@@ -2392,7 +2603,8 @@ class FinanciamientoController extends Controller
                         WHERE
                             cf.fecha_vencimiento < '$fecha_actual'
                             AND cf.estado = 'En Progreso'
-                             AND f.estado_eliminado = 0
+                            AND f.estado_eliminado = 0
+                            AND (f.aprobado = 1 OR f.aprobado IS NULL)
                             AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                         GROUP BY
@@ -2424,11 +2636,12 @@ class FinanciamientoController extends Controller
                             cf.fecha_vencimiento < '$fecha_actual'
                             AND cf.estado = 'En Progreso'
                             AND f.id_cliente IS NOT NULL
-                             AND f.estado_eliminado = 0
+                            AND f.estado_eliminado = 0
+                            AND (f.aprobado = 1 OR f.aprobado IS NULL)
                             AND NOT (f.idproductosv2 IN (37, 312) AND f.estado_entrega = 'pendiente')
                             $incobrable_condition
                         GROUP BY
-                            cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno 
+                            cl.id, p.nombre, f.moneda, cl.telefono, cl.nombres, cl.apellido_paterno, cl.apellido_materno
                     ";
                     
                     $result = $this->conexion->query($query);
@@ -2515,7 +2728,11 @@ class FinanciamientoController extends Controller
                                 precio_venta, 
                                 categoria 
                         FROM productosv2 
-                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
                         AND estado = '1'
                         ORDER BY nombre";
                 
@@ -2548,7 +2765,11 @@ class FinanciamientoController extends Controller
                 
                 $query = "SELECT idproductosv2, nombre, codigo, cantidad, precio_venta, categoria 
                         FROM productosv2 
-                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
                         AND estado = '1'
                         AND (LOWER(nombre) LIKE ? OR LOWER(codigo) LIKE ?)
                         ORDER BY nombre";
@@ -2590,6 +2811,16 @@ class FinanciamientoController extends Controller
                     throw new Exception('Faltan parámetros requeridos');
                 }
 
+                // Obtener información del financiamiento para verificar si es principal
+                $queryFinanciamiento = "SELECT es_financiamiento_principal FROM financiamiento WHERE idfinanciamiento = ?";
+                $stmtFin = mysqli_prepare($this->conexion, $queryFinanciamiento);
+                mysqli_stmt_bind_param($stmtFin, 'i', $idFinanciamiento);
+                mysqli_stmt_execute($stmtFin);
+                $resultFin = mysqli_stmt_get_result($stmtFin);
+                $financiamiento = mysqli_fetch_assoc($resultFin);
+                $esPrincipal = $financiamiento['es_financiamiento_principal'] ?? 1;
+                mysqli_stmt_close($stmtFin);
+
                 // ✅ NUEVO: Si no se proporciona fecha, usar la fecha actual
                 if (!$fechaEntrega) {
                     $fechaEntrega = date('Y-m-d');
@@ -2608,16 +2839,19 @@ class FinanciamientoController extends Controller
                 
                 if (mysqli_stmt_execute($stmt)) {
 
-                    // Actualizar cantidad del producto (restar 1)
-                    $queryUpdateStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ? AND cantidad > 0";
-                    $stmtStock = mysqli_prepare($this->conexion, $queryUpdateStock);
-                    mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
+                    // Solo actualizar stock si es financiamiento principal
+                    if ($esPrincipal == 1) {
+                        // Actualizar cantidad del producto (restar 1)
+                        $queryUpdateStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ? AND cantidad > 0";
+                        $stmtStock = mysqli_prepare($this->conexion, $queryUpdateStock);
+                        mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
 
-                    if (!mysqli_stmt_execute($stmtStock) || mysqli_stmt_affected_rows($stmtStock) === 0) {
-                        throw new Exception('Error: El vehículo ya no tiene stock disponible');
+                        if (!mysqli_stmt_execute($stmtStock) || mysqli_stmt_affected_rows($stmtStock) === 0) {
+                            throw new Exception('Error: El vehículo ya no tiene stock disponible');
+                        }
+
+                        mysqli_stmt_close($stmtStock);
                     }
-
-                    mysqli_stmt_close($stmtStock);
 
                     // Actualizar cantidad_producto a 1 en el financiamiento
                     $queryUpdateCantidad = "UPDATE financiamiento SET cantidad_producto = '1' WHERE idfinanciamiento = ?";
@@ -2709,14 +2943,20 @@ class FinanciamientoController extends Controller
             $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
             $fechaEntrega = $_POST['fecha_entrega'] ?? null;
             $idProducto = $_POST['id_producto'] ?? null; // NUEVO: ID del producto real a entregar
+            $fechaPrimeraCuota = $_POST['fecha_primera_cuota'] ?? null; // ✅ NUEVO: Fecha de primera cuota elegida manualmente
 
             error_log("ID Financiamiento: " . $idFinanciamiento);
             error_log("Fecha Entrega: " . $fechaEntrega);
             error_log("ID Producto: " . $idProducto);
+            error_log("Fecha Primera Cuota: " . $fechaPrimeraCuota);
 
-            if (!$idFinanciamiento || !$fechaEntrega) {
+            if (!$idFinanciamiento || !$fechaEntrega || !$fechaPrimeraCuota) {
                 throw new Exception('Faltan parámetros requeridos');
             }
+
+            // ✅ NUEVO: Usar la fecha de primera cuota proporcionada en lugar de calcularla
+            $fechaInicioPagosStr = $fechaPrimeraCuota;
+            $fechaInicioPagos = new DateTime($fechaPrimeraCuota);
 
             // Validar que el financiamiento existe y es CrediYango
             $query = "SELECT f.*, p.nombre_plan, p.tasa_interes as tasa, p.frecuencia_pago,
@@ -2740,37 +2980,84 @@ class FinanciamientoController extends Controller
                 throw new Exception('Este financiamiento no es CrediYango');
             }
 
-            // Calcular fecha de inicio de pagos (fecha_entrega + 7 días)
-            $fechaEntregaObj = new DateTime($fechaEntrega);
-            $fechaInicioPagos = clone $fechaEntregaObj;
-            $fechaInicioPagos->add(new DateInterval('P7D'));
-            $fechaInicioPagosStr = $fechaInicioPagos->format('Y-m-d');
+            // ✅ MODIFICADO: Ya no se calcula automáticamente, se usa la fecha proporcionada
+            // La fecha de primera cuota ya viene en $fechaInicioPagosStr y $fechaInicioPagos
 
             // Iniciar transacción
             mysqli_begin_transaction($this->conexion);
 
-            // ✅ MODIFICADO: Actualizar el financiamiento con las fechas, estado y estado_entrega
-            // Ya no se cambia el producto, se mantiene el seleccionado en el registro
-            $queryUpdate = "UPDATE financiamiento
-                           SET fecha_entrega = ?,
-                               fecha_inicio_pagos_calculada = ?,
-                               fecha_inicio = ?,
-                               estado = 'Vehiculo Entregado',
-                               estado_entrega = 'entregado',
-                               cobrar_mora = 1
-                           WHERE idfinanciamiento = ?";
+            // ✅ NUEVO: Si se proporciona un nuevo ID de producto, actualizar el financiamiento
+            if ($idProducto && $idProducto != $financiamiento['idproductosv2']) {
+                error_log("🔄 Actualizando producto: de {$financiamiento['idproductosv2']} a $idProducto");
+                
+                // Verificar que el producto existe y tiene stock
+                $queryProducto = "SELECT idproductosv2, nombre, cantidad FROM productosv2 WHERE idproductosv2 = ?";
+                $stmtProducto = mysqli_prepare($this->conexion, $queryProducto);
+                mysqli_stmt_bind_param($stmtProducto, 'i', $idProducto);
+                mysqli_stmt_execute($stmtProducto);
+                $resultProducto = mysqli_stmt_get_result($stmtProducto);
+                $producto = mysqli_fetch_assoc($resultProducto);
+                mysqli_stmt_close($stmtProducto);
+                
+                if (!$producto) {
+                    throw new Exception('El producto seleccionado no existe');
+                }
+                
+                if ($producto['cantidad'] <= 0) {
+                    throw new Exception('El producto seleccionado no tiene stock disponible');
+                }
+                
+                // Actualizar el financiamiento con el nuevo producto y las fechas
+                $queryUpdate = "UPDATE financiamiento
+                               SET idproductosv2 = ?,
+                                   fecha_entrega = ?,
+                                   fecha_inicio_pagos_calculada = ?,
+                                   fecha_inicio = ?,
+                                   estado = 'Vehiculo Entregado',
+                                   estado_entrega = 'entregado',
+                                   cobrar_mora = 1
+                               WHERE idfinanciamiento = ?";
 
-            $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
-            mysqli_stmt_bind_param($stmtUpdate, 'sssi', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
+                $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmtUpdate, 'isssi', $idProducto, $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
+                
+                // Solo reducir stock si es financiamiento principal
+                $esPrincipal = $financiamiento['es_financiamiento_principal'] ?? 1;
+                if ($esPrincipal == 1) {
+                    // Reducir stock del nuevo producto
+                    $queryStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ?";
+                    $stmtStock = mysqli_prepare($this->conexion, $queryStock);
+                    mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
+                    
+                    if (!mysqli_stmt_execute($stmtStock)) {
+                        throw new Exception('Error al actualizar el stock del producto');
+                    }
+                    mysqli_stmt_close($stmtStock);
+                    
+                    error_log("✅ Stock reducido para producto ID: $idProducto");
+                }
+                
+            } else {
+                // No se cambia el producto, solo actualizar fechas y estado
+                $queryUpdate = "UPDATE financiamiento
+                               SET fecha_entrega = ?,
+                                   fecha_inicio_pagos_calculada = ?,
+                                   fecha_inicio = ?,
+                                   estado = 'Vehiculo Entregado',
+                                   estado_entrega = 'entregado',
+                                   cobrar_mora = 1
+                               WHERE idfinanciamiento = ?";
+
+                $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmtUpdate, 'sssi', $fechaEntrega, $fechaInicioPagosStr, $fechaInicioPagosStr, $idFinanciamiento);
+            }
 
             if (!mysqli_stmt_execute($stmtUpdate)) {
                 throw new Exception('Error al actualizar el financiamiento');
             }
             mysqli_stmt_close($stmtUpdate);
 
-            // ✅ NOTA: El stock ya fue reducido al momento del registro inicial
-            // No es necesario reducir stock nuevamente aquí
-            error_log("✅ Estado actualizado a 'entregado' - Stock ya fue reducido en el registro");
+            error_log("✅ Financiamiento actualizado correctamente");
 
             // 2. Generar cronograma de pagos
             $cuotas = intval($financiamiento['cuotas']);
@@ -2885,17 +3172,18 @@ class FinanciamientoController extends Controller
             error_log("=== ENTREGA CREDIYANGO - FIN EXITOSO ===");
 
             // Formatear fechas para respuesta
+            $fechaEntregaObj = new DateTime($fechaEntrega);
             $fechaEntregaFormateada = $fechaEntregaObj->format('d/m/Y');
-            $fechaInicioPagosFormateada = $fechaInicioPagos->format('d/m/Y');
+            $fechaPrimeraCuotaFormateada = $fechaInicioPagos->format('d/m/Y');
 
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => true,
                 'message' => 'Vehículo CrediYango entregado exitosamente',
                 'fecha_entrega' => $fechaEntrega,
-                'fecha_inicio_pagos' => $fechaInicioPagosStr,
+                'fecha_primera_cuota' => $fechaInicioPagosStr,
                 'fecha_entrega_formateada' => $fechaEntregaFormateada,
-                'fecha_inicio_pagos_formateada' => $fechaInicioPagosFormateada,
+                'fecha_primera_cuota_formateada' => $fechaPrimeraCuotaFormateada,
                 'total_pagos' => count($fechasVencimiento),
                 'monto_cuota' => number_format($montoCuota, 2)
             ]);
@@ -2910,6 +3198,272 @@ class FinanciamientoController extends Controller
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function entregarVehiculoCrediAhorrosAutos()
+    {
+        try {
+            error_log("=== ENTREGA CREDI AHORRO AUTOS - INICIO ===");
+
+            $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+            $fechaEntrega = $_POST['fecha_entrega'] ?? null;
+            $idProducto = $_POST['id_producto'] ?? null;
+            $precioVehiculo = $_POST['precio_vehiculo'] ?? null;
+            $excedente = floatval($_POST['excedente'] ?? 0);
+            $metodoPagoExcedente = $_POST['metodo_pago_excedente'] ?? null;
+            $notaExcedente = $_POST['nota_excedente'] ?? null;
+
+            error_log("ID Financiamiento: " . $idFinanciamiento);
+            error_log("Fecha Entrega: " . $fechaEntrega);
+            error_log("ID Producto: " . $idProducto);
+            error_log("Precio Vehículo: " . $precioVehiculo);
+            error_log("Excedente: " . $excedente);
+
+            if (!$idFinanciamiento || !$fechaEntrega || !$idProducto || !$precioVehiculo) {
+                throw new Exception('Faltan parámetros requeridos');
+            }
+
+            if ($excedente > 0 && !$metodoPagoExcedente) {
+                throw new Exception('Debe indicar el método de pago del excedente');
+            }
+
+            // Validar que el financiamiento existe y es Credi Ahorro Autos (plan 49)
+            $query = "SELECT f.*, p.nombre_plan, p.monto_cuota, p.frecuencia_pago, p.cantidad_cuotas
+                      FROM financiamiento f
+                      LEFT JOIN planes_financiamiento p ON f.grupo_financiamiento = p.idplan_financiamiento
+                      WHERE f.idfinanciamiento = ?";
+
+            $stmt = mysqli_prepare($this->conexion, $query);
+            mysqli_stmt_bind_param($stmt, 'i', $idFinanciamiento);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $financiamiento = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$financiamiento) {
+                throw new Exception('Financiamiento no encontrado');
+            }
+
+            if ($financiamiento['grupo_financiamiento'] != 49) {
+                throw new Exception('Este financiamiento no es Credi Ahorro Autos');
+            }
+
+            $idConductor = $financiamiento['id_conductor'] ?? null;
+            $idCliente = $financiamiento['id_cliente'] ?? null;
+            $moneda = $financiamiento['moneda'];
+
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $idAsesor = isset($_SESSION['usuario_id']) ? intval($_SESSION['usuario_id']) : null;
+
+            // Iniciar transacción
+            mysqli_begin_transaction($this->conexion);
+
+            // Verificar que el producto existe y tiene stock
+            $queryProducto = "SELECT idproductosv2, nombre, cantidad FROM productosv2 WHERE idproductosv2 = ?";
+            $stmtProducto = mysqli_prepare($this->conexion, $queryProducto);
+            mysqli_stmt_bind_param($stmtProducto, 'i', $idProducto);
+            mysqli_stmt_execute($stmtProducto);
+            $resultProducto = mysqli_stmt_get_result($stmtProducto);
+            $producto = mysqli_fetch_assoc($resultProducto);
+            mysqli_stmt_close($stmtProducto);
+
+            if (!$producto) {
+                throw new Exception('El producto seleccionado no existe');
+            }
+
+            if ($producto['cantidad'] <= 0) {
+                throw new Exception('El producto seleccionado no tiene stock disponible');
+            }
+
+            // Actualizar financiamiento: producto, fecha, estado
+            $productoChanged = ($idProducto != $financiamiento['idproductosv2']);
+            if ($productoChanged) {
+                error_log("Actualizando producto: de {$financiamiento['idproductosv2']} a $idProducto");
+                $queryUpdate = "UPDATE financiamiento
+                               SET idproductosv2 = ?,
+                                   fecha_entrega = ?,
+                                   estado = 'Vehiculo Entregado',
+                                   estado_entrega = 'entregado',
+                                   cobrar_mora = 1
+                               WHERE idfinanciamiento = ?";
+                $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmtUpdate, 'isi', $idProducto, $fechaEntrega, $idFinanciamiento);
+            } else {
+                $queryUpdate = "UPDATE financiamiento
+                               SET fecha_entrega = ?,
+                                   estado = 'Vehiculo Entregado',
+                                   estado_entrega = 'entregado',
+                                   cobrar_mora = 1
+                               WHERE idfinanciamiento = ?";
+                $stmtUpdate = mysqli_prepare($this->conexion, $queryUpdate);
+                mysqli_stmt_bind_param($stmtUpdate, 'si', $fechaEntrega, $idFinanciamiento);
+            }
+
+            if (!mysqli_stmt_execute($stmtUpdate)) {
+                throw new Exception('Error al actualizar el financiamiento');
+            }
+            mysqli_stmt_close($stmtUpdate);
+
+            // Siempre reducir stock del producto entregado
+            $esPrincipal = $financiamiento['es_financiamiento_principal'] ?? 1;
+            if ($esPrincipal == 1) {
+                $queryStock = "UPDATE productosv2 SET cantidad = cantidad - 1 WHERE idproductosv2 = ?";
+                $stmtStock = mysqli_prepare($this->conexion, $queryStock);
+                mysqli_stmt_bind_param($stmtStock, 'i', $idProducto);
+
+                if (!mysqli_stmt_execute($stmtStock)) {
+                    throw new Exception('Error al actualizar el stock del producto');
+                }
+                mysqli_stmt_close($stmtStock);
+
+                error_log("Stock reducido para producto ID: $idProducto");
+            }
+
+            error_log("✅ Financiamiento actualizado correctamente");
+
+            // Si hay excedente, registrar el pago
+            $idPagoExcedente = null;
+            if ($excedente > 0) {
+                error_log("💰 Registrando pago de excedente: $excedente");
+
+                $conceptoExcedente = "Excedente entrega vehiculo";
+
+                $financiamientoModel = new Financiamiento();
+                $resultadoPago = $financiamientoModel->newPago(
+                    $idConductor,
+                    $idAsesor,
+                    $excedente,
+                    $conceptoExcedente,
+                    $excedente,
+                    0,
+                    $moneda,
+                    $idFinanciamiento,
+                    $idCliente,
+                    $metodoPagoExcedente,
+                    1
+                );
+
+                if (!$resultadoPago['success']) {
+                    throw new Exception('Error al registrar pago de excedente: ' . ($resultadoPago['message'] ?? 'Error desconocido'));
+                }
+
+                $idPagoExcedente = $resultadoPago['id_pago'] ?? null;
+                error_log("✅ Pago de excedente registrado con ID: $idPagoExcedente");
+            }
+
+            // Confirmar transacción
+            mysqli_commit($this->conexion);
+
+            error_log("✅ Transacción confirmada");
+            error_log("=== ENTREGA CREDI AHORRO AUTOS - FIN EXITOSO ===");
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => 'Vehículo entregado exitosamente - Credi Ahorro Autos',
+                'id_financiamiento' => $idFinanciamiento,
+                'excedente' => $excedente,
+                'id_pago_excedente' => $idPagoExcedente,
+                'fecha_entrega' => $fechaEntrega,
+                'moneda' => $moneda
+            ]);
+
+        } catch (Exception $e) {
+            if (mysqli_connect_errno() === 0) {
+                mysqli_rollback($this->conexion);
+            }
+
+            error_log("❌ Error en entrega Credi Ahorro Autos: " . $e->getMessage());
+
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function generarReciboExcedente()
+    {
+        try {
+            $idPago = $_POST['id_pago'] ?? null;
+            $idFinanciamiento = $_POST['id_financiamiento'] ?? null;
+
+            if (!$idFinanciamiento) {
+                echo json_encode(['success' => false, 'message' => 'ID de financiamiento requerido']);
+                return;
+            }
+
+            // Si no se envía id_pago, buscar el pago de excedente del financiamiento
+            if (!$idPago) {
+                $queryBuscar = "SELECT idpagos_financiamiento FROM pagos_financiamiento
+                                WHERE id_financiamiento = ? AND concepto = 'Excedente entrega vehiculo'
+                                ORDER BY fecha_pago DESC LIMIT 1";
+                $stmtBuscar = $this->conexion->prepare($queryBuscar);
+                $stmtBuscar->bind_param("i", $idFinanciamiento);
+                $stmtBuscar->execute();
+                $resultBuscar = $stmtBuscar->get_result();
+                $pagoBuscado = $resultBuscar->fetch_assoc();
+                $stmtBuscar->close();
+
+                if (!$pagoBuscado) {
+                    echo json_encode(['success' => false, 'message' => 'No se encontró pago de excedente para este financiamiento']);
+                    return;
+                }
+                $idPago = $pagoBuscado['idpagos_financiamiento'];
+            }
+
+            // Get financiamiento data
+            $queryFin = "SELECT id_conductor, moneda FROM financiamiento WHERE idfinanciamiento = ?";
+            $stmtFin = $this->conexion->prepare($queryFin);
+            $stmtFin->bind_param("i", $idFinanciamiento);
+            $stmtFin->execute();
+            $resultFin = $stmtFin->get_result();
+            $dataFin = $resultFin->fetch_assoc();
+            $stmtFin->close();
+
+            if (!$dataFin) {
+                echo json_encode(['success' => false, 'message' => 'Financiamiento no encontrado']);
+                return;
+            }
+
+            // Get payment data for the asesor
+            $queryPago = "SELECT id_asesor FROM pagos_financiamiento WHERE idpagos_financiamiento = ?";
+            $stmtPago = $this->conexion->prepare($queryPago);
+            $stmtPago->bind_param("i", $idPago);
+            $stmtPago->execute();
+            $resultPago = $stmtPago->get_result();
+            $dataPago = $resultPago->fetch_assoc();
+            $stmtPago->close();
+
+            if (!$dataPago) {
+                echo json_encode(['success' => false, 'message' => 'Pago no encontrado']);
+                return;
+            }
+
+            $idConductor = (int)$dataFin['id_conductor'];
+            $idAsesor = (string)$dataPago['id_asesor'];
+            $moneda = $dataFin['moneda'];
+
+            // Generate PDF using existing system
+            // ob_start/ob_end_clean to capture mPDF warnings that corrupt JSON response
+            ob_start();
+            $reportController = new \ReportFinanciamientoController();
+            $pdfBase64 = $reportController->generateNotaVenta($idConductor, $idAsesor, [], $idPago, $moneda);
+            ob_end_clean();
+
+            echo json_encode([
+                'success' => true,
+                'pdf_base64' => $pdfBase64
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al generar recibo: ' . $e->getMessage()
             ]);
         }
     }
@@ -3179,6 +3733,7 @@ class FinanciamientoController extends Controller
                 WHERE f.estado != 'eliminado'
                 AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 GROUP BY pf.idplan_financiamiento, pf.nombre_plan
                 ORDER BY total_financiamientos DESC
@@ -3216,6 +3771,7 @@ class FinanciamientoController extends Controller
                 WHERE f.estado != 'eliminado'
                 AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
             ";
             $stmtTotal = $this->conexion->prepare($queryTotalConductores);
             $stmtTotal->execute();
@@ -3289,7 +3845,9 @@ class FinanciamientoController extends Controller
                 LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
                 WHERE CAST(f.grupo_financiamiento AS UNSIGNED) = ?
                 AND f.estado != 'eliminado'
+                AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 ORDER BY COALESCE(c.nombres, cl.nombres) ASC
             ";
@@ -3805,6 +4363,493 @@ class FinanciamientoController extends Controller
                 'success' => false,
                 'message' => 'Error al generar boleta: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Finalizar contrato - marca un financiamiento como contrato finalizado
+     */
+    public function finalizarContrato()
+    {
+        try {
+            // Verificar que se haya enviado el ID del financiamiento
+            if (!isset($_POST['idfinanciamiento']) || empty($_POST['idfinanciamiento'])) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se proporcionó el ID del financiamiento'
+                ]);
+                return;
+            }
+
+            $idFinanciamiento = intval($_POST['idfinanciamiento']);
+
+            // Obtener el ID del usuario de la sesión (la sesión ya está activa)
+            $idUsuario = isset($_SESSION['usuario_id']) ? intval($_SESSION['usuario_id']) : null;
+
+            if (!$idUsuario) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'No se pudo identificar el usuario. Inicia sesión nuevamente.'
+                ]);
+                return;
+            }
+
+            // Verificar que el financiamiento existe y NO está ya finalizado
+            $queryVerificar = "SELECT contrato_finalizado FROM financiamiento WHERE idfinanciamiento = ?";
+            $stmtVerificar = $this->conexion->prepare($queryVerificar);
+            $stmtVerificar->bind_param("i", $idFinanciamiento);
+            $stmtVerificar->execute();
+            $resultVerificar = $stmtVerificar->get_result();
+
+            if ($resultVerificar->num_rows === 0) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'El financiamiento no existe'
+                ]);
+                $stmtVerificar->close();
+                return;
+            }
+
+            $financiamiento = $resultVerificar->fetch_assoc();
+            $stmtVerificar->close();
+
+            if ($financiamiento['contrato_finalizado'] == 1) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Este contrato ya fue finalizado anteriormente'
+                ]);
+                return;
+            }
+
+            // Actualizar el financiamiento para marcarlo como finalizado
+            $fechaActual = date('Y-m-d H:i:s');
+            $queryUpdate = "UPDATE financiamiento
+                           SET contrato_finalizado = 1,
+                               fecha_finalizacion_contrato = ?,
+                               usuario_finalizo_contrato = ?
+                           WHERE idfinanciamiento = ?";
+
+            $stmtUpdate = $this->conexion->prepare($queryUpdate);
+            $stmtUpdate->bind_param("sii", $fechaActual, $idUsuario, $idFinanciamiento);
+
+            if ($stmtUpdate->execute()) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'El contrato ha sido finalizado correctamente'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al finalizar el contrato: ' . $this->conexion->error
+                ]);
+            }
+
+            $stmtUpdate->close();
+
+        } catch (Exception $e) {
+            error_log("Error en finalizarContrato: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al finalizar el contrato: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ✅ NUEVO: Obtener contratos finalizados con paginación y búsqueda
+     */
+    public function obtenerContratosFinalizados()
+    {
+        try {
+            // Parámetros de paginación
+            $pagina = isset($_GET['pagina']) ? intval($_GET['pagina']) : 1;
+            $porPagina = isset($_GET['porPagina']) ? intval($_GET['porPagina']) : 20;
+            $busqueda = isset($_GET['busqueda']) ? trim($_GET['busqueda']) : '';
+
+            $offset = ($pagina - 1) * $porPagina;
+
+            // Construir query base
+            $queryBase = "FROM financiamiento f
+                         LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+                         LEFT JOIN clientes_financiar cl ON f.id_cliente = cl.id
+                         LEFT JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                         LEFT JOIN planes_financiamiento pf ON f.grupo_financiamiento = pf.idplan_financiamiento
+                         LEFT JOIN usuarios u ON f.usuario_finalizo_contrato = u.usuario_id
+                         WHERE f.contrato_finalizado = 1 AND f.estado_eliminado = 0";
+
+            // Agregar condiciones de búsqueda si existe
+            if (!empty($busqueda)) {
+                $queryBase .= " AND (
+                    c.nombres LIKE ? OR
+                    c.apellido_paterno LIKE ? OR
+                    c.apellido_materno LIKE ? OR
+                    c.nro_documento LIKE ? OR
+                    cl.nombres LIKE ? OR
+                    cl.apellido_paterno LIKE ? OR
+                    cl.apellido_materno LIKE ? OR
+                    cl.n_documento LIKE ? OR
+                    f.codigo_asociado LIKE ? OR
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) LIKE ? OR
+                    CONCAT(cl.nombres, ' ', cl.apellido_paterno, ' ', cl.apellido_materno) LIKE ?
+                )";
+            }
+
+            // Contar total de registros
+            $queryCount = "SELECT COUNT(*) as total " . $queryBase;
+            $stmtCount = $this->conexion->prepare($queryCount);
+
+            if (!empty($busqueda)) {
+                $busquedaParam = "%{$busqueda}%";
+                $stmtCount->bind_param("sssssssssss",
+                    $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam,
+                    $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam,
+                    $busquedaParam, $busquedaParam, $busquedaParam
+                );
+            }
+
+            $stmtCount->execute();
+            $resultCount = $stmtCount->get_result();
+            $totalRegistros = $resultCount->fetch_assoc()['total'];
+            $stmtCount->close();
+
+            // Obtener registros paginados
+            $querySelect = "SELECT
+                f.idfinanciamiento,
+                f.codigo_asociado,
+                f.monto_total,
+                f.moneda,
+                f.fecha_creacion,
+                f.fecha_finalizacion_contrato,
+                COALESCE(c.nro_documento, cl.n_documento) as documento,
+                CONCAT(COALESCE(c.nombres, cl.nombres), ' ',
+                       COALESCE(c.apellido_paterno, cl.apellido_paterno), ' ',
+                       COALESCE(c.apellido_materno, cl.apellido_materno)) as nombre_completo,
+                p.nombre as producto_nombre,
+                pf.nombre_plan,
+                TRIM(CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, ''))) as usuario_finalizo
+                " . $queryBase . "
+                ORDER BY f.fecha_finalizacion_contrato DESC
+                LIMIT ? OFFSET ?";
+
+            $stmtSelect = $this->conexion->prepare($querySelect);
+
+            if (!empty($busqueda)) {
+                $busquedaParam = "%{$busqueda}%";
+                $stmtSelect->bind_param("sssssssssssii",
+                    $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam,
+                    $busquedaParam, $busquedaParam, $busquedaParam, $busquedaParam,
+                    $busquedaParam, $busquedaParam, $busquedaParam,
+                    $porPagina, $offset
+                );
+            } else {
+                $stmtSelect->bind_param("ii", $porPagina, $offset);
+            }
+
+            $stmtSelect->execute();
+            $result = $stmtSelect->get_result();
+
+            $contratos = [];
+            while ($row = $result->fetch_assoc()) {
+                $contratos[] = $row;
+            }
+
+            $stmtSelect->close();
+
+            // Calcular total de páginas
+            $totalPaginas = ceil($totalRegistros / $porPagina);
+
+            echo json_encode([
+                'success' => true,
+                'contratos' => $contratos,
+                'paginacion' => [
+                    'paginaActual' => $pagina,
+                    'totalPaginas' => $totalPaginas,
+                    'totalRegistros' => $totalRegistros,
+                    'porPagina' => $porPagina
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            error_log("Error en obtenerContratosFinalizados: " . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al obtener contratos finalizados: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    // ========== FACTURACIÓN DE PAGOS DE FINANCIAMIENTO ==========
+
+    public function obtenerDetallePagoFinanciamiento()
+    {
+        try {
+            $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID requerido']);
+                return;
+            }
+            $detalle = $this->financiamientoModel->obtenerPagoConDatos($id);
+            if (!$detalle) {
+                echo json_encode(['success' => false, 'message' => 'Pago no encontrado']);
+                return;
+            }
+            echo json_encode(['success' => true, 'data' => $detalle]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function obtenerSerieNumeroFinanciamiento()
+    {
+        try {
+            if (!isset($_POST['tipo_doc']) || empty($_POST['tipo_doc'])) {
+                echo json_encode(['success' => false, 'message' => 'Tipo de documento requerido']);
+                return;
+            }
+            $c_tido = new DocumentoEmpresa();
+            $id_empresa = $_SESSION['id_empresa'];
+            $tipo_doc = $_POST['tipo_doc'];
+            $c_tido->setIdEmpresa($id_empresa);
+            $c_tido->setIdTido($tipo_doc);
+            $c_tido->obtenerDatos();
+            echo json_encode([
+                'success' => true,
+                'serie' => $c_tido->getSerie(),
+                'numero' => $c_tido->getNumero()
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function generarFacturaPagoFinanciamiento()
+    {
+        try {
+            $id_pago = isset($_POST['id_pago']) ? (int)$_POST['id_pago'] : 0;
+            if (!$id_pago) {
+                echo json_encode(['success' => false, 'message' => 'ID de pago requerido']);
+                return;
+            }
+
+            if ($this->financiamientoModel->estaFacturadoPago($id_pago)) {
+                echo json_encode(['success' => false, 'message' => 'Este pago ya ha sido facturado']);
+                return;
+            }
+
+            $detalle = $this->financiamientoModel->obtenerPagoConDatos($id_pago);
+            if (!$detalle) {
+                echo json_encode(['success' => false, 'message' => 'Pago no encontrado']);
+                return;
+            }
+
+            // Solo pagos iniciales/inscripción son facturables
+            $conceptosFacturables = ['Cuota Inicial', 'Monto de Inscripción', 'Monto Recalculado', 'Producto Financiado', 'Excedente entrega vehiculo'];
+            $esCuotaAdelantada = stripos($detalle['concepto'] ?? '', 'adelantada') !== false;
+            if (!in_array($detalle['concepto'], $conceptosFacturables) && !$esCuotaAdelantada) {
+                echo json_encode(['success' => false, 'message' => 'Este tipo de pago no es facturable desde aquí']);
+                return;
+            }
+
+            // Validar fecha de emisión (hasta 5 días atrás)
+            $fecha_emision = $_POST['fecha_emision'] ?? date('Y-m-d');
+            $fecha_minima = date('Y-m-d', strtotime('-5 days'));
+            $fecha_actual = date('Y-m-d');
+            if ($fecha_emision < $fecha_minima) {
+                echo json_encode(['success' => false, 'message' => 'Solo puede emitir comprobantes con fecha de hasta 5 días atrás']);
+                return;
+            }
+            if ($fecha_emision > $fecha_actual) {
+                echo json_encode(['success' => false, 'message' => 'No puede emitir comprobantes con fecha futura']);
+                return;
+            }
+
+            // Preparar modelos
+            $c_cliente = new Cliente();
+            $c_venta = new Venta();
+            $c_tido = new DocumentoEmpresa();
+            $c_servicio = new VentaServicio();
+
+            $id_empresa = $_SESSION['id_empresa'];
+            $tipo_doc = $_POST['tipo_doc'] ?? '1';
+            $descripcion = $_POST['descripcion'] ?? "Pago {$detalle['concepto']} - {$detalle['nombre_plan']} - ID: {$detalle['idfinanciamiento']}";
+
+            // Convertir moneda string a número (PEN=1, USD=2)
+            $monedaStr = $detalle['moneda'] ?? 'S/.';
+            $moneda_numero = (strpos($monedaStr, '$') !== false) ? 2 : 1;
+
+            // Datos empresa
+            $sql = "SELECT * FROM empresas WHERE id_empresa = " . (int)$id_empresa;
+            $respEmpre = $c_venta->exeSQL($sql)->fetch_assoc();
+            if (!$respEmpre) {
+                throw new Exception('No se encontraron datos de la empresa');
+            }
+            $igv_empresa = $respEmpre['igv'];
+
+            // Calcular montos (monto incluye IGV)
+            $monto_servicio = round(floatval($detalle['monto']), 2);
+            $base_imponible = round($monto_servicio / 1.18, 2);
+            $igv_monto = round($monto_servicio - $base_imponible, 2);
+
+            // Procesar cliente
+            $c_cliente->setIdEmpresa($id_empresa);
+            $c_cliente->setDocumento($detalle['dni_cliente']);
+            $c_cliente->setDatos($detalle['nombre_cliente']);
+            $c_cliente->setDireccion('-');
+            $c_cliente->setDireccion2('-');
+
+            if (!$c_cliente->verificarDocumento()) {
+                $nuevo_id = $c_cliente->insertarCliente(
+                    $c_cliente->getDocumento(),
+                    $c_cliente->getDatos(),
+                    '',
+                    $detalle['celular_cliente'] ?? '',
+                    '-',
+                    $id_empresa
+                );
+                if ($nuevo_id) {
+                    $c_cliente->setIdCliente($nuevo_id);
+                } else {
+                    throw new Exception('Error al procesar cliente');
+                }
+            }
+
+            // Documento serie/numero
+            $c_tido->setIdEmpresa($id_empresa);
+            $c_tido->setIdTido($tipo_doc);
+            $c_tido->obtenerDatos();
+            $numero_original = $c_tido->getNumero();
+
+            // Configurar venta
+            $c_venta->setDireccion('-');
+            $c_venta->setApliIgv(1);
+            $c_venta->setIdEmpresa($id_empresa);
+            $c_venta->setFecha($fecha_emision);
+            $c_venta->setFechaVenc($fecha_emision);
+            $c_venta->setDiasPagos(0);
+            $c_venta->setIdTipoPago(1);
+            $c_venta->setMetodo(1);
+            $c_venta->setObserva("Pago Financiamiento ID: {$detalle['idfinanciamiento']}");
+            $c_venta->setIdTido($c_tido->getIdTido());
+            $c_venta->setSerie($c_tido->getSerie());
+            $c_venta->setNumero($numero_original);
+            $c_venta->setIdCliente($c_cliente->getIdCliente());
+            $c_venta->setIgv($igv_empresa);
+            $c_venta->setTotal($monto_servicio);
+            $c_venta->setIdCoti(null);
+
+            $_POST['moneda'] = $moneda_numero;
+            $_POST['tc'] = '1.00';
+            $_POST['pagacon'] = $monto_servicio;
+
+            // Transacción
+            $conexion = (new Conexion())->getConexion();
+            $conexion->begin_transaction();
+
+            try {
+                if (!$c_venta->insertar()) {
+                    throw new Exception('Error al insertar la venta');
+                }
+                $id_venta = $c_venta->getIdVenta();
+
+                // Detalle del servicio
+                $c_servicio->setIdVenta($id_venta);
+                $c_servicio->setIdItem(1);
+                $c_servicio->setDescripcion($descripcion);
+                $c_servicio->setMonto($base_imponible);
+                $c_servicio->setCantidad(1);
+                $c_servicio->setCodSunat('');
+                if (!$c_servicio->insertar()) {
+                    throw new Exception('Error al insertar detalle del servicio');
+                }
+
+                // Generar XML SUNAT
+                if ($tipo_doc == '1' || $tipo_doc == '2') {
+                    $dataSend = [];
+                    $dataSend['certGlobal'] = false;
+
+                    $nombre_cliente = $c_cliente->getDatos() ?: '-';
+                    $direccion_cliente = $c_cliente->getDireccion() ?: '-';
+
+                    $dataSend['cliente'] = json_encode([
+                        'doc_num' => $c_cliente->getDocumento(),
+                        'nom_RS' => $nombre_cliente,
+                        'direccion' => $direccion_cliente
+                    ]);
+                    $dataSend['apli_igv'] = true;
+                    $dataSend['total'] = number_format($monto_servicio, 2, '.', '');
+                    $dataSend['serie'] = $c_tido->getSerie();
+                    $dataSend['numero'] = $c_tido->getNumero();
+                    $dataSend['fechaE'] = $fecha_emision;
+                    $dataSend['fechaV'] = $fecha_emision;
+                    $dataSend['tipo_pago'] = 1;
+                    $dataSend['igv_venta'] = $igv_empresa;
+                    $dataSend['moneda'] = ($moneda_numero == 1) ? 'PEN' : 'USD';
+                    $dataSend['dias_pagos'] = json_encode([]);
+                    $dataSend['productos'] = json_encode([[
+                        'precio' => number_format($base_imponible, 2, '.', ''),
+                        'cantidad' => 1,
+                        'cod_pro' => 1,
+                        'cod_sunat' => '',
+                        'descripcion' => $descripcion
+                    ]]);
+                    $dataSend['endpoints'] = $respEmpre['modo'];
+                    $dataSend['empresa'] = json_encode([
+                        'ruc' => $respEmpre['ruc'],
+                        'razon_social' => $respEmpre['razon_social'],
+                        'direccion' => $respEmpre['direccion'],
+                        'ubigeo' => $respEmpre['ubigeo'],
+                        'distrito' => $respEmpre['distrito'],
+                        'provincia' => $respEmpre['provincia'],
+                        'departamento' => $respEmpre['departamento'],
+                        'clave_sol' => $respEmpre['clave_sol'],
+                        'usuario_sol' => $respEmpre['user_sol']
+                    ]);
+
+                    $dataResp = ($tipo_doc == '1')
+                        ? $this->sunatApi->genBoletaXML($dataSend)
+                        : $this->sunatApi->genFacturaXML($dataSend);
+
+                    if ($dataResp['res']) {
+                        $c_sunat = new VentaSunat();
+                        $c_sunat->setIdVenta($id_venta);
+                        $c_sunat->setHash($dataResp['data']['hash']);
+                        $c_sunat->setNombreXml($dataResp['data']['nombre_archivo']);
+                        $c_sunat->setQrData($dataResp['data']['qr']);
+                        if (!$c_sunat->insertar()) {
+                            throw new Exception('Error al guardar datos de SUNAT');
+                        }
+                        // Incrementar numero DESPUÉS de generar XML
+                        $c_tido->setNumero(intval($c_tido->getNumero()) + 1);
+                        $c_tido->modificar();
+                    } else {
+                        throw new Exception('Error al generar XML: ' . ($dataResp['msg'] ?? 'Error desconocido'));
+                    }
+                }
+
+                // Marcar pago como facturado
+                if (!$this->financiamientoModel->marcarPagoComoFacturado($id_pago, $id_venta)) {
+                    throw new Exception('Error al marcar pago como facturado');
+                }
+
+                $conexion->commit();
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Comprobante generado correctamente.',
+                    'id_venta' => $id_venta,
+                    'serie' => $c_tido->getSerie(),
+                    'numero' => $numero_original,
+                    'tipo_doc' => $tipo_doc
+                ]);
+
+            } catch (Exception $e) {
+                $conexion->rollback();
+                throw $e;
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en generarFacturaPagoFinanciamiento: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }
 }

@@ -1,6 +1,9 @@
 // public\js\financiamiento\list-clientes.js
 // Funciones para gestionar la lista de clientes
 
+// Variable para almacenar el asesor seleccionado
+var asesorSeleccionado = '';
+
 function cargarClientes() {
     let url = '/arequipago/obtenerClientesFinanciamiento?pagina=' + paginaActual;
 
@@ -8,6 +11,11 @@ function cargarClientes() {
     if (sortField) {
         url += '&sortField=' + sortField;  // 🔴 Eliminar la comprobación de sortDirection
         url += '&sortDirection=' + (sortDirection || 'desc');  // 🔴 Valor por defecto desc
+    }
+
+    // Filtro por asesor
+    if (asesorSeleccionado) {
+        url += '&asesor_id=' + asesorSeleccionado;
     }
 
     $.ajax({
@@ -37,12 +45,31 @@ function cargarClientes() {
             vincularEventosDetalles();
 
             vistaActual = 'default';
+
+            // ✅ NUEVO: Verificar si hay parámetro de búsqueda en la URL
+            verificarBusquedaEnURL();
         },
         error: function (xhr, status, error) {
             console.error("Error al cargar los clientes:", error);
             alert("Error al cargar los clientes: " + error);
         }
     });
+}
+
+// ✅ NUEVA FUNCIÓN: Verificar si viene parámetro de búsqueda desde conductores
+function verificarBusquedaEnURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const buscarParam = urlParams.get('buscar');
+    
+    if (buscarParam) {
+        console.log('🔍 Búsqueda automática desde conductores:', buscarParam);
+        // Establecer el valor en el input de búsqueda
+        $('#searchCliente').val(buscarParam);
+        // Ejecutar la búsqueda
+        buscarClientes();
+        // Limpiar el parámetro de la URL sin recargar la página
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 }
 
 
@@ -64,6 +91,11 @@ function buscarClientes() {
     if (sortField) {
         url += '&sortField=' + sortField;
         url += '&sortDirection=' + (sortDirection || 'desc');
+    }
+
+    // Filtro por asesor
+    if (asesorSeleccionado) {
+        url += '&asesor_id=' + asesorSeleccionado;
     }
 
     $.ajax({
@@ -265,6 +297,60 @@ function ocultarPapeleraAlCambiarTab() {
         // Recargar la lista de clientes
         cargarClientes();
     }
+}
+
+// Función para cargar asesores en el select
+function cargarAsesores() {
+    $.ajax({
+        url: '/arequipago/obtenerAsesoresFinanciamiento',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            var select = $('#filtroAsesor');
+            select.find('option:not(:first)').remove();
+            if (data.asesores && data.asesores.length > 0) {
+                $.each(data.asesores, function (i, asesor) {
+                    select.append('<option value="' + asesor.usuario_id + '">' + asesor.nombre_completo + '</option>');
+                });
+            }
+        },
+        error: function () {
+            console.error('Error al cargar asesores');
+        }
+    });
+}
+
+// Función para filtrar por asesor seleccionado
+function filtrarPorAsesor() {
+    asesorSeleccionado = $('#filtroAsesor').val();
+    paginaActual = 1;
+    var searchTerm = $('#searchCliente').val();
+    if (searchTerm && searchTerm.trim() !== '') {
+        buscarClientes();
+    } else {
+        cargarClientes();
+    }
+}
+
+// Función para limpiar filtros
+function limpiarFiltros() {
+    $('#searchCliente').val('');
+    $('#filtroAsesor').val('');
+    asesorSeleccionado = '';
+    paginaActual = 1;
+    cargarClientes();
+}
+
+// Función para exportar financiamientos a Excel con filtros aplicados
+function exportarFinanciamientosExcel() {
+    var searchTerm = $('#searchCliente').val() || '';
+    var asesorId = $('#filtroAsesor').val() || '';
+
+    var url = '/arequipago/exportarFinanciamientosExcel?searchTerm=' + encodeURIComponent(searchTerm)
+        + '&asesor_id=' + encodeURIComponent(asesorId);
+
+    // Descargar abriendo una nueva ventana
+    window.open(url, '_blank');
 }
 
 // ✅ NUEVA FUNCIÓN: Configurar event listeners para los tabs de navegación

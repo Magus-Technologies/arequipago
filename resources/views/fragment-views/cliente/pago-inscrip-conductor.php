@@ -255,11 +255,8 @@ $id_conductor = $_GET['id'] ?? null;
             const esLima = window.conductorEsLima || false;
 
             if (esLima) {
-                if (select.value === 'financiado') {
-                    $('#montoBase').val(150);
-                } else { // contado
-                    $('#montoBase').val(100);
-                }
+                // ✅ MODIFICADO: Tanto contado como financiado son 150 soles para Lima
+                $('#montoBase').val(150);
                 // Siempre mantener readonly para Lima
                 $('#montoBase').prop('readonly', true);
             }
@@ -418,8 +415,7 @@ $id_conductor = $_GET['id'] ?? null;
                                 // Guardar bandera globalmente para usarla en toggleFinanciado()
                                 window.conductorEsLima = true;
 
-                                $('#montoBase').val(100);  // ✅ Valor por defecto para "Contado"
-                                $('#montoBase').prop('readonly', true);
+                                $('#montoBase').val(150);  // ✅ MODIFICADO: 150 soles para Lima (contado y financiado)
                                 $('#montoBase').prop('readonly', true);
                                 $('#tasaInteres').val(0);
                                 $('#tasaInteres').prop('readonly', true);

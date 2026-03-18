@@ -280,12 +280,20 @@ function GenerarContratos() {
 
         // Mostrar mensaje de éxito con advertencia si hay errores parciales
         if (data.errores && data.errores.length > 0) {
+          // Construir mensaje detallado de errores
+          let mensajeErrores = '';
+          data.errores.forEach((error) => {
+            if (typeof error === 'object' && error.mensaje) {
+              mensajeErrores += `<br>• ID ${error.id}: ${error.mensaje}`;
+            } else {
+              mensajeErrores += `<br>• ID ${error}`;
+            }
+          });
+          
           Swal.fire({
             icon: "info",
             title: "Archivos generados parcialmente",
-            html: `Se han descargado los archivos disponibles.<br>No se pudieron generar los contratos para los IDs: ${data.errores.join(
-              ", "
-            )}`,
+            html: `Se han descargado los archivos disponibles.<br><strong>Errores encontrados:</strong>${mensajeErrores}`,
             confirmButtonText: "Entendido",
           });
         } else {
@@ -297,12 +305,30 @@ function GenerarContratos() {
         }
       } else {
         // Mostrar mensaje específico del backend si existe
-        const mensajeError = data.mensaje || (data.errores && data.errores.length > 0 ? `Estos contratos no se generaron: ${data.errores.join(", ")}` : "No se pudieron generar los contratos.");
-        Swal.fire(
-          "Atención",
-          mensajeError,
-          "warning"
-        );
+        let mensajeError = data.mensaje;
+        
+        // Si no hay mensaje pero hay errores, construir mensaje detallado
+        if (!mensajeError && data.errores && data.errores.length > 0) {
+          mensajeError = 'No se pudieron generar los contratos:<br>';
+          data.errores.forEach((error) => {
+            if (typeof error === 'object' && error.mensaje) {
+              mensajeError += `<br>• ID ${error.id}: ${error.mensaje}`;
+            } else {
+              mensajeError += `<br>• ID ${error}`;
+            }
+          });
+        }
+        
+        if (!mensajeError) {
+          mensajeError = "No se pudieron generar los contratos.";
+        }
+        
+        Swal.fire({
+          icon: "warning",
+          title: "Atención",
+          html: mensajeError,
+          confirmButtonText: "Entendido"
+        });
       }
     })
     .catch((error) => {

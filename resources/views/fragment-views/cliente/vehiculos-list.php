@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -90,9 +90,15 @@
                     <h2 class="mb-1"><i class="fas fa-car"></i> Gestión de Vehículos</h2>
                     <p class="mb-0">Administra el inventario de vehículos</p>
                 </div>
-                <button class="btn btn-light btn-lg" onclick="abrirModalAgregarVehiculo()">
-                    <i class="fas fa-plus"></i> Agregar Vehículo
-                </button>
+                <div>
+                    <!-- ✅ NUEVO: Botón para descargar reporte Excel de vehículos -->
+                    <button class="btn btn-success btn-lg me-2" onclick="downloadReportVehiculos()">
+                        <i class="fa fa-file-excel"></i> Descargar Excel
+                    </button>
+                    <button class="btn btn-light btn-lg" onclick="abrirModalAgregarVehiculo()">
+                        <i class="fas fa-plus"></i> Agregar Vehículo
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -112,7 +118,8 @@
                 <div class="col-md-2">
                     <label class="form-label">Oficina</label>
                     <select class="form-select" id="filtroOficinaVehiculo" onchange="cambiarOficinaVehiculo()">
-                        <option value="1" selected>Oficina 1</option>
+                        <option value="" selected>Todas las oficinas</option>
+                        <option value="1">Oficina 1</option>
                         <option value="2">Oficina 2</option>
                         <option value="3">Oficina Lima</option>
                     </select>
@@ -251,6 +258,14 @@
                                 <div class="col-md-4">
                                     <label class="text-muted small">Transmisión</label>
                                     <p class="mb-0" id="detalle-transmision"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Kilometraje</label>
+                                    <p class="mb-0" id="detalle-kilometraje"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">GPS</label>
+                                    <p class="mb-0" id="detalle-gps"></p>
                                 </div>
                             </div>
                         </div>
@@ -405,6 +420,27 @@
                                         <option value="Automático">Automático</option>
                                         <!-- <option value="Automática">Automática</option> -->
                                     </select>
+                                </div>
+                            </div>
+
+                            <!-- Kilometraje -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="kilometraje_modal" class="form-label">Kilometraje</label>
+                                    <input type="number" id="kilometraje_modal" class="form-control" min="0" placeholder="Ej: 15000">
+                                    <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+
+                            <!-- GPS -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="gps_activo_modal" name="gps_activo" value="1">
+                                        <label class="form-check-label" for="gps_activo_modal">
+                                            <i class="fas fa-map-marker-alt me-1"></i> GPS Activo
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
@@ -697,51 +733,89 @@
 
         // Función para ver detalles
         function verDetalles(id) {
-            const vehiculo = vehiculos.find(v => v.idproductosv2 == id);
-            if (!vehiculo) return;
+            // Hacer AJAX para obtener datos frescos del producto
+            $.ajax({
+                url: '/arequipago/dataEditProducto',
+                type: 'POST',
+                data: { id: id },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.error) {
+                        Swal.fire('Error', 'No se pudieron cargar los detalles', 'error');
+                        return;
+                    }
 
-            // Determinar símbolo de moneda (el backend envía "$" o "S/.")
-            const simboloMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? '$' : 'S/';
+                    const producto = response.producto;
+                    const caracteristicas = response.caracteristicas || [];
 
-            // Información Básica
-            $('#detalle-codigo').text(vehiculo.codigo || 'N/A');
-            $('#detalle-nombre').text(vehiculo.nombre || 'N/A');
-            $('#detalle-marca').text(vehiculo.marca || 'No especificada');
-            $('#detalle-modelo').text(vehiculo.modelo || 'No especificado');
-            $('#detalle-anio').text(vehiculo.anio || 'No especificado');
-            $('#detalle-stock').text(vehiculo.cantidad || 0);
+                    // Crear objeto vehiculo combinando producto y características
+                    const vehiculo = {
+                        codigo: producto.CODIGO,
+                        nombre: producto.NOMBRE,
+                        marca: producto.MARCA,
+                        modelo: producto.MODELO,
+                        cantidad: producto.CANTIDAD,
+                        precio_venta: producto.PRECIO_VENTA,
+                        descuento_cuota: producto.DESCUENTO_CUOTA,
+                        moneda: producto.MONEDA
+                    };
 
-            // Especificaciones Técnicas
-            $('#detalle-vin').text(vehiculo.vin || 'No especificado');
-            $('#detalle-chasis').text(vehiculo.chasis || 'No especificado');
-            $('#detalle-placa').text(vehiculo.placa || 'En trámite');
-            $('#detalle-color').text(vehiculo.color || 'No especificado');
-            $('#detalle-transmision').text(vehiculo.transmision || 'No especificado');
+                    // Agregar características al objeto vehiculo
+                    caracteristicas.forEach(function(car) {
+                        const nombre = car.nombre_caracteristicas || '';
+                        const valor = car.valor_caracteristica || '';
+                        vehiculo[nombre.toLowerCase()] = valor;
+                    });
 
-            // Información de Precios
-            $('#detalle-precio').text(simboloMoneda + ' ' + parseFloat(vehiculo.precio_venta || 0).toFixed(2));
-            
-            // Mostrar descuento por cuota
-            if (vehiculo.descuento_cuota && vehiculo.descuento_cuota > 0) {
-                $('#detalle-descuento-cuota').text(simboloMoneda + ' ' + parseFloat(vehiculo.descuento_cuota).toFixed(2));
-            } else {
-                $('#detalle-descuento-cuota').text('Sin descuento');
-            }
-            
-            // Mostrar moneda
-            const textoMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? 'Dólares (USD)' : 'Soles (PEN)';
-            $('#detalle-moneda').text(textoMoneda);
+                    // Determinar símbolo de moneda
+                    const simboloMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? '$' : 'S/';
 
-            // Información Adicional (SOAT y Seguro)
-            if (vehiculo.fecha_venc_soat || vehiculo.fecha_venc_seguro) {
-                $('#detalle-info-adicional').show();
-                $('#detalle-soat').text(vehiculo.fecha_venc_soat || 'No especificado');
-                $('#detalle-seguro').text(vehiculo.fecha_venc_seguro || 'No especificado');
-            } else {
-                $('#detalle-info-adicional').hide();
-            }
+                    // Información Básica
+                    $('#detalle-codigo').text(vehiculo.codigo || 'N/A');
+                    $('#detalle-nombre').text(vehiculo.nombre || 'N/A');
+                    $('#detalle-marca').text(vehiculo.marca || 'No especificada');
+                    $('#detalle-modelo').text(vehiculo.modelo || 'No especificado');
+                    $('#detalle-anio').text(vehiculo.anio || 'No especificado');
+                    $('#detalle-stock').text(vehiculo.cantidad || 0);
 
-            $('#modalDetallesVehiculo').modal('show');
+                    // Especificaciones Técnicas
+                    $('#detalle-vin').text(vehiculo.vin || 'No especificado');
+                    $('#detalle-chasis').text(vehiculo.chasis || 'No especificado');
+                    $('#detalle-placa').text(vehiculo.placa || 'En trámite');
+                    $('#detalle-color').text(vehiculo.color || 'No especificado');
+                    $('#detalle-transmision').text(vehiculo.transmision || 'No especificado');
+                    $('#detalle-kilometraje').text(vehiculo.kilometraje ? vehiculo.kilometraje + ' km' : 'No especificado');
+                    $('#detalle-gps').html(vehiculo.gps_activo === '1' ? '<span class="badge bg-success"><i class="fas fa-map-marker-alt me-1"></i>Activo</span>' : '<span class="badge bg-secondary"><i class="fas fa-map-marker-alt me-1"></i>Inactivo</span>');
+
+                    // Información de Precios
+                    $('#detalle-precio').text(simboloMoneda + ' ' + parseFloat(vehiculo.precio_venta || 0).toFixed(2));
+
+                    // Mostrar descuento por cuota
+                    if (vehiculo.descuento_cuota && vehiculo.descuento_cuota > 0) {
+                        $('#detalle-descuento-cuota').text(simboloMoneda + ' ' + parseFloat(vehiculo.descuento_cuota).toFixed(2));
+                    } else {
+                        $('#detalle-descuento-cuota').text('Sin descuento');
+                    }
+
+                    // Mostrar moneda
+                    const textoMoneda = (vehiculo.moneda === '$' || vehiculo.moneda === 'USD') ? 'Dólares (USD)' : 'Soles (PEN)';
+                    $('#detalle-moneda').text(textoMoneda);
+
+                    // Información Adicional (SOAT y Seguro)
+                    if (vehiculo.fecha_venc_soat || vehiculo.fecha_venc_seguro) {
+                        $('#detalle-info-adicional').show();
+                        $('#detalle-soat').text(vehiculo.fecha_venc_soat || 'No especificado');
+                        $('#detalle-seguro').text(vehiculo.fecha_venc_seguro || 'No especificado');
+                    } else {
+                        $('#detalle-info-adicional').hide();
+                    }
+
+                    $('#modalDetallesVehiculo').modal('show');
+                },
+                error: function() {
+                    Swal.fire('Error', 'Error al cargar los detalles del vehículo', 'error');
+                }
+            });
         }
 
         // Función para abrir modal agregar vehículo
@@ -844,8 +918,13 @@
 
                         // Filtrar solo las categorías que contengan "vehiculo" o "vehículo"
                         var categoriaVehiculo = response.filter(function(categoria) {
-                            return categoria.nombre.toLowerCase().includes('vehiculo') ||
-                                   categoria.nombre.toLowerCase().includes('vehículo');
+                            var nombre = categoria.nombre.toLowerCase();
+                            return nombre.includes('vehiculo') ||
+                                   nombre.includes('vehículo') ||
+                                   nombre.includes('moto lineal') ||
+                                   nombre.includes('motokar') ||
+                                   nombre.includes('trimovil') ||
+                                   nombre.includes('cuatrimoto');
                         });
 
                         // Si encontramos la categoría vehículo, agregarla y seleccionarla automáticamente
@@ -886,7 +965,7 @@
 
             if (select && vehiculoWrapper) {
                 const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim();
-                const vehiculoRegex = /veh[íi]cul[o]?[s]?/i;
+                const vehiculoRegex = /veh[íi]cul[o]?[s]?|moto\s*lineal|motokar|trimovil|cuatrimoto/i;
 
                 if (vehiculoRegex.test(selectedText)) {
                     vehiculoWrapper.style.display = 'block';
@@ -1019,6 +1098,8 @@
             formData.append('anio', $('#anio_modal').val());
             formData.append('placa_vehiculo', $('#placa_vehiculo_modal').val());
             formData.append('transmision_vehiculo', $('#transmision_vehiculo_modal').val());
+            formData.append('kilometraje', $('#kilometraje_modal').val());
+            formData.append('gps_activo', document.getElementById('gps_activo_modal').checked ? '1' : '0');
             formData.append('fecha_venc_soat', $('#fecha_venc_soat_modal').val());
             formData.append('fecha_venc_seguro', $('#fecha_venc_seguro_modal').val());
 
@@ -1060,6 +1141,67 @@
                     Swal.fire('Error', 'Error al guardar el vehículo', 'error');
                     console.error(xhr.responseText);
                 }
+            });
+        }
+
+        // ✅ NUEVA FUNCIÓN: Descargar reporte Excel de vehículos
+        function downloadReportVehiculos() {
+            // Recopilar filtros activos
+            var params = new URLSearchParams();
+            var oficina = $('#filtroOficinaVehiculo').val() || 1;
+            params.set('oficina', oficina);
+            
+            // ✅ CRÍTICO: Filtrar solo productos con categoría "Vehículo"
+            params.set('categorias', 'Vehículo');
+            
+            // Agregar filtros adicionales si están activos
+            var marca = $('#filtroMarca').val();
+            if (marca) {
+                params.set('marca', marca);
+            }
+            
+            var anio = $('#filtroAnio').val();
+            if (anio) {
+                params.set('anio', anio);
+            }
+            
+            var busqueda = $('#buscadorVehiculos').val().trim();
+            if (busqueda) {
+                params.set('busqueda', busqueda);
+            }
+
+            fetch('/arequipago/downloadReport?' + params.toString(), {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('No se pudo descargar el reporte.');
+                }
+                
+                // Obtener el nombre del archivo desde el encabezado Content-Disposition
+                const contentDisposition = response.headers.get('Content-Disposition');
+                const fileName = contentDisposition ? contentDisposition.split('filename=')[1].replace(/"/g, '') : 'reporte_vehiculos.xlsx';
+
+                return response.blob().then(blob => ({ fileName, blob }));
+            })
+            .then(({ fileName, blob }) => {
+                const url = window.URL.createObjectURL(blob);
+                
+                // Crear enlace de descarga
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Error al descargar el reporte:', error);
+                Swal.fire('Error', 'No se pudo descargar el reporte de vehículos', 'error');
             });
         }
     </script>

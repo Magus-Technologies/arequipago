@@ -673,9 +673,11 @@ class EditarConductorController extends Controller
         $stmt->execute();
         
         // Actualizar vehículo
+        $fechSoat = !empty($_POST['fechSoat']) ? $_POST['fechSoat'] : null;
+        $fechSeguro = !empty($_POST['fechSeguro']) ? $_POST['fechSeguro'] : null;
         $sql = "UPDATE vehiculos SET placa=?, marca=?, modelo=?, anio=?, condicion=?, vehiculo_flota=?, fech_soat=?, fech_seguro=?, color=? WHERE id_conductor=?";
         $stmt = $this->conectar->prepare($sql);
-        $stmt->bind_param("sssisssssi", $_POST['n_placa'], $_POST['marca'], $_POST['modelo'], $_POST['anio'], $_POST['tipo_condicion'], $_POST['vehicle_flota'], $_POST['fechSoat'], $_POST['fechSeguro'], $_POST['color'], $id_conductor);
+        $stmt->bind_param("sssisssssi", $_POST['n_placa'], $_POST['marca'], $_POST['modelo'], $_POST['anio'], $_POST['tipo_condicion'], $_POST['vehicle_flota'], $fechSoat, $fechSeguro, $_POST['color'], $id_conductor);
         $stmt->execute();
         
         // Actualizar kits

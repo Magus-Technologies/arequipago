@@ -1,11 +1,17 @@
 <?php
 $conexion = (new Conexion())->getConexion();
 
-$datoEmpresa = $conexion->query("select * from empresas where id_empresa='{$_SESSION['id_empresa']}'")->fetch_assoc();
+$datoEmpresa = $conexion
+    ->query(
+        "select * from empresas where id_empresa='{$_SESSION["id_empresa"]}'",
+    )
+    ->fetch_assoc();
 
-$igv_empresa = $datoEmpresa['igv'];
+$igv_empresa = $datoEmpresa["igv"];
+
+// Obtener rol del usuario para validaciones
 ?>
-<script src="<?= URL::to('public/js/qrCode.min.js') ?>"></script>
+<script src="<?= URL::to("public/js/qrCode.min.js") ?>"></script>
 <div class="page-title-box">
     <div class="row align-items-center">
         <div class="col-md-8">
@@ -25,16 +31,17 @@ $igv_empresa = $datoEmpresa['igv'];
     </div>
 </div>
 <input type="hidden" id="fecha-app" value="<?= date("Y-m-d") ?>">
-<?php
-if (isset($_GET["coti"])) {
+<input type="hidden" id="fecha-minima" value="<?= date(
+    "Y-m-d",
+    strtotime("-5 days"),
+) ?>">
+<input type="hidden" id="rol-usuario" value="<?= $_SESSION["id_rol"] ?? 0 ?>">
+<?php if (isset($_GET["coti"])) {
     echo "<input type='hidden' id='cotizacion' value='{$_GET["coti"]}'>";
-}
-?>
-<?php
-if (isset($_GET["guia"])) {
+} ?>
+<?php if (isset($_GET["guia"])) {
     echo "<input type='hidden' id='guia' value='{$_GET["guia"]}'>";
-}
-?>
+} ?>
 </head>
 <style>
     #AddPrice{
@@ -122,16 +129,20 @@ if (isset($_GET["guia"])) {
                                                 id="example-text-input">
                                         </div>
 
-                                        <!-- Campo Precio -->
+                                        <!-- Campo Precio - EDITABLE -->
                                         <div class="col-lg-4">
                                             <label for="example-text-input" class="col-form-label">Precio</label>
-                                            <select name="" id="price" class="form-control" v-model="producto.precio_unidad">
+                                            <!-- SELECT para productos del inventario -->
+                                            <select v-if="precioProductos.length > 0" name="" id="price" class="form-control" v-model="producto.precio_unidad">
                                                 <option v-for="(value, key) in precioProductos" :value="value.precio"
                                                     :key="key">{{ value.precio }}</option>
                                             </select>
+                                            <!-- INPUT para entrada manual -->
+                                            <input v-else @keypress="onlyNumber" v-model="producto.precio_unidad" 
+                                                type="text" class="form-control text-center" placeholder="0.00" id="input-precio-manual">
                                         </div>
 
-                                        
+
 
                                         <!-- Botón Agregar -->
                                         <div class="col-lg-2 d-flex align-items-end">
@@ -147,11 +158,11 @@ if (isset($_GET["guia"])) {
                             </form>
                         </div>
                         <div class="row">
-                            <div class="col-md-3"> 
+                            <div class="col-md-3">
 
                             </div>
 
-                            <div class="col-md-3"> 
+                            <div class="col-md-3">
 
                             </div>
 
@@ -159,7 +170,7 @@ if (isset($_GET["guia"])) {
                                 <div id="AddPrice"></div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-12 mt-5">
                             <!-- <div class="row">
                                 <div class="text-left col-md-9">
@@ -280,10 +291,16 @@ if (isset($_GET["guia"])) {
                                             <label class="control-label">Documento</label>
                                             <div class="col-md-12">
                                                 <select @change="onChangeTiDoc($event)" v-model="venta.tipo_doc"
-                                                    class="form-control">
+                                                    class="form-control" id="select-tipo-documento">
+                                                    <?php if (
+                                                        $_SESSION["id_rol"] == 2
+                                                    ): ?>
+                                                    <option value="6">NOTA DE VENTA</option>
+                                                    <?php else: ?>
                                                     <option value="1">BOLETA DE VENTA</option>
                                                     <option value="2">FACTURA</option>
                                                     <option value="6">NOTA DE VENTA</option>
+                                                    <?php endif; ?>
                                                 </select>
                                             </div>
                                         </div>
@@ -292,7 +309,7 @@ if (isset($_GET["guia"])) {
                                             <select v-model="venta.tipo_pago" @change="changeTipoPago"
                                                 class="form-control">
                                                 <option value="1">Contado</option>
-                                                <option value="2">Crédito</option> 
+                                                <option value="2">Crédito</option>
                                                 <option value="3">Gratis</option>
                                             </select>
                                         </div>
@@ -356,7 +373,11 @@ if (isset($_GET["guia"])) {
                                                         <div class="col-lg-12">
                                                             <input v-model="venta.fecha" type="date"
                                                                 placeholder="dd/mm/aaaa" name="input_fecha"
-                                                                class="form-control text-center" value="2021-10-16">
+                                                                class="form-control text-center"
+                                                                id="input-fecha-emision"
+                                                                :min="fechaMinima"
+                                                                :max="fechaActual"
+                                                                @change="validarFechaEmision">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -697,7 +718,7 @@ if (isset($_GET["guia"])) {
     </div>
 
     <!-- Modal de Éxito de Venta -->
- 
+
 <div class="modal fade" id="modal-venta-success" tabindex="-1"
     aria-labelledby="modalVentaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -785,9 +806,10 @@ if (isset($_GET["guia"])) {
 
 <script>
 
-    $(document).ready(function () { 
+    $(document).ready(function () {
 
-        $("input[v-model='producto.descripcion']").prop("readonly", true);
+        // COMENTADO: Permitir edición manual del campo descripción
+        // $("input[v-model='producto.descripcion']").prop("readonly", true);
 
         console.log($('.idAlmacen').val());
 
@@ -810,7 +832,7 @@ if (isset($_GET["guia"])) {
                     costo: "",
                     codsunat: "",
                     precio: '',
-                    almacen: '<?php echo $_SESSION["sucursal"] ?>',
+                    almacen: '<?php echo $_SESSION["sucursal"]; ?>',
                     precio2: '',
                     // precio3: '',
                     // precio4: '',
@@ -868,7 +890,10 @@ if (isset($_GET["guia"])) {
                 dataKey: '',
                 listaTempProd: [],
                 itemsLista: [],
-                pointSel: 1
+                pointSel: 1,
+                fechaActual: $("#fecha-app").val(),
+                fechaMinima: $("#fecha-minima").val(),
+                rolUsuario: parseInt($("#rol-usuario").val()) || 0
             },
             watch: {
 
@@ -919,7 +944,7 @@ if (isset($_GET["guia"])) {
                     if (cantidadPagos > 0) {
                         // Si el total está disponible, distribuir equitativamente
                         const montoIndividual = this.venta.total > 0 ? (this.venta.total / cantidadPagos).toFixed(2) : '';
-                        
+
                         // Inicializar o actualizar cada pago
                         for (let i = 0; i < 5; i++) {
                             if (i < cantidadPagos) {
@@ -1216,19 +1241,36 @@ if (isset($_GET["guia"])) {
                                         app.producto.precioVenta = parseFloat(producto.precio_venta + "").toFixed(0);
                                         app.producto.codigo = producto.codigo || producto.codigo_barra;
                                         app.producto.costo = producto.costo;
-                                        
-                                        let array = [{
-                                            precio: app.producto.precio
-                                        },
-                                        {
-                                            precio: app.producto.precio2
-                                        },
-                                        {
-                                            precio: app.producto.precio_unidad
-                                        }];
+                                        app.producto.tipo_producto = producto.tipo_producto || ''; // 🔹 NUEVO: Guardar tipo de producto
 
-                                        app.precioProductos = array;
-                                        console.log(array);
+                                        // 🔹 DEBUG: Mostrar tipo de producto
+                                        console.log('🔍 DEBUG - Producto seleccionado:', {
+                                            nombre: producto.nombre,
+                                            tipo_producto: producto.tipo_producto,
+                                            codigo: producto.codigo
+                                        });
+
+                                        // 🔹 MODIFICACIÓN: Si es producto Intangible (ej: SOAT), permitir edición manual del precio
+                                        if (producto.tipo_producto === 'Intangible') {
+                                            app.precioProductos = []; // Array vacío = muestra INPUT editable
+                                            app.producto.precio_unidad = ''; // 🔹 Vacío para que se vea el placeholder
+                                            console.log('✅ Producto Intangible detectado - Precio editable');
+                                            console.log('✅ precioProductos.length:', app.precioProductos.length);
+                                        } else {
+                                            // Productos normales: mostrar SELECT con precios predefinidos
+                                            let array = [{
+                                                precio: app.producto.precio
+                                            },
+                                            {
+                                                precio: app.producto.precio2
+                                            },
+                                            {
+                                                precio: app.producto.precio_unidad
+                                            }];
+
+                                            app.precioProductos = array;
+                                            console.log('📦 Producto normal - Precios:', array);
+                                        }
                                         $("#input_buscar_productos").val('');
                                         $("#example-text-input").focus();
                                     } else {
@@ -1401,6 +1443,29 @@ if (isset($_GET["guia"])) {
                     //console.log("1000000000000000000")
                     $("#modal-dias-pagos").modal("show")
                 },
+                validarFechaEmision() {
+                    const fechaSeleccionada = new Date(this.venta.fecha);
+                    const fechaMin = new Date(this.fechaMinima);
+                    const fechaMax = new Date(this.fechaActual);
+
+                    if (fechaSeleccionada < fechaMin) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Fecha no permitida',
+                            text: 'Solo puede emitir comprobantes con fecha de hasta 5 días atrás',
+                            confirmButtonText: 'Entendido'
+                        });
+                        this.venta.fecha = this.fechaActual;
+                    } else if (fechaSeleccionada > fechaMax) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Fecha no permitida',
+                            text: 'No puede emitir comprobantes con fecha futura',
+                            confirmButtonText: 'Entendido'
+                        });
+                        this.venta.fecha = this.fechaActual;
+                    }
+                },
                 changeTipoPago(event) {
                     console.log(event.target.value)
                     this.venta.fechaVen = this.venta.fecha;
@@ -1411,7 +1476,7 @@ if (isset($_GET["guia"])) {
     console.log(event.target.value)
     this.producto.almacen = event.target.value
     var self = this
-    
+
     $("#input_buscar_productos").autocomplete({
         source: function(request, response) {
             const searchTerm = request.term;
@@ -1468,7 +1533,7 @@ if (isset($_GET["guia"])) {
             app.producto.codigo = ui.item.codigo;
             app.producto.costo = ui.item.costo;
             app.producto.precioVenta = ui.item.precio_unidad == null ? parseFloat(0 + "").toFixed(2) : ui.item.precio_unidad;
-            
+
             let array = [{
                 precio: app.producto.precio
             },
@@ -1478,7 +1543,7 @@ if (isset($_GET["guia"])) {
             {
                 precio: app.producto.precio_unidad
             }];
-            
+
             app.precioProductos = array;
             console.log(array);
             $('#input_buscar_productos').val("");
@@ -1502,7 +1567,7 @@ if (isset($_GET["guia"])) {
                 },
                 // Modifica la función buscarDocumentSS() así:
                     buscarDocumentSS() {
-         
+
                         const tipoSeleccionado = this.venta.tipo_doc; // ✅ Usar binding de Vue
 
                         // Validar si está seleccionado "Factura" y el documento es de 8 dígitos (DNI)
@@ -1519,7 +1584,7 @@ if (isset($_GET["guia"])) {
         $("#loader-menor").show()
         this.venta.dir_pos = 1
 
-        
+
 
         // Actualizar serie y número después de cambiar tipo_doc
         this.buscarSNdoc();
@@ -1530,21 +1595,21 @@ if (isset($_GET["guia"])) {
         function (resp) {
             $("#loader-menor").hide()
             console.log(resp);
-            
+
             // Para RUC (verificar si existe la propiedad ruc)
             if (resp.ruc) {
                 app.venta.nom_cli = resp.razonSocial || '';
                 app.venta.dir_cli = resp.direccion || '-';
                 return;
             }
-            
+
             // Para DNI (verificar si existe la propiedad success y dni)
             if (resp.success && resp.dni) {
                 const nombreCompleto = `${resp.nombres} ${resp.apellidoPaterno} ${resp.apellidoMaterno}`.trim();
                 app.venta.nom_cli = nombreCompleto;
                 return;
             }
-            
+
             // Si no se encontró información
             alertAdvertencia("Documento no encontrado");
         })
@@ -1565,7 +1630,7 @@ if (isset($_GET["guia"])) {
                     const vuee = this;
                     if (this.enProceso) {
                         this.enProceso = false;
-                        
+
                         // Validaciones iniciales
                         if (!this.productos || this.productos.length === 0) {
                             this.enProceso = true;
@@ -1667,7 +1732,11 @@ if (isset($_GET["guia"])) {
                             datosTransporteGuiaRemosion: localStorage.getItem('datosTransporteGuiaRemosion'),
                             productosGuiaRemosion: localStorage.getItem('productosGuiaRemosion'),
                             datosUbigeoGuiaRemosion: localStorage.getItem('datosUbigeoGuiaRemosion'),
-                            idCoti: JSON.parse('<?php echo addslashes(json_encode(isset($_GET["coti"]) ? $_GET["coti"] : null)); ?>')
+                            idCoti: JSON.parse('<?php echo addslashes(
+                                json_encode(
+                                    isset($_GET["coti"]) ? $_GET["coti"] : null,
+                                ),
+                            ); ?>')
                         };
                         data.dias_lista = JSON.stringify(data.dias_lista);
 
@@ -1676,7 +1745,7 @@ if (isset($_GET["guia"])) {
                             function (resp) {
                                 vuee.enProceso = true;
                                 console.log("Respuesta del servidor:", resp);
-                                
+
 
 
                                 if (resp.res) {
@@ -1814,14 +1883,16 @@ if (isset($_GET["guia"])) {
                         costo: "",
                         codsunat: "",
                         precio: '',
-                        almacen: '<?php echo $_SESSION["sucursal"] ?>',
+                        almacen: '<?php echo $_SESSION["sucursal"]; ?>',
                         precio2: '',
                         // precio3: '',
                         // precio4: '',
                         precio_unidad: '',
                         precioVenta: '',
                         precio_usado: 1
-                    }
+                    };
+                    // Limpiar el array de precios para permitir entrada manual
+                    this.precioProductos = [];
                     document.getElementById("input_buscar_productos").value = "";
                 },
 
@@ -1864,32 +1935,62 @@ if (isset($_GET["guia"])) {
                 },
 
                 addProduct() {
-                    //if (this.producto.stock)
-                        if (this.producto.descripcion.length > 0) {
-                                        const inputDescripcion = document.getElementById("descrip").value; // Obtiene el valor del input descripción
-
-                        if (inputDescripcion.trim().length > 0) { // Verifica que no esté vacío
-                            this.producto.descripcion = inputDescripcion; // Asigna la descripción del input al producto
-                        }
-                        const prod = {
-                            ...this.producto,   
-                            precioVenta: this.producto.precio_unidad
-                            
-                        }
-                        this.productos.push(prod)
-                        console.log("addproduct producto es:", prod);
-                        console.log("Estado actual de this.producto:", this.producto);
-                        this.limpiasDatos();
-                        this.usar_precio = 5
-                    } else {
-                        alertAdvertencia("Busque un producto primero")
-                            .then(function () {
-                                setTimeout(function () {
-                                    $("#input_buscar_productos").focus();
-                                }, 500)
-                            })
+                    // Validar que haya descripción
+                    if (!this.producto.descripcion || this.producto.descripcion.trim().length === 0) {
+                        alertAdvertencia("Debe ingresar una descripción del producto");
+                        setTimeout(function () {
+                            $("#descrip").focus();
+                        }, 500);
+                        return;
                     }
 
+                    // Validar que haya cantidad
+                    if (!this.producto.cantidad || parseFloat(this.producto.cantidad) <= 0) {
+                        alertAdvertencia("Debe ingresar una cantidad válida");
+                        setTimeout(function () {
+                            $("#example-text-input").focus();
+                        }, 500);
+                        return;
+                    }
+
+                    // Validar que haya precio
+                    if (!this.producto.precio_unidad || parseFloat(this.producto.precio_unidad) <= 0) {
+                        alertAdvertencia("Debe ingresar un precio válido");
+                        setTimeout(function () {
+                            if (this.precioProductos.length === 0) {
+                                $("#input-precio-manual").focus();
+                            } else {
+                                $("#price").focus();
+                            }
+                        }, 500);
+                        return;
+                    }
+
+                    // 🔹 MODIFICADO: Validar stock solo si NO es producto Intangible
+                    // Productos Intangibles (ej: SOAT) no tienen stock físico
+                    if (this.producto.tipo_producto !== 'Intangible' && this.producto.productoid && this.producto.stock) {
+                        const stockDisponible = parseFloat(this.producto.stock);
+                        const cantidadSolicitada = parseFloat(this.producto.cantidad);
+                        
+                        if (cantidadSolicitada > stockDisponible) {
+                            alertAdvertencia(`Stock insuficiente. Disponible: ${stockDisponible}`);
+                            return;
+                        }
+                    } else if (this.producto.tipo_producto === 'Intangible') {
+                        console.log('✅ Producto Intangible - Omitiendo validación de stock');
+                    }
+
+                    // Crear el producto para agregar a la lista
+                    const prod = {
+                        ...this.producto,
+                        precioVenta: this.producto.precio_unidad,
+                        edicion: false
+                    };
+
+                    this.productos.push(prod);
+                    console.log("Producto agregado:", prod);
+                    this.limpiasDatos();
+                    this.usar_precio = 5;
                 },
                 editarProducto(index) {
                     // Copiar los datos del producto al formulario de edición
@@ -1945,6 +2046,11 @@ if (isset($_GET["guia"])) {
             },
             created() {
                 console.log("Component created");
+
+                // Si es asesor (rol 2), forzar tipo_doc a NOTA DE VENTA (6)
+                if (this.rolUsuario === 2) {
+                    this.venta.tipo_doc = '6';
+                }
 
                 // Check for guide ID
                 const guiaId = $("#guia").val();
@@ -2031,10 +2137,10 @@ if (isset($_GET["guia"])) {
                     app.venta.numero = resp.numero */
             }
         )
-        
+
         // Initialize product search functionality
         inicializarBusquedaProductos();
-    
+
         // Keep the rest of your document.ready code
         $("#input_datos_cliente").autocomplete({
             source: _URL + "/ajs/buscar/cliente/datos",
@@ -2051,23 +2157,25 @@ if (isset($_GET["guia"])) {
                 $('#input_datos_cliente').focus();*/
 
                 // Cambiar tipo de documento basado en la longitud del documento
-                if (ui.item.documento.length === 8) {
-                    app._data.venta.tipo_doc = '1' // Boleta para DNI
-                } else if (ui.item.documento.length === 11) {
-                    app._data.venta.tipo_doc = '2' // Factura para RUC
+                // SOLO si NO es asesor (rol 2)
+                if (app._data.rolUsuario !== 2) {
+                    if (ui.item.documento.length === 8) {
+                        app._data.venta.tipo_doc = '1' // Boleta para DNI
+                    } else if (ui.item.documento.length === 11) {
+                        app._data.venta.tipo_doc = '2' // Factura para RUC
+                    }
                 }
-        
+                // Si es asesor, mantener NOTA DE VENTA (6)
+
                 // Actualizar serie y número
                 app.onChangeTiDoc()
             }
         });
 
-        <?php
-        if (isset($_GET["coti"])) {
+        <?php if (isset($_GET["coti"])) {
             echo "app.cargarCotizacion();";
-        }
-        ?>
-    
+        } ?>
+
         // Keep the rest of your event handlers
         $("#example-text-input").on('keypress', function (e) {
             if (e.which == 13) {
@@ -2075,7 +2183,7 @@ if (isset($_GET["guia"])) {
                 $("#input_buscar_productos").focus()
             }
         });
-    
+
         $("#container-vue").on("click", ".print-pfd-sld", function () {
             console.log("ssssssssssssssssssss")
 
@@ -2100,13 +2208,13 @@ if (isset($_GET["guia"])) {
         $('#modalImprimirComprobante').on('hidden.bs.modal', function (e) {
             location.reload();
         });
-    
+
         // Add the product search initialization function
         function inicializarBusquedaProductos() {
             const inputBuscar = document.getElementById("input_buscar_productos");
             const listaProductos = document.getElementById("lista_productos");
             const checkboxUsarScanner = document.getElementById("btn-scan-qr");
-        
+
             inputBuscar.addEventListener("keyup", function () {
                 const searchTerm = inputBuscar.value.trim();
                 if (searchTerm.length < 2) { // Para evitar demasiadas solicitudes
@@ -2165,6 +2273,8 @@ if (isset($_GET["guia"])) {
                                 item.dataset.precio = producto.precio_venta;
                                 item.dataset.idproducto = producto.idproductosv2; // 🔹 Guardar el ID real
                                 item.dataset.oficina = producto.oficina; // 🔹 Guardar oficina
+                                item.dataset.tipoProducto = producto.tipo_producto || ''; // 🔹 NUEVO: Guardar tipo de producto para SOAT
+                                item.dataset.idPlan = producto.id_plan || ''; // 🔹 NUEVO: Guardar id_plan para filtros
 
                                 // Resaltar al pasar el mouse
                                 item.addEventListener("mouseover", function () {
@@ -2178,7 +2288,7 @@ if (isset($_GET["guia"])) {
                                 item.addEventListener("click", function () {
                                     seleccionarProducto(this);
                                 });
-                            
+
                                 listaProductos.appendChild(item);
                             });
                             listaProductos.style.display = "block"; // Mostrar lista
@@ -2198,7 +2308,7 @@ if (isset($_GET["guia"])) {
                         if (items.length === 1) { // Solo seleccionar si hay una opción única
                             seleccionarProducto(items[0]);
                         }
-                    }, 2000); 
+                    }, 2000);
                 }
             });
 
@@ -2210,8 +2320,8 @@ if (isset($_GET["guia"])) {
             });
         }
 
-        
-        let opcionesAgregadas = []; 
+
+        let opcionesAgregadas = [];
         // Función para seleccionar un producto y asignar valores
         function seleccionarProducto(item) {
             const inputBuscar = document.getElementById("input_buscar_productos");
@@ -2225,7 +2335,7 @@ if (isset($_GET["guia"])) {
 
             // Restablecer input y eliminar elementos previos
             descripcionInput.setAttribute("readonly", true); // Bloquear nuevamente
-            
+
             divAddPrice.innerHTML = ""; // Vaciar el div
             opcionesAgregadas.forEach(valor => {
                 let opcion = selectPrice.querySelector(`option[value='${valor}']`);
@@ -2245,7 +2355,7 @@ if (isset($_GET["guia"])) {
                 inputExtra.id = "nuevoPrecio";
                 inputExtra.style.width = "150px";
                 inputExtra.required = false;
-                inputExtra.setAttribute("formnovalidate", "true"); 
+                inputExtra.setAttribute("formnovalidate", "true");
 
                 let btnAgregar = document.createElement("button");
                 btnAgregar.className = "button";
@@ -2283,29 +2393,37 @@ if (isset($_GET["guia"])) {
             app.producto.precio_unidad = item.dataset.precio;
             app.producto.precioVenta = item.dataset.precio;
             app.producto.codigo = item.dataset.codigo;
-        
-            // Create price options array
-            let array = [{
-                precio: app.producto.precio
-            },
-            {
-                precio: app.producto.precio2
-            },
-            {
-                precio: app.producto.precio_unidad
-            }];
-        
-            app.precioProductos = array;
-        
+            app.producto.tipo_producto = item.dataset.tipoProducto || ''; // 🔹 NUEVO: Guardar tipo de producto
+
+            // 🔹 NUEVO: Verificar si es producto Intangible (ej: SOAT) para permitir edición de precio
+            if (item.dataset.tipoProducto === 'Intangible') {
+                app.precioProductos = []; // Array vacío = muestra INPUT editable
+                app.producto.precio_unidad = ''; // 🔹 Vacío para que se vea el placeholder
+                console.log('✅ Producto Intangible detectado desde DROPDOWN - Precio editable');
+            } else {
+                // Create price options array para productos normales
+                let array = [{
+                    precio: app.producto.precio
+                },
+                {
+                    precio: app.producto.precio2
+                },
+                {
+                    precio: app.producto.precio_unidad
+                }];
+
+                app.precioProductos = array;
+            }
+
             // Hide the dropdown
             listaProductos.style.display = "none";
-        
+
             // Focus on quantity field
             $("#example-text-input").focus();
 
- 
-           
-            
+
+
+
             // Restablecer input y eliminar elementos previos
             descripcionInput.setAttribute("readonly", true); // Bloquear nuevamente
             divAddPrice.innerHTML = ""; // Vaciar el div
@@ -2316,7 +2434,7 @@ if (isset($_GET["guia"])) {
             opcionesAgregadas = []; // Limpiar array
 
             // Si el código coincide, desbloquear input y agregar elementos
-            if (codigoSeleccionado === "402617304544" || codigoSeleccionado === "951313638856") { 
+            if (codigoSeleccionado === "402617304544" || codigoSeleccionado === "951313638856") {
                 descripcionInput.removeAttribute("readonly"); // Desbloquear input
 
                 // Crear input y botón
@@ -2406,7 +2524,7 @@ $("#input_buscar_productos").autocomplete({
         app.producto.precioVenta = ui.item.precio_unidad;
         app.producto.codigo = ui.item.codigo;
         app.producto.costo = ui.item.costo;
-        
+
         let array = [{
             precio: app.producto.precio
         },
@@ -2470,13 +2588,13 @@ $("#input_buscar_productos").autocomplete({
     function validarLogoYangoAntesDeProcesar(event) {
         // Verificar si hay productos Logo YANGO en la lista
         const tieneLogoYango = app.productos.some(producto => producto.productoid === '27');
-        
+
         if (tieneLogoYango) {
             event.preventDefault();
             event.stopPropagation();
-            
+
             const documentoCliente = app.venta.num_doc.trim();
-            
+
             if (documentoCliente) {
                 validarConductorLogoYango(documentoCliente);
             } else {
@@ -2523,4 +2641,3 @@ $("#input_buscar_productos").autocomplete({
     }
 
 </script>
-

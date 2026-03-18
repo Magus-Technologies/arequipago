@@ -25,6 +25,9 @@ class Constatacion
                 f.fecha_entrega,
                 f.moneda,
                 f.monto_total,
+                f.id_financiamiento_vinculado,
+                f.es_financiamiento_principal,
+                COALESCE(f.placa_vehiculo, cp_placa.valor_caracteristica) as placa_vehiculo,
                 p.nombre as producto_nombre,
                 p.categoria,
                 CASE
@@ -57,14 +60,37 @@ class Constatacion
                 END as verificacion_domiciliaria,
                 cd.id_constatacion,
                 cd.fecha_constatacion,
-                cd.foto_domicilio
+                cd.foto_domicilio,
+                -- ✅ NUEVO: Datos del financiamiento vinculado
+                fv.idfinanciamiento as vinculado_id_financiamiento,
+                CASE
+                    WHEN fv.id_conductor IS NOT NULL THEN CONCAT(cv.nombres, ' ', cv.apellido_paterno, ' ', cv.apellido_materno)
+                    WHEN fv.id_cliente IS NOT NULL THEN CONCAT(cfv.nombres, ' ', cfv.apellido_paterno, ' ', cfv.apellido_materno)
+                    ELSE NULL
+                END as vinculado_nombre,
+                CASE
+                    WHEN fv.id_conductor IS NOT NULL THEN cv.nro_documento
+                    WHEN fv.id_cliente IS NOT NULL THEN cfv.n_documento
+                    ELSE NULL
+                END as vinculado_documento,
+                CASE
+                    WHEN fv.id_conductor IS NOT NULL THEN 'conductor'
+                    WHEN fv.id_cliente IS NOT NULL THEN 'cliente'
+                    ELSE NULL
+                END as vinculado_tipo
             FROM financiamiento f
             LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
             LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
+            LEFT JOIN caracteristicas_producto cp_placa ON f.idproductosv2 = cp_placa.idproductosv2 AND cp_placa.nombre_caracteristicas = 'placa'
             JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
             LEFT JOIN constataciones_domiciliarias cd ON f.idfinanciamiento = cd.id_financiamiento
+            -- ✅ NUEVO: JOIN con financiamiento vinculado
+            LEFT JOIN financiamiento fv ON f.id_financiamiento_vinculado = fv.idfinanciamiento
+            LEFT JOIN conductores cv ON fv.id_conductor = cv.id_conductor
+            LEFT JOIN clientes_financiar cfv ON fv.id_cliente = cfv.id
             WHERE f.estado_entrega = 'entregado'
             AND f.estado_eliminado = 0
+            AND (f.es_financiamiento_principal = 1 OR f.es_financiamiento_principal IS NULL)
             ORDER BY cd.id_constatacion IS NULL DESC, f.fecha_entrega DESC
         ";
 
@@ -91,6 +117,7 @@ class Constatacion
             LEFT JOIN constataciones_domiciliarias cd ON f.idfinanciamiento = cd.id_financiamiento
             WHERE f.estado_entrega = 'entregado'
             AND f.estado_eliminado = 0
+            AND (f.es_financiamiento_principal = 1 OR f.es_financiamiento_principal IS NULL)
             AND cd.id_constatacion IS NULL
         ";
 
@@ -114,6 +141,7 @@ class Constatacion
             FROM financiamiento
             WHERE estado_entrega = 'entregado'
             AND estado_eliminado = 0
+            AND (es_financiamiento_principal = 1 OR es_financiamiento_principal IS NULL)
         ";
 
         $result = $this->conexion->query($query);
@@ -355,11 +383,13 @@ class Constatacion
                 cd.link_google_maps,
                 cd.observaciones,
                 u.usuario as usuario_nombre,
-                c.numUnidad as numero_unidad
+                c.numUnidad as numero_unidad,
+                COALESCE(f.placa_vehiculo, cp_placa.valor_caracteristica) as placa_vehiculo
             FROM constataciones_domiciliarias cd
             JOIN financiamiento f ON cd.id_financiamiento = f.idfinanciamiento
             JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
             LEFT JOIN conductores c ON cd.tipo_usuario = 1 AND cd.id_tipo_usuario = c.id_conductor
+            LEFT JOIN caracteristicas_producto cp_placa ON f.idproductosv2 = cp_placa.idproductosv2 AND cp_placa.nombre_caracteristicas = 'placa'
             LEFT JOIN clientes_financiar cf ON cd.tipo_usuario = 2 AND cd.id_tipo_usuario = cf.id
             LEFT JOIN usuarios u ON cd.usuario_id = u.usuario_id
             ORDER BY cd.fecha_constatacion DESC
@@ -404,9 +434,11 @@ class Constatacion
                     WHEN f.id_conductor IS NOT NULL THEN 'Conductor'
                     ELSE 'Cliente'
                 END as tipo_persona,
-                c.numUnidad as numero_unidad
+                c.numUnidad as numero_unidad,
+                COALESCE(f.placa_vehiculo, cp_placa.valor_caracteristica) as placa_vehiculo
             FROM financiamiento f
             LEFT JOIN conductores c ON f.id_conductor = c.id_conductor
+            LEFT JOIN caracteristicas_producto cp_placa ON f.idproductosv2 = cp_placa.idproductosv2 AND cp_placa.nombre_caracteristicas = 'placa'
             LEFT JOIN clientes_financiar cf ON f.id_cliente = cf.id
             JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
             LEFT JOIN constataciones_domiciliarias cd ON f.idfinanciamiento = cd.id_financiamiento

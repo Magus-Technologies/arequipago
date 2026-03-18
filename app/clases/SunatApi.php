@@ -56,10 +56,10 @@ class SunatApi
 
         $sql="select v.id_venta, v.fecha_emision, va.fecha as fecha_anulado, ds.cod_sunat,
        ds.abreviatura, v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.id_tido, v.enviado_sunat, v.estado
-        from ventas_anuladas as va 
-            inner join ventas as v on v.id_venta = va.id_venta 
+        from ventas_anuladas as va
+            inner join ventas as v on v.id_venta = va.id_venta
             inner join documentos_sunat ds on v.id_tido = ds.id_tido
-            inner join clientes c on v.id_cliente = c.id_cliente 
+            inner join clientes c on v.id_cliente = c.id_cliente
         where  ".implode(" OR ",$listaFac);
 
         $a_anulados =  $conexion->query($sql);
@@ -156,11 +156,11 @@ class SunatApi
         $emp = $conexion->query("select * from empresas where id_empresa='$empresa'")->fetch_assoc();
 
         $sql = "select v.id_venta, v.fecha_emision, ds.cod_sunat, ds.abreviatura,
-       v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.id_tido, 
+       v.serie, v.numero, c.documento, c.datos, v.total, v.estado, v.id_tido,
        v.enviado_sunat, v.estado
-        from ventas as v 
+        from ventas as v
             inner join documentos_sunat ds on v.id_tido = ds.id_tido
-            inner join clientes c on v.id_cliente = c.id_cliente 
+            inner join clientes c on v.id_cliente = c.id_cliente
         where   ".implode(" OR ",$ventas);
 
         $resultResu = $conexion->query($sql);
@@ -269,7 +269,7 @@ class SunatApi
                     $descripcion = $cdr->getDescription();
 
                     $fecha = date("Y-m-d");
-                    $sql ="insert into resumen_diario set 
+                    $sql ="insert into resumen_diario set
                       id_empresa='{$emp['id_empresa']}',
                       fecha='$fecha',
                       ticket='$ticket',
@@ -297,10 +297,10 @@ class SunatApi
         $sql = "select v.id_venta, v.fecha_emision, va.fecha as fecha_anulado, ds.cod_sunat,
        ds.abreviatura, v.serie, v.numero, c.documento, c.datos, v.total,
        v.estado, v.id_tido, v.enviado_sunat, v.estado
-        from ventas_anuladas as va 
-            inner join ventas as v on v.id_venta = va.id_venta 
+        from ventas_anuladas as va
+            inner join ventas as v on v.id_venta = va.id_venta
             inner join documentos_sunat ds on v.id_tido = ds.id_tido
-            inner join clientes c on v.id_cliente = c.id_cliente 
+            inner join clientes c on v.id_cliente = c.id_cliente
         where  ".implode(" OR ",$ventas);
 
         $resultResu = $conexion->query($sql);
@@ -409,7 +409,7 @@ class SunatApi
                     $descripcion = $cdr->getDescription();
 
                     $fecha = date("Y-m-d");
-                    $sql ="insert into resumen_diario set 
+                    $sql ="insert into resumen_diario set
                       id_empresa='{$emp['id_empresa']}',
                       fecha='$fecha',
                       ticket='$ticket',
@@ -511,48 +511,19 @@ class SunatApi
         $nombre_archivo = $nom_XML;
         $xml_ruta = "files/facturacion/xml/".$empresa["ruc"].'/'.$nombre_archivo.".xml";
         $contenido =  file_get_contents($xml_ruta);
-        
-        // LOG: Inicio de envío
-        error_log("[CDR DEBUG] Iniciando envío a SUNAT (PorEmpresa): {$nombre_archivo}");
-        
         $res = $see->sendXml(Invoice::class, $nombre_archivo,$contenido );
         if ($res->isSuccess()) {
-            error_log("[CDR DEBUG] SUNAT aceptó el documento: {$nombre_archivo}");
-            
             $nombreCDR='R-'.$nombre_archivo.'.zip';
             $cdr = $res->getCdrZip();
             $fileDir =  'files/facturacion/cdr/'.$empresa['ruc'];
-            
-            // LOG: Verificar carpeta
-            error_log("[CDR DEBUG] Carpeta CDR: {$fileDir}");
-            error_log("[CDR DEBUG] Carpeta existe: " . (file_exists($fileDir) ? 'SI' : 'NO'));
-            
             if (!file_exists($fileDir)) {
-                $created = mkdir($fileDir, 0777, true);
-                error_log("[CDR DEBUG] Carpeta creada: " . ($created ? 'SI' : 'NO'));
-                if (!$created) {
-                    error_log("[CDR ERROR] No se pudo crear la carpeta: {$fileDir}");
-                }
+                mkdir($fileDir, 0777, true);
             }
-            
-            // LOG: Intentar guardar CDR
-            $cdr_path = $fileDir.DIRECTORY_SEPARATOR.$nombreCDR;
-            error_log("[CDR DEBUG] Ruta completa CDR: {$cdr_path}");
-            error_log("[CDR DEBUG] Tamaño CDR: " . strlen($cdr) . " bytes");
-            
-            $saved = file_put_contents($cdr_path, $cdr);
-            if ($saved !== false) {
-                error_log("[CDR DEBUG] ✅ CDR guardado exitosamente: {$cdr_path} ({$saved} bytes)");
-            } else {
-                error_log("[CDR ERROR] ❌ No se pudo guardar el CDR: {$cdr_path}");
-                error_log("[CDR ERROR] Error PHP: " . error_get_last()['message']);
-            }
-            
+            file_put_contents($fileDir.DIRECTORY_SEPARATOR.$nombreCDR,$cdr);
             return true;
         }else{
             $mensaje = $util->getErrorResponse2($res->getError());
             $this->mensaje = $mensaje;
-            error_log("[CDR ERROR] SUNAT rechazó el documento: {$nombre_archivo} - {$mensaje}");
             return false;
         }
 
@@ -583,48 +554,19 @@ class SunatApi
         $nombre_archivo = $nom_XML;
         $xml_ruta = "files/facturacion/xml/".$empresa["ruc"].'/'.$nombre_archivo.".xml";
         $contenido =  file_get_contents($xml_ruta);
-        
-        // LOG: Inicio de envío
-        error_log("[CDR DEBUG] Iniciando envío a SUNAT: {$nombre_archivo}");
-        
         $res = $see->sendXml(Invoice::class, $nombre_archivo,$contenido );
         if ($res->isSuccess()) {
-            error_log("[CDR DEBUG] SUNAT aceptó el documento: {$nombre_archivo}");
-            
             $nombreCDR='R-'.$nombre_archivo.'.zip';
             $cdr = $res->getCdrZip();
             $fileDir =  'files/facturacion/cdr/'.$empresa['ruc'];
-            
-            // LOG: Verificar carpeta
-            error_log("[CDR DEBUG] Carpeta CDR: {$fileDir}");
-            error_log("[CDR DEBUG] Carpeta existe: " . (file_exists($fileDir) ? 'SI' : 'NO'));
-            
             if (!file_exists($fileDir)) {
-                $created = mkdir($fileDir, 0777, true);
-                error_log("[CDR DEBUG] Carpeta creada: " . ($created ? 'SI' : 'NO'));
-                if (!$created) {
-                    error_log("[CDR ERROR] No se pudo crear la carpeta: {$fileDir}");
-                }
+                mkdir($fileDir, 0777, true);
             }
-            
-            // LOG: Intentar guardar CDR
-            $cdr_path = $fileDir.DIRECTORY_SEPARATOR.$nombreCDR;
-            error_log("[CDR DEBUG] Ruta completa CDR: {$cdr_path}");
-            error_log("[CDR DEBUG] Tamaño CDR: " . strlen($cdr) . " bytes");
-            
-            $saved = file_put_contents($cdr_path, $cdr);
-            if ($saved !== false) {
-                error_log("[CDR DEBUG] ✅ CDR guardado exitosamente: {$cdr_path} ({$saved} bytes)");
-            } else {
-                error_log("[CDR ERROR] ❌ No se pudo guardar el CDR: {$cdr_path}");
-                error_log("[CDR ERROR] Error PHP: " . error_get_last()['message']);
-            }
-            
+            file_put_contents($fileDir.DIRECTORY_SEPARATOR.$nombreCDR,$cdr);
            return true;
         }else{
             $mensaje = $util->getErrorResponse2($res->getError());
             $this->mensaje = $mensaje;
-            error_log("[CDR ERROR] SUNAT rechazó el documento: {$nombre_archivo} - {$mensaje}");
             return false;
         }
 
@@ -687,6 +629,7 @@ class SunatApi
                     ->setProvincia($data['empresa']["provincia"])
                     ->setDepartamento($data['empresa']["departamento"])
                     ->setUrbanizacion('-')
+                    ->setAddressTypeCode('01')
                     ->setCodLocal('0000')
                     ->setDireccion(utf8_encode($data['empresa']["direccion"])));
 
@@ -1379,22 +1322,22 @@ $consten_XML = $see->getXmlSigned($despatch);
                 $item->setCodProducto($value['cod_pro'])
                     ->setCodProdSunat($value['cod_sunat'])
                     ->setUnidad('NIU')
-                    ->setDescripcion(utf8_encode($value['descripcion']))
+                    ->setDescripcion(mb_convert_encoding($value['descripcion'], 'UTF-8', 'UTF-8'))
                     ->setCantidad($value['cantidad'])
-                    ->setMtoValorUnitario($preciounitariosinigv)
-                    ->setMtoValorVenta($valorventasinigv)
-                    ->setMtoBaseIgv($valorventasinigv)
+                    ->setMtoValorUnitario(number_format($preciounitariosinigv, 2, ".", ""))
+                    ->setMtoValorVenta(number_format($valorventasinigv, 2, ".", ""))
+                    ->setMtoBaseIgv(number_format($valorventasinigv, 2, ".", ""))
                     ->setPorcentajeIgv(18)
-                    ->setIgv($igvtotal)
+                    ->setIgv(number_format($igvtotal, 2, ".", ""))
                     ->setTipAfeIgv('10')
-                    ->setTotalImpuestos($igvtotal)
-                    ->setMtoPrecioUnitario(round($preciounitario,3));
+                    ->setTotalImpuestos(number_format($igvtotal, 2, ".", ""))
+                    ->setMtoPrecioUnitario(number_format($preciounitario, 2, ".", ""));
 
                 $array_items []=$item;
             }
             $note->setDetails($array_items);
             $c_numeros = new NumerosaLetras();
-            $numeros = utf8_decode($c_numeros->to_word(number_format($data['total'], 2, ".", ""), "PEN"));
+            $numeros = utf8_decode($c_numeros->to_word(number_format($data['total'], 2, ".", ""), $data['moneda']));
             $note->setLegends([
                 (new Legend())
                     ->setCode('1000')
