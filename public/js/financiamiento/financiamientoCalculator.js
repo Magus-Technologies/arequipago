@@ -85,6 +85,15 @@ function calcularFinanciamiento() {
               <i class="fas fa-info-circle me-1"></i>
               Podrá entregar el vehículo desde la vista de detalles del financiamiento.
             </small>
+            <div class="mt-3 text-start" style="max-width: 300px; margin: 0 auto;">
+              <label for="fechaProximaEntrega" class="form-label fw-bold" style="color: #0d47a1;">
+                <i class="fas fa-calendar-day me-1"></i>Fecha próxima de entrega
+              </label>
+              <input type="date" class="form-control" id="fechaProximaEntrega" 
+                ${document.getElementById('fechaProximaEntrega')?.value ? 'value="' + document.getElementById('fechaProximaEntrega').value + '"' : ''}
+                style="border: 2px solid #90caf9; border-radius: 8px;">
+              <small class="text-muted"><i class="fas fa-bell me-1"></i>Recordatorio de entrega del vehículo</small>
+            </div>
           </div>
         </div>
       `;

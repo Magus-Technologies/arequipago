@@ -170,6 +170,7 @@ class RegistrarFinanciamientoController extends Controller
             // Agregar los campos de CrediYango a los datos
             $datos['fecha_entrega'] = $fechaEntrega;
             $datos['fecha_inicio_pagos_calculada'] = $fechaInicioPagosCalculada;
+            $datos['fecha_proxima_entrega'] = isset($datos['fecha_proxima_entrega']) && !empty($datos['fecha_proxima_entrega']) ? $datos['fecha_proxima_entrega'] : null;
 
             // Para CrediYango, fechasVencimiento puede ser null o vacío (se generan al entregar)
             $fechasVencimiento = isset($datos['fechas_vencimiento']) ? $datos['fechas_vencimiento'] : [];
@@ -711,6 +712,9 @@ class RegistrarFinanciamientoController extends Controller
             // ✅ NUEVO: Capturar número corporativo (Plan 36 - CORPORATIVO CLARO)
             'numero_corporativo' => isset($_POST['numero_corporativo']) && !empty(trim($_POST['numero_corporativo']))
                 ? trim($_POST['numero_corporativo'])
+                : null,
+            'fecha_proxima_entrega' => isset($_POST['fecha_proxima_entrega']) && !empty($_POST['fecha_proxima_entrega'])
+                ? $_POST['fecha_proxima_entrega']
                 : null
         ];
 
@@ -732,8 +736,8 @@ class RegistrarFinanciamientoController extends Controller
         $query = 'INSERT INTO financiamiento
         (id_conductor, id_cliente, idproductosv2, id_coti, codigo_asociado, grupo_financiamiento, id_variante, cantidad_producto,
         monto_total, cuota_inicial, cuotas, estado, fecha_inicio, fecha_fin, fecha_creacion,
-        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora, estado_entrega, nombre_personalizado, numero_corporativo)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        frecuencia, second_product, monto_inscrip, moneda, monto_recalculado, monto_sin_interes, tasa, usuario_id, aprobado, cobrar_mora, estado_entrega, nombre_personalizado, numero_corporativo, fecha_proxima_entrega)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $conexion->prepare($query);
 
@@ -914,6 +918,15 @@ class RegistrarFinanciamientoController extends Controller
             $tipos .= 's';
             $params[] = $datos['numero_corporativo'];
             error_log("📱 Número corporativo a guardar: " . $datos['numero_corporativo']);
+        }
+
+        // fecha_proxima_entrega (puede ser null) - Recordatorio entrega CrediYango
+        if (isset($datos['fecha_proxima_entrega']) && $datos['fecha_proxima_entrega'] !== null && $datos['fecha_proxima_entrega'] !== '') {
+            $tipos .= 's';
+            $params[] = $datos['fecha_proxima_entrega'];
+        } else {
+            $tipos .= 's';
+            $params[] = NULL;
         }
 
         // ⭐ Modificado: Vinculación dinámica de parámetros

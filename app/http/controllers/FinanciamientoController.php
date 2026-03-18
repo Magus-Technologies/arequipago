@@ -380,11 +380,29 @@ class FinanciamientoController extends Controller
                 $planData = $planResult->fetch_assoc();
 
                 // Calcular capacidad de compra actual si es vehículo
-                // Verificar si es vehículo por tipo_vehicular O por nombre del plan
+                // Verificar si es vehículo por tipo_vehicular, nombre del plan O categoría del producto
                 $esVehiculo = ($planData && (
                     $planData['tipo_vehicular'] === 'vehiculo' ||
                     stripos($planData['nombre_plan'], 'vehicular') !== false
                 ));
+
+                // Si no se detectó por plan, verificar por categoría del producto
+                if (!$esVehiculo && !empty($financiamiento['idproductosv2'])) {
+                    $catQuery = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
+                    $catStmt = $conexion->prepare($catQuery);
+                    $catStmt->bind_param("i", $financiamiento['idproductosv2']);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    $catData = $catResult->fetch_assoc();
+                    $catStmt->close();
+
+                    if ($catData && (
+                        stripos($catData['categoria'], 'vehiculo') !== false ||
+                        stripos($catData['categoria'], 'vehículo') !== false
+                    )) {
+                        $esVehiculo = true;
+                    }
+                }
 
                 if ($esVehiculo) {
                     $semanasPerdidas = 0;
@@ -2710,7 +2728,11 @@ class FinanciamientoController extends Controller
                                 precio_venta, 
                                 categoria 
                         FROM productosv2 
-                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
                         AND estado = '1'
                         ORDER BY nombre";
                 
@@ -2743,7 +2765,11 @@ class FinanciamientoController extends Controller
                 
                 $query = "SELECT idproductosv2, nombre, codigo, cantidad, precio_venta, categoria 
                         FROM productosv2 
-                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
                         AND estado = '1'
                         AND (LOWER(nombre) LIKE ? OR LOWER(codigo) LIKE ?)
                         ORDER BY nombre";
@@ -3707,6 +3733,7 @@ class FinanciamientoController extends Controller
                 WHERE f.estado != 'eliminado'
                 AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 GROUP BY pf.idplan_financiamiento, pf.nombre_plan
                 ORDER BY total_financiamientos DESC
@@ -3744,6 +3771,7 @@ class FinanciamientoController extends Controller
                 WHERE f.estado != 'eliminado'
                 AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
             ";
             $stmtTotal = $this->conexion->prepare($queryTotalConductores);
             $stmtTotal->execute();
@@ -3819,6 +3847,7 @@ class FinanciamientoController extends Controller
                 AND f.estado != 'eliminado'
                 AND f.estado != 'rechazado'
                 AND f.estado_eliminado = 0
+                AND (f.aprobado = 1 OR f.aprobado IS NULL)
                 AND f.grupo_financiamiento REGEXP '^[0-9]+$'
                 ORDER BY COALESCE(c.nombres, cl.nombres) ASC
             ";

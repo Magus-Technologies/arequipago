@@ -90,6 +90,10 @@ Route::post("/ajas/ventas/porempresa/sendsunat","VentasController@enviarDocument
 Route::post("/ajas/ventas/porempresa/sendsunatresumen","VentasController@envioResumenDiarioPorEmpresa");
 Route::post("/ajas/ventas/porempresa/sendsunatcomubaja","VentasController@envioComunicacionBajaPorEmpresa");
 
+Route::post('/ajs/inscripcion/pago/detalle', 'ConductorController@obtenerDetallePagoInscripcion');
+Route::post('/ajs/inscripcion/pago/serie-numero', 'ConductorController@obtenerSerieNumeroInscripcion');
+Route::post('/ajs/inscripcion/pago/facturar', 'ConductorController@generarFacturaPagoInscripcion');
+
 Route::post("/ajs/getroles","ConsultasController@getRoles");
 Route::post("/ajs/add/users","ConsultasController@saveUser");
 

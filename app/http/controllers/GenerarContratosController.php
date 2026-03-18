@@ -832,7 +832,7 @@ class GenerarContratosController extends controller
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 19) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'credigo_AutosGrupo3.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 22) {
-            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_Motos.html';
+            $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_CrediMotos.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 44) {
             $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'contrato_incamotors.html';
         } elseif (isset($financiamiento['grupo_financiamiento']) && $financiamiento['grupo_financiamiento'] == 45) {
@@ -1876,7 +1876,13 @@ class GenerarContratosController extends controller
      */
     private function cargarYLlenarTemplateEntrega($financiamiento, $cliente, $vehiculo)
     {
-        $rutaTemplate = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . 'entrga_vehiculo.html';
+        // Seleccionar template según la categoría del producto
+        $templateFile = 'entrga_vehiculo.html';
+        $categoriaProducto = strtolower(trim($vehiculo['producto']['categoria'] ?? ''));
+        if (preg_match('/moto\s*lineal|motokar/i', $categoriaProducto)) {
+            $templateFile = 'acta_credimotos.html';
+        }
+        $rutaTemplate = 'app' . DIRECTORY_SEPARATOR . 'contratos' . DIRECTORY_SEPARATOR . $templateFile;
 
         if (!file_exists($rutaTemplate)) {
             throw new Exception("Template no encontrado: $rutaTemplate");
@@ -2316,7 +2322,7 @@ class GenerarContratosController extends controller
                 break;
 
             case 22:  // CrediGo Motos (Grupo 1)
-                $templatePath = 'app/contratos/contrato_Motos.html';
+                $templatePath = 'app/contratos/contrato_CrediMotos.html';
                 break;
 
             case 33:  // MotosYa

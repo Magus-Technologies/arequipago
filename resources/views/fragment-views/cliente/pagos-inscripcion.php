@@ -95,12 +95,13 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
                     <th>Tipo Pago</th>
                     <th>Monto</th>
                     <th>Fecha Emisión</th>
+                    <th>Facturación</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="tabla-reportes">
                 <tr>
-                    <td colspan="9" class="text-center">Cargando datos...</td>
+                    <td colspan="10" class="text-center">Cargando datos...</td>
                 </tr>
             </tbody>
         </table>
@@ -253,6 +254,88 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
     </div>
 </div>
 
+<!-- Modal Facturar Pago Inscripción -->
+<div class="modal fade" id="modalFacturarInscripcion" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="fas fa-file-invoice me-2"></i>Generar Factura/Boleta - Pago Inscripción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formFacturarInscripcion">
+                    <input type="hidden" id="fact_insc_id_pago" name="id_pago">
+                    <input type="hidden" id="fact_insc_tipo" name="tipo">
+                    <input type="hidden" id="fact_insc_tipo_pago" name="tipo_pago">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-user me-2"></i>Datos del Cliente</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">Cliente:</th><td id="fact_insc_cliente"></td></tr>
+                                <tr><th>DNI/RUC:</th><td id="fact_insc_dni"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fas fa-money-bill me-2"></i>Datos del Pago</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><th width="40%">Concepto:</th><td id="fact_insc_concepto"></td></tr>
+                                <tr><th>Monto:</th><td id="fact_insc_monto"></td></tr>
+                                <tr><th>Fecha Pago:</th><td id="fact_insc_fecha_pago"></td></tr>
+                                <tr><th>Método Pago:</th><td id="fact_insc_metodo_pago"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-file-alt me-1"></i>Tipo de Documento *</label>
+                            <select class="form-control" name="tipo_doc" id="fact_insc_tipo_doc" required onchange="actualizarSerieNumeroInscripcion()">
+                                <option value="1">Boleta de Venta</option>
+                                <option value="2">Factura</option>
+                            </select>
+                            <small class="text-muted">Boleta para DNI, Factura para RUC</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-hashtag me-1"></i>Serie - Número</label>
+                            <input type="text" class="form-control" id="fact_insc_serie_numero" readonly style="background-color: #f8f9fa;">
+                            <small class="text-muted">Serie y número que se generará</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar me-1"></i>Fecha de Emisión *</label>
+                            <input type="date" class="form-control" name="fecha_emision" id="fact_insc_fecha_emision" required>
+                            <small class="text-muted">Hasta 5 días atrás permitido</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-align-left me-1"></i>Descripción del Servicio *</label>
+                        <textarea class="form-control" name="descripcion" id="fact_insc_descripcion" rows="3" required></textarea>
+                        <small class="text-muted">Esta descripción aparecerá en el comprobante</small>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> La factura se generará pero NO se enviará automáticamente a SUNAT.
+                        Podrá enviarla desde la lista de ventas.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarFacturacionInscripcion()">
+                    <i class="fas fa-file-invoice me-1"></i> Generar Factura
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     function actualizarMetodoPago() {
@@ -970,7 +1053,7 @@ function eliminarReporte(id) {
 // Función para mostrar los reportes en la tabla
 function mostrarReportes(reportes) {
     if (reportes.length === 0) {
-        $("#tabla-reportes").html('<tr><td colspan="9" class="text-center">No hay reportes disponibles</td></tr>');
+        $("#tabla-reportes").html('<tr><td colspan="10" class="text-center">No hay reportes disponibles</td></tr>');
         return;
     }
 
@@ -1006,6 +1089,12 @@ function mostrarReportes(reportes) {
             <td>S/ ${parseFloat(reporte.monto).toFixed(2)}</td>
             <td>${formatearFecha(reporte.fecha_emision)}</td>
             <td>
+                ${reporte.facturado == 1 
+                    ? '<span class="badge bg-success" title="Facturado ' + (reporte.fecha_facturacion ? reporte.fecha_facturacion.substring(0, 10) : '') + '"><i class="fas fa-check-circle me-1"></i>Facturado</span>'
+                    : '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendiente</span>'
+                }
+            </td>
+            <td>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-primary ver-pdf"
                             data-id="${reporte.id_pago}"
@@ -1036,6 +1125,17 @@ function mostrarReportes(reportes) {
                             title="Eliminar">
                         <i class="fa fa-trash"></i>
                     </button>
+                    <?php endif; ?>
+                    <?php if ($rol_usuario == 3 || $rol_usuario == 4): ?>
+                    ${reporte.facturado != 1 ? `
+                    <button class="btn btn-sm btn-primary btn-facturar-inscripcion"
+                            data-id="${reporte.id_pago}"
+                            data-tipo="${reporte.tipo_persona}"
+                            data-tipopago="${reporte.tipo_pago}"
+                            title="Generar Boleta/Factura SUNAT">
+                        <i class="fas fa-file-invoice"></i>
+                    </button>
+                    ` : ''}
                     <?php endif; ?>
                 </div>
             </td>
@@ -1097,6 +1197,13 @@ function mostrarReportes(reportes) {
     $(".eliminar-reporte").click(function () {
         const id = $(this).data("id");
         confirmarEliminar(id);
+    });
+
+    $(".btn-facturar-inscripcion").click(function () {
+        const id = $(this).data("id");
+        const tipo = $(this).data("tipo");
+        const tipoPago = $(this).data("tipopago");
+        abrirModalFacturarInscripcion(id, tipo, tipoPago);
     });
 }
 
@@ -1309,6 +1416,157 @@ $(document).ready(function () {
         }
     });
 });
+
+// ========== FUNCIONES DE FACTURACIÓN PAGOS INSCRIPCIÓN ==========
+
+function actualizarSerieNumeroInscripcion() {
+    var tipoDoc = $('#fact_insc_tipo_doc').val();
+
+    $.ajax({
+        url: '/arequipago/ajs/inscripcion/pago/serie-numero',
+        type: 'POST',
+        data: { tipo_doc: tipoDoc },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                $('#fact_insc_serie_numero').val(response.serie + ' - ' + response.numero);
+            } else {
+                $('#fact_insc_serie_numero').val('Error al obtener');
+            }
+        },
+        error: function() {
+            $('#fact_insc_serie_numero').val('Error al obtener');
+        }
+    });
+}
+
+function abrirModalFacturarInscripcion(idPago, tipo, tipoPago) {
+    $.ajax({
+        url: '/arequipago/ajs/inscripcion/pago/detalle',
+        type: 'POST',
+        data: { id: idPago, tipo: tipo, tipo_pago: tipoPago },
+        dataType: 'json',
+        success: function(data) {
+            if (data.success) {
+                var detalle = data.data;
+
+                $('#fact_insc_id_pago').val(idPago);
+                $('#fact_insc_tipo').val(tipo);
+                $('#fact_insc_tipo_pago').val(tipoPago);
+                $('#fact_insc_cliente').text(detalle.nombre_cliente || 'N/A');
+                $('#fact_insc_dni').text(detalle.dni_cliente || 'N/A');
+                $('#fact_insc_concepto').text(detalle.concepto || 'Pago Inscripción');
+                $('#fact_insc_monto').text('S/ ' + parseFloat(detalle.monto || 0).toFixed(2));
+                $('#fact_insc_fecha_pago').text(detalle.fecha_pago || 'N/A');
+                $('#fact_insc_metodo_pago').text(detalle.metodo_pago || 'N/A');
+
+                var tipoDoc = detalle.dni_cliente && detalle.dni_cliente.length === 11 ? '2' : '1';
+                $('#fact_insc_tipo_doc').val(tipoDoc);
+
+                actualizarSerieNumeroInscripcion();
+
+                var fechaPago = detalle.fecha_pago ? detalle.fecha_pago.substring(0, 10) : '';
+                $('#fact_insc_fecha_emision').val(fechaPago || new Date().toISOString().split('T')[0]);
+
+                var hoy = new Date();
+                var fechaMinima = new Date();
+                fechaMinima.setDate(fechaMinima.getDate() - 5);
+                $('#fact_insc_fecha_emision').attr('min', fechaMinima.toISOString().split('T')[0]);
+                $('#fact_insc_fecha_emision').attr('max', hoy.toISOString().split('T')[0]);
+
+                var descripcion = 'Pago Inscripción - ' + (detalle.nombre_cliente || 'Cliente');
+                $('#fact_insc_descripcion').val(descripcion);
+
+                new bootstrap.Modal(document.getElementById('modalFacturarInscripcion')).show();
+            } else {
+                Swal.fire('Error', data.message || 'Error al obtener detalle del pago', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error en petición:', error);
+            Swal.fire('Error', 'Error al obtener detalle del pago', 'error');
+        }
+    });
+}
+
+function confirmarFacturacionInscripcion() {
+    var form = document.getElementById('formFacturarInscripcion');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    Swal.fire({
+        title: '¿Generar Factura?',
+        text: 'Se generará el comprobante con los datos ingresados',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f4f750',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, generar',
+        cancelButtonText: 'Cancelar'
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            generarFacturaInscripcion();
+        }
+    });
+}
+
+function generarFacturaInscripcion() {
+    var formData = $('#formFacturarInscripcion').serialize();
+
+    Swal.fire({
+        title: 'Generando factura...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        didOpen: function() {
+            Swal.showLoading();
+        }
+    });
+
+    $.ajax({
+        url: '/arequipago/ajs/inscripcion/pago/facturar',
+        type: 'POST',
+        data: formData,
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Factura Generada!',
+                    html: '<p><strong>Serie:</strong> ' + response.serie + '</p>' +
+                          '<p><strong>Número:</strong> ' + response.numero + '</p>' +
+                          '<p class="text-info mt-3"><i class="fas fa-info-circle me-1"></i>' +
+                          'La factura NO ha sido enviada a SUNAT aún.<br>' +
+                          'Puede enviarla desde la lista de ventas.</p>',
+                    confirmButtonColor: '#f4f750',
+                    confirmButtonText: 'Entendido'
+                }).then(function() {
+                    bootstrap.Modal.getInstance(document.getElementById('modalFacturarInscripcion')).hide();
+                    cargarReportes();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Error al generar factura',
+                    confirmButtonColor: '#f4f750'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al generar factura: ' + error,
+                confirmButtonColor: '#f4f750'
+            });
+        }
+    });
+}
+
+// ========== FIN FUNCIONES FACTURACIÓN INSCRIPCIÓN ==========
 </script>
 
 <!-

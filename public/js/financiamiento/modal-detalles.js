@@ -63,7 +63,7 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
           financiamiento.producto.categoria || ""
         ).toLowerCase();
         esVehiculo =
-          categoria.includes("vehiculo") || categoria.includes("vehículo");
+          categoria.includes("vehiculo") || categoria.includes("vehículo") || categoria.includes("moto");
 
         // ✅ NUEVO: Verificar si ya fue entregado usando estado_entrega
         const estadoEntrega = financiamiento.financiamiento.estado_entrega;
@@ -413,10 +413,15 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
             </div>
           </div>
         `;
-      } else if (estadoFinanciamiento.toLowerCase() === 'finalizado' || estadoFinanciamiento.toLowerCase() === 'pagado') {
-        estadoBadge = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Finalizado</span>';
-      } else if (estadoFinanciamiento.toLowerCase() === 'en progreso') {
-        estadoBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>En Progreso</span>';
+      } else if (financiamiento.cuotas && financiamiento.cuotas.length > 0) {
+        // Calcular estado real desde las cuotas
+        const totalCuotas = financiamiento.cuotas.length;
+        const cuotasPagadas = financiamiento.cuotas.filter(c => c.estado && c.estado.toLowerCase() === 'pagado').length;
+        if (cuotasPagadas === totalCuotas) {
+          estadoBadge = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Cuotas Completadas</span>';
+        } else {
+          estadoBadge = `<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>En Progreso (${cuotasPagadas}/${totalCuotas})</span>`;
+        }
       } else if (estadoFinanciamiento.toLowerCase() === 'vendido - pendiente de entrega') {
         estadoBadge = '<span class="badge bg-info text-dark"><i class="fas fa-truck me-1"></i>Pendiente de Entrega</span>';
       } else {
@@ -531,10 +536,17 @@ window.seleccionarFinanciamiento = function seleccionarFinanciamiento(row) {
     // NUEVO: Mostrar sección CrediYango si aplica
     mostrarSeccionCrediYangoModal(financiamiento);
 
+    // NUEVO: Notificación flotante de fecha próxima de entrega (CrediYango)
+    mostrarNotificacionEntrega(financiamiento);
+
     // Llenar campos según tipo de plan
     if (financiamiento.financiamiento.es_vehiculo) {
       // Mostrar sección de vehículo
       document.getElementById("infoVehiculo").style.display = "block";
+
+      console.log('🔍 DEBUG es_vehiculo - producto:', financiamiento.producto);
+      console.log('🔍 DEBUG es_vehiculo - precio_venta:', financiamiento.producto?.precio_venta);
+      console.log('🔍 DEBUG es_vehiculo - capacidad_compra_actual:', financiamiento.financiamiento.capacidad_compra_actual);
 
       // Capacidad de compra actual (lo que el plan le permite comprar)
       const capacidadCompra =
@@ -844,6 +856,7 @@ function mostrarDetallesCliente(idConductor) {
                         <td>${producto.categoria || 'Sin categoría'}</td>
                         <td>${(() => {
                             const estado = financiamiento.estado || '';
+                            if (financiamiento.contrato_finalizado == 1) return '<span class="badge bg-success"><i class="fas fa-check-double me-1"></i>Contrato Finalizado</span>';
                             if (estado === 'Finalizado') return '<span class="badge bg-success"><i class="fas fa-check-double me-1"></i>Finalizado</span>';
                             if (estado === 'En Progreso') return '<span class="badge bg-primary"><i class="fas fa-spinner me-1"></i>En Progreso</span>';
                             if (estado === 'Pendiente') return '<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pendiente</span>';
@@ -1182,4 +1195,99 @@ function finalizarContrato() {
       });
     }
   });
+}
+
+// NUEVO: Notificación flotante de fecha próxima de entrega (solo CrediYango ID 45)
+function mostrarNotificacionEntrega(financiamiento) {
+  // Eliminar notificación anterior si existe
+  const notifAnterior = document.getElementById('notifEntregaFlotante');
+  if (notifAnterior) notifAnterior.remove();
+
+  const esCrediYango = financiamiento.financiamiento.grupo_financiamiento == 45;
+  if (!esCrediYango) return;
+
+  const fechaProxima = financiamiento.financiamiento.fecha_proxima_entrega;
+  if (!fechaProxima) return;
+
+  // Calcular días restantes
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fechaEntrega = new Date(fechaProxima + 'T00:00:00');
+  const diffMs = fechaEntrega - hoy;
+  const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  let colorFondo, icono, textoTiempo;
+  if (diffDias < 0) {
+    colorFondo = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+    icono = 'fas fa-exclamation-triangle';
+    textoTiempo = `Hace ${Math.abs(diffDias)} día(s) - ¡Entrega atrasada!`;
+  } else if (diffDias === 0) {
+    colorFondo = 'linear-gradient(135deg, #f9ca24 0%, #f0932b 100%)';
+    icono = 'fas fa-bell';
+    textoTiempo = '¡HOY es la entrega!';
+  } else if (diffDias <= 3) {
+    colorFondo = 'linear-gradient(135deg, #f9ca24 0%, #f0932b 100%)';
+    icono = 'fas fa-clock';
+    textoTiempo = `En ${diffDias} día(s)`;
+  } else {
+    colorFondo = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)';
+    icono = 'fas fa-calendar-day';
+    textoTiempo = `En ${diffDias} días`;
+  }
+
+  const fechaFormateada = fechaEntrega.toLocaleDateString('es-PE', {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  });
+
+  const notif = document.createElement('div');
+  notif.id = 'notifEntregaFlotante';
+  notif.innerHTML = `
+    <div style="
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      background: ${colorFondo}; color: white;
+      padding: 15px 20px; border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      max-width: 320px; animation: slideInRight 0.4s ease-out;
+      font-family: Arial, sans-serif;
+    ">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="${icono}" style="font-size: 24px;"></i>
+        <div>
+          <div style="font-weight: 700; font-size: 14px;">🚗 Entrega de Vehículo</div>
+          <div style="font-size: 13px; opacity: 0.95;">${fechaFormateada}</div>
+          <div style="font-size: 12px; font-weight: 600; margin-top: 2px;">${textoTiempo}</div>
+        </div>
+        <button onclick="this.closest('#notifEntregaFlotante').remove()" 
+          style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; margin-left: auto; opacity: 0.8;">
+          ✕
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Agregar animación CSS si no existe
+  if (!document.getElementById('notifEntregaStyles')) {
+    const style = document.createElement('style');
+    style.id = 'notifEntregaStyles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(notif);
+
+  // Auto-ocultar después de 8 segundos (excepto si está atrasada)
+  if (diffDias >= 0) {
+    setTimeout(() => {
+      if (notif.parentNode) {
+        notif.style.transition = 'opacity 0.5s ease';
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 500);
+      }
+    }, 8000);
+  }
 }

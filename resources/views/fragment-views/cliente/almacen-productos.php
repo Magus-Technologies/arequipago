@@ -951,6 +951,18 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
                                 </div>
                             </div>
 
+                            <!-- Fila GPS -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="gps_activo" name="gps_activo" value="1">
+                                        <label class="form-check-label" for="gps_activo">
+                                            <i class="fas fa-map-marker-alt me-1"></i> GPS Activo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Fila 6: Fechas de Vencimiento -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
@@ -1159,12 +1171,12 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         }
 
         // Mostrar/ocultar campos para Vehículo de manera flexible (ignorar mayúsculas, acentos, espacios)
-        const vehiculoRegex = /veh[íi]cul[o]?[s]?/i; // Expresión regular flexible
-        const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim(); // Convertir a minúscula y eliminar espacios
-        if (vehiculoRegex.test(selectedText)) { // Validación flexible con regex
-            vehiculoWrapper.style.display = 'block'; // Mostrar el div para vehículo si la opción coincide
+        const vehiculoRegex = /veh[íi]cul[o]?[s]?|moto\s*lineal|motokar|trimovil|cuatrimoto/i;
+        const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim();
+        if (vehiculoRegex.test(selectedText)) {
+            vehiculoWrapper.style.display = 'block';
         } else {
-            vehiculoWrapper.style.display = 'none'; // Ocultar si no es vehículo
+            vehiculoWrapper.style.display = 'none';
         }
     }
 
@@ -1829,6 +1841,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
             formData.append('placa_vehiculo', document.getElementById('placa_vehiculo').value);  // Placa añadido
             formData.append('transmision_vehiculo', document.getElementById('transmision_vehiculo').value);  // Transmisión añadido
             formData.append('kilometraje', document.getElementById('kilometraje').value);  // Kilometraje añadido
+            formData.append('gps_activo', document.getElementById('gps_activo').checked ? '1' : '0');  // GPS añadido
         }
 
         $.ajax({

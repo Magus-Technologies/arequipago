@@ -51,10 +51,11 @@ function revertirEstilosInputs() {
       return;
     }
 
-    // 🚗 NUEVO: No bloquear frecuenciaPago si es plan vehicular o Credi Ahorros Autos (ID 49)
+    // 🚗 NUEVO: No bloquear frecuenciaPago si es plan vehicular, Credi Ahorros Autos (ID 49) o CrediYango (ID 45)
     const esVehicular = planGlobal && planGlobal.tipo_vehicular !== null;
     const esCrediAhorrosAutos = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 49;
-    if (id === "frecuenciaPago" && (esVehicular || esCrediAhorrosAutos)) {
+    const esCrediYango = planGlobal && parseInt(planGlobal.idplan_financiamiento) === 45;
+    if (id === "frecuenciaPago" && (esVehicular || esCrediAhorrosAutos || esCrediYango)) {
       input.style.backgroundColor = "#ffffff";
       input.style.color = "#212529";
       input.style.border = "1px solid #ced4da";

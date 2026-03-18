@@ -125,6 +125,12 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             PAGOS FINANCIAMIENTO
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/arequipago/nuevo-pago">
+                            <i class="ti-money"></i>
+                            PAGOS INSCRIPCIÓN
+                        </a>
+                    </li>
                 <?php endif; ?>
 
                 <?php if ($id_rol != 4): ?>

@@ -165,16 +165,9 @@ function saveFinanciamiento(event) {
   let fechaEntrega = null;
   let fechaInicioPagosCalculada = null;
 
-  // const fechaEntregaInput = document.getElementById('fechaEntrega');
-  // const fechaInicioPagosInput = document.getElementById('fechaInicioPagosCalculada');
-  //
-  // if (fechaEntregaInput && fechaEntregaInput.value) {
-  //   fechaEntrega = fechaEntregaInput.value;
-  // }
-  //
-  // if (fechaInicioPagosInput && fechaInicioPagosInput.value) {
-  //   fechaInicioPagosCalculada = fechaInicioPagosInput.value;
-  // }
+  // Capturar fecha próxima de entrega ANTES de que el DOM pueda cambiar
+  const fechaProximaEntregaInput = document.getElementById('fechaProximaEntrega');
+  const fechaProximaEntrega = fechaProximaEntregaInput && fechaProximaEntregaInput.value ? fechaProximaEntregaInput.value : '';
 
   const fechasVencimiento = []; // Crear un arreglo vacío para almacenar las fechas
   $("#contenedorFechas span").each(function () {
@@ -544,6 +537,7 @@ function saveFinanciamiento(event) {
         verificacion_domiciliaria: verificacionDomiciliaria,
         fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
         fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
+        fecha_proxima_entrega: fechaProximaEntrega, // NUEVO: Recordatorio entrega CrediYango
         placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
         numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
         id_variante: idVariante, // ✅ CORREGIDO: Enviar id_variante
@@ -688,6 +682,7 @@ function saveFinanciamiento(event) {
             verificacion_domiciliaria: verificacionDomiciliaria,
             fecha_entrega: fechaEntrega, // NUEVO: Campo para CrediYango
             fecha_inicio_pagos_calculada: fechaInicioPagosCalculada, // NUEVO: Campo para CrediYango
+            fecha_proxima_entrega: fechaProximaEntrega, // Recordatorio entrega CrediYango
             placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
             numero_corporativo: typeof obtenerNumeroCorporativo === 'function' ? obtenerNumeroCorporativo() : null, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO
             id_variante: idVariante, // ✅ CORREGIDO: Enviar id_variante
@@ -1127,6 +1122,7 @@ function saveFinanciamientoVehicular() {
       id_variante: idVariante,
       cobrar_mora: cobrarMora,
       verificacion_domiciliaria: verificacionDomiciliaria,
+      fecha_proxima_entrega: document.getElementById('fechaProximaEntrega')?.value || '', // Recordatorio entrega CrediYango
       placa_vehiculo: typeof obtenerPlacaVehiculo === 'function' ? obtenerPlacaVehiculo() : null, // ✅ NUEVO: Placa para IncaMotors
       numero_corporativo: numeroCorporativoCapturado, // ✅ NUEVO: Número corporativo para CORPORATIVO CLARO (Plan 36)
       // ✅ NUEVO: Para Plan 38 (CrediGo Autos Grupo 4), enviar la cantidad de cuotas adelantadas

@@ -374,6 +374,10 @@ Route::get(
     "AdjudicacionesController@obtenerFechasEntrega",
 );
 Route::get(
+    "/ajs/adjudicaciones/fechas-proxima-entrega",
+    "AdjudicacionesController@obtenerFechasProximaEntrega",
+);
+Route::get(
     "/ajs/adjudicaciones/cuotas-vencidas",
     "AdjudicacionesController@obtenerCuotasVencidas",
 );

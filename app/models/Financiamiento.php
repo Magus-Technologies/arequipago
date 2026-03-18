@@ -126,6 +126,11 @@ class Financiamiento
             $fechaInicioPagosCalculada = $fechaEntregaObj->format('Y-m-d');
         }
         
+        // ✅ NUEVO: Fecha próxima de entrega (recordatorio CrediYango)
+        $fechaProximaEntrega = isset($datos['fecha_proxima_entrega']) && $datos['fecha_proxima_entrega'] !== ''
+            ? $datos['fecha_proxima_entrega']
+            : null;
+
         // ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
         $placaVehiculo = isset($datos['placa_vehiculo']) && $datos['placa_vehiculo'] !== ''
             ? strtoupper(trim($datos['placa_vehiculo']))
@@ -172,10 +177,11 @@ class Financiamiento
                 estado_entrega,       -- ✅ NUEVO: Campo para trackear entrega CrediYango
                 es_entrega_especial,  -- ✅ NUEVO: Flag de entrega especial (plan 42)
                 fecha_entrega,        -- NUEVO: Campo para CrediYango
+                fecha_proxima_entrega, -- ✅ NUEVO: Recordatorio de entrega CrediYango
                 fecha_inicio_pagos_calculada,  -- NUEVO: Campo para CrediYango
                 placa_vehiculo,       -- ✅ NUEVO: Placa del vehículo (Mantenimiento IncaMotors - Plan 44)
                 numero_corporativo    -- ✅ NUEVO: Número corporativo (CORPORATIVO CLARO - Plan 36)
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
         $stmt = $this->conectar->prepare($query);
 
@@ -244,14 +250,14 @@ class Financiamiento
         // Posición 32: numero_corporativo = 's' (string) ✅ NUEVO
         // Total: 32 parámetros
         $stmt->bind_param(
-            'iiiiisissdiissssssdsdddiiisisss' . 's',
+            'iiiiisissdiissssssdsdddiiisiss' . 'sss',
             $idConductor,
             $idCliente,
             $datos['id_producto'],
             $idCoti,
             $datos['codigo_asociado'],
             $datos['grupo_financiamiento'],
-            $idVariante,  // ✅ CORREGIDO: Agregar id_variante
+            $idVariante,
             $nombrePersonalizado,
             $datos['cantidad_producto'],
             $datos['monto_total'],
@@ -274,6 +280,7 @@ class Financiamiento
             $estadoEntrega,
             $esEntregaEspecial,
             $fechaEntrega,
+            $fechaProximaEntrega,
             $fechaInicioPagosCalculada,
             $placaVehiculo,
             $numeroCorporativo
@@ -980,42 +987,68 @@ class Financiamiento
         }
 
         // Verificar si todas las cuotas del financiamiento están pagadas
+        // Obtener los financiamientos reales de las cuotas actualizadas (no confiar solo en $idFinanciamiento)
         if ($idFinanciamiento) {
-            $sqlVerificar = "SELECT COUNT(*) as total_pendientes 
-                            FROM cuotas_financiamiento 
-                            WHERE id_financiamiento = ? AND estado != 'pagado' AND estado_eliminado = 0";
-            $stmtVerificar = $this->conectar->prepare($sqlVerificar);
+            $placeholdersFinan = implode(',', array_fill(0, count($ids), '?'));
+            $sqlFinanciamientos = "SELECT DISTINCT id_financiamiento FROM cuotas_financiamiento WHERE idcuotas_financiamiento IN ({$placeholdersFinan})";
+            $stmtFinan = $this->conectar->prepare($sqlFinanciamientos);
             
-            if (!$stmtVerificar) {
-                error_log("Error preparando verificación: " . $this->conectar->error);
-                return ['success' => false, 'message' => 'Error al verificar estado del financiamiento'];
+            if ($stmtFinan) {
+                $typesFinan = str_repeat('i', count($ids));
+                $bindParamsFinan = [$typesFinan];
+                foreach ($ids as $key => $value) {
+                    $bindParamsFinan[] = &$ids[$key];
+                }
+                call_user_func_array([$stmtFinan, 'bind_param'], $bindParamsFinan);
+                $stmtFinan->execute();
+                $resultFinan = $stmtFinan->get_result();
+                
+                $idsFinanciamientos = [];
+                while ($rowFinan = $resultFinan->fetch_assoc()) {
+                    $idsFinanciamientos[] = $rowFinan['id_financiamiento'];
+                }
+                $stmtFinan->close();
+            } else {
+                $idsFinanciamientos = [$idFinanciamiento];
             }
-            
-            $stmtVerificar->bind_param('i', $idFinanciamiento);
-            $stmtVerificar->execute();
-            $resultVerificar = $stmtVerificar->get_result();
-            $rowVerificar = $resultVerificar->fetch_assoc();
-            $stmtVerificar->close();
 
-            // Si no hay cuotas pendientes, marcar financiamiento como finalizado
-            if ($rowVerificar && $rowVerificar['total_pendientes'] == 0) {
-                $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
-                $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
+            foreach ($idsFinanciamientos as $idFinan) {
+                $sqlVerificar = "SELECT COUNT(*) as total_pendientes 
+                                FROM cuotas_financiamiento 
+                                WHERE id_financiamiento = ? AND estado != 'pagado' AND estado_eliminado = 0";
+                $stmtVerificar = $this->conectar->prepare($sqlVerificar);
                 
-                if (!$stmtFinal) {
-                    error_log("Error preparando finalización: " . $this->conectar->error);
-                    return ['success' => false, 'message' => 'Error al preparar finalización del financiamiento'];
+                if (!$stmtVerificar) {
+                    error_log("Error preparando verificación: " . $this->conectar->error);
+                    continue;
                 }
                 
-                $stmtFinal->bind_param('i', $idFinanciamiento);
+                $stmtVerificar->bind_param('i', $idFinan);
+                $stmtVerificar->execute();
+                $resultVerificar = $stmtVerificar->get_result();
+                $rowVerificar = $resultVerificar->fetch_assoc();
+                $stmtVerificar->close();
 
-                if (!$stmtFinal->execute()) {
-                    error_log("Error finalizando financiamiento: " . $stmtFinal->error);
+                // Si no hay cuotas pendientes, marcar financiamiento como finalizado
+                if ($rowVerificar && $rowVerificar['total_pendientes'] == 0) {
+                    $sqlUpdateFinanciamiento = "UPDATE financiamiento SET estado = 'Finalizado' WHERE idfinanciamiento = ?";
+                    $stmtFinal = $this->conectar->prepare($sqlUpdateFinanciamiento);
+                    
+                    if (!$stmtFinal) {
+                        error_log("Error preparando finalización: " . $this->conectar->error);
+                        continue;
+                    }
+                    
+                    $stmtFinal->bind_param('i', $idFinan);
+
+                    if (!$stmtFinal->execute()) {
+                        error_log("Error finalizando financiamiento: " . $stmtFinal->error);
+                        $stmtFinal->close();
+                        continue;
+                    }
                     $stmtFinal->close();
-                    return ['success' => false, 'message' => 'Error al finalizar el financiamiento'];
+                    error_log("Financiamiento {$idFinan} marcado como Finalizado");
                 }
-                $stmtFinal->close();
-                error_log("Financiamiento {$idFinanciamiento} marcado como Finalizado");
             }
         }
 

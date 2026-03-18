@@ -503,6 +503,11 @@ class VentasController extends Controller
                 $tipoDocFiltro = 6; // NOTA DE VENTA
             }
 
+            // Filtro por tipo de documento desde el frontend (no aplica para asesores)
+            if ($id_rol !== 2 && isset($_GET["tipo_doc"]) && $_GET["tipo_doc"] !== "") {
+                $tipoDocFiltro = intval($_GET["tipo_doc"]);
+            }
+
             // MODIFICADO: Obtener datos usando el modelo
             $resultado = $ventasModel->buscarVentas(
                 $searchTerm,

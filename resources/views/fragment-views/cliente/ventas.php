@@ -94,6 +94,20 @@
                             data-bs-target="#ventas-pdf-reporte-v-p">Reporte Ventas Producto</button>
 
                     </div>
+                    <div class="mb-3 row align-items-center">
+                        <div class="col-auto">
+                            <label class="form-label fw-bold mb-0">Filtrar por tipo de documento:</label>
+                        </div>
+                        <div class="col-auto">
+                            <select id="filtro-tipo-doc" class="form-select form-select-sm" style="width: 200px;">
+                                <option value="">Todos</option>
+                                <option value="1">Boleta</option>
+                                <option value="2">Factura</option>
+                                <option value="6">Nota de Venta</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <table id="datatable" class="table"
                         style="border: 2px solid white;border-collapse: collapse; border-spacing: 0; width: 100%;">
 
@@ -856,6 +870,9 @@
             alert(message) // Esto es solo un ejemplo, usa una librería de alertas más sofisticada
         }
 
+        // Variable para el filtro de tipo de documento
+        var filtroTipoDoc = "";
+
         // Inicialización de DataTables
         tabla = $("#datatable").DataTable({
             processing: true,
@@ -863,6 +880,9 @@
             ajax: {
                 url: _URL + "/ajs/ventas",
                 type: "GET",
+                data: function (d) {
+                    d.tipo_doc = filtroTipoDoc;
+                },
                 // CORREGIDO: Añadir función para depurar los parámetros enviados
                 dataSrc: (json) => {
                     console.log("Datos recibidos:", json)
@@ -1020,6 +1040,12 @@
         // AÑADIDO: Depuración para el campo de búsqueda
         $("#datatable_filter input").on("keyup", function () {
             console.log("Término de búsqueda:", $(this).val())
+        })
+
+        // Filtro por tipo de documento
+        $("#filtro-tipo-doc").on("change", function () {
+            filtroTipoDoc = $(this).val();
+            tabla.ajax.reload();
         })
 
         tes()

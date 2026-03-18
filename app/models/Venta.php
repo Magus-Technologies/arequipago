@@ -905,11 +905,12 @@ LEFT JOIN metodo_pago mdp2 ON mdp2.id_metodo_pago=v.medoto_pago2_id
                 v.total LIKE ? OR
                 v.serie LIKE ? OR
                 v.numero LIKE ? OR
+                v.sn_v LIKE ? OR
                 CONCAT(IFNULL(u.nombres, ''), ' ', IFNULL(u.apellidos, '')) LIKE ?
             )";
 
             $searchParam = "%$searchTerm%";
-            for ($i = 0; $i < 7; $i++) {
+            for ($i = 0; $i < 8; $i++) {
                 $searchParams[] = $searchParam;
                 $searchTypes .= "s";
             }

@@ -599,7 +599,7 @@
                     { nombre: 'Plan Mensual', campo: 'plan_mensual', tipo: 'text' },
                     { nombre: 'Operadora', campo: 'operadora', tipo: 'text' }
                 ];
-            } else if (categoriaNorm.includes('vehiculo')) {
+            } else if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto lineal') || categoriaNorm.includes('motolineal') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                 todasLasCaracteristicas = [
                     { nombre: 'Placa', campo: 'placa_vehiculo', tipo: 'text' },
                     { nombre: 'Transmisión', campo: 'transmision_vehiculo', tipo: 'text' },
@@ -609,7 +609,8 @@
                     { nombre: 'Nº de Motor', campo: 'chasis', tipo: 'text' },
                     { nombre: 'VIN (Número de identificación del Vehículo)', campo: 'vin', tipo: 'text' },
                     { nombre: 'Color', campo: 'color', tipo: 'text' },
-                    { nombre: 'Año del vehículo', campo: 'anio', tipo: 'number' }
+                    { nombre: 'Año del vehículo', campo: 'anio', tipo: 'number' },
+                    { nombre: 'GPS Activo', campo: 'gps_activo', tipo: 'checkbox' }
                 ];
             }
             
@@ -653,7 +654,7 @@
             // Si no es nueva categoría y tenemos una categoría específica, cargar campos completos
             if (!esNuevaCategoria && categoriaOriginal) {
                 const categoriaNorm = normalizarTexto(categoriaOriginal);
-                if (categoriaNorm.includes('llanta') || categoriaNorm.includes('chip') || categoriaNorm.includes('vehiculo')) {
+                if (categoriaNorm.includes('llanta') || categoriaNorm.includes('chip') || categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                     caracteristicas = cargarCaracteristicasCompletasPorCategoria(categoriaOriginal, caracteristicas);
                 }
             }
@@ -697,6 +698,16 @@
                         html += `<div class="mb-3"><label class="form-label"><i class="fas fa-hdd text-primary"></i> Almacenamiento</label><select class="form-control" name="${campo}"><option value="">Seleccionar</option>`;
                         opcionesAlm.forEach(op => { html += `<option value="${op}"${valor===op?' selected':''}>${op}</option>`; });
                         html += `</select></div>`;
+                    } else if (tipo === 'checkbox') {
+                        const isChecked = valor === '1' || valor === 'Si' || valor === 'true' ? 'checked' : '';
+                        html += `<div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="${campo}" id="${campo}" value="1" ${isChecked}>
+                                <label class="form-check-label" for="${campo}">
+                                    <i class="fas fa-map-marker-alt text-primary me-1"></i> ${nombre}
+                                </label>
+                            </div>
+                        </div>`;
                     } else {
                         html += `
                             <div class="mb-3">
@@ -971,7 +982,7 @@
                     { nombre: 'Plan Mensual', campo: 'plan_mensual' },
                     { nombre: 'Operadora', campo: 'operadora' }
                 ];
-            } else if (categoriaNorm.includes('vehiculo')) {
+            } else if (categoriaNorm.includes('vehiculo') || categoriaNorm.includes('moto lineal') || categoriaNorm.includes('motolineal') || categoriaNorm.includes('motokar') || categoriaNorm.includes('trimovil') || categoriaNorm.includes('cuatrimoto')) {
                 todasLasCaracteristicas = [
                     { nombre: 'Placa', campo: 'placa_vehiculo' },
                     { nombre: 'Transmisión', campo: 'transmision_vehiculo' },
@@ -981,7 +992,8 @@
                     { nombre: 'Nº de Motor', campo: 'chasis' },
                     { nombre: 'VIN (Número de identificación del Vehículo)', campo: 'vin' },
                     { nombre: 'Color', campo: 'color' },
-                    { nombre: 'Año del vehículo', campo: 'anio' }
+                    { nombre: 'Año del vehículo', campo: 'anio' },
+                    { nombre: 'GPS Activo', campo: 'gps_activo' }
                 ];
             }
             

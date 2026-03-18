@@ -198,6 +198,14 @@ function selectPlan(idPlan) {
               <i class="fas fa-info-circle me-1"></i>
               Solo se muestran productos de la categoría "Vehículos"
             </small>
+            <div class="mt-3 text-start" style="max-width: 300px; margin: 0 auto;">
+              <label for="fechaProximaEntrega" class="form-label fw-bold" style="color: #0d47a1;">
+                <i class="fas fa-calendar-day me-1"></i>Fecha próxima de entrega
+              </label>
+              <input type="date" class="form-control" id="fechaProximaEntrega" 
+                style="border: 2px solid #90caf9; border-radius: 8px;">
+              <small class="text-muted"><i class="fas fa-bell me-1"></i>Recordatorio de entrega del vehículo</small>
+            </div>
           </div>
         </div>
       `;
@@ -610,7 +618,10 @@ function selectPlan(idPlan) {
         }
 
         $("#contenedorVehicular").empty();
-        $("#contenedorFechas").empty();
+        // No limpiar contenedorFechas si es CrediYango (tiene campo fecha próxima entrega)
+        if (parseInt(plan.idplan_financiamiento) !== 45) {
+          $("#contenedorFechas").empty();
+        }
         // Limpiar el input "Monto Recalculado" y ocultar su contenedor
         const montoRecalculadoInput =
           document.getElementById("montoRecalculado"); // Obtener el input "Monto Recalculado"
@@ -2071,7 +2082,10 @@ function verificarInputsVacios() {
   } else {
     console.log("🚗 Grupo 49 - Manteniendo contenedorVehicular con Vehículo Entregado");
   }
-  $("#contenedorFechas").empty();
+  // No limpiar contenedorFechas si es CrediYango (tiene campo fecha próxima entrega)
+  if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 45) {
+    $("#contenedorFechas").empty();
+  }
 
   // Llamar a la función de cálculo del monto
   calcularMonto();
@@ -2304,7 +2318,9 @@ function NotGrupo() {
     // Volver a mostrar la columna "Cuota Inicial"
     document.getElementById("cuotaInicialContenedor").style.display = "block"; // Hacer visible nuevamente el contenedor "Cuota Inicial"
     $("#contenedorVehicular").empty();
-    $("#contenedorFechas").empty();
+    if (!planGlobal || parseInt(planGlobal.idplan_financiamiento) !== 45) {
+      $("#contenedorFechas").empty();
+    }
 
     calcularMonto();
   } else {
@@ -2700,16 +2716,11 @@ function configurarFrecuenciaPago(planOVariante) {
   
   // ✅ NUEVO: Verificar si es Credi Ahorros Autos (ID 49) que debe funcionar como grupo 38
   const esCrediAhorrosAutos = planOVariante && parseInt(planOVariante.idplan_financiamiento) === 49;
+  
+  // ✅ NUEVO: Verificar si es CrediYango (ID 45)
+  const esCrediYango = planOVariante && parseInt(planOVariante.idplan_financiamiento) === 45;
 
-  // 🔍 DEBUG: Log para plan 49
-  if (esCrediAhorrosAutos) {
-    console.log("🔍 DEBUG configurarFrecuenciaPago - Plan 49 detectado");
-    console.log("🔍 DEBUG - tipo_vehicular:", planOVariante.tipo_vehicular);
-    console.log("🔍 DEBUG - esVehicular:", esVehicular);
-    console.log("🔍 DEBUG - esCrediAhorrosAutos:", esCrediAhorrosAutos);
-  }
-
-  if (esVehicular || esCrediAhorrosAutos) {
+  if (esVehicular || esCrediAhorrosAutos || esCrediYango) {
     // Es vehicular o Credi Ahorros Autos: desbloquear el select
     frecuenciaSelect.disabled = false;
     frecuenciaSelect.style.backgroundColor = "#ffffff";

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -263,6 +263,10 @@
                                     <label class="text-muted small">Kilometraje</label>
                                     <p class="mb-0" id="detalle-kilometraje"></p>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">GPS</label>
+                                    <p class="mb-0" id="detalle-gps"></p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -425,6 +429,18 @@
                                     <label for="kilometraje_modal" class="form-label">Kilometraje</label>
                                     <input type="number" id="kilometraje_modal" class="form-control" min="0" placeholder="Ej: 15000">
                                     <small class="form-text text-muted">Kilometraje actual del vehículo</small>
+                                </div>
+                            </div>
+
+                            <!-- GPS -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="gps_activo_modal" name="gps_activo" value="1">
+                                        <label class="form-check-label" for="gps_activo_modal">
+                                            <i class="fas fa-map-marker-alt me-1"></i> GPS Activo
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
@@ -769,6 +785,7 @@
                     $('#detalle-color').text(vehiculo.color || 'No especificado');
                     $('#detalle-transmision').text(vehiculo.transmision || 'No especificado');
                     $('#detalle-kilometraje').text(vehiculo.kilometraje ? vehiculo.kilometraje + ' km' : 'No especificado');
+                    $('#detalle-gps').html(vehiculo.gps_activo === '1' ? '<span class="badge bg-success"><i class="fas fa-map-marker-alt me-1"></i>Activo</span>' : '<span class="badge bg-secondary"><i class="fas fa-map-marker-alt me-1"></i>Inactivo</span>');
 
                     // Información de Precios
                     $('#detalle-precio').text(simboloMoneda + ' ' + parseFloat(vehiculo.precio_venta || 0).toFixed(2));
@@ -901,8 +918,13 @@
 
                         // Filtrar solo las categorías que contengan "vehiculo" o "vehículo"
                         var categoriaVehiculo = response.filter(function(categoria) {
-                            return categoria.nombre.toLowerCase().includes('vehiculo') ||
-                                   categoria.nombre.toLowerCase().includes('vehículo');
+                            var nombre = categoria.nombre.toLowerCase();
+                            return nombre.includes('vehiculo') ||
+                                   nombre.includes('vehículo') ||
+                                   nombre.includes('moto lineal') ||
+                                   nombre.includes('motokar') ||
+                                   nombre.includes('trimovil') ||
+                                   nombre.includes('cuatrimoto');
                         });
 
                         // Si encontramos la categoría vehículo, agregarla y seleccionarla automáticamente
@@ -943,7 +965,7 @@
 
             if (select && vehiculoWrapper) {
                 const selectedText = select.options[select.selectedIndex].text.toLowerCase().trim();
-                const vehiculoRegex = /veh[íi]cul[o]?[s]?/i;
+                const vehiculoRegex = /veh[íi]cul[o]?[s]?|moto\s*lineal|motokar|trimovil|cuatrimoto/i;
 
                 if (vehiculoRegex.test(selectedText)) {
                     vehiculoWrapper.style.display = 'block';
@@ -1077,6 +1099,7 @@
             formData.append('placa_vehiculo', $('#placa_vehiculo_modal').val());
             formData.append('transmision_vehiculo', $('#transmision_vehiculo_modal').val());
             formData.append('kilometraje', $('#kilometraje_modal').val());
+            formData.append('gps_activo', document.getElementById('gps_activo_modal').checked ? '1' : '0');
             formData.append('fecha_venc_soat', $('#fecha_venc_soat_modal').val());
             formData.append('fecha_venc_seguro', $('#fecha_venc_seguro_modal').val());
 

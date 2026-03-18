@@ -162,6 +162,11 @@
                                 <option value="">Todas las fechas de entrega</option>
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="filtro-fecha-proxima-entrega">
+                                <option value="">Todas las fechas próximas</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -174,6 +179,7 @@
                                     <th>Vehículo</th>
                                     <th>Tipo Adjudicación</th>
                                     <th>Fecha Entrega</th>
+                                    <th>Fecha Próx. Entrega</th>
                                     <th>Estado</th>
                                     <th>Cuotas</th>
                                     <th>Acciones</th>
@@ -181,7 +187,7 @@
                             </thead>
                             <tbody id="tbody-adjudicados">
                                 <tr>
-                                    <td colspan="8" class="text-center">
+                                    <td colspan="9" class="text-center">
                                         <div class="spinner-border" role="status">
                                             <span class="sr-only">Cargando...</span>
                                         </div>
@@ -475,11 +481,13 @@ function exportarAdjudicadosExcel() {
     var tipoAdj = $('#filtro-tipo-adjudicacion').val();
     var estadoEntrega = $('#filtro-estado-entrega').val();
     var fechaEntrega = $('#filtro-fecha-entrega').val();
+    var fechaProximaEntrega = $('#filtro-fecha-proxima-entrega').val();
     var url = _URL + '/ajs/adjudicaciones/exportar-excel?';
     var params = [];
     if (tipoAdj) params.push('tipo_adjudicacion=' + encodeURIComponent(tipoAdj));
     if (estadoEntrega) params.push('estado_entrega=' + encodeURIComponent(estadoEntrega));
     if (fechaEntrega) params.push('fecha_entrega=' + encodeURIComponent(fechaEntrega));
+    if (fechaProximaEntrega) params.push('fecha_proxima_entrega=' + encodeURIComponent(fechaProximaEntrega));
     url += params.join('&');
     window.open(url, '_blank');
 }

@@ -13,6 +13,11 @@ require_once 'app/models/Usuario.php';
 require_once 'utils/lib/vendor/autoload.php'; // Importar PhpSpreadsheet
 require_once 'utils/lib/exel/vendor/autoload.php'; // Importar PhpSpreadsheet
 require_once "utils/lib/mpdf/vendor/autoload.php";  // Incluir el autoload de MPDF
+require_once "app/models/DocumentoEmpresa.php";
+require_once "app/models/Venta.php";
+require_once "app/models/VentaServicio.php";
+require_once "app/models/VentaSunat.php";
+require_once "app/clases/SunatApi.php";
 
 use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\Spreadsheet; // Importar la clase Spreadsheet
@@ -26,6 +31,7 @@ class ConductorController extends Controller
 {
 
     private $conexion;
+    private $sunatApi;
     //private $conductor;   
 
     public function __construct()
@@ -33,6 +39,7 @@ class ConductorController extends Controller
         $this->conexion = (new Conexion())->getConexion();
        // $this->conductor = new Conductor();
         $this->mpdf = new Mpdf();
+        $this->sunatApi = new SunatApi();
     }
 
     
@@ -1481,7 +1488,9 @@ class ConductorController extends Controller
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
                     'conductor' AS tipo_persona,
                     CASE WHEN cp.id_tipopago = 1 THEN 'contado' ELSE 'cuotas' END AS tipo_pago,
-                    NULL AS estado_contrato
+                    NULL AS estado_contrato,
+                    IFNULL(nv.facturado, 0) AS facturado,
+                    nv.fecha_facturacion
                     FROM notas_venta_inscripcion nv
                     INNER JOIN conductores c ON nv.id_conductor = c.id_conductor
                     LEFT JOIN usuarios u ON nv.id_asesor = u.usuario_id
@@ -1502,7 +1511,9 @@ class ConductorController extends Controller
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
                     'conductor' AS tipo_persona,
                     'contado' AS tipo_pago,
-                    NULL AS estado_contrato
+                    NULL AS estado_contrato,
+                    IFNULL(cp.facturado, 0) AS facturado,
+                    cp.fecha_facturacion
                     FROM conductor_pago cp
                     INNER JOIN conductores c ON cp.id_conductor = c.id_conductor
                     LEFT JOIN usuarios u ON cp.usuario_registro = u.usuario_id
@@ -1525,7 +1536,9 @@ class ConductorController extends Controller
                     CONCAT(u.nombres, ' ', IFNULL(u.apellidos, '')) AS nombre_asesor,
                     'cliente' AS tipo_persona,
                     'contado' AS tipo_pago,
-                    NULL AS estado_contrato
+                    NULL AS estado_contrato,
+                    IFNULL(cp.facturado, 0) AS facturado,
+                    cp.fecha_facturacion
                     FROM cliente_pago cp
                     INNER JOIN clientes_financiar clf ON cp.cliente_id = clf.id
                     LEFT JOIN usuarios u ON cp.usuario_id = u.usuario_id";
@@ -2388,5 +2401,410 @@ class ConductorController extends Controller
         
         $stmt->close();
         return false; // No tiene financiamientos vehiculares
+    }
+
+    // ========== FACTURACIÓN DE PAGOS DE INSCRIPCIÓN ==========
+
+    public function obtenerDetallePagoInscripcion()
+    {
+        header('Content-Type: application/json');
+        try {
+            $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+            $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : '';
+            $tipo_pago = isset($_POST['tipo_pago']) ? $_POST['tipo_pago'] : '';
+
+            if (!$id) {
+                echo json_encode(['success' => false, 'message' => 'ID requerido']);
+                return;
+            }
+
+            $con = new Conexion();
+            $conn = $con->getConexion();
+
+            if ($tipo === 'conductor' && $tipo_pago === 'cuotas') {
+                $stmt = $conn->prepare("SELECT 
+                    nv.idnotas_venta_inscripcion AS id_pago,
+                    nv.monto,
+                    nv.fecha_emision AS fecha_pago,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_cliente,
+                    c.nro_documento AS dni_cliente,
+                    c.telefono AS celular_cliente,
+                    'Pago Inscripción' AS concepto,
+                    'cuotas' AS metodo_pago,
+                    nv.facturado
+                FROM notas_venta_inscripcion nv
+                INNER JOIN conductores c ON nv.id_conductor = c.id_conductor
+                WHERE nv.idnotas_venta_inscripcion = ?");
+                $stmt->bind_param("i", $id);
+            } elseif ($tipo === 'conductor' && $tipo_pago === 'contado') {
+                $stmt = $conn->prepare("SELECT 
+                    cp.id_conductorpago AS id_pago,
+                    cp.monto_pago AS monto,
+                    cp.fecha_pago AS fecha_pago,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_cliente,
+                    c.nro_documento AS dni_cliente,
+                    c.telefono AS celular_cliente,
+                    'Pago Inscripción Contado' AS concepto,
+                    'Efectivo' AS metodo_pago,
+                    cp.facturado
+                FROM conductor_pago cp
+                INNER JOIN conductores c ON cp.id_conductor = c.id_conductor
+                WHERE cp.id_conductorpago = ? AND cp.id_tipopago = 1");
+                $stmt->bind_param("i", $id);
+            } elseif ($tipo === 'cliente') {
+                $stmt = $conn->prepare("SELECT 
+                    cp.id AS id_pago,
+                    cp.monto_pagado AS monto,
+                    cp.fecha_pago AS fecha_pago,
+                    CONCAT(clf.nombres, ' ', clf.apellido_paterno, ' ', clf.apellido_materno) AS nombre_cliente,
+                    clf.n_documento AS dni_cliente,
+                    clf.telefono AS celular_cliente,
+                    'Pago Inscripción Cliente' AS concepto,
+                    'Efectivo' AS metodo_pago,
+                    cp.facturado
+                FROM cliente_pago cp
+                INNER JOIN clientes_financiar clf ON cp.cliente_id = clf.id
+                WHERE cp.id = ?");
+                $stmt->bind_param("i", $id);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Tipo o tipo de pago no válido']);
+                return;
+            }
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $detalle = $result->fetch_assoc();
+            $stmt->close();
+            $con->closeConexion();
+
+            if (!$detalle) {
+                echo json_encode(['success' => false, 'message' => 'Pago no encontrado']);
+                return;
+            }
+
+            echo json_encode(['success' => true, 'data' => $detalle]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function obtenerSerieNumeroInscripcion()
+    {
+        header('Content-Type: application/json');
+        try {
+            if (!isset($_POST['tipo_doc']) || empty($_POST['tipo_doc'])) {
+                echo json_encode(['success' => false, 'message' => 'Tipo de documento requerido']);
+                return;
+            }
+            $c_tido = new DocumentoEmpresa();
+            $id_empresa = $_SESSION['id_empresa'];
+            $tipo_doc = $_POST['tipo_doc'];
+            $c_tido->setIdEmpresa($id_empresa);
+            $c_tido->setIdTido($tipo_doc);
+            $c_tido->obtenerDatos();
+            echo json_encode([
+                'success' => true,
+                'serie' => $c_tido->getSerie(),
+                'numero' => $c_tido->getNumero()
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function generarFacturaPagoInscripcion()
+    {
+        header('Content-Type: application/json');
+        try {
+            $id_pago = isset($_POST['id_pago']) ? (int)$_POST['id_pago'] : 0;
+            $tipo = isset($_POST['tipo']) ? $_POST['tipo'] : '';
+            $tipo_pago = isset($_POST['tipo_pago']) ? $_POST['tipo_pago'] : '';
+
+            if (!$id_pago) {
+                echo json_encode(['success' => false, 'message' => 'ID de pago requerido']);
+                return;
+            }
+
+            $con = new Conexion();
+            $conn = $con->getConexion();
+
+            // Verificar si ya está facturado y obtener detalle
+            if ($tipo === 'conductor' && $tipo_pago === 'cuotas') {
+                $stmt = $conn->prepare("SELECT 
+                    nv.idnotas_venta_inscripcion AS id_pago,
+                    nv.monto,
+                    nv.fecha_emision AS fecha_pago,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_cliente,
+                    c.nro_documento AS dni_cliente,
+                    c.telefono AS celular_cliente,
+                    'Pago Inscripción' AS concepto,
+                    'cuotas' AS metodo_pago,
+                    nv.facturado
+                FROM notas_venta_inscripcion nv
+                INNER JOIN conductores c ON nv.id_conductor = c.id_conductor
+                WHERE nv.idnotas_venta_inscripcion = ?");
+                $stmt->bind_param("i", $id_pago);
+            } elseif ($tipo === 'conductor' && $tipo_pago === 'contado') {
+                $stmt = $conn->prepare("SELECT 
+                    cp.id_conductorpago AS id_pago,
+                    cp.monto_pago AS monto,
+                    cp.fecha_pago AS fecha_pago,
+                    CONCAT(c.nombres, ' ', c.apellido_paterno, ' ', c.apellido_materno) AS nombre_cliente,
+                    c.nro_documento AS dni_cliente,
+                    c.telefono AS celular_cliente,
+                    'Pago Inscripción Contado' AS concepto,
+                    'Efectivo' AS metodo_pago,
+                    cp.facturado
+                FROM conductor_pago cp
+                INNER JOIN conductores c ON cp.id_conductor = c.id_conductor
+                WHERE cp.id_conductorpago = ? AND cp.id_tipopago = 1");
+                $stmt->bind_param("i", $id_pago);
+            } elseif ($tipo === 'cliente') {
+                $stmt = $conn->prepare("SELECT 
+                    cp.id AS id_pago,
+                    cp.monto_pagado AS monto,
+                    cp.fecha_pago AS fecha_pago,
+                    CONCAT(clf.nombres, ' ', clf.apellido_paterno, ' ', clf.apellido_materno) AS nombre_cliente,
+                    clf.n_documento AS dni_cliente,
+                    clf.telefono AS celular_cliente,
+                    'Pago Inscripción Cliente' AS concepto,
+                    'Efectivo' AS metodo_pago,
+                    cp.facturado
+                FROM cliente_pago cp
+                INNER JOIN clientes_financiar clf ON cp.cliente_id = clf.id
+                WHERE cp.id = ?");
+                $stmt->bind_param("i", $id_pago);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Tipo o tipo de pago no válido']);
+                return;
+            }
+
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $detalle = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$detalle) {
+                echo json_encode(['success' => false, 'message' => 'Pago no encontrado']);
+                return;
+            }
+
+            if ($detalle['facturado'] == 1) {
+                echo json_encode(['success' => false, 'message' => 'Este pago ya ha sido facturado']);
+                return;
+            }
+
+            // Validar fecha de emisión (hasta 5 días atrás)
+            $fecha_emision = $_POST['fecha_emision'] ?? date('Y-m-d');
+            $fecha_minima = date('Y-m-d', strtotime('-5 days'));
+            $fecha_actual = date('Y-m-d');
+            if ($fecha_emision < $fecha_minima) {
+                echo json_encode(['success' => false, 'message' => 'Solo puede emitir comprobantes con fecha de hasta 5 días atrás']);
+                return;
+            }
+            if ($fecha_emision > $fecha_actual) {
+                echo json_encode(['success' => false, 'message' => 'No puede emitir comprobantes con fecha futura']);
+                return;
+            }
+
+            // Preparar modelos
+            $c_cliente = new Cliente();
+            $c_venta = new Venta();
+            $c_tido = new DocumentoEmpresa();
+            $c_servicio = new VentaServicio();
+
+            $id_empresa = $_SESSION['id_empresa'];
+            $tipo_doc = $_POST['tipo_doc'] ?? '1';
+            $descripcion = $_POST['descripcion'] ?? "Pago Inscripción - {$detalle['nombre_cliente']}";
+
+            // Moneda siempre PEN para inscripciones
+            $moneda_numero = 1;
+
+            // Datos empresa
+            $sql = "SELECT * FROM empresas WHERE id_empresa = " . (int)$id_empresa;
+            $respEmpre = $c_venta->exeSQL($sql)->fetch_assoc();
+            if (!$respEmpre) {
+                throw new Exception('No se encontraron datos de la empresa');
+            }
+            $igv_empresa = $respEmpre['igv'];
+
+            // Calcular montos (monto incluye IGV)
+            $monto_servicio = round(floatval($detalle['monto']), 2);
+            $base_imponible = round($monto_servicio / 1.18, 2);
+            $igv_monto = round($monto_servicio - $base_imponible, 2);
+
+            // Procesar cliente
+            $c_cliente->setIdEmpresa($id_empresa);
+            $c_cliente->setDocumento($detalle['dni_cliente']);
+            $c_cliente->setDatos($detalle['nombre_cliente']);
+            $c_cliente->setDireccion('-');
+            $c_cliente->setDireccion2('-');
+
+            if (!$c_cliente->verificarDocumento()) {
+                $nuevo_id = $c_cliente->insertarCliente(
+                    $c_cliente->getDocumento(),
+                    $c_cliente->getDatos(),
+                    '',
+                    $detalle['celular_cliente'] ?? '',
+                    '-',
+                    $id_empresa
+                );
+                if ($nuevo_id) {
+                    $c_cliente->setIdCliente($nuevo_id);
+                } else {
+                    throw new Exception('Error al procesar cliente');
+                }
+            }
+
+            // Documento serie/numero
+            $c_tido->setIdEmpresa($id_empresa);
+            $c_tido->setIdTido($tipo_doc);
+            $c_tido->obtenerDatos();
+            $numero_original = $c_tido->getNumero();
+
+            // Configurar venta
+            $c_venta->setDireccion('-');
+            $c_venta->setApliIgv(1);
+            $c_venta->setIdEmpresa($id_empresa);
+            $c_venta->setFecha($fecha_emision);
+            $c_venta->setFechaVenc($fecha_emision);
+            $c_venta->setDiasPagos(0);
+            $c_venta->setIdTipoPago(1);
+            $c_venta->setMetodo(1);
+            $c_venta->setObserva("Pago Inscripción - {$detalle['nombre_cliente']}");
+            $c_venta->setIdTido($c_tido->getIdTido());
+            $c_venta->setSerie($c_tido->getSerie());
+            $c_venta->setNumero($numero_original);
+            $c_venta->setIdCliente($c_cliente->getIdCliente());
+            $c_venta->setIgv($igv_empresa);
+            $c_venta->setTotal($monto_servicio);
+            $c_venta->setIdCoti(null);
+
+            $_POST['moneda'] = $moneda_numero;
+            $_POST['tc'] = '1.00';
+            $_POST['pagacon'] = $monto_servicio;
+
+            // Transacción
+            $conexion_tx = (new Conexion())->getConexion();
+            $conexion_tx->begin_transaction();
+
+            try {
+                if (!$c_venta->insertar()) {
+                    throw new Exception('Error al insertar la venta');
+                }
+                $id_venta = $c_venta->getIdVenta();
+
+                // Detalle del servicio
+                $c_servicio->setIdVenta($id_venta);
+                $c_servicio->setIdItem(1);
+                $c_servicio->setDescripcion($descripcion);
+                $c_servicio->setMonto($base_imponible);
+                $c_servicio->setCantidad(1);
+                $c_servicio->setCodSunat('');
+                if (!$c_servicio->insertar()) {
+                    throw new Exception('Error al insertar detalle del servicio');
+                }
+
+                // Generar XML SUNAT
+                if ($tipo_doc == '1' || $tipo_doc == '2') {
+                    $dataSend = [];
+                    $dataSend['certGlobal'] = false;
+
+                    $nombre_cliente = $c_cliente->getDatos() ?: '-';
+                    $direccion_cliente = $c_cliente->getDireccion() ?: '-';
+
+                    $dataSend['cliente'] = json_encode([
+                        'doc_num' => $c_cliente->getDocumento(),
+                        'nom_RS' => $nombre_cliente,
+                        'direccion' => $direccion_cliente
+                    ]);
+                    $dataSend['apli_igv'] = true;
+                    $dataSend['total'] = number_format($monto_servicio, 2, '.', '');
+                    $dataSend['serie'] = $c_tido->getSerie();
+                    $dataSend['numero'] = $c_tido->getNumero();
+                    $dataSend['fechaE'] = $fecha_emision;
+                    $dataSend['fechaV'] = $fecha_emision;
+                    $dataSend['tipo_pago'] = 1;
+                    $dataSend['igv_venta'] = $igv_empresa;
+                    $dataSend['moneda'] = 'PEN';
+                    $dataSend['dias_pagos'] = json_encode([]);
+                    $dataSend['productos'] = json_encode([[
+                        'precio' => number_format($base_imponible, 2, '.', ''),
+                        'cantidad' => 1,
+                        'cod_pro' => 1,
+                        'cod_sunat' => '',
+                        'descripcion' => $descripcion
+                    ]]);
+                    $dataSend['endpoints'] = $respEmpre['modo'];
+                    $dataSend['empresa'] = json_encode([
+                        'ruc' => $respEmpre['ruc'],
+                        'razon_social' => $respEmpre['razon_social'],
+                        'direccion' => $respEmpre['direccion'],
+                        'ubigeo' => $respEmpre['ubigeo'],
+                        'distrito' => $respEmpre['distrito'],
+                        'provincia' => $respEmpre['provincia'],
+                        'departamento' => $respEmpre['departamento'],
+                        'clave_sol' => $respEmpre['clave_sol'],
+                        'usuario_sol' => $respEmpre['user_sol']
+                    ]);
+
+                    $dataResp = ($tipo_doc == '1')
+                        ? $this->sunatApi->genBoletaXML($dataSend)
+                        : $this->sunatApi->genFacturaXML($dataSend);
+
+                    if ($dataResp['res']) {
+                        $c_sunat = new VentaSunat();
+                        $c_sunat->setIdVenta($id_venta);
+                        $c_sunat->setHash($dataResp['data']['hash']);
+                        $c_sunat->setNombreXml($dataResp['data']['nombre_archivo']);
+                        $c_sunat->setQrData($dataResp['data']['qr']);
+                        if (!$c_sunat->insertar()) {
+                            throw new Exception('Error al guardar datos de SUNAT');
+                        }
+                        // Incrementar numero DESPUÉS de generar XML
+                        $c_tido->setNumero(intval($c_tido->getNumero()) + 1);
+                        $c_tido->modificar();
+                    } else {
+                        throw new Exception('Error al generar XML: ' . ($dataResp['msg'] ?? 'Error desconocido'));
+                    }
+                }
+
+                // Marcar pago como facturado en la tabla correspondiente
+                if ($tipo === 'conductor' && $tipo_pago === 'cuotas') {
+                    $stmtUpd = $conexion_tx->prepare("UPDATE notas_venta_inscripcion SET facturado=1, fecha_facturacion=NOW(), id_venta_sunat=? WHERE idnotas_venta_inscripcion=?");
+                    $stmtUpd->bind_param("ii", $id_venta, $id_pago);
+                } elseif ($tipo === 'conductor' && $tipo_pago === 'contado') {
+                    $stmtUpd = $conexion_tx->prepare("UPDATE conductor_pago SET facturado=1, fecha_facturacion=NOW(), id_venta_sunat=? WHERE id_conductorpago=?");
+                    $stmtUpd->bind_param("ii", $id_venta, $id_pago);
+                } elseif ($tipo === 'cliente') {
+                    $stmtUpd = $conexion_tx->prepare("UPDATE cliente_pago SET facturado=1, fecha_facturacion=NOW(), id_venta_sunat=? WHERE id=?");
+                    $stmtUpd->bind_param("ii", $id_venta, $id_pago);
+                }
+
+                if (!$stmtUpd->execute()) {
+                    throw new Exception('Error al marcar pago como facturado');
+                }
+                $stmtUpd->close();
+
+                $conexion_tx->commit();
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Comprobante generado correctamente.',
+                    'id_venta' => $id_venta,
+                    'serie' => $c_tido->getSerie(),
+                    'numero' => $numero_original,
+                    'tipo_doc' => $tipo_doc
+                ]);
+
+            } catch (Exception $e) {
+                $conexion_tx->rollback();
+                throw $e;
+            }
+
+        } catch (Exception $e) {
+            error_log("Error en generarFacturaPagoInscripcion: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
     }
 }

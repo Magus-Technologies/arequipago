@@ -1487,13 +1487,20 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                         const fila = document.createElement("tr");
                         fila.onclick = function () { seleccionarFila(this, financiamiento); };
 
-                        // Determinar el estado del contrato
+                        // Determinar el estado del contrato basado en datos reales
                         let estadoContrato = '';
-                        let badgeClass = '';
                         if (financiamiento.contrato_finalizado == 1) {
-                            estadoContrato = '<span class="badge bg-danger">Finalizado</span>';
+                            estadoContrato = '<span class="badge bg-danger">Contrato Finalizado</span>';
+                        } else if (financiamiento.cuotas && financiamiento.cuotas.length > 0) {
+                            const totalCuotas = financiamiento.cuotas.length;
+                            const cuotasPagadas = financiamiento.cuotas.filter(c => c.estado && c.estado.toLowerCase() === 'pagado').length;
+                            if (cuotasPagadas === totalCuotas) {
+                                estadoContrato = '<span class="badge bg-success">Cuotas Completadas</span>';
+                            } else {
+                                estadoContrato = '<span class="badge bg-warning text-dark">En Progreso (' + cuotasPagadas + '/' + totalCuotas + ')</span>';
+                            }
                         } else {
-                            estadoContrato = '<span class="badge bg-success">Activo</span>';
+                            estadoContrato = '<span class="badge bg-secondary">Sin Cuotas</span>';
                         }
 
                         fila.innerHTML = `
@@ -1712,9 +1719,24 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         function seleccionarFila(fila, financiamiento) {
             // Actualizar el texto del financiamiento seleccionado
             const selectBox = document.getElementById("selectBox");
+            let badgeEstado = '';
+            if (financiamiento.contrato_finalizado == 1) {
+                badgeEstado = '<span class="badge bg-danger ms-2">Contrato Finalizado</span>';
+            } else if (financiamiento.cuotas && financiamiento.cuotas.length > 0) {
+                const totalCuotas = financiamiento.cuotas.length;
+                const cuotasPagadas = financiamiento.cuotas.filter(c => c.estado && c.estado.toLowerCase() === 'pagado').length;
+                if (cuotasPagadas === totalCuotas) {
+                    badgeEstado = '<span class="badge bg-success ms-2">Cuotas Completadas</span>';
+                } else {
+                    badgeEstado = '<span class="badge bg-warning text-dark ms-2">En Progreso (' + cuotasPagadas + '/' + totalCuotas + ')</span>';
+                }
+            } else {
+                badgeEstado = '<span class="badge bg-secondary ms-2">Sin Cuotas</span>';
+            }
             selectBox.innerHTML = `
                 <i class="fas fa-check-circle me-1"></i>
                 <span>${financiamiento.producto.nombre} - ${financiamiento.grupo_financiamiento}</span>
+                ${badgeEstado}
             `;
 
             // Resaltar la fila seleccionada

@@ -66,6 +66,30 @@ class AdjudicacionesController
     }
 
     /**
+     * Obtener fechas próximas de entrega distintas para el filtro
+     */
+    public function obtenerFechasProximaEntrega()
+    {
+        try {
+            $adjudicacionModel = new Adjudicacion();
+            $fechas = $adjudicacionModel->obtenerFechasProximaEntregaDistintas();
+
+            header("Content-Type: application/json");
+            echo json_encode([
+                "success" => true,
+                "data" => $fechas,
+            ]);
+        } catch (Exception $e) {
+            error_log("Error en obtenerFechasProximaEntrega: " . $e->getMessage());
+            header("Content-Type: application/json");
+            echo json_encode([
+                "success" => false,
+                "error" => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Listar todos los adjudicados
      */
     public function listarAdjudicados()
@@ -82,6 +106,9 @@ class AdjudicacionesController
             }
             if (!empty($_GET["fecha_entrega"])) {
                 $filtros["fecha_entrega"] = $_GET["fecha_entrega"];
+            }
+            if (!empty($_GET["fecha_proxima_entrega"])) {
+                $filtros["fecha_proxima_entrega"] = $_GET["fecha_proxima_entrega"];
             }
 
             $adjudicacionModel = new Adjudicacion();
@@ -803,6 +830,9 @@ class AdjudicacionesController
             }
             if (!empty($_GET["fecha_entrega"])) {
                 $filtros["fecha_entrega"] = $_GET["fecha_entrega"];
+            }
+            if (!empty($_GET["fecha_proxima_entrega"])) {
+                $filtros["fecha_proxima_entrega"] = $_GET["fecha_proxima_entrega"];
             }
 
             $adjudicacionModel = new Adjudicacion();

@@ -120,6 +120,10 @@ class Adjudicacion
                 $fechaEntrega = $this->conectar->real_escape_string($filtros["fecha_entrega"]);
                 $whereConditions[] = "DATE(f.fecha_entrega) = '" . $fechaEntrega . "'";
             }
+            if (!empty($filtros["fecha_proxima_entrega"])) {
+                $fechaProxima = $this->conectar->real_escape_string($filtros["fecha_proxima_entrega"]);
+                $whereConditions[] = "DATE(f.fecha_proxima_entrega) = '" . $fechaProxima . "'";
+            }
 
             $whereClause = implode(" AND ", $whereConditions);
 
@@ -137,6 +141,7 @@ class Adjudicacion
                         f.fecha_fin,
                         f.fecha_creacion,
                         f.fecha_entrega,
+                        f.fecha_proxima_entrega,
                         f.estado_entrega,
                         f.moneda,
                         p.idproductosv2,
@@ -839,6 +844,40 @@ class Adjudicacion
         } catch (Exception $e) {
             error_log("Error en obtenerInfoVencimiento: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Obtener fechas próximas de entrega distintas para el filtro
+     */
+    public function obtenerFechasProximaEntregaDistintas()
+    {
+        try {
+            $sql = "SELECT DISTINCT DATE(f.fecha_proxima_entrega) as fecha_proxima_entrega
+                    FROM financiamiento f
+                    INNER JOIN productosv2 p ON f.idproductosv2 = p.idproductosv2
+                    WHERE f.estado_eliminado = 0
+                      AND p.categoria IN ('Vehiculo', 'Moto')
+                      AND f.estado_entrega IN ('entregado', 'pendiente')
+                      AND f.fecha_proxima_entrega IS NOT NULL
+                    ORDER BY f.fecha_proxima_entrega DESC";
+
+            $result = $this->conectar->query($sql);
+            if (!$result) {
+                throw new Exception("Error: " . $this->conectar->error);
+            }
+
+            $fechas = [];
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['fecha_proxima_entrega'])) {
+                    $fechas[] = $row['fecha_proxima_entrega'];
+                }
+            }
+
+            return $fechas;
+        } catch (Exception $e) {
+            error_log("Error en obtenerFechasProximaEntregaDistintas: " . $e->getMessage());
+            return [];
         }
     }
 

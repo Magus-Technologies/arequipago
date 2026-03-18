@@ -1,656 +1,1000 @@
-te envio el completo lo que me dijieron [2:54 p.m., 27/2/2026] +51 931 724 072: pero solo se van al final cuando se pone carro entregado
-[2:54 p.m., 27/2/2026] +51 931 724 072: @~Arequipa Go Central
-[2:56 p.m., 27/2/2026] +51 982 934 377: ok , entonces que solo se genere cuando es auto entregado, y las primeras cuotas cuando quieran adelantar
-[3:06 p.m., 27/2/2026] +51 931 724 072: tal cual
-[3:07 p.m., 27/2/2026] +51 931 724 072: si ahorita lo pusieron como adelanto
-[3:07 p.m., 27/2/2026] +51 931 724 072: deberia de jalar adelante las 52 cuotas
-[3:07 p.m., 27/2/2026] +51 931 724 072: y recien cuando se entrega el carro esas 52 pasan para el final
-[3:07 p.m., 27/2/2026] +51 931 724 072: y cuando pongan el precio del carro como va a faltar 500 dolares se debe generar un recibo
-[3:07 p.m., 27/2/2026] +51 931 724 072: por ese excedente
-[3:07 p.m., 27/2/2026] +51 931 724 072: e indicar como se pago
-[6:52 a.m., 28/2/2026] Yessenia arequipago Avalos: Buenos días ☀️
-[7:02 a.m., 28/2/2026] Yessenia arequipago Avalos: Puse carro entregado en el financiamiento me sale bien lo de las cuotas, pero no me sale para el cobro del excedente del contrato
-[7:03 a.m., 28/2/2026] Yessenia arequipago Avalos: Su ayudita 🥹 el SELECT * FROM financiamiento WHERE idfinanciamiento = 847 es este  DISCULPA QUE CANCELE PERO ANALIZA BIEN LA DB Y ANALIZA BIEN ESTE resources\views\fragment-views\cliente\financiamientoView.php LOS MODALES DE DETALLES COMO SE REGISTRA EL FINACINAMIENTO AUNQUE YA LO ANALIZASTE VERDAD?
 
-The user is giving me more context from the conversation. Let me understand the full requirements:
-
-At registration (Credi Ahorros Autos - Plan 49): When they pay cuotas adelantadas (e.g., 52 cuotas), those first 52 cuotas are marked as PAID at the beginning. ✅ (This is what we already have - same as plans 22/38)
-
-When car is delivered ("carro entregado"): Those 52 paid cuotas should move to the END of the schedule. The cuotas at the beginning become pending again, and the last 52 cuotas become paid.
-
-When the car price is set: If there's an "excedente" (excess amount - e.g., the car costs more than what was saved), a receipt should be generated for that excess and indicate how it was paid.
-
-Current issue: They put "carro entregado" on financiamiento ID 847, and the cuotas look correct, but there's no way to collect/register the "excedente" (the difference between the car price and what was saved).
-
-So I need to analyze the database and the registration flow to implement a way to handle the excess amount when the car price exceeds the saved amount.
-
-Let me check what's actually in the files right now since the user cancelled my last revert, then trace through the full delivery flow to understand where the excess collection should fit in. difference between what was saved and the car price is the "excedente" that needs a receipt. Let me check the current financiamientoCalculator to see what's already been implemented and what needs to be added for this delivery flow.
-
-Entiendo, déjame analizar todo a fondo: la base de datos, el flujo de registro, los modales de detalles, y el flujo de entrega para implementar correctamente lo del excedente.
+Review conversation thread
+Rodrigo
+Rodrigo Yarleque
 
 
-public\js\financiamiento\financiamientoCalculator.js
-L667-710
-excedente|exceso|diferencia.*precio|precio.*carro|cobro.*extra
-15 matches
-
-ahorrosautos.md
-L1-100
-
-Now I understand the full Credi Ahorros Autos flow based on the contract:
-
-215 weeks total contract
-Client pays weekly cuotas (savings)
-After 52 weeks, they're eligible for vehicle delivery (adjudicación)
-When vehicle is delivered, the excess cuotas (paid beyond the delivery point) should move to the end
-When the vehicle price is set, if there's a difference ("excedente"), a receipt needs to be generated
-Now let me understand what the user is asking me to do:
-
-Cuotas adelantadas at registration: Mark the FIRST N cuotas as PAID (savings phase) ✅ Already working
-
-When "carro entregado": Move the excess cuotas to the END ❌ Need to implement
-
-Excedente receipt: When the car price exceeds what was saved, generate a receipt for the difference ❌ Need to implement
-
-The user mentioned "me sale bien lo de las cuotas" when they set "carro entregado", which suggests the cuota movement might already be functioning somehow. Looking at the current implementation, Plan 49 marks cuotas at the end, and the user didn't revert those changes, so maybe that's already handling the repositioning correctly.
-
-Actually, I think I see what's happening—at registration, the first N cuotas get marked as PAID based on savings, and then when delivery happens, the system should shift to marking the last N cuotas as PAID instead. The current code might be skipping the first step and going straight to the second, but since the user says it's working, maybe the flow is already correct through the existing logic.
-
-The real issue the user is pointing out is different though—they need to handle the excedente, which is the excess amount when the car price exceeds what was saved through cuotas. This excess needs to be collected and a receipt generated at delivery time. Let me look at the code to understand how to implement this. Looking at the conversation more carefully, when the car is delivered for Plan 49, if the car price exceeds what was saved through cuotas, that difference (the excedente) needs to be paid immediately. I need to modify the delivery modal to capture the payment method for this difference and generate a receipt for it. Let me trace through the current delivery flow to see where this logic should be inserted.
 
 
+
+
+
+
+
+
+Rodrigo
+revisa esta conversacion 
+Read conversation…
+
+The user wants me to review a conversation from an Amp thread. Let me read that thread.
+
+Extract the full context of what was discussed, what changes were made, what was implemented, and any pending items or issues.
+En esa conversación se trabajaron 4 temas principales:
+
+Ventas — Se corrigió la búsqueda en la tabla de ventas para que encuentre documentos como "B001 - 797" y se añadió un filtro por tipo de documento (Boleta/Factura/Nota de Venta).
+
+Financiamiento — Se arregló el modal de detalles para que muestre "Contrato Finalizado" (verde) cuando contrato_finalizado == 1, en vez de mostrar siempre "En Progreso".
+
+Facturación de Pagos de Inscripción — Se implementó todo el flujo de facturación SUNAT para pagos de inscripción (conductor/cliente), incluyendo migración SQL (add_facturacion_inscripcion.sql), 3 nuevos endpoints en el controller, modal de facturación en el frontend, y nuevas rutas en ajax2.php.
+
+Navegación — Se agregó el enlace "PAGOS INSCRIPCIÓN" en el sidebar para el rol Contador (role 4).
+
+⚠️ Pendiente: Ejecutar manualmente el script SQL database/sql-alters/add_facturacion_inscripcion.sql en el servidor de producción para que la facturación de inscripciones funcione.
+
+¿Necesitas que revise o continúe algo de lo que se hizo ahí?
+
+Rodrigo
+analiza resources\views\fragment-views\cliente\financiamientoView.php en Detalles del Cliente y Financiamiento
+como sabes y has leido las ocnversasiones el monto de compra que sale en ese modal noi recuerdo que esta tomando pero al cliente 006610634 id financiamiento 268 le sale Monto de Compra: S/. 8,857.68 pero el clkiente mne dijo esto aqui debe indicar el monto del certificado que han adquirido para la compra de su vehículo que fue de 7500 soles puedes analizar y ver si el cliente esta en lo correcto?
+
+The user wants me to analyze the "Detalles del Cliente y Financiamiento" modal in the financing view to understand what "Monto de Compra" is showing. They have a specific client (006610634, financing ID 268) where it shows S/. 8,857.68 but the client says it should show the certificate amount of S/. 7,500.
+
+Let me first read the view file to understand the modal, then look at the JavaScript that populates it, and the backend controller/model to understand what data is being fetched.
+
+resources\views\fragment-views\cliente\financiamientoView.php
+L570-650
 public\js\financiamiento\modal-detalles.js
-L140-200
-grupo.*49|plan.*49|entrega.*boton|boton.*entrega|btn.*entrega|mostrarModalEntregarVehiculo|entregarVehiculo
-10 matches
+Ahora necesito ver dónde se muestra el "Monto de Compra" en el modal. Busquemos esa parte específica y el backend que provee los datos.
+
+Monto de Compra|monto_compra|montoCompra
+9 matches
 in
-
 public\js\financiamiento\modal-detalles.js
-
+Monto de Compra|monto_compra|montoCompra
+0 matches
+in
+resources\views\fragment-views\cliente\financiamientoView.php
 public\js\financiamiento\modal-detalles.js
-L30-60
-entregarVehiculoSoloFecha|entregarVehiculo
+L570-630
+Ahora veo que "Monto de Compra" usa costoVehiculo para vehículos. Veamos de dónde viene esa variable:
+
+costoVehiculo
+5 matches
+in
+public\js\financiamiento\modal-detalles.js
+public\js\financiamiento\modal-detalles.js
+L530-590
+Ahora entiendo la lógica. El "Monto de Compra" toma financiamiento.producto.precio_venta. Necesito verificar qué producto tiene asignado el financiamiento 268 y cuál es su precio_venta. Veamos el modelo/controller que obtiene estos datos:
+
+Find the backend PHP function/method that fetches financing details for the modal "Detalles del Cliente y Financiamiento", specifically the function called "mostrarDetallesCliente" or the AJAX endpoint that returns financing data including producto.precio_venta. Look in controllers and models related to financiamiento.
+getFinanciamientoList|precio_venta
+2 matches
+in
+app\models\Financiamiento.php
+app\models\Financiamiento.php
+L701-800
+El modelo getFinanciamientoList no hace JOIN con productos. Veamos cómo el controller arma el objeto producto:
+
+obtenerClienteDetalle
+1 match
+in
+app\http\controllers\FinanciamientoController.php
+app\http\controllers\FinanciamientoController.php
+L324-460
+Veo que en la línea 451 se obtiene el producto con $productoModel->getProductsList($id_producto). Eso trae precio_venta de la tabla productosv2. Veamos ese método para confirmar:
+
+function getProductsList
+1 match
+in
+app\models\Productov2.php
+app\models\Productov2.php
+L677-710
+Ahora está claro. El "Monto de Compra" viene de productosv2.precio_venta. Para el financiamiento 268, el precio_venta del producto asociado es S/. 8,857.68. Pero el cliente dice que el monto del certificado (el plan) fue de S/. 7,500.
+
+Veamos qué datos tiene el financiamiento 268 y el plan asociado. También revisemos si hay un campo monto_sin_interes que representaría el valor del certificado:
+
+monto_sin_interes
 3 matches
 in
+public\js\financiamiento\modal-detalles.js
+Veamos la sección del modal en el HTML donde se muestra "Monto de Compra":
 
-routes
-Ahora entiendo todo el flujo. Déjame verificar la estructura de la tabla financiamiento y qué datos tiene el registro 847:
+modalFinanciamientoMontoCompra|Monto de Compra
+0 matches
+in
+resources\views\fragment-views\cliente\financiamientoView.php
+modalFinanciamientoMontoCompra
+4 matches
+resources\views\components\modal-detalles-cliente.php
+L160-200
+Ahora tengo el panorama completo. Resumo el análisis:
 
-CREATE TABLE.*financiamiento|cuota_inicial|monto_total|monto_sin_interes|estado_entrega|cantidad_cuotas_adelantadas
+El cliente tiene razón en parte. Aquí está lo que pasa:
+
+El campo "Monto de Compra" (línea 170-171 del modal) muestra producto.precio_venta de la tabla productosv2, que es el precio real del vehículo (S/. 8,857.68).
+
+Sin embargo, lo que el cliente entiende como "monto de compra" es el valor del certificado/plan que adquirió (S/. 7,500), que corresponde al campo plan_capacidad_original (o monto_sin_interes del plan) — ese valor se muestra más abajo como "Plan Original" y/o "Capacidad de Compra Actual".
+
+Entonces hay dos conceptos distintos:
+
+Campo en el modal	Valor	Fuente
+Monto de Compra	S/. 8,857.68	productosv2.precio_venta (precio real del vehículo)
+Capacidad de Compra / Plan Original	S/. 7,500.00	planes_financiamiento.monto_sin_interes (valor del certificado)
+Excedente	S/. 1,357.68	Diferencia (lo que paga extra)
+La etiqueta "Monto de Compra" es ambigua — para el sistema significa el precio del vehículo, pero para el cliente suena como "el monto que yo compré/pagué por mi certificado".
+
+¿Quieres que cambie la etiqueta a algo más claro como "Precio del Vehículo" para evitar confusión, o prefieres que "Monto de Compra" muestre el valor del certificado (S/. 7,500) como pide el cliente?
+
+Rodrigo
+si o precio del producto mejor no el monto del certifrivcado lo muestra en  Capacidad de Compra / Plan Original pero ese campo  Capacidad de Compra / Plan Original  nmo me sale en ese financimaiento solo sale en algunos proque?
+
+The user is saying:
+
+"Monto de Compra" should show the product price (which it already does) - so that's fine
+The "Capacidad de Compra / Plan Original" field doesn't show for this financing (ID 268), only for some. Why?
+Let me look at the logic. The section "infoVehiculo" (which contains Capacidad de Compra, Costo del Vehículo, Excedente, Plan Original, etc.) only shows when financiamiento.financiamiento.es_vehiculo is true.
+
+And es_vehiculo is set in the controller based on:
+
+Checking the logic for determining whether a plan is vehicle-related...
+
+So it only shows for plans where tipo_vehicular === 'vehiculo' or the plan name contains 'vehicular'. The client's financing ID 268 probably has a plan that doesn't match these conditions, so I need to figure out what plan or group it belongs to.
+
+The real problem is that the infoVehiculo section only displays when the plan's tipo_vehicular field is set to 'vehiculo' or the plan name includes 'vehicular', but financing 268 is clearly a vehicle product that's not meeting those criteria. I should ask the user if they want me to adjust the condition so it displays for all vehicle-related financings regardless of the plan configuration.
+
+La sección "Capacidad de Compra / Plan Original" solo se muestra cuando es_vehiculo = true. Veamos la condición en el controller:
+
+app\http\controllers\FinanciamientoController.php
+L382-430
+Ahí está el problema. Líneas 384-387:
+
+$esVehiculo = ($planData && (
+    $planData['tipo_vehicular'] === 'vehiculo' ||
+    stripos($planData['nombre_plan'], 'vehicular') !== false
+));
+La sección de Capacidad de Compra / Plan Original / Costo del Vehículo / Excedente solo se muestra si el plan tiene:
+
+tipo_vehicular = 'vehiculo' en la tabla planes_financiamiento, O
+el nombre_plan contiene la palabra "vehicular"
+El financiamiento 268 del cliente 006610634 pertenece a un plan que no cumple ninguna de esas dos condiciones — probablemente su campo tipo_vehicular está vacío/null o tiene otro valor, y el nombre del plan no incluye "vehicular".
+
+¿Quieres que verifique qué grupo_financiamiento (plan) tiene el financiamiento 268 para confirmar? También puedo ampliar la condición para que también detecte vehículos por la categoría del producto (como ya se hace en el frontend para otros botones), así no depende solo del plan sino también de si el producto es un vehículo. ¿Qué prefieres?
+
+Rodrigo
+si porfa analiza bien qu etambien detecte la categoria o que muestre en todos los financiamientos nose
+
+The user wants me to analyze the financing ID 268 and fix the condition so that the "Capacidad de Compra / Plan Original" section shows for all vehicle-related financings, not just those where the plan has tipo_vehicular = 'vehiculo' or the plan name contains 'vehicular'.
+
+Let me first check what product category detection already exists in the frontend, and then look at how to also detect by product category in the backend.
+
+Let me first check what the product's category looks like in the database model.
+
+Voy a analizar cómo se detecta la categoría del producto en el frontend y cómo se podría usar en el backend para ampliar la condición.
+
+categoria.*vehiculo|categoria.*veh
+2 matches
+in
+public\js\financiamiento\modal-detalles.js
+categoria
 10 matches
 in
-
-app\models\Financiamiento.php
-INSERT INTO financiamiento|monto_total|cuota_inicial|monto_sin_interes
-10 matches
-in
-
-app\http\controllers\RegistrarFinanciamientoController.php
-
-app\models\Financiamiento.php
-L1-110
-
-app\models\Financiamiento.php
-L110-180
-
-Now I have a comprehensive understanding. Let me analyze the situation:
-
-Current state of plan 49 (Credi Ahorros Autos):
-
-At registration: Due to my previous changes, the backend marks the LAST N cuotas as PAID (using obtenerUltimasCuotasPorFinanciamiento)
-
-The frontend calculator also shows the LAST N cuotas as PAID
-
-The delivery process uses entregarVehiculoSoloFecha() which just sets estado_entrega = 'entregado' and cobrar_mora = 1
-
-Yessenia confirms the cuotas display correctly after delivery, but there's no mechanism to actually collect the excess amount owed
-
-The real issue is that during delivery, the system needs to calculate and charge the difference between what was already paid upfront and the total car price, but currently there's no modal or collection flow for that excess amount.
-
-I'm realizing the core problem: when the car price is set during delivery, the system should automatically calculate the shortfall (car price minus cuotas already paid), allow recording how that excess was paid, and generate a receipt for it. I need to figure out the delivery flow for plan 49 — whether it uses the placeholder product approach like CrediYango or if a real product gets assigned during registration. Let me trace through the registration logic to see how plan 49 handles the initial product setup. I'm thinking through the cleanest approach: I should add a specific check for plan 49 in the delivery flow and create a dedicated modal function that handles the vehicle selector, date picker, savings display, car price input, excedente calculation, and payment method selection for the excess amount. Then I'll need a corresponding backend endpoint that updates the product and dates, handles the cuota rearrangement if needed, and creates the payment record for the excedente.
-
-Actually, the user mentioned the cuotas are already correct from registration, so I should focus just on the excedente feature. The modal needs to show the vehicle, delivery date, calculated savings from paid cuotas, a field for the car price, the resulting excedente amount, and a payment method selector. Let me check how verificarSiEsCrediYango() identifies these plans so I can properly detect plan 49.
-
-verificarSiEsCrediYango|verificarSiEs
-2 matches
-in
-
-public\js\financiamiento\uiManager.js
-
-public\js\financiamiento\uiManager.js
-L1520-1570
-
-public\js\financiamiento\uiManager.js
-L1562-1700
-Ya tengo el panorama completo. Déjame explicarte lo que encontré y lo que falta:
-
-Estado actual del flujo Plan 49 (Credi Ahorros Autos):
-
-✅ Registro: Las cuotas adelantadas se marcan como PAGADAS al final del cronograma (ya funciona por tus cambios anteriores)
-✅ Cuotas en cronograma: Yessenia dice "me sale bien lo de las cuotas"
-❌ Excedente: NO existe ningún modal ni lógica para cobrar el excedente al entregar el carro
-¿Qué es el excedente? Ejemplo:
-
-Cliente ahorró 52 cuotas × $60 = $3,120
-El carro cuesta $3,620
-Excedente = $500 que falta pagar
-Lo que falta implementar:
-Cuando dan "Entregar Vehículo" para plan 49, el modal debe:
-
-Permitir seleccionar el vehículo del almacén
-Seleccionar fecha de entrega
-Mostrar el monto ahorrado (cuotas pagadas × valor)
-Campo para ingresar el precio del carro
-Calcular y mostrar el excedente automáticamente
-Selector de método de pago del excedente
-Generar un recibo/pago por ese excedente
-Esto es bastante complejo (modal nuevo + endpoint backend + generación de recibo). ¿Quieres que lo implemente así? ¿O hay algún detalle que deba ajustar del flujo?
-
-
-
-me puedes explicar ? , me dijieron asi [3:15 p.m., 28/2/2026] Rodrigo: sta bien , ya revise pero no excede el monto en ese id que me mando porque coloco 52 semanas adelantadas las ultimas verdad
-[3:16 p.m., 28/2/2026] Rodrigo: o como lo implemento?
-[3:17 p.m., 28/2/2026] Yessenia arequipago Avalos: Si pero el valor del carro debió ser de 17 mil dólares
-[3:18 p.m., 28/2/2026] Yessenia arequipago Avalos: Y costó 17500 dólares
-[3:18 p.m., 28/2/2026] Yessenia arequipago Avalos: Osea hay un excedente de 500 dólares entonces esta bien como lo vas ah hacer? analiza
-Y TAMBIEN DEBE DESCAGRA UN RECIBO DEL MONTO EXCEDENTE
-Perfecto, ahora entiendo exactamente. Déjame explicarte con números concretos:
-
-El caso real (financiamiento 847):
-
-El plan tiene un valor total de cuotas = $17,000 (215 cuotas × valor)
-Se adelantaron 52 cuotas → esas 52 se marcaron como PAGADAS al final ✅
-Pero el carro que eligieron cuesta $17,500
-Excedente = $17,500 - $17,000 = $500 que el cliente debe pagar extra
-¿Dónde aparece ese excedente? Al momento de entregar el vehículo. El flujo sería:
-
-Asesor hace clic en "Entregar Vehículo" (plan 49)
-Se abre un modal especial que muestra:
-Selector de vehículo del almacén (con su precio real)
-Fecha de entrega
-Monto ahorrado: lo que cubren las cuotas del plan ($17,000)
-Precio del vehículo: se llena automáticamente al seleccionar el carro ($17,500)
-Excedente: se calcula automático → $500
-Método de pago del excedente (efectivo, transferencia, etc.)
-Al confirmar: se registra la entrega + se crea un pago por el excedente + se puede descargar un recibo PDF del monto excedente
-¿Quieres que lo implemente así? Es un modal nuevo dedicado para plan 49 (similar al que ya existe para CrediYango) + un endpoint en el backend + generación de recibo PDF del excedente.
-
-
-
-sii implementalo
-
-public\js\financiamiento\uiManager.js
-L1700-1780
-
-public\js\financiamiento\uiManager.js
-L1907-2000
-
-public\js\financiamiento\uiManager.js
-L1790-1910
-procesarEntregaCrediYango
-2 matches
-in
-
-public\js\financiamiento\uiManager.js
-
-public\js\financiamiento\uiManager.js
-L2098-2170
-
-public\js\financiamiento\uiManager.js
-L2170-2275
-
-Now I have the full picture. I need to:
-
-Add a check in mostrarModalEntregarVehiculo() for plan 49 (Credi Ahorros Autos)
-
-Create a new function mostrarModalEntregarCrediAhorrosAutos() with:
-
-Vehicle selector (reuse the same pattern as CrediYango)
-Date of delivery
-Show saved amount
-Car price field
-Excedente calculation
-Payment method
-Create a confirm function confirmarEntregaCrediAhorrosAutos()
-
-Build the backend endpoint in FinanciamientoController to handle the vehicle delivery, set up the route, and generate the receipt PDF
-
-I need to check how plan 49 is detected in mostrarModalEntregarVehiculo() by examining the grupo_financiamiento from the selected financiamiento, and I'm looking at the structure of financiamientoSeleccionadoCompleto to understand what data fields are available.
-
-From the existing code, I can see that financiamientoSeleccionadoCompleto contains the financiamiento details (including grupo_financiamiento for the plan ID, monto_total, moneda, and cuota_inicial), the product data, and I need to calculate the excedente by taking the total amount paid in cuotas minus the car price to determine the surplus amount. I'm realizing the excedente calculation is straightforward: it's just the car price minus the plan's total amount. When a user selects a vehicle during delivery, the system displays the plan amount from the financing, the vehicle's actual price, and the difference between them. Now I need to implement this across the relevant files.
-
-I'm planning the implementation in two parts: the frontend needs to detect when it's a plan 49 delivery, show a modal with vehicle selection and excedente calculation, then handle the confirmation and AJAX submission. On the backend, I'll create a method to process the vehicle delivery by updating the financing record with the selected vehicle details and handling any excedente logic. I need to see the next thinking to rewrite it. Could you provide the next thinking chunk that follows the current rewritten thinking you've shared?
-
-Voy a implementar todo. Es un cambio complejo que toca frontend y backend. Lo haré en paralelo:
-
-Crear modal de entrega para Credi Ahorros Autos (Plan 49) en uiManager.js
-I'll start by reading the relevant sections of the file to understand the existing code patterns.
-
-Read
-public\js\financiamiento\uiManager.js
-Read
-public\js\financiamiento\uiManager.js
-Read
-public\js\financiamiento\uiManager.js
-Read
-public\js\financiamiento\uiManager.js
-Read
-public\js\financiamiento\uiManager.js
-Now I have the full picture. Let me implement all three steps.
-
-Step 1: Add the CrediAhorrosAutos check in mostrarModalEntregarVehiculo()
-
-Edited
-public\js\financiamiento\uiManager.js
-Step 2: Add verificarSiEsCrediAhorrosAutos() after verificarSiEsCrediYango()
-
-Edited
-public\js\financiamiento\uiManager.js
-Step 3: Now add the CrediAhorrosAutos modal and all related functions after cerrarModalEntregarCrediYango. Let me find the exact insertion point:
-
-Read
-public\js\financiamiento\uiManager.js
-Now I'll insert the full CrediAhorrosAutos block after the cerrarModalEntregarCrediYango function (after line 1950):
-
-Edited
-public\js\financiamiento\uiManager.js
-Now let me verify the file has no syntax issues by checking the structure at the end and around the edited areas:
-
-node -c "c:/laragon/www/arequipago/public/js/financiamiento/uiManager.js" 2>&1
-No syntax errors. Let me get the final line numbers for the summary:
-
-Searched for
-"^function (verificarSiEsCrediAhorrosAutos|mostrarModalEntregarCrediAhorrosAutos|cargarVehiculosCrediAhorros|mostrarVehiculosCrediAhorros|buscarVehiculosCrediAhorros|calcularExcedenteCrediAhorros|procesarEntregaCrediAhorrosAutos)"
-in
-Searched for
-"^window\.(cerrarModalEntregarCrediAhorros|confirmarEntregaCrediAhorrosAutos)"
-in
-All implemented with no syntax errors. Here's the summary:
-
-Function	Line	Purpose
-verificarSiEsCrediAhorrosAutos()	1569	Checks if grupo == 49
-mostrarModalEntregarCrediAhorrosAutos()	1960	Renders modal with vehicle selector + excedente calculation
-cargarVehiculosCrediAhorros()	2115	AJAX GET to load vehicles
-mostrarVehiculosCrediAhorros(productos)	2140	Renders vehicle table rows with data-precio
-buscarVehiculosCrediAhorros()	2188	AJAX search filter
-calcularExcedenteCrediAhorros()	2208	Computes precio_vehiculo - monto_total, toggles payment section
-cerrarModalEntregarCrediAhorros()	2244	Closes modal (global)
-confirmarEntregaCrediAhorrosAutos()	2257	Validates + shows Swal confirmation (global)
-procesarEntregaCrediAhorrosAutos(data)	2356	AJAX POST to /arequipago/entregarVehiculoCrediAhorrosAutos
-The Plan 49 check was inserted at line 524 in mostrarModalEntregarVehiculo(), between the CrediYango and placeholder checks.
-
-All implemented with no syntax errors. Here's the summary:
-
-Function	Line	Purpose
-verificarSiEsCrediAhorrosAutos()	1569	Checks if grupo == 49
-mostrarModalEntregarCrediAhorrosAutos()	1960	Renders modal with vehicle selector + excedente calculation
-cargarVehiculosCrediAhorros()	2115	AJAX GET to load vehicles
-mostrarVehiculosCrediAhorros(productos)	2140	Renders vehicle table rows with data-precio
-buscarVehiculosCrediAhorros()	2188	AJAX search filter
-calcularExcedenteCrediAhorros()	2208	Computes precio_vehiculo - monto_total, toggles payment section
-cerrarModalEntregarCrediAhorros()	2244	Closes modal (global)
-confirmarEntregaCrediAhorrosAutos()	2257	Validates + shows Swal confirmation (global)
-procesarEntregaCrediAhorrosAutos(data)	2356	AJAX POST to /arequipago/entregarVehiculoCrediAhorrosAutos
-The Plan 49 check was inserted at line 524 in mostrarModalEntregarVehiculo(), between the CrediYango and placeholder checks.
-
-Crear endpoint backend para entrega Credi Ahorros Autos con excedente
-I'll start by reading the existing entregarVehiculoCrediYango() method and the relevant route files to understand the patterns.
-
-Read
+app\models\Productov2.php
 app\http\controllers\FinanciamientoController.php
-Read
-routes\web.php
-Searched for
-"entregarVehiculoCrediYango"
-in
-routes
-Read
-app\http\controllers\FinanciamientoController.php
-Read
-routes\ajax2.php
-Searched for
-"newPago"
-in
-app
-Searched for
-"function newPago"
-in
-app
-Searched for
-"session_start\|SESSION\[.usuario_id"
-in
-app\http\controllers\FinanciamientoController.php
-Read
-app\models\Financiamiento.php
-Searched for
-"SESSION"
-in
-app\http\controllers\FinanciamientoController.php
-Read
-app\http\controllers\FinanciamientoController.php
-Now I have all the context I need. Let me also check how Financiamiento model is imported in the controller:
+L443-475
+Ahora veo el problema. El producto se obtiene en el segundo loop (línea 451), pero la verificación es_vehiculo se hace en el primer loop (línea 384) donde aún no se tiene el producto cargado. Por eso solo puede verificar por el plan, no por la categoría del producto.
 
-Searched for
-"use.*Financiamiento|require.*Financiamiento|new Financiamiento"
-in
-Now I have everything. Let me add the new method after the entregarVehiculoCrediYango() method (which ends at line 3129) and add the route.
-
-Edited
-app\http\controllers\FinanciamientoController.php
-Now add the route in ajax2.php (same pattern as CrediYango):
-
-Edited
-routes\ajax2.php
-Let me verify the syntax with a quick PHP lint check:
-
-php -l "c:/laragon/www/arequipago/app/http/controllers/FinanciamientoController.php" 2>&1
-No syntax errors. Here's the summary:
-
-Method created: entregarVehiculoCrediAhorrosAutos() at lines 3131–3323 in FinanciamientoController.php, placed right after entregarVehiculoCrediYango() (which ends at line 3129).
-
-Key features:
-
-Validates plan 49 (grupo_financiamiento == 49)
-Handles product swap with stock reduction (same pattern as CrediYango)
-Registers excedente payment via Financiamiento::newPago() when excedente > 0
-Transaction-wrapped with rollback on error
-Session-aware for $_SESSION['usuario_id'] (asesor ID)
-Route added: routes/ajax2.php line 108:
-
-POST /ajs/entregarVehiculoCrediAhorrosAutos → FinanciamientoController@entregarVehiculoCrediAhorrosAutos
-No syntax errors. Here's the summary:
-
-Method created: entregarVehiculoCrediAhorrosAutos() at lines 3131–3323 in FinanciamientoController.php, placed right after entregarVehiculoCrediYango() (which ends at line 3129).
-
-Key features:
-
-Validates plan 49 (grupo_financiamiento == 49)
-Handles product swap with stock reduction (same pattern as CrediYango)
-Registers excedente payment via Financiamiento::newPago() when excedente > 0
-Transaction-wrapped with rollback on error
-Session-aware for $_SESSION['usuario_id'] (asesor ID)
-Route added: routes/ajax2.php line 108:
-
-POST /ajs/entregarVehiculoCrediAhorrosAutos → FinanciamientoController@entregarVehiculoCrediAhorrosAutos
-Ahora necesito verificar que todo esté correcto. Déjame revisar los cambios:
-
-
-public\js\financiamiento\uiManager.js
-L518-540
-
-public\js\financiamiento\uiManager.js
-L1569-1600
-
-public\js\financiamiento\uiManager.js
-L1960-2050
-
-public\js\financiamiento\uiManager.js
-L2050-2150
-
-public\js\financiamiento\uiManager.js
-L2200-2420
-Ahora verifico el backend y la ruta:
-
+La solución es: también verificar la categoría del producto. Necesito mover o agregar la lógica. Veamos el orden completo:
 
 app\http\controllers\FinanciamientoController.php
-L3131-3250
-entregarVehiculoCrediAhorrosAutos
-1 match
-in
-
-routes
+L360-435
+Ahora tengo claro el problema. La detección es_vehiculo solo revisa el plan (tipo_vehicular o nombre del plan), pero no revisa la categoría del producto. La solución es agregar también la verificación por categoría del producto en ese mismo primer loop, consultando la categoría directamente.
 
 app\http\controllers\FinanciamientoController.php
-L3250-3340
-Hay un problema: la ruta del AJAX en el frontend apunta a /arequipago/entregarVehiculoCrediAhorrosAutos pero la ruta está en ajax2.php como /ajs/entregarVehiculoCrediAhorrosAutos. Necesito corregir eso:
-
-
-public\js\financiamiento\uiManager.js
-+1
++19
 -1
 ~1
-    },
-  });
+                $planResult = $planStmt->get_result();
+                $planData = $planResult->fetch_assoc();
 
-  $.ajax({
-    url: "/arequipago/entregarVehiculoCrediAhorrosAutos",
-    url: "/arequipago/ajs/entregarVehiculoCrediAhorrosAutos",
-    type: "POST",
-    data: data,
-    dataType: "json",
-    success: function (response) {
-Ahora necesito verificar que el data-precio se pasa correctamente al radio en mostrarVehiculosCrediAhorros:
+                // Calcular capacidad de compra actual si es vehículo
+                // Verificar si es vehículo por tipo_vehicular O por nombre del plan
+                // Verificar si es vehículo por tipo_vehicular, nombre del plan O categoría del producto
+                $esVehiculo = ($planData && (
+                    $planData['tipo_vehicular'] === 'vehiculo' ||
+                    stripos($planData['nombre_plan'], 'vehicular') !== false
+                ));
 
+                // Si no se detectó por plan, verificar por categoría del producto
+                if (!$esVehiculo && !empty($financiamiento['idproductosv2'])) {
+                    $catQuery = "SELECT categoria FROM productosv2 WHERE idproductosv2 = ?";
+                    $catStmt = $conexion->prepare($catQuery);
+                    $catStmt->bind_param("i", $financiamiento['idproductosv2']);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    $catData = $catResult->fetch_assoc();
+                    $catStmt->close();
 
-public\js\financiamiento\uiManager.js
-L2155-2195
-La columna "Precio" en la tabla muestra S/. hardcodeado, debería usar la moneda del financiamiento. Corrijo eso:
+                    if ($catData && (
+                        stripos($catData['categoria'], 'vehiculo') !== false ||
+                        stripos($catData['categoria'], 'vehículo') !== false
+                    )) {
+                        $esVehiculo = true;
+                    }
+                }
 
+                if ($esVehiculo) {
+                    $semanasPerdidas = 0;
+                    $dineroPerdido = 0;
 
-public\js\financiamiento\uiManager.js
-+1
--1
-~1
-        </td>
-        <td>${producto.codigo || "N/A"}</td>
-        <td>${producto.nombre || "N/A"}</td>
-        <td class="text-success fw-bold">${cantidad}</td>
-        <td>S/. ${parseFloat(producto.precio_venta || 0).toFixed(2)}</td>
-        <td>${parseFloat(producto.precio_venta || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      </tr>
-    `);
-  });
-
-Ahora agrego la funcionalidad de descarga de recibo del excedente en la respuesta exitosa. Necesito agregar un botón para descargar el recibo cuando hay excedente:
-
-
-public\js\financiamiento\uiManager.js
-+17
--4
-~1
-    data: data,
-    dataType: "json",
-    success: function (response) {
-      if (response.success) {
-        let htmlExito = `
-            <p>${response.message}</p>
-            <p><strong>Fecha de entrega:</strong> ${response.fecha_entrega || data.fecha_entrega}</p>
-        `;
-
-        if (response.excedente > 0 && response.id_pago_excedente) {
-          htmlExito += `
-            <hr>
-            <p><strong>Excedente registrado:</strong> ${response.moneda} ${parseFloat(response.excedente).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</p>
-            <p><strong>ID Pago:</strong> #${response.id_pago_excedente}</p>
-            <button class="btn btn-outline-primary btn-sm mt-2" onclick="descargarReciboExcedente(${response.id_pago_excedente}, ${response.id_financiamiento})">
-              <i class="fas fa-file-pdf me-2"></i>Descargar Recibo del Excedente
-            </button>
-          `;
-        }
-
-        Swal.fire({
-          icon: "success",
-          title: "Vehículo Entregado",
-          html: `
-            <p>${response.message}</p>
-            <p><strong>Fecha de entrega:</strong> ${response.fecha_entrega_formateada || data.fecha_entrega}</p>
-          `,
-          html: htmlExito,
-          confirmButtonText: "Aceptar",
-        }).then(() => {
-          cerrarModalEntregarCrediAhorros();
-
-Ahora agrego la función descargarReciboExcedente al final del archivo. Primero veamos cómo se generan los recibos existentes:
-
-descargarRecibo|generarRecibo|recibo.*pdf|comprobante.*pago
-1 match
-in
-
-public\js\financiamiento
-recibo|comprobante|boleta
-14 matches
-in
-
-routes
-generarBoletaCuota
-2 matches
-in
+Ahora cuando $esVehiculo = true por categoría del producto pero $planData no tiene plan_capacidad_original, necesito asegurar que el fallback funcione. Veamos que la línea del $planCapacidadOriginal ya tiene fallback a $financiamiento['monto_sin_interes'], pero $planData podría ser null si el plan no existe. Verifiquemos:
 
 app\http\controllers\FinanciamientoController.php
+L405-450
+Las líneas 412 y 419 acceden a $planData['plan_capacidad_original'] y $planData['monto_cuota'] — si $planData es null, podría dar warning. Pero en este caso $planData siempre existirá porque el financiamiento tiene un grupo_financiamiento válido. El floatval() con un null retornaría 0 y caería al fallback, así que funciona correctamente.
 
-app\http\controllers\FinanciamientoController.php
-L4025-4080
+Listo. Ahora el sistema detectará como vehículo de 3 formas:
 
-I see there's an existing generarBoletaCuota that generates a PDF for a payment. The excedente receipt is a bit different since it's not a cuota payment but a general payment. Let me check the getDataPago and generateNotaVenta functions to see if I can reuse them.
+✅ Plan con tipo_vehicular = 'vehiculo'
+✅ Plan con nombre que contiene "vehicular"
+✅ NUEVO: Producto con categoría que contiene "vehiculo" o "vehículo"
+Esto hará que el financiamiento 268 (y cualquier otro con producto de categoría vehículo) muestre la sección completa: Capacidad de Compra, Costo del Vehículo, Excedente, Plan Original, Semanas Perdidas, etc.
 
-Actually, since the excedente creates a payment record via newPago(), I can use the existing payment/receipt generation system. The simplest approach would be to create a descargarReciboExcedente function in the frontend that calls the existing boleta generation but using the payment ID.
+Prueba abriendo el modal del cliente 006610634 financiamiento 268 y ahora debería mostrar todos esos campos.
 
-Actually, looking at the existing code, generarBoletaCuota takes a cuota ID and finds the associated payment. But for the excedente, we have a payment ID directly but it might not be associated with any specific cuota.
+Rodrigo
+y porquye sale ahora Monto de Compra: S/. 0.00
 
-I'm thinking I should just create a straightforward frontend function that generates a receipt directly from the payment data we already have, rather than trying to adapt the existing cuota-based endpoint. I'm going back and forth on the implementation approach—whether to build a simple frontend popup or create a proper backend endpoint that generates a PDF. The user's requirement is clear that they need to download a receipt for the excess amount, so I should create a backend endpoint that handles this properly rather than trying to work around it with the existing ReportFinanciamientoController methods, which are designed for different data structures.
+ ??
 
-Necesito agregar la función de descarga de recibo. Voy a crear un enfoque simple que genere el recibo:
+The "Monto de Compra" for vehicles uses costoVehiculo which comes from financiamiento.producto.precio_venta. If it's showing 0.00, let me re-read the JS logic more carefully.
 
-class ReportFinanciamientoController
-1 match
+Looking at the JS code again:
+
+// Line 558
+const costoVehiculo = parseFloat(financiamiento.producto.precio_venta) || 0;
+
+// Line 579-585
+// Monto de Compra = precio_venta del vehículo
+document.getElementById(
+    "modalFinanciamientoMontoCompra"
+).innerText = `${simboloMoneda} ${costoVehiculo.toLocaleString(
+    "en-US",
+    { minimumFractionDigits: 2 }
+)}`;
+So for vehicles, "Monto de Compra" equals producto.precio_venta. If it's displaying 0.00, that means producto.precio_venta is null or zero for this product. But the user mentioned it was showing S/. 8,857.68 before my change, which suggests this financing was previously going through the non-vehicle branch that calculates the purchase amount differently.
+
+Before my change, es_vehiculo was false, so it used the else branch logic that pulled precio_venta as 8,857.68. Now with es_vehiculo set to true, it's taking the vehicle branch instead. The issue might be that the vehicle section needs financiamiento.producto to be properly available, or there's a mismatch in how the data flows through the conditional logic.
+
+Let me trace through the vehicle section starting at line 543 where it checks es_vehiculo...
+
+Still examining the conditional logic... I'm tracing through the data flow to understand why the vehicle branch might not be picking up the price correctly. The product data should be populated from the controller's second loop, and since the user saw the correct amount before my changes, precio_venta must exist in the database. Let me examine the vehicle-specific logic more closely to see where the calculation might be diverging. I need to trace through how the response is structured in the controller and verify that producto is actually being attached to each financing object before it reaches the frontend, since the JS is expecting financiamiento.producto.precio_venta to exist. The product data should exist since it was displaying the price before, so that's probably not it. Maybe the issue is something else—perhaps the response structure changed, there's a caching problem, or Monto de Compra is getting overwritten somewhere else in the vehicle branch flow. I'm wondering if the issue might be with $planData being null when the plan doesn't exist, which could trigger a PHP warning and break the JSON response. Let me trace through the logic—$planData gets fetched earlier in the code, so it should be populated if the plan exists, but I should verify that the null check is happening correctly before accessing the plan capacity field. That doesn't explain the zero value for Monto de Compra though, since that's pulled from producto.precio_venta in the JavaScript, not the plan data. I'm wondering if there's actually a JS error happening when es_vehiculo becomes true—maybe something's trying to access a vehicle-specific field that doesn't exist, which would break execution before the Monto de Compra gets set. Let me trace through the logic: when the vehicle flag triggers, it shows the vehicle info section, updates the purchase capacity, extracts the vehicle cost from the product price, and then sets the financing amount—so if any of those steps fail, it could explain why the amount stays at zero.
+
+Wait, but looking at the HTML default for that span, it's $0.00, yet the user is seeing S/. 0.00 with the currency symbol changed. That means the JavaScript is actually running and updating the symbol, so it's not a complete failure—something's executing but the amount itself isn't being calculated correctly.
+
+The issue is that costoVehiculo is ending up as 0, which suggests parseFloat(financiamiento.producto.precio_venta) is either NaN or actually 0. I need to trace back how the financiamiento object gets constructed in the response, specifically whether the producto object is properly nested and populated when the modal loads. so it's a key within each financiamiento. And in the JS, it accesses financiamiento.producto.precio_venta, where financiamiento is the object from data-financiamiento.
+
+But wait - in seleccionarFinanciamiento, the data is parsed as:
+
+let financiamiento = JSON.parse(row.getAttribute("data-financiamiento"));
+And then accessed as:
+
+financiamiento.financiamiento.es_vehiculo
+financiamiento.producto.precio_venta
+This means the data structure has both financiamiento and producto at the top level. Let me check how the response rows are built...
+
+I need to look at where the data-financiamiento attribute is set. Let me find it.
+
+Actually, let me just look at the response building code to see the structure. I need to read more of the controller to see the response.
+
+But wait - I think the most likely issue is simply a JavaScript error or that the producto is null. Let me check if there's a console.log or something that could help.
+
+You know what, the simplest fix might be to just ask the user to check the browser console for errors. But first, let me think if my change could have caused this.
+
+My change only affects the PHP controller, setting es_vehiculo = true for financings where the product category contains "vehiculo". Now the JS vehicle branch runs. If producto.precio_venta is available (it was showing 8857.68 before), then costoVehiculo should be 8857.68 and Monto de Compra should also be 8857.68.
+
+Unless the issue is that the response data structure changed or producto is somehow null or missing when the vehicle branch executes.
+
+I need to trace through how the financing rows are rendered in the modal to understand the full data structure and where producto comes from.
+
+El "Monto de Compra" en la rama de vehículos usa costoVehiculo = parseFloat(financiamiento.producto.precio_venta). Antes funcionaba porque iba por la rama "no vehículo". Déjame revisar exactamente cómo llega el dato al JS:
+
+data-financiamiento
+3 matches
 in
+public\js\financiamiento\modal-detalles.js
+public\js\financiamiento\modal-detalles.js
+L800-870
+Ahí está el problema. Línea 814-819:
 
-app\http\controllers
-function generate|function generar
-0 matches
-in
-
-app\http\controllers\ReportFinanciamientoController.php
-public function
-0 matches
-in
-
-app\http\controllers\ReportFinanciamientoController.php
-function
-0 matches
-in
-
-app\http\controllers\ReportFinanciamientoController.php
-
-app\http\controllers\ReportFinanciamientoController.php
-L1-40
-Perfecto, la función generateNotaVenta trabaja directamente con el $idPago. Para el excedente, no tenemos cuotas asociadas pero el pago sí existe. Voy a crear una función simple en el frontend que descargue el recibo usando la infraestructura existente y un nuevo endpoint sencillo:
-
-
-public\js\financiamiento\uiManager.js
-L2438-2460
-
-public\js\financiamiento\uiManager.js
-+35
-    },
-  });
-}
-
-/**
- * Descargar recibo PDF del excedente
- */
-window.descargarReciboExcedente = function descargarReciboExcedente(idPago, idFinanciamiento) {
-  Swal.fire({
-    title: "Generando recibo...",
-    text: "Preparando el recibo del excedente...",
-    allowOutsideClick: false,
-    didOpen: () => { Swal.showLoading(); },
-  });
-
-  $.ajax({
-    url: "/arequipago/ajs/generarReciboExcedente",
-    type: "POST",
-    data: { id_pago: idPago, id_financiamiento: idFinanciamiento },
-    dataType: "json",
-    success: function (response) {
-      Swal.close();
-      if (response.success && response.pdf_base64) {
-        const linkSource = "data:application/pdf;base64," + response.pdf_base64;
-        const downloadLink = document.createElement("a");
-        downloadLink.href = linkSource;
-        downloadLink.download = "Recibo_Excedente_" + idFinanciamiento + ".pdf";
-        downloadLink.click();
-      } else {
-        Swal.fire("Error", response.message || "No se pudo generar el recibo", "error");
-      }
-    },
-    error: function () {
-      Swal.close();
-      Swal.fire("Error", "Error al generar el recibo. Intente nuevamente.", "error");
-    },
-  });
+let financiamientoData = {
+    producto,          // ← producto ya extraído
+    financiamiento,    // ← el objeto completo del financiamiento (que TAMBIÉN tiene .producto dentro)
+    conductor,
+    direccion
 };
+Entonces en seleccionarFinanciamiento, financiamiento.producto es el producto extraído en línea 807, y financiamiento.financiamiento es el objeto del financiamiento del backend. Pero financiamiento.financiamiento también tiene una key producto (porque el controller la agrega en línea 451).
 
-// Asegurar que las funciones estén disponibles globalmente
-window.mostrarModalEntregarCrediAhorrosAutos = mostrarModalEntregarCrediAhorrosAutos;
-window.buscarVehiculosCrediAhorros = buscarVehiculosCrediAhorros;
-window.calcularExcedenteCrediAhorros = calcularExcedenteCrediAhorros;
-Ahora creo el endpoint backend para generar el recibo y la ruta:
+El JS en línea 558 accede a financiamiento.producto.precio_venta. Esto toma producto del nivel superior (línea 807: let producto = financiamiento.producto || {}). Esto debería funcionar...
 
-Crear endpoint generarReciboExcedente en el backend
-Let me read the relevant files to understand the patterns and structure.
+Déjame ver qué pasa exactamente — el producto viene del backend como financiamiento['producto'], y cuando el JS lo extrae en la línea 807 con financiamiento.producto, eso ya debería tener precio_venta. Pero luego en financiamientoData, financiamiento (línea 816) es el objeto original que todavía incluye .producto. Así que no debería ser un problema.
+
+Probablemente haya un error JS al acceder a algún campo vehicular que no existe. Déjame revisar qué campos podrían ser null cuando se detecta vehículo por categoría:
+
+public\js\financiamiento\modal-detalles.js
+L540-585
+La lógica se ve correcta. El costoVehiculo usa financiamiento.producto.precio_venta. Si antes mostraba 8,857.68 por la rama else, debería funcionar igual por la rama vehicle. El problema posiblemente sea que hay un error JS antes de la línea 582 que está rompiendo la ejecución, o que el producto no tiene precio_venta.
+
+Veamos si financiamiento.producto podría ser undefined — en la línea 807, si el objeto del backend no tiene .producto, producto sería {} y precio_venta sería undefined.
+
+Espera — voy a verificar algo. Cuando el controller construye el financiamiento, el key producto se agrega dentro del array $financiamiento. Luego en JS línea 807:
+
+let producto = financiamiento.producto || {};  // extrae producto
+Y en línea 816:
+
+financiamiento,  // el objeto financiamiento COMPLETO (con .producto dentro)
+Entonces en seleccionarFinanciamiento, financiamiento.producto apunta al objeto extraído. Pero financiamiento.financiamiento.producto también apunta al objeto producto. Ambos deberían funcionar.
+
+Me parece que probablemente el usuario necesita limpiar cache del navegador. Pero para estar 100% seguro, déjame agregar protección y un console.log temporal para debuggear:
+
+public\js\financiamiento\modal-detalles.js
+L542-560
+public\js\financiamiento\modal-detalles.js
++4
+    if (financiamiento.financiamiento.es_vehiculo) {
+      // Mostrar sección de vehículo
+      document.getElementById("infoVehiculo").style.display = "block";
+
+      console.log('🔍 DEBUG es_vehiculo - producto:', financiamiento.producto);
+      console.log('🔍 DEBUG es_vehiculo - precio_venta:', financiamiento.producto?.precio_venta);
+      console.log('🔍 DEBUG es_vehiculo - capacidad_compra_actual:', financiamiento.financiamiento.capacidad_compra_actual);
+
+      // Capacidad de compra actual (lo que el plan le permite comprar)
+      const capacidadCompra =
+        financiamiento.financiamiento.capacidad_compra_actual || 0;
+      document.getElementById(
+Ahora abre el modal del financiamiento 268, haz clic en la fila, y revisa la consola del navegador (F12 → Console). Dime qué muestra en los 3 logs con 🔍:
+
+producto: — ¿muestra el objeto con datos o {} / null?
+precio_venta: — ¿muestra 8857.68 o undefined?
+capacidad_compra_actual: — ¿qué valor tiene?
+Con eso sabré exactamente por qué sale 0.00 y lo corrijo.
+
+Rodrigo
+esta bien , que archivos subo al soistema ? que modifcaste?=
+
+The user wants to know which files I modified so they can upload them to the server.
+
+Los archivos modificados son:
+
+app/http/controllers/FinanciamientoController.php — Se agregó detección de vehículo por categoría del producto
+public/js/financiamiento/modal-detalles.js — Se agregaron logs de debug temporales
+Sube esos 2 archivos. Luego abre el financiamiento 268, haz clic en la fila, y dime qué sale en la consola (F12) con los 🔍 para resolver el tema del S/. 0.00.
+
+Rodrigo
+mira me dicen esto necesitamos que se ingresen mas detalles como vin, chasis, placa , color, año, transmisión, kilometraje, fecha vencimiento soat, decha vencimiento seguro y activar la opción de gps yo le pregunte para para moto lineal y carros ? y me dijo correcto pero creo qeu esta mal que vea categoria moto lineal creo que seria suficiente con tipo de vehiculo moto o carro no? resources\views\fragment-views\cliente\almacen-productos.php analiza eso porfa analiza la db tambien si me entiendes'? resources\views\fragment-views\cliente\editar-producto.php , falta agregar esois campos lo hacemos por tipo o lo dejamos por categora como esta?
+
+The user wants to add more vehicle detail fields (VIN, chasis, placa, color, año, transmisión, kilometraje, fecha vencimiento SOAT, fecha vencimiento seguro, GPS) to the product forms. They want to understand how the current system categorizes vehicles and whether to use "tipo" (type) or "categoría" (category) to determine when to show these fields.
+
+Let me analyze the current database structure and the views they mentioned.
+
+resources\views\fragment-views\cliente\editar-producto.php
+resources\views\fragment-views\cliente\almacen-productos.php
+categoria|tipo_producto|tipo_vehiculo|vin|chasis|placa|color.*vehic
+10 matches
+in
+app\models\Productov2.php
+resources\views\fragment-views\cliente\almacen-productos.php
+L1147-1220
+vehiculo_wrapper|celular_wrapper|mostrarIntfecha
+10 matches
+in
+resources\views\fragment-views\cliente\almacen-productos.php
+Ahora veamos las categorías disponibles y cómo se manejan en la DB:
+
+resources\views\fragment-views\cliente\almacen-productos.php
+L740-900
+Ahora veamos cómo se guardan esos campos de vehículo en la DB:
+
+resources\views\fragment-views\cliente\almacen-productos.php
+L1780-1850
+guardarProducto|marca_vehiculo|modelo_vehiculo|vin|chasis|placa_vehiculo
+in
+app\http\controllers\Productov2Controller.php
+marca_vehiculo|modelo_vehiculo|vin|chasis|placa_vehiculo
+0 matches
+in
+app\models\Productov2.php
+guardarProducto|actualizarProducto
+2 matches
+in
+routes
+marca_vehiculo|modelo_vehiculo|vin|chasis|placa_vehiculo|caracteristicas
+10 matches
+in
+app\http\controllers\ProductosController.php
+app\http\controllers\ProductosController.php
+L180-350
+Ahora tengo el panorama completo. Aquí está mi análisis:
+
+Análisis actual del sistema
+Los campos que piden ya existen en almacen-productos.php (al crear producto):
+
+✅ VIN, Nº Motor (chasis), Placa, Color, Año, Transmisión, Kilometraje, Fecha SOAT, Fecha Seguro
+¿Cómo se guardan? → Como características en la tabla caracteristicas_producto (no como columnas en productosv2). Se guardan cuando la categoría contiene "vehículo".
+
+¿Cómo se detecta? → Por categoría, usando regex: /vehículo|vehiculos/i
+
+El problema real
+La detección actual es por categoría (ej: "Vehículo", "Moto Lineal", etc.). Categorías como "Moto Lineal" no matchean con el regex de vehículo, por lo que no les muestra los campos de VIN, chasis, placa, etc.
+
+Mi recomendación
+Dejarlo por categoría pero ampliar el regex para incluir todas las categorías vehiculares (moto lineal, motokar, cuatrimoto, etc.). No tiene sentido crear un campo nuevo "tipo vehículo" si ya la categoría diferencia entre moto y carro. Solo hay que:
+
+Ampliar la detección en mostrarIntfecha() del JS y en el controller PHP para incluir: vehiculo, moto lineal, motokar, trimovil, etc.
+Verificar que editar-producto.php tenga los mismos campos (ya tiene algunos en la función cargarCaracteristicasCompletasPorCategoria).
+Opcional: agregar campo GPS (no existe todavía).
+¿Quieres que lo haga así? ¿O prefieres ver primero qué categorías exactas hay en la base de datos para definir cuáles son vehiculares? También necesito que me confirmes: ¿el campo GPS es un simple sí/no (checkbox) o necesita datos adicionales (código IMEI del GPS, etc.)?
+
+Rodrigo
+un check , y si poorfa ayudame a solucionar  revisa si puedes tambien la db pprfa
+
+The user wants me to:
+
+Check the database for existing categories to know which ones are vehicular
+Add a GPS checkbox field
+Fix the detection to include all vehicular categories (moto lineal, etc.)
+Make sure both create and edit forms show the vehicle fields for all vehicular categories
+Let me first check the database structure and existing categories.
+
+CREATE TABLE.*productosv2|CREATE TABLE.*caracteristicas
+4 matches
+in
+database
+categoria|categorias
+32 matches
+in
+database
+categorias_producto|tabla.*categoria
+0 matches
+in
+app\models
+database\magusqao_arequipaa.sql
+L560-600
+database\magusqao_arequipaa.sql
+L330-365
+database\magusqao_arequipaa.sql
+L44389-44430
+Ahora tengo todo claro. Las categorías vehiculares en la DB son:
+
+ID 15: Vehículo
+ID 22: MOTO LINEAL
+Ahora necesito ver cómo se cargan las categorías en el select y verificar el controller para la edición:
+
+categoria_producto|cargarCategorias|obtenerCategorias
+6 matches
+in
+app\http\controllers\ProductosController.php
+app\http\controllers\ProductosController.php
+L315-360
+resources\views\fragment-views\cliente\editar-producto.php
+L250-500
+Ahora veamos la función renderizarCaracteristicas y actualizarProducto del controller:
+
+resources\views\fragment-views\cliente\editar-producto.php
+L500-700
+function actualizarProducto
+2 matches
+in
+app\http\controllers\ProductosController.php
+app\http\controllers\ProductosController.php
+L1957-2100
+Ahora veamos procesarCaracteristicas:
+
+function procesarCaracteristicas
+3 matches
+in
+app\http\controllers\ProductosController.php
+app\http\controllers\ProductosController.php
+L2296-2420
+Ya tengo todo el panorama. Ahora voy a implementar los cambios. Son 4 puntos de modificación:
+
+almacen-productos.php — JS mostrarIntfecha(): ampliar regex para incluir "moto lineal" + agregar campo GPS
+almacen-productos.php — HTML vehiculo_wrapper: agregar campo GPS checkbox
+almacen-productos.php — JS guardarProducto(): enviar GPS
+editar-producto.php — cargarCaracteristicasCompletasPorCategoria(): ampliar detección + agregar GPS
+ProductosController.php — guardarProducto(): ampliar regex + guardar GPS como característica
+Ampliar detección vehicular y agregar GPS en almacen-productos.php
+I'll read the file first to verify the exact content at the specified locations, then make all three changes.
 
 Read
-app\http\controllers\FinanciamientoController.php
+resources\views\fragment-views\cliente\almacen-productos.php
 Read
-app\http\controllers\ReportFinanciamientoController.php
+resources\views\fragment-views\cliente\almacen-productos.php
 Read
-app\http\controllers\FinanciamientoController.php
+resources\views\fragment-views\cliente\almacen-productos.php
+All three locations confirmed. Applying the changes now:
+
+Edited
+resources\views\fragment-views\cliente\almacen-productos.php
+Edited
+resources\views\fragment-views\cliente\almacen-productos.php
+Edited
+resources\views\fragment-views\cliente\almacen-productos.php
+Now let me verify the changed sections:
+
+Read
+resources\views\fragment-views\cliente\almacen-productos.php
+Read
+resources\views\fragment-views\cliente\almacen-productos.php
+Read
+resources\views\fragment-views\cliente\almacen-productos.php
+All three changes applied and verified:
+
+Regex expanded (line 1174) — now matches moto lineal, motokar, trimovil, cuatrimoto in addition to vehículo.
+GPS checkbox added (lines 954–964) — form-switch toggle inserted between Kilometraje and Fechas de Vencimiento rows.
+GPS in guardarProducto() (line 1844) — sends gps_activo as '1'/'0' based on checkbox state.
+All three changes applied and verified:
+
+Regex expanded (line 1174) — now matches moto lineal, motokar, trimovil, cuatrimoto in addition to vehículo.
+GPS checkbox added (lines 954–964) — form-switch toggle inserted between Kilometraje and Fechas de Vencimiento rows.
+GPS in guardarProducto() (line 1844) — sends gps_activo as '1'/'0' based on checkbox state.
+Ampliar detección vehicular y agregar GPS en editar-producto.php
+Let me first read the relevant sections of the file to understand the exact code before making changes.
+
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Now I have the exact code. Let me apply all four changes:
+
+Failed to edit
+resources\views\fragment-views\cliente\editar-producto.php
+Edited
+resources\views\fragment-views\cliente\editar-producto.php
+Edited
+resources\views\fragment-views\cliente\editar-producto.php
+Edited
+resources\views\fragment-views\cliente\editar-producto.php
+The first edit had multiple matches. Let me find both occurrences and use more context to make each unique:
+
 Searched for
-"getDataPago"
+"categoriaNorm.includes\('vehiculo'\)"
 in
-app\models\Financiamiento.php
-Read
-routes\ajax2.php
-Now let me check the getDataPago model method and the pagos_financiamiento table columns:
+resources\views\fragment-views\cliente\editar-producto.php
+There are two standalone else if matches - line 602 and line 985. Let me read around line 985 to understand the second one:
 
 Read
-app\models\Financiamiento.php
-Now I have all the info. The pagos_financiamiento table has id_conductor, id_asesor, and moneda columns. Let me make the changes:
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+There's a second similar function. Let me read more context around line 995:
+
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+There's a second cargarCaracteristicasCompletasPorCategoria function (line 970). This also needs the same updates. Let me apply all remaining changes:
 
 Edited
-app\http\controllers\FinanciamientoController.php
+resources\views\fragment-views\cliente\editar-producto.php
 Edited
-routes\ajax2.php
-Summary of changes:
+resources\views\fragment-views\cliente\editar-producto.php
+Now let me also add the GPS field to the second function (line 995) and verify all changes:
 
-FinanciamientoController.php (line ~3324): Added generarReciboExcedente() method right after entregarVehiculoCrediAhorrosAutos(). It queries financiamiento for id_conductor/moneda, queries pagos_financiamiento for id_asesor, then calls ReportFinanciamientoController::generateNotaVenta() with an empty [] for cuotas and returns the PDF as base64 JSON.
+Edited
+resources\views\fragment-views\cliente\editar-producto.php
+All changes applied. Let me verify by reading back the modified sections:
 
-routes/ajax2.php (line 110): Added Route::post('/ajs/generarReciboExcedente', ...) right after the entregarVehiculoCrediAhorrosAutos route.
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+Read
+resources\views\fragment-views\cliente\editar-producto.php
+All 5 changes are applied and verified:
 
-Summary of changes:
+Line 602 — Vehicle category detection expanded with moto lineal, motolineal, motokar, trimovil, cuatrimoto
+Line 613 — GPS Activo checkbox field added to vehicle characteristics
+Line 657 — renderizarCaracteristicas() detection expanded with moto, motokar, trimovil, cuatrimoto
+Lines 701-710 — Checkbox rendering added before the generic else branch
+Lines 985, 996 — Second cargarCaracteristicasCompletasPorCategoria function also updated with same moto categories and GPS field
+All 5 changes are applied and verified:
 
-FinanciamientoController.php (line ~3324): Added generarReciboExcedente() method right after entregarVehiculoCrediAhorrosAutos(). It queries financiamiento for id_conductor/moneda, queries pagos_financiamiento for id_asesor, then calls ReportFinanciamientoController::generateNotaVenta() with an empty [] for cuotas and returns the PDF as base64 JSON.
+Line 602 — Vehicle category detection expanded with moto lineal, motolineal, motokar, trimovil, cuatrimoto
+Line 613 — GPS Activo checkbox field added to vehicle characteristics
+Line 657 — renderizarCaracteristicas() detection expanded with moto, motokar, trimovil, cuatrimoto
+Lines 701-710 — Checkbox rendering added before the generic else branch
+Lines 985, 996 — Second cargarCaracteristicasCompletasPorCategoria function also updated with same moto categories and GPS field
+Ampliar regex y guardar GPS en ProductosController.php
+Let me first read the file to understand the current code around the areas that need modification.
 
-routes/ajax2.php (line 110): Added Route::post('/ajs/generarReciboExcedente', ...) right after the entregarVehiculoCrediAhorrosAutos route.
+Read
+app\http\controllers\ProductosController.php
+Read
+app\http\controllers\ProductosController.php
+Now I'll make all three changes:
 
-Verifico rápidamente que no haya errores de sintaxis:
+Edited
+app\http\controllers\ProductosController.php
+Edited
+app\http\controllers\ProductosController.php
+Edited
+app\http\controllers\ProductosController.php
+Now let me verify the changes by reading back the modified sections:
 
-generarReciboExcedente
+Read
+app\http\controllers\ProductosController.php
+Read
+app\http\controllers\ProductosController.php
+All three changes are in place and verified:
+
+Line 199 — $gps_activo POST variable reading added after $kilometraje
+Line 316 — Regex updated to match vehículo/vehiculo(s), moto lineal, motokar, trimovil, cuatrimoto
+Lines 354-355 — GPS characteristic saving added after the kilometraje block, always stored (defaults to '0')
+All three changes are in place and verified:
+
+Line 199 — $gps_activo POST variable reading added after $kilometraje
+Line 316 — Regex updated to match vehículo/vehiculo(s), moto lineal, motokar, trimovil, cuatrimoto
+Lines 354-355 — GPS characteristic saving added after the kilometraje block, always stored (defaults to '0')
+Los 3 archivos están actualizados. Verifiquemos que todo quedó bien:
+
+moto.*lineal|motokar|gps_activo
+4 matches
+in
+resources\views\fragment-views\cliente\almacen-productos.php
+moto.*lineal|motokar|gps_activo|checkbox
+7 matches
+in
+resources\views\fragment-views\cliente\editar-producto.php
+moto.*lineal|motokar|gps_activo
+4 matches
+in
+app\http\controllers\ProductosController.php
+Todo listo. Resumen de los 3 archivos modificados que debes subir:
+
+Archivo	Cambios
+resources/views/fragment-views/cliente/almacen-productos.php	Regex ampliado para moto lineal/motokar/etc. + checkbox GPS en form + envío de GPS en guardarProducto()
+resources/views/fragment-views/cliente/editar-producto.php	Detección ampliada en 2 funciones + GPS en características + renderizado de checkbox
+app/http/controllers/ProductosController.php	Regex ampliado + lectura y guardado de gps_activo como característica
+Ahora al seleccionar categoría "Vehículo" o "MOTO LINEAL" (o motokar, trimovil, cuatrimoto), se mostrarán todos los campos: VIN, Nº Motor, Placa, Color, Año, Transmisión, Kilometraje, SOAT, Seguro y GPS (checkbox). Tanto al crear como al editar.
+
+Rodrigo
+en el modal de detalles tambien mostrara? la db no la modifcaste verdad? y esta vista resources\views\fragment-views\cliente\vehiculos-list.php qie son productos pero con filtro por defacul de vehiculos ya esta tambien el registrar y editar y ver detalle ahi tiene mopdales creo
+
+The user is asking:
+
+Will the financing detail modal also show the GPS field? - No, I only modified the product creation/editing forms, not the financing modal.
+Did I modify the database? - No, GPS is saved as a characteristic in caracteristicas_producto table, no DB changes needed.
+What about vehiculos-list.php - they want me to analyze this view which has its own modals for registering, editing, and viewing vehicle details.
+Let me read the vehiculos-list.php file to understand what modals it has and if they also need the same updates.
+
+Respondo primero tus preguntas:
+
+Modal de detalles del financiamiento: No, ahí no se muestran las características del producto (VIN, GPS, etc.). Eso es otro tema aparte.
+La DB no se modificó: Correcto, GPS se guarda como característica en caracteristicas_producto (tabla existente), no requiere migración.
+Ahora analicemos vehiculos-list.php:
+
+resources\views\fragment-views\cliente\vehiculos-list.php
+Ahora veamos la parte del modal de detalles y el modal de agregar vehículo para ver qué falta:
+
+resources\views\fragment-views\cliente\vehiculos-list.php
+L250-400
+resources\views\fragment-views\cliente\vehiculos-list.php
+L400-500
+Ahora veamos la función que carga los datos en el modal de detalles y el modal de edición:
+
+resources\views\fragment-views\cliente\vehiculos-list.php
+L500-700
+resources\views\fragment-views\cliente\vehiculos-list.php
+L700-940
+Ya tengo todo claro. Hay 3 cosas que faltan en vehiculos-list.php:
+
+Modal de detalles — No muestra GPS
+Modal de agregar — No tiene checkbox GPS
+Función guardarVehiculo() — No envía GPS
+mostrarIntfechaVehiculo() — No detecta "moto lineal"
+cargarCategoriasVehiculo() — Solo filtra "vehiculo/vehículo", no moto lineal
+También el modal de edición usa modal-editar-producto.php (componente incluido en línea 1187). Veamos ese:
+
+resources\views\components\modal-editar-producto.php
+L1-50
+gps|GPS
+0 matches
+in
+resources\views\components\modal-editar-producto.php
+vehiculo|moto.*lineal
+10 matches
+in
+resources\views\components\modal-editar-producto.php
+resources\views\components\modal-editar-producto.php
+L238-340
+resources\views\components\modal-editar-producto.php
+L565-600
+resources\views\components\modal-editar-producto.php
+L598-680
+Ahora veamos la función de guardar del modal de edición:
+
+function guardarCambiosProducto
 1 match
 in
+resources\views\components\modal-editar-producto.php
+resources\views\components\modal-editar-producto.php
+L752-870
+Perfecto. Ahora tengo todo el panorama. Hay 4 archivos que necesitan cambios para GPS + moto lineal. Voy a hacer todos en paralelo:
 
-routes\ajax2.php
-function generarReciboExcedente
+Agregar GPS y detección moto lineal en vehiculos-list.php
+I'll start by reading the file to understand the current content around the lines that need to be modified.
+
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Now I'll apply all 6 changes:
+
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+Edited
+resources\views\fragment-views\cliente\vehiculos-list.php
+I notice the first diff looks off — the closing </div> tags may have shifted. Let me verify the detail modal section is properly structured:
+
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+The structure looks correct. Now let me verify the other modified sections:
+
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+Read
+resources\views\fragment-views\cliente\vehiculos-list.php
+All 6 changes have been applied correctly:
+
+GPS field in detail modal — added #detalle-gps after kilometraje (line 266-269)
+GPS checkbox in add modal — form-switch checkbox added before Fechas SOAT (lines 435-445)
+verDetalles() GPS display — badge rendering added at line 788
+guardarVehiculo() GPS submit — gps_activo appended to formData after kilometraje
+mostrarIntfechaVehiculo() regex — expanded to include moto lineal, motokar, trimovil, cuatrimoto
+cargarCategoriasVehiculo() filter — expanded to match the same additional category names
+All 6 changes have been applied correctly:
+
+GPS field in detail modal — added #detalle-gps after kilometraje (line 266-269)
+GPS checkbox in add modal — form-switch checkbox added before Fechas SOAT (lines 435-445)
+verDetalles() GPS display — badge rendering added at line 788
+guardarVehiculo() GPS submit — gps_activo appended to formData after kilometraje
+mostrarIntfechaVehiculo() regex — expanded to include moto lineal, motokar, trimovil, cuatrimoto
+cargarCategoriasVehiculo() filter — expanded to match the same additional category names
+Agregar GPS y detección moto lineal en modal-editar-producto.php
+I'll start by reading the file to understand the current content before making changes.
+
+Read
+resources\views\components\modal-editar-producto.php
+Read
+resources\views\components\modal-editar-producto.php
+Read
+resources\views\components\modal-editar-producto.php
+Now I have full context. Let me also check line 784 for the exclusion list:
+
+Read
+resources\views\components\modal-editar-producto.php
+Now I'll apply all 5 changes:
+
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Now for the changes in guardarCambiosProducto():
+
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Edited
+resources\views\components\modal-editar-producto.php
+Now let me verify the modified sections:
+
+Read
+resources\views\components\modal-editar-producto.php
+Read
+resources\views\components\modal-editar-producto.php
+Read
+resources\views\components\modal-editar-producto.php
+All 5 changes have been applied and verified correctly:
+
+GPS checkbox HTML added between Kilometraje and SOAT rows (lines 296-305)
+Vehicle detection updated in 3 places to include moto/motokar/trimovil/cuatrimoto (lines 581, 596, 805)
+GPS switch case added to renderizarCaracteristicasEdit() (lines 651-654)
+GPS clear line added after the .val('') clear (line 605)
+GPS in guardarCambiosProducto(): added to exclusion list (line 799), camposVehiculo map (line 823), and forEach updated with checkbox handling (lines 826-839)
+All 5 changes have been applied and verified correctly:
+
+GPS checkbox HTML added between Kilometraje and SOAT rows (lines 296-305)
+Vehicle detection updated in 3 places to include moto/motokar/trimovil/cuatrimoto (lines 581, 596, 805)
+GPS switch case added to renderizarCaracteristicasEdit() (lines 651-654)
+GPS clear line added after the .val('') clear (line 605)
+GPS in guardarCambiosProducto(): added to exclusion list (line 799), camposVehiculo map (line 823), and forEach updated with checkbox handling (lines 826-839)
+Verifiquemos que todo quedó consistente:
+
+gps_activo
+4 matches
+in
+resources\views\fragment-views\cliente\vehiculos-list.php
+gps_activo
+7 matches
+in
+resources\views\components\modal-editar-producto.php
+moto
+7 matches
+in
+resources\views\components\modal-editar-producto.php
+Todo está correcto. Resumen de los 5 archivos que debes subir:
+
+#	Archivo	Cambios
+1	resources/views/fragment-views/cliente/almacen-productos.php	Regex moto lineal + GPS checkbox + envío GPS
+2	resources/views/fragment-views/cliente/editar-producto.php	Detección moto lineal + GPS en características + renderizado checkbox
+3	resources/views/fragment-views/cliente/vehiculos-list.php	GPS en modal detalles + GPS en modal agregar + envío GPS + regex moto lineal + filtro categorías ampliado
+4	resources/views/components/modal-editar-producto.php	GPS checkbox en tab vehículo + detección moto lineal + GPS en switch + GPS en guardar
+5	app/http/controllers/ProductosController.php	Regex ampliado + guardado GPS
+No se tocó la DB — GPS se guarda como gps_activo en caracteristicas_producto (tabla existente). La vista de vehículos ahora también mostrará productos de categoría "MOTO LINEAL" además de "Vehículo".
+
+Rodrigo
+disculpa en el modal de entrga en motos lineal no salen los productos de moto es porque solo salen vehiculos no sale de moto lineal
+
+The user is saying that in the "modal de entrega" (delivery modal), only products with category "Vehículo" show up, but not "MOTO LINEAL" products. I need to find where the delivery modal fetches/filters products and expand the filter to include "MOTO LINEAL".
+
+Let me search for the delivery modal and its product filtering logic.
+
+Find the "modal de entrega" (vehicle delivery modal) in the financing module. Look for where it filters products by category "Vehículo" or fetches vehicle products for delivery. Search in financiamientoView.php, modal-detalles.js, and related controllers for "entrega", "entregar vehiculo", "obtenerVehiculos", or product filtering by vehicle category in the delivery context.
+obtenerProductosVehiculos|cargarProductosPorCategoria|Veh[ií]culo
+2 matches
+in
+public\js\financiamiento\productosManager.js
+obtenerProductosVehiculos|cargarVehiculosCrediAhorros
+5 matches
+in
+public\js\financiamiento\uiManager.js
+obtenerProductosVehiculos
 1 match
 in
+routes
+function obtenerProductosVehiculos
+1 match
+in
+app\http\controllers
+app\http\controllers\FinanciamientoController.php
+L2719-2810
+Ahí está el problema. Línea 2731:
+
+WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%'
+Solo matchea categorías con "vehicul" (Vehículo, Vehículos), pero no "MOTO LINEAL". Lo mismo en buscarProductosVehiculos() línea 2764.
 
 app\http\controllers\FinanciamientoController.php
-Todo está en su lugar. Déjame hacer un resumen visual del flujo completo:
++5
+-1
+~1
+                                cantidad, 
+                                precio_venta, 
+                                categoria 
+                        FROM productosv2 
+                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
+                        AND estado = '1'
+                        ORDER BY nombre";
+                
+                $result = mysqli_query($this->conexion, $query);
+app\http\controllers\FinanciamientoController.php
++5
+-1
+~1
+                $searchTerm = $_GET['searchTerm'] ?? '';
+                
+                $query = "SELECT idproductosv2, nombre, codigo, cantidad, precio_venta, categoria 
+                        FROM productosv2 
+                        WHERE LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                        WHERE (LOWER(TRIM(categoria)) LIKE '%vehicul%' 
+                            OR LOWER(TRIM(categoria)) LIKE '%moto lineal%'
+                            OR LOWER(TRIM(categoria)) LIKE '%motokar%'
+                            OR LOWER(TRIM(categoria)) LIKE '%trimovil%'
+                            OR LOWER(TRIM(categoria)) LIKE '%cuatrimoto%')
+                        AND estado = '1'
+                        AND (LOWER(nombre) LIKE ? OR LOWER(codigo) LIKE ?)
+                        ORDER BY nombre";
+                
+Ahora verifiquemos si hay más lugares con el mismo filtro (el obtenerVehiculosEntregados que mencionó el finder):
 
-Implementación completa. Resumen de todos los archivos modificados:
+LIKE '%vehicul%'
+2 matches
+in
+app\http\controllers\FinanciamientoController.php
+Solo esos 2, ya corregidos. Ahora verifiquemos el obtenerVehiculos del ProductosController que usa vehiculos-list.php:
+
+app\http\controllers\ProductosController.php
+L2410-2470
+Este también necesita incluir MOTO LINEAL. Veamos cómo funciona obtenerProductosPorCategoria:
+
+function obtenerProductosPorCategoria
+1 match
+in
+app\models\Productov2.php
+app\models\Productov2.php
+L1041-1120
+El modelo usa LIKE con el parámetro, así que solo necesito agregar las llamadas para MOTO LINEAL en el controller:
+
+app\http\controllers\ProductosController.php
++5
+-3
+~3
+            $oficina = isset($_GET['oficina']) ? intval($_GET['oficina']) : 1;
+
+            $productoModel = new Productov2();
+
+            // Buscar tanto por nombre como por ID de categoría para compatibilidad con datos antiguos
+            // Buscar por nombre, ID de categoría y categorías vehiculares adicionales
+            $vehiculosPorNombre = $productoModel->obtenerProductosPorCategoria('Vehículo', $oficina);
+            $vehiculosPorId = $productoModel->obtenerProductosPorCategoria('15', $oficina);
+            $motoLineal = $productoModel->obtenerProductosPorCategoria('MOTO LINEAL', $oficina);
+            $motoLinealPorId = $productoModel->obtenerProductosPorCategoria('22', $oficina);
+
+            // Combinar ambos resultados y eliminar duplicados
+            $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId);
+            // Combinar todos los resultados y eliminar duplicados
+            $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId, $motoLineal, $motoLinealPorId);
+
+            // Eliminar duplicados basándose en el ID del producto
+            $vehiculosUnicos = [];
+            $idsVistos = [];
+Listo. Archivos que debes subir para este fix:
 
 Archivo	Cambio
-uiManager.js	Detección plan 49 en mostrarModalEntregarVehiculo(), función verificarSiEsCrediAhorrosAutos(), modal completo con selector de vehículo + cálculo de excedente + método de pago, funciones de confirmar/procesar entrega, función descargarReciboExcedente()
-FinanciamientoController.php	Método entregarVehiculoCrediAhorrosAutos() (actualiza producto, stock, estado, registra pago excedente) + método generarReciboExcedente() (genera PDF)
-routes/ajax2.php	2 rutas nuevas: entregarVehiculoCrediAhorrosAutos y generarReciboExcedente
-Flujo para Yessenia:
+app/http/controllers/FinanciamientoController.php	obtenerProductosVehiculos() y buscarProductosVehiculos() ahora incluyen moto lineal, motokar, etc.
+app/http/controllers/ProductosController.php	obtenerVehiculos() ahora también busca categoría MOTO LINEAL (ID 22)
+Ahora el
 
-Abre detalles del financiamiento → clic "Entregar Vehículo"
-Selecciona el vehículo del almacén → el precio se muestra automático
-Si precio vehículo > monto plan → aparece el excedente en rojo con selector de método de pago
-Confirma → se registra todo + aparece botón "Descargar Recibo del Excedente" en PDF
+Thread
+19h ago
+magus-technologies/arequipago
+master
+smart (Opus 4.6)
+$11.09 (free)
+CLI
+10 prompts
+90% of 168k 
+3 files
++38
+-6
+~6
+ lines
+Labels
+Open in CLI
+amp threads continue T-019cf895-fa2b-732b-a576-51a2489e5049
 
-
-mira ya esta marcado como entregado me pasas la consulkta pata dejarlo como pendiente?
-UPDATE financiamiento SET estado_entrega = 'pendiente', estado = 'En progreso', fecha_
+Review conversation thread - Amp

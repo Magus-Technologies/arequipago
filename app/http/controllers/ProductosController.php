@@ -196,6 +196,7 @@ class ProductosController extends Controller
         $placa = $_POST['placa_vehiculo'] ?? null;
         $transmision = $_POST['transmision_vehiculo'] ?? null;
         $kilometraje = $_POST['kilometraje'] ?? null;
+        $gps_activo = $_POST['gps_activo'] ?? '0';
 
         // Generar código de barras automáticamente si no se proporciona uno (Nuevo cambio)
         $codigo_barra = null;
@@ -312,7 +313,7 @@ class ProductosController extends Controller
                     $caracteristicas[] = ['nombre_caracteristica' => 'operadora', 'valor_caracteristica' => $operator];
                 }
             }
-             elseif (preg_match('/vehículo|vehiculos|vehiculos/i', $categoria)) { // Validar categoría 'Vehículo' (independiente de mayúsculas, tildes o plural)
+             elseif (preg_match('/veh[ií]culo[s]?|moto\s*lineal|motokar|trimovil|cuatrimoto/i', $categoria)) {
                 $fecha_venc_soat = $_POST['fecha_venc_soat'] ?? null;
                 $fecha_venc_seguro = $_POST['fecha_venc_seguro'] ?? null;
                 $chasis = $_POST['chasis'] ?? null;
@@ -350,6 +351,8 @@ class ProductosController extends Controller
                 if ($kilometraje) {
                     $caracteristicas[] = ['nombre_caracteristica' => 'kilometraje', 'valor_caracteristica' => $kilometraje]; // Agregado: Guardar kilometraje
                 }
+                $gps_activo = $_POST['gps_activo'] ?? '0';
+                $caracteristicas[] = ['nombre_caracteristica' => 'gps_activo', 'valor_caracteristica' => $gps_activo];
             }
         
             if (!empty($caracteristicas)) { // Cambiado: Validar si hay características para insertar
@@ -2415,12 +2418,14 @@ private function esCategoríaCelular($categoriaNormalizada) {
 
             $productoModel = new Productov2();
 
-            // Buscar tanto por nombre como por ID de categoría para compatibilidad con datos antiguos
+            // Buscar por nombre, ID de categoría y categorías vehiculares adicionales
             $vehiculosPorNombre = $productoModel->obtenerProductosPorCategoria('Vehículo', $oficina);
             $vehiculosPorId = $productoModel->obtenerProductosPorCategoria('15', $oficina);
+            $motoLineal = $productoModel->obtenerProductosPorCategoria('MOTO LINEAL', $oficina);
+            $motoLinealPorId = $productoModel->obtenerProductosPorCategoria('22', $oficina);
 
-            // Combinar ambos resultados y eliminar duplicados
-            $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId);
+            // Combinar todos los resultados y eliminar duplicados
+            $vehiculos = array_merge($vehiculosPorNombre, $vehiculosPorId, $motoLineal, $motoLinealPorId);
 
             // Eliminar duplicados basándose en el ID del producto
             $vehiculosUnicos = [];
