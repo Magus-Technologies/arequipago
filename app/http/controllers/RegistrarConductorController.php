@@ -495,7 +495,7 @@ public function buscarConductor()
 
             $fotoUrl = $conductor->getFoto();
             if (empty($fotoUrl) || !file_exists($_SERVER['DOCUMENT_ROOT'] . parse_url($fotoUrl, PHP_URL_PATH))) {
-                $fotoUrl = '/arequipago/assets/images/avatar-default.png';
+                $fotoUrl = '/assets/images/avatar-default.png';
             }
 
             $response = [

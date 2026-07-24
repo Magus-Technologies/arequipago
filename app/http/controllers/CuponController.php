@@ -441,7 +441,7 @@ class CuponController
                     'nombres' => $cliente['nombres'],
                     'apellido_paterno' => $cliente['apellido_paterno'],
                     'apellido_materno' => $cliente['apellido_materno'],
-                    'foto' => '/arequipago/public/img/default-user.png' // Foto por defecto para clientes
+                    'foto' => '/public/img/default-user.png' // Foto por defecto para clientes
                 ] : null,
                 'cupones' => $cupones,
                 'tiene_cupones' => !empty($cupones),
@@ -667,7 +667,7 @@ class CuponController
                         'nombres' => $clienteData['nombres'],
                         'apellido_paterno' => $clienteData['apellido_paterno'],
                         'apellido_materno' => $clienteData['apellido_materno'],
-                        'foto' => '/arequipago/public/img/default-user.png' // Foto por defecto para clientes
+                        'foto' => '/public/img/default-user.png' // Foto por defecto para clientes
                     ];
                 }
             }

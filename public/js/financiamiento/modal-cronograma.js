@@ -31,7 +31,7 @@ function cargarCronograma(idConductor) {
     var param = tipo === 'conductor' ? 'id_conductor=' + idConductor : 'id=' + idConductor;  // ✅ CAMBIADO: usar idConductor en lugar de id
 
     $.ajax({
-        url: '/arequipago/obtenerCuotasPorCliente?' + param,
+        url: '/obtenerCuotasPorCliente?' + param,
         dataType: 'json',
         success: function (data) {
             //console.log("Datos recibidos del servidor:", data);

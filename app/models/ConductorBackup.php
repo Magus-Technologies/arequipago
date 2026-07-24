@@ -200,7 +200,7 @@ public function obtenerNumDocFiltrado($searchTerm = '')
             while ($row = $result->fetch_assoc()) {
                 // Procesar la foto
                 if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
+                    $row['foto'] = '/public/' . $row['foto'];
                 }
                 
                 // Obtener datos del vehículo
@@ -750,7 +750,7 @@ public function eliminar() {
             while ($row = $result->fetch_assoc()) {
                 // Procesar la foto
                 if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
+                    $row['foto'] = '/public/' . $row['foto'];
                 }
     
                 // Obtener datos del vehículo
@@ -809,7 +809,7 @@ public function eliminar() {
             while ($row = $result->fetch_assoc()) {
                 // Procesar la foto
                 if ($row['foto'] && !empty($row['foto'])) {
-                    $row['foto'] = '/arequipago/public/' . $row['foto'];
+                    $row['foto'] = '/public/' . $row['foto'];
                 }
     
                 // Obtener datos del vehículo
@@ -849,7 +849,7 @@ public function eliminar() {
             
             // Procesar la foto para agregar la ruta completa
             if ($data['foto'] && !empty($data['foto'])) {
-                $conductor->setFoto('/arequipago/public/' . $data['foto']); // Modificado: Añadir ruta completa
+                $conductor->setFoto('/public/' . $data['foto']); // Modificado: Añadir ruta completa
             } else {
                 $conductor->setFoto(null); // Modificado: Devolver null si no hay foto
             }

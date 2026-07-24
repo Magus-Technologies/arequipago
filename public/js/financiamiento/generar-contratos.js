@@ -86,7 +86,7 @@ function eliminarDeTabla(button) {
 
 function cargarDetallesFinanciamiento(idFinanciamiento) {
   fetch(
-    `/arequipago/obtenerFinanciamientoDetalle?id_financiamiento=${idFinanciamiento}`
+    `/obtenerFinanciamientoDetalle?id_financiamiento=${idFinanciamiento}`
   ) // Usar el ID proporcionado
     .then((response) => response.json())
     .then((data) => {

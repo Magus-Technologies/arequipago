@@ -1681,7 +1681,7 @@ public function obtenerDepartamentos()
                 $row = $result->fetch_assoc();
                 if (!empty($row['selfie'])) {
                     $stmt->close();
-                    return '/arequipago/' . $row['selfie'];
+                    return '/' . $row['selfie'];
                 }
             }
             $stmt->close();

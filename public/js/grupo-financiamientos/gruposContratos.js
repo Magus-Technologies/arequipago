@@ -33,7 +33,7 @@ function verContratoHardcodeado(grupoId) {
     });
     
     $.ajax({
-        url: '/arequipago/api/contratos/hardcoded-preview',
+        url: '/api/contratos/hardcoded-preview',
         type: 'POST',
         data: { grupo_id: grupoId },
         dataType: 'json',
@@ -51,7 +51,7 @@ function verContratoHardcodeado(grupoId) {
             } else {
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '/arequipago/api/contratos/hardcoded-preview';
+                form.action = '/api/contratos/hardcoded-preview';
                 form.target = '_blank';
                 
                 const inputGrupo = document.createElement('input');
@@ -104,7 +104,7 @@ function verContratoHardcodeado(grupoId) {
  */
 function verPlantillaContrato(grupoId) {
     $.ajax({
-        url: '/arequipago/api/contratos/plantilla-por-grupo',
+        url: '/api/contratos/plantilla-por-grupo',
         type: 'GET',
         data: { grupo_id: grupoId },
         success: function(response) {
@@ -141,7 +141,7 @@ function verPlantillaContrato(grupoId) {
  */
 function editarPlantillaContrato(grupoId) {
     $.ajax({
-        url: '/arequipago/api/contratos/plantilla-por-grupo',
+        url: '/api/contratos/plantilla-por-grupo',
         type: 'GET',
         data: { grupo_id: grupoId },
         success: function(response) {
@@ -184,7 +184,7 @@ function mostrarVistaPreviaPlantilla(plantilla) {
     
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '/arequipago/api/contratos/plantilla/preview-pdf';
+    form.action = '/api/contratos/plantilla/preview-pdf';
     form.target = '_blank';
     
     const inputTemplate = document.createElement('input');
@@ -219,7 +219,7 @@ function abrirEditorPlantilla(grupoId, plantilla) {
         sessionStorage.removeItem('editor_plantilla');
     }
     
-    window.location.href = '/arequipago/editor-contratos';
+    window.location.href = '/editor-contratos';
 }
 
 /**

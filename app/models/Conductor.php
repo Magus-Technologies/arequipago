@@ -1473,7 +1473,7 @@ class Conductor
                 $row = $result->fetch_assoc();
                 if (!empty($row['foto'])) {
                     $stmt->close();
-                    return '/arequipago/public/' . $row['foto'];
+                    return '/public/' . $row['foto'];
                 }
             }
             $stmt->close();

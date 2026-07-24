@@ -1,6 +1,6 @@
 
         function cargarProductos(categoriaFiltro = null, idPlanFiltro = null) {
-            let url = `/arequipago/obtenerProductos?pagina=${currentPage}`;
+            let url = `/obtenerProductos?pagina=${currentPage}`;
 
             // ✅ NUEVO: Agregar filtro de categoría si se especifica (para CrediYango)
             if (categoriaFiltro) {
@@ -54,7 +54,7 @@
         function buscarProductos() {
             const searchTerm = $('#buscarProducto').val();
             $.ajax({
-                url: `/arequipago/busquedaProductos?searchTerm=${encodeURIComponent(searchTerm)}&pagina=${currentPage}`,
+                url: `/busquedaProductos?searchTerm=${encodeURIComponent(searchTerm)}&pagina=${currentPage}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -209,7 +209,7 @@
 
             // Realizar una solicitud AJAX al controlador para verificar la categoría
             $.ajax({
-                url: '/arequipago/tipoProducto?id_producto=' + productoId, // Concatenación explícita
+                url: '/tipoProducto?id_producto=' + productoId, // Concatenación explícita
                 type: 'GET',
                 dataType: 'json',
                 success: function (response) {

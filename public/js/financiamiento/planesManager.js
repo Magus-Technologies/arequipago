@@ -1,6 +1,6 @@
 function getAllPlanes() {
   $.ajax({
-    url: "/arequipago/getAllPlanes",
+    url: "/getAllPlanes",
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -298,7 +298,7 @@ function selectPlan(idPlan) {
 
 
   $.ajax({
-    url: "/arequipago/obtenerPlanFinanciamiento",
+    url: "/obtenerPlanFinanciamiento",
     type: "POST",
     data: { id_plan: idPlan },
     dataType: "json",
@@ -2097,7 +2097,7 @@ function verificarInputsVacios() {
 function planMensual() {
   // Realizamos la solicitud AJAX
   $.ajax({
-    url: "/arequipago/buscarPlanesMensuales", // Ruta de la solicitud AJAX
+    url: "/buscarPlanesMensuales", // Ruta de la solicitud AJAX
     type: "POST",
     dataType: "json", // Esperamos una respuesta en formato JSON
     success: function (data) {
@@ -2348,7 +2348,7 @@ function NotGrupo() {
 
 function obtenerFinanciamientosPendientes() {
   $.ajax({
-    url: "/arequipago/getFinanciamientos-pendientes",
+    url: "/getFinanciamientos-pendientes",
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -2624,7 +2624,7 @@ function verificarCodigoAsociadoEnServidor(codigo, grupoFinanciamiento) {
   }
 
   $.ajax({
-    url: "/arequipago/verificarCodigoAsociado",
+    url: "/verificarCodigoAsociado",
     type: "POST",
     data: {
       codigo_asociado: codigo,

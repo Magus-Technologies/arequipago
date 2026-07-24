@@ -461,7 +461,7 @@ function abrirModalEditarProducto(idProducto) {
 function cargarDatosProductoEdit(idProducto) {
     return new Promise((resolve, reject) => {
         $.ajax({
-            url: "/arequipago/dataEditProducto",
+            url: "/dataEditProducto",
             type: "POST",
             data: { id: idProducto },
             dataType: "json",
@@ -513,8 +513,8 @@ function cargarDatosProductoEdit(idProducto) {
 function cargarTiposYCategoriasEdit() {
     return new Promise((resolve, reject) => {
         Promise.all([
-            $.ajax({ url: "/arequipago/cargartiposproducto", method: "GET", dataType: "json" }),
-            $.ajax({ url: "/arequipago/cargarcategoriaproductos", method: "GET", dataType: "json" })
+            $.ajax({ url: "/cargartiposproducto", method: "GET", dataType: "json" }),
+            $.ajax({ url: "/cargarcategoriaproductos", method: "GET", dataType: "json" })
         ]).then(([tiposResponse, categoriasResponse]) => {
             tiposProductoDataEdit = Array.isArray(tiposResponse) ? tiposResponse : [];
             categoriasDataEdit = Array.isArray(categoriasResponse) ? categoriasResponse : [];
@@ -884,7 +884,7 @@ function guardarCambiosProducto() {
     
     // Enviar datos
     $.ajax({
-        url: "/arequipago/actualizarProducto",
+        url: "/actualizarProducto",
         type: "POST",
         data: formData,
         processData: false,

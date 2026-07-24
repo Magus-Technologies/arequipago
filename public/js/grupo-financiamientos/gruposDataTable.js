@@ -18,7 +18,7 @@ function inicializarTablaGrupos() {
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
         ajax: {
-            url: "/arequipago/getAllPlanes",
+            url: "/getAllPlanes",
             type: "GET",
             data: {
                 order_by: 'id_desc'

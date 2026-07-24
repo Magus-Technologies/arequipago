@@ -5,7 +5,7 @@
 var asesorSeleccionado = '';
 
 function cargarClientes() {
-    let url = '/arequipago/obtenerClientesFinanciamiento?pagina=' + paginaActual;
+    let url = '/obtenerClientesFinanciamiento?pagina=' + paginaActual;
 
     // 🔴 Ahora mandamos los parámetros de ordenamiento al servidor siempre
     if (sortField) {
@@ -85,7 +85,7 @@ function buscarClientes() {
         return; // 👈 Salimos de la función para no seguir ejecutando la búsqueda 🛒
     }
 
-    let url = '/arequipago/obtenerClientesBuscados?searchTerm=' + encodeURIComponent(searchTerm) + '&pagina=' + paginaActual;
+    let url = '/obtenerClientesBuscados?searchTerm=' + encodeURIComponent(searchTerm) + '&pagina=' + paginaActual;
 
     // 🔴 Agregar ordenamiento de forma consistente
     if (sortField) {
@@ -248,7 +248,7 @@ function vincularEventosFilas() {
         var param = tipo === 'conductor' ? 'id_conductor=' + id : 'id=' + id;  // Añadido: construir parámetro según tipo
 
         $.ajax({
-            url: '/arequipago/obtenerFinanciamientoPorCliente?' + param,  // Modificado: usar el parámetro dinámico
+            url: '/obtenerFinanciamientoPorCliente?' + param,  // Modificado: usar el parámetro dinámico
             type: 'GET',
             dataType: 'json',
             success: function (data) {
@@ -302,7 +302,7 @@ function ocultarPapeleraAlCambiarTab() {
 // Función para cargar asesores en el select
 function cargarAsesores() {
     $.ajax({
-        url: '/arequipago/obtenerAsesoresFinanciamiento',
+        url: '/obtenerAsesoresFinanciamiento',
         type: 'GET',
         dataType: 'json',
         success: function (data) {
@@ -346,7 +346,7 @@ function exportarFinanciamientosExcel() {
     var searchTerm = $('#searchCliente').val() || '';
     var asesorId = $('#filtroAsesor').val() || '';
 
-    var url = '/arequipago/exportarFinanciamientosExcel?searchTerm=' + encodeURIComponent(searchTerm)
+    var url = '/exportarFinanciamientosExcel?searchTerm=' + encodeURIComponent(searchTerm)
         + '&asesor_id=' + encodeURIComponent(asesorId);
 
     // Descargar abriendo una nueva ventana

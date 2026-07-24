@@ -1573,7 +1573,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             // Función para cargar los datos en la tabla de la papelera
             function cargarFinanciamientosEliminados() {
                 $.ajax({
-                    url: '/arequipago/get-financiamientos-eliminados',
+                    url: '/get-financiamientos-eliminados',
                     type: 'POST',
                     dataType: 'json',
                     success: function(response) {
@@ -1690,7 +1690,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/vaciar-papelera',
+                            url: '/financiamientos/vaciar-papelera',
                             type: 'POST',
                             dataType: 'json',
                             beforeSend: function() {
@@ -1744,7 +1744,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/restaurar',
+                            url: '/financiamientos/restaurar',
                             type: 'POST',
                             data: { id_financiamiento: id },
                             dataType: 'json',
@@ -1794,7 +1794,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/eliminar-permanentemente',
+                            url: '/financiamientos/eliminar-permanentemente',
                             type: 'POST',
                             data: { id_financiamiento: id },
                             dataType: 'json',
@@ -1854,7 +1854,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
         id="btnFloatRegistrosPendientes"
         class="btn btn-warning btn-float-pendientes"
         type="button"
-        onclick="window.location.href='/arequipago/financiamientosAprobar'"
+        onclick="window.location.href='/financiamientosAprobar'"
         title="Registros Pendientes de Aprobación">
         <i class="fas fa-bell me-2"></i>
         <span class="btn-float-text">Pendientes</span>
@@ -1896,7 +1896,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
         // Función para actualizar el badge del botón flotante
         function actualizarBadgeFloatPendientes() {
             $.ajax({
-                url: '/arequipago/getFinanciamientos-aprobar',
+                url: '/getFinanciamientos-aprobar',
                 type: 'POST',
                 dataType: 'json',
                 success: function(data) {

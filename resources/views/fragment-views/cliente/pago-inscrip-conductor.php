@@ -360,7 +360,7 @@ $id_conductor = $_GET['id'] ?? null;
 
         function cargarMetodosPago() {
             $.ajax({
-                url: '/arequipago/obtenerMetodosPago',
+                url: '/obtenerMetodosPago',
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -388,7 +388,7 @@ $id_conductor = $_GET['id'] ?? null;
             var id_conductor = <?php echo json_encode($id_conductor); ?>;
             if (id_conductor) {
                 $.ajax({
-                    url: '/arequipago/conductorPago',
+                    url: '/conductorPago',
                     type: 'GET',
                     data: { id: id_conductor },
                     dataType: 'json',
@@ -397,17 +397,17 @@ $id_conductor = $_GET['id'] ?? null;
                             console.log("Datos del conductor:", response.data);
 
                             const fotoUrl = response.data.foto;
-                            if (fotoUrl && fotoUrl !== '' && fotoUrl !== '/arequipago/assets/images/avatar-default.png') {
+                            if (fotoUrl && fotoUrl !== '' && fotoUrl !== '/assets/images/avatar-default.png') {
                                 const img = new Image();
                                 img.onload = function () {
                                     $('#fotoConductor').attr('src', fotoUrl);
                                 };
                                 img.onerror = function () {
-                                    $('#fotoConductor').attr('src', '/arequipago/public/img/not-foto.png');
+                                    $('#fotoConductor').attr('src', '/public/img/not-foto.png');
                                 };
                                 img.src = fotoUrl;
                             } else {
-                                $('#fotoConductor').attr('src', '/arequipago/public/img/not-foto.png');
+                                $('#fotoConductor').attr('src', '/public/img/not-foto.png');
                             }
                             $('#nombreConductor').text(response.data.nombre_completo);
 
@@ -591,7 +591,7 @@ $id_conductor = $_GET['id'] ?? null;
             }
 
             // Enviar la solicitud Ajax para guardar el registro
-            fetch('/arequipago/guardarRegistroPago', {
+            fetch('/guardarRegistroPago', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -694,7 +694,7 @@ $id_conductor = $_GET['id'] ?? null;
             }
 
             $.ajax({
-                url: "/arequipago/datoPagoConductor",
+                url: "/datoPagoConductor",
                 type: "GET",
                 data: { id: id_conductor },
                 dataType: "json",
@@ -861,7 +861,7 @@ $id_conductor = $_GET['id'] ?? null;
             tablaBody.innerHTML = "";
 
             $.ajax({
-                url: "/arequipago/datoPagoConductor",
+                url: "/datoPagoConductor",
                 type: "GET",
                 data: { id: <?php echo json_encode($_GET['id'] ?? null); ?> },
                 dataType: "json",
@@ -905,7 +905,7 @@ $id_conductor = $_GET['id'] ?? null;
             var formData = new FormData();
             formData.append("id_conductor", id_conductor);
 
-            fetch("/arequipago/deleteInfoPagoConductor/", {
+            fetch("/deleteInfoPagoConductor/", {
                 method: "POST",
                 body: formData
             })
@@ -941,7 +941,7 @@ $id_conductor = $_GET['id'] ?? null;
                 if (pdfBase64) {
                     // Enviar el PDF base64 al servidor para crear una URL compartible
                     $.ajax({
-                        url: "/arequipago/generarEnlacePDF", // Endpoint que creamos
+                        url: "/generarEnlacePDF", // Endpoint que creamos
                         type: "POST",
                         data: { pdf_base64: pdfBase64 },
                         dataType: "json",
@@ -1077,7 +1077,7 @@ $id_conductor = $_GET['id'] ?? null;
                         <div class="col-lg-3 col-md-4 text-center mb-3 mb-md-0">
                             <label class="form-label fw-bold">Foto del conductor:</label>
                             <div class="photo-placeholder mx-auto">
-                                <img id="fotoConductor" src="/arequipago/public/img/not-foto.png"
+                                <img id="fotoConductor" src="/public/img/not-foto.png"
                                     alt="Foto del Conductor" class="custom-photo">
                             </div>
                         </div>

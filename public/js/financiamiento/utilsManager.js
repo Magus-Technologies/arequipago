@@ -183,7 +183,7 @@ async function handleGeneratePDFs(
 
   try {
     // Solicitud para obtener los PDFs desde el servidor
-    const response = await fetch("/arequipago/generateBoletaFinance", {
+    const response = await fetch("/generateBoletaFinance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -373,7 +373,7 @@ async function handleGeneratePDFs(
                 formData.append("pdf_base64", pdfData.base64); // MODIFICADO: Usar el base64 directamente
 
                 const shareResponse = await fetch(
-                  "/arequipago/generarEnlacePDF",
+                  "/generarEnlacePDF",
                   {
                     method: "POST",
                     body: formData, // MODIFICADO: Enviar formData en lugar de JSON
@@ -427,7 +427,7 @@ function deleteMontoRecalculado() {
 // Función para verificar si el cliente existe en la BD
 function verificarClienteExistente(numDoc) {
   $.ajax({
-    url: "/arequipago/buscarClienteExiste",
+    url: "/buscarClienteExiste",
     type: "POST",
     data: { dni: numDoc },
     dataType: "json",
@@ -511,7 +511,7 @@ function generarContratoInstant(idFinanciamiento, soloExcel = false, soloActa = 
     },
   });
 
-  fetch("/arequipago/generarContratos", {
+  fetch("/generarContratos", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

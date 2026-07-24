@@ -2105,7 +2105,7 @@ function obtenerProvincias() {
         
        function buscarProductoModal(searchTerm) {
             if (searchTerm.length > 3) {
-                fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+                fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
                     .then(response => response.json())
                     .then(resp => {
                         if (resp.success && resp.productos.length > 0) {

@@ -175,7 +175,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
 
                             <div class="card-body text-center">
                                 <button id="btnPendientes" class="btn btn-success position-relative"
-                                    onclick="window.location.href='/arequipago/financiamientosAprobar'">
+                                    onclick="window.location.href='/financiamientosAprobar'">
                                     <i class="fas fa-clock me-2"></i> Ver Pendientes
                                     <!-- 🔔 Circulito tipo notificación -->
                                     <span id="badgePendientes"
@@ -1988,7 +1988,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
             // Función para cargar los datos en la tabla de la papelera
             function cargarFinanciamientosEliminados() {
                 $.ajax({
-                    url: '/arequipago/get-financiamientos-eliminados',
+                    url: '/get-financiamientos-eliminados',
                     type: 'POST',
                     dataType: 'json',
                     success: function(response) {
@@ -2105,7 +2105,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/vaciar-papelera',
+                            url: '/financiamientos/vaciar-papelera',
                             type: 'POST',
                             dataType: 'json',
                             beforeSend: function() {
@@ -2159,7 +2159,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/restaurar',
+                            url: '/financiamientos/restaurar',
                             type: 'POST',
                             data: { id_financiamiento: id },
                             dataType: 'json',
@@ -2209,7 +2209,7 @@ $audioPath = $baseURL . '/public/assets/sound/Menu.mp3';
                 }).then((result) => {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: '/arequipago/financiamientos/eliminar-permanentemente',
+                            url: '/financiamientos/eliminar-permanentemente',
                             type: 'POST',
                             data: { id_financiamiento: id },
                             dataType: 'json',

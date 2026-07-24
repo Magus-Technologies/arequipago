@@ -290,7 +290,7 @@ class Cupon
                     // $usuarioFormateado['tipo_cliente'] = 'conductor';
                     $usuarioFormateado['id_cliente'] = null;
                     $usuarioFormateado['id_conductor'] = (int) $row['id_usuario'];
-                    $usuarioFormateado['foto'] = $row['conductor_foto'] ? '/arequipago/public/' . $row['conductor_foto'] : '/arequipago/public/img/default-user.png';
+                    $usuarioFormateado['foto'] = $row['conductor_foto'] ? '/public/' . $row['conductor_foto'] : '/public/img/default-user.png';
                     $usuarioFormateado['nro_documento'] = $row['conductor_documento'];
                     $usuarioFormateado['nombres'] = $row['conductor_nombres'];
                     $usuarioFormateado['apellido_paterno'] = $row['conductor_apellido_paterno'];
@@ -300,7 +300,7 @@ class Cupon
                     // $usuarioFormateado['tipo_cliente'] = 'cliente';
                     $usuarioFormateado['id_cliente'] = (int) $row['id_usuario'];
                     $usuarioFormateado['id_conductor'] = null;
-                    $usuarioFormateado['foto'] = '/arequipago/public/img/default-user.png';
+                    $usuarioFormateado['foto'] = '/public/img/default-user.png';
                     $usuarioFormateado['nro_documento'] = $row['cliente_documento'];
                     $usuarioFormateado['nombres'] = $row['cliente_nombres'];
                     $usuarioFormateado['apellido_paterno'] = $row['cliente_apellido_paterno'];
@@ -892,7 +892,7 @@ class Cupon
             $clientes = [];
 
             while ($row = $result->fetch_assoc()) {
-                $row['foto'] = '/arequipago/public/img/default-user.png';  // Imagen por defecto
+                $row['foto'] = '/public/img/default-user.png';  // Imagen por defecto
                 $clientes[] = $row;
             }
 

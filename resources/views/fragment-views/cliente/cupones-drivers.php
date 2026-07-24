@@ -173,7 +173,7 @@
 
                         <!-- Banner -->
                         <div v-if="cupon.imagen_banner" class="position-relative overflow-hidden">
-                            <img :src="'/arequipago/public/' + cupon.imagen_banner" class="cupon-banner"
+                            <img :src="'/public/' + cupon.imagen_banner" class="cupon-banner"
                                 alt="Banner del cupón">
                         </div>
 
@@ -1563,7 +1563,7 @@
                         if (cupon.imagen_banner) {
                             imagenHtml = `
                                 <div class="text-center mb-4">
-                                    <img src="/arequipago/public/${cupon.imagen_banner}" 
+                                    <img src="/public/${cupon.imagen_banner}" 
                                          alt="Banner del cupón" 
                                          style="max-width: 100%; height: auto; max-height: 300px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                 </div>
@@ -1749,7 +1749,7 @@
                         };
                         
                         if (cupon.imagen_banner) {
-                            this.bannerPreview = '/arequipago/public/' + cupon.imagen_banner;
+                            this.bannerPreview = '/public/' + cupon.imagen_banner;
                         }
                         
                         this.modal.show();
@@ -2210,7 +2210,7 @@
 
                                 // Configurar banner si existe
                                 if (result.cupon.imagen_banner) {
-                                    self.bannerPreview = '/arequipago/public/' + result.cupon.imagen_banner;
+                                    self.bannerPreview = '/public/' + result.cupon.imagen_banner;
                                 }
 
                                 // Preseleccionar usuarios asignados

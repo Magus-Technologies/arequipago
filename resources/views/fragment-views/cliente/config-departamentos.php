@@ -1,7 +1,7 @@
 <?php
 // Verificar que el usuario sea director (rol 3)
 if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
-    header("Location: /arequipago/");
+    header("Location: /");
     exit();
 }
 ?>
@@ -321,7 +321,7 @@ if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
             $('#loadingOverlay').addClass('active');
             
             $.ajax({
-                url: '/arequipago/config/departamentos/obtener',
+                url: '/config/departamentos/obtener',
                 method: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -391,7 +391,7 @@ if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
             $('#loadingOverlay').addClass('active');
 
             $.ajax({
-                url: '/arequipago/config/departamentos/cambiar-estado',
+                url: '/config/departamentos/cambiar-estado',
                 method: 'POST',
                 data: {
                     iddepast: iddepast,
@@ -430,7 +430,7 @@ if (!isset($_SESSION['id_rol']) || $_SESSION['id_rol'] != 3) {
 
         function cargarHistorial() {
             $.ajax({
-                url: '/arequipago/config/departamentos/historial',
+                url: '/config/departamentos/historial',
                 method: 'GET',
                 dataType: 'json',
                 success: function(response) {

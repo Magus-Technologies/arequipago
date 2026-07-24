@@ -666,7 +666,7 @@ $id_conductor = $_GET['id'] ?? null;
         <button id="registrar" class="btn btn-custom" onclick="saveChangesConductor(event)">Guardar Cambios</button>
 
         <button type="button" class="btn btn-danger"
-            onclick="window.location.href='/arequipago/conductores';">Cerrar</button>
+            onclick="window.location.href='/conductores';">Cerrar</button>
     </div>
 
     <div class="mt-4">
@@ -686,7 +686,7 @@ $id_conductor = $_GET['id'] ?? null;
         }
 
         $.ajax({
-            url: '/arequipago/chargedData',
+            url: '/chargedData',
             type: 'GET',
             data: { id: id_conductor },
             dataType: 'json',
@@ -722,7 +722,7 @@ $id_conductor = $_GET['id'] ?? null;
                         // Mostrar foto del conductor si existe
                         if (data.conductor.foto) {
                             fotoActualConductor = data.conductor.foto;
-                            const photoUrl = '/arequipago/public/' + data.conductor.foto;
+                            const photoUrl = '/public/' + data.conductor.foto;
                             setPhotoPreview(photoUrl);
                         }
                     }
@@ -938,7 +938,7 @@ $id_conductor = $_GET['id'] ?? null;
 
         // Enviar datos al servidor
         $.ajax({
-            url: '/arequipago/ajs/actualizar/conductorofasesor',
+            url: '/ajs/actualizar/conductorofasesor',
             type: 'POST',
             data: formData,
             processData: false,
@@ -1212,7 +1212,7 @@ $id_conductor = $_GET['id'] ?? null;
     // Función para cargar departamentos con callback
     function UploadDepartamentos(callback) {
         $.ajax({
-            url: "/arequipago/cargardireccion",
+            url: "/cargardireccion",
             method: "GET",
             dataType: "json",
             success: function (response) {
@@ -1257,7 +1257,7 @@ $id_conductor = $_GET['id'] ?? null;
         }
 
         $.ajax({
-            url: "/arequipago/cargarprovincia",
+            url: "/cargarprovincia",
             method: "GET",
             data: { iddepartamento: departamentoId },
             dataType: "json",
@@ -1321,7 +1321,7 @@ $id_conductor = $_GET['id'] ?? null;
         }
 
         $.ajax({
-            url: "/arequipago/cargardistrito",
+            url: "/cargardistrito",
             method: "GET",
             data: { idprovincia: provinciaId },
             dataType: "json",

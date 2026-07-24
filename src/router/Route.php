@@ -61,7 +61,7 @@ class Route {
             unset($_SESSION['token']); // Elimina el token de autenticación
 
             // Redirige al usuario directamente a la página de login con un parámetro para limpiar localStorage
-            header("Location: /arequipago/login?logout_local=true"); // Redirige directamente al login
+            header("Location: /login?logout_local=true"); // Redirige directamente al login
             exit(); // Es crucial terminar la ejecución aquí
         }
 

@@ -428,8 +428,8 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
                 $nuevaImagen = $this->procesarImagenUpload($_FILES['imagen_principal']);
                 if ($nuevaImagen) {
                     // Eliminar imagen anterior si existe
-                    if ($imagenPrincipal && file_exists($_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $imagenPrincipal)) {
-                        unlink($_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $imagenPrincipal);
+                    if ($imagenPrincipal && file_exists($_SERVER['DOCUMENT_ROOT'] . '/public/' . $imagenPrincipal)) {
+                        unlink($_SERVER['DOCUMENT_ROOT'] . '/public/' . $imagenPrincipal);
                         error_log("Imagen anterior eliminada: " . $imagenPrincipal);
                     }
                     $imagenPrincipal = $nuevaImagen;
@@ -517,7 +517,7 @@ if (!empty($_POST['categoria']) && !$this->validarCategoriaExiste($_POST['catego
             if ($eliminado) {
                 // Si el beneficio fue eliminado exitosamente, eliminar también la imagen del servidor
                 if (!empty($beneficio['imagen'])) {
-                    $rutaImagen = $_SERVER['DOCUMENT_ROOT'] . '/arequipago/public/' . $beneficio['imagen'];
+                    $rutaImagen = $_SERVER['DOCUMENT_ROOT'] . '/public/' . $beneficio['imagen'];
                     if (file_exists($rutaImagen)) {
                         unlink($rutaImagen);
                         error_log("Imagen eliminada: " . $rutaImagen);

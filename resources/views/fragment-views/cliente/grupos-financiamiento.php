@@ -8,13 +8,13 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Verificamos si el usuario tiene sesión activa
 if (!isset($_SESSION['id_rol'])) {
-    header('Location: /arequipago/login');  // Redirige al login si no está autenticado
+    header('Location: /login');  // Redirige al login si no está autenticado
     exit();
 }
 
 // Verificamos que el usuario tenga el rol adecuado
 if ($_SESSION['id_rol'] != 3 && $_SESSION['id_rol'] != 1) {  // 🔹 Permitimos acceso a rol 1 y 3
-    header('Location: /arequipago/');  // Redirige a la página principal si no tiene permiso
+    header('Location: /');  // Redirige a la página principal si no tiene permiso
     exit();
 }
 

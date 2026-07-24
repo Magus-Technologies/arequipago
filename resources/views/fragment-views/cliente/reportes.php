@@ -644,7 +644,7 @@
             // Función para cargar grupos de financiamiento
             function loadGruposFinanciamiento() {
                 $.ajax({
-                    url: '/arequipago/get-grupos-financiamiento',
+                    url: '/get-grupos-financiamiento',
                     method: 'GET',
                     dataType: 'json',
                     success: function(response) {
@@ -699,7 +699,7 @@
                 }
                 
                 $.ajax({
-                    url: '/arequipago/get-variantes-por-grupo',
+                    url: '/get-variantes-por-grupo',
                     method: 'POST',
                     data: { grupos: gruposSeleccionados },
                     dataType: 'json',
@@ -758,7 +758,7 @@
             // Load employees for filter (only when needed)
             function loadEmpleados() {
                 $.ajax({
-                    url: '/arequipago/get-empleados',
+                    url: '/get-empleados',
                     method: 'GET',
                     dataType: 'json',
                     success: function(response) {
@@ -1062,7 +1062,7 @@
 
                 // Make AJAX request for report data
                 $.ajax({
-                    url: `/arequipago/${selectedReportType}`,
+                    url: `/${selectedReportType}`,
                     method: 'POST',
                     data: filterData,
                     dataType: 'json',
@@ -1400,7 +1400,7 @@
                 // Create a form to submit the data
                 const form = $('<form></form>')
                     .attr('method', 'post')
-                    .attr('action', '/arequipago/download-excel')
+                    .attr('action', '/download-excel')
                     .css('display', 'none');
                 
                 // Add data as hidden inputs
@@ -1436,7 +1436,7 @@
                 // Create a form to submit the data
                 const form = $('<form></form>')
                     .attr('method', 'post')
-                    .attr('action', '/arequipago/download-pdf')
+                    .attr('action', '/download-pdf')
                     .css('display', 'none');
                 
                 // Add data as hidden inputs
@@ -1476,7 +1476,7 @@
             // Función para cargar categorías
             function loadCategorias() {
                 $.ajax({
-                    url: '/arequipago/get-categorias',
+                    url: '/get-categorias',
                     method: 'GET',
                     dataType: 'json',
                     success: function(response) {
@@ -1533,7 +1533,7 @@
                 }
                 
                 $.ajax({
-                    url: '/arequipago/get-productos-por-categoria',
+                    url: '/get-productos-por-categoria',
                     method: 'POST',
                     data: { categorias: categoriasSeleccionadas },
                     dataType: 'json',

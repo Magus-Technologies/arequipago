@@ -552,7 +552,7 @@
             var oficinaSeleccionada = $('#filtroOficinaVehiculo').val() || 1;
 
             $.ajax({
-                url: '/arequipago/obtenerVehiculos',
+                url: '/obtenerVehiculos',
                 type: 'GET',
                 data: { oficina: oficinaSeleccionada },
                 dataType: 'json',
@@ -735,7 +735,7 @@
         function verDetalles(id) {
             // Hacer AJAX para obtener datos frescos del producto
             $.ajax({
-                url: '/arequipago/dataEditProducto',
+                url: '/dataEditProducto',
                 type: 'POST',
                 data: { id: id },
                 dataType: 'json',
@@ -856,7 +856,7 @@
                 if (result.isConfirmed) {
                     // Llamada AJAX para eliminar el vehículo
                     $.ajax({
-                        url: '/arequipago/deleteProducts',
+                        url: '/deleteProducts',
                         type: 'POST',
                         data: JSON.stringify({ ids: [id] }),
                         contentType: 'application/json',
@@ -908,7 +908,7 @@
         // Función para cargar categorías (solo Vehículo)
         function cargarCategoriasVehiculo() {
             $.ajax({
-                url: '/arequipago/cargarcategoriaproductos',
+                url: '/cargarcategoriaproductos',
                 method: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -1118,7 +1118,7 @@
             formData.append('fecha_registro', $('#fechaActual_vehiculo').val());
 
             $.ajax({
-                url: '/arequipago/guardarProducto',
+                url: '/guardarProducto',
                 type: 'POST',
                 data: Object.fromEntries(formData),
                 dataType: 'json',
@@ -1170,7 +1170,7 @@
                 params.set('busqueda', busqueda);
             }
 
-            fetch('/arequipago/downloadReport?' + params.toString(), {
+            fetch('/downloadReport?' + params.toString(), {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

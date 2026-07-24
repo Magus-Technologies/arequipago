@@ -796,7 +796,7 @@ function mostrarDetallesCliente(idConductor) {
     var param = tipo === 'conductor' ? 'id_conductor=' + idConductor : 'id=' + idConductor;  // MODIFICADO: Cambié id por idConductor
 
     $.ajax({
-        url: '/arequipago/obtenerClienteDetalle?' + param,
+        url: '/obtenerClienteDetalle?' + param,
         type: 'GET',
         dataType: 'json',
         success: function (data) {
@@ -1094,7 +1094,7 @@ window.descargarCronogramaDesdeModal = function() {
 
   // Enviar solicitud AJAX
   $.ajax({
-    url: '/arequipago/generarCronogramaPDF',
+    url: '/generarCronogramaPDF',
     method: 'POST',
     dataType: 'json',
     data: JSON.stringify(datosFormulario),

@@ -315,7 +315,7 @@
         function obtenerDatosProducto(idProducto) {
             return new Promise((resolve, reject) => {
                 $.ajax({
-                    url: "/arequipago/dataEditProducto",
+                    url: "/dataEditProducto",
                     type: "POST",
                     data: { id: idProducto },
                     dataType: "json",
@@ -350,13 +350,13 @@
                 Promise.all([
                     // Cargar tipos de producto
                     $.ajax({
-                        url: "/arequipago/cargartiposproducto",
+                        url: "/cargartiposproducto",
                         method: "GET",
                         dataType: "json"
                     }),
                     // Cargar categorías de producto
                     $.ajax({
-                        url: "/arequipago/cargarcategoriaproductos",
+                        url: "/cargarcategoriaproductos",
                         method: "GET",
                         dataType: "json"
                     })
@@ -904,7 +904,7 @@
             
             // Enviar datos
             $.ajax({
-                url: "/arequipago/actualizarProducto",
+                url: "/actualizarProducto",
                 type: "POST",
                 data: formData,
                 processData: false,
@@ -920,7 +920,7 @@
                             text: response.message || 'Producto actualizado correctamente',
                             confirmButtonText: 'Aceptar'
                         }).then(() => {
-                            window.location.href = '/arequipago/almacen/productos';
+                            window.location.href = '/almacen/productos';
                         });
                     } else {
                         Swal.fire({

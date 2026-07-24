@@ -258,7 +258,7 @@ require_once "app/models/Distrito.php";
                                         <i class="fa fa-info-circle" style="color: #2196F3; margin-right: 8px;"></i>
                                         <strong>Director:</strong> ¿Necesitas habilitar más departamentos?
                                     </div>
-                                    <a href="/arequipago/config/departamentos" class="btn btn-sm" style="background-color: #2196F3; color: white; font-weight: 600; padding: 6px 16px; border-radius: 4px; text-decoration: none;">
+                                    <a href="/config/departamentos" class="btn btn-sm" style="background-color: #2196F3; color: white; font-weight: 600; padding: 6px 16px; border-radius: 4px; text-decoration: none;">
                                         <i class="fa fa-cog"></i> Gestionar Departamentos
                                     </a>
                                 </div>
@@ -693,8 +693,8 @@ require_once "app/models/Distrito.php";
         <!-- Botón para guardar al final -->
         <div class="text-center mt-4">
             <button id="registrar" class="btn btn-custom" @click="saveConductor">Registrar</button>
-            <button type="button" class="btn btn-secondary" onclick="window.location.href='/arequipago/conductores';">Buscar</button>
-            <button type="button" class="btn btn-danger" onclick="window.location.href='/arequipago/';">Cerrar</button>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='/conductores';">Buscar</button>
+            <button type="button" class="btn btn-danger" onclick="window.location.href='/';">Cerrar</button>
         </div>
 
         <div class="mt-4">
@@ -1012,7 +1012,7 @@ require_once "app/models/Distrito.php";
                 },
                 cargarDepartamentos() {
                     $.ajax({
-                        url: "/arequipago/cargardireccion",
+                        url: "/cargardireccion",
                         method: "GET",
                         dataType: "json",
                         success: (response) => {
@@ -1027,7 +1027,7 @@ require_once "app/models/Distrito.php";
                 },
                 cargarProvincias(departamentoId) {
                     $.ajax({
-                        url: "/arequipago/cargarprovincia",
+                        url: "/cargarprovincia",
                         method: "GET",
                         data: { iddepartamento: departamentoId },
                         dataType: "json",
@@ -1043,7 +1043,7 @@ require_once "app/models/Distrito.php";
                 },
                 cargarDistritos(provinciaId) {
                     $.ajax({
-                        url: "/arequipago/cargardistrito",
+                        url: "/cargardistrito",
                         method: "GET",
                         data: { idprovincia: provinciaId },
                         dataType: "json",
@@ -1083,7 +1083,7 @@ require_once "app/models/Distrito.php";
                 },
                 obtenerNumeroUnidad(tipo) {
                     $.ajax({
-                        url: '/arequipago/numUnidad',
+                        url: '/numUnidad',
                         type: 'GET',
                         data: { tipo: tipo },
                         dataType: 'json',
@@ -1094,7 +1094,7 @@ require_once "app/models/Distrito.php";
                 },
                 obtenerNumeroUnidadLima(tipo) {
                     $.ajax({
-                        url: '/arequipago/numUnidadLima',
+                        url: '/numUnidadLima',
                         type: 'GET',
                         data: { tipo: tipo },
                         dataType: 'json',
@@ -1127,7 +1127,7 @@ require_once "app/models/Distrito.php";
                     }
 
                     $.ajax({
-                        url: '/arequipago/verificarConductorExiste',
+                        url: '/verificarConductorExiste',
                         type: 'POST',
                         data: { nro_documento: this.conductor.num_doc },
                         dataType: 'json',
@@ -1148,7 +1148,7 @@ require_once "app/models/Distrito.php";
                     if (!this.kit.logo_yango) return;
 
                     $.ajax({
-                        url: '/arequipago/verificar-stock-logo',
+                        url: '/verificar-stock-logo',
                         type: 'POST',
                         data: { id_producto: 27 },
                         dataType: 'json',
@@ -1334,7 +1334,7 @@ require_once "app/models/Distrito.php";
 
                     // Enviar datos
                     $.ajax({
-                        url: '/arequipago/ajs/registrar/conductor',
+                        url: '/ajs/registrar/conductor',
                         type: 'POST',
                         data: formData,
                         headers: {
@@ -1352,7 +1352,7 @@ require_once "app/models/Distrito.php";
                                     confirmButtonText: 'Aceptar'
                                 }).then(() => {
                                     const id_conductor = response.data.id_conductor;
-                                    window.location.href = '/arequipago/pago-inscripcion?id=' + id_conductor;
+                                    window.location.href = '/pago-inscripcion?id=' + id_conductor;
                                 });
                             } else {
                                 Swal.fire({

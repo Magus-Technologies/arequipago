@@ -905,7 +905,7 @@ if (isset($_GET["coti"])) {
         $("#input_buscar_productos").autocomplete({
             source: function(request, response) {
                 const searchTerm = request.term;
-                fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+                fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.productos.length > 0) {

@@ -4,7 +4,7 @@
 // vincularEventosFilas se encuentran ahora en list-clientes.js
 
 /* function cargarClientes() {
-    let url = '/arequipago/obtenerClientesFinanciamiento?pagina=' + paginaActual;
+    let url = '/obtenerClientesFinanciamiento?pagina=' + paginaActual;
 
     // 🔴 Ahora mandamos los parámetros de ordenamiento al servidor siempre
     if (sortField) {
@@ -114,7 +114,7 @@ function setearLinkActive(liElement) {
 
             // Hacer la solicitud AJAX para obtener los clientes filtrados
             $.ajax({
-                url: '/arequipago/obtenerClientesAutocompletado?searchTerm=' + encodeURIComponent(searchTerm),
+                url: '/obtenerClientesAutocompletado?searchTerm=' + encodeURIComponent(searchTerm),
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -235,7 +235,7 @@ function setearLinkActive(liElement) {
             }
 
             $.ajax({
-                url: '/arequipago/obtenerNumDocClientesAutocompletado?searchTerm=' + encodeURIComponent(searchTerm),
+                url: '/obtenerNumDocClientesAutocompletado?searchTerm=' + encodeURIComponent(searchTerm),
                 type: 'GET',
                 dataType: 'json',
                 success: function (data) {
@@ -381,7 +381,7 @@ function setearLinkActive(liElement) {
             inputCodigo.placeholder = 'Generando código...';
             
             $.ajax({
-                url: '/arequipago/obtenerSiguienteCodigoAsociado',
+                url: '/obtenerSiguienteCodigoAsociado',
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {

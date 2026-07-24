@@ -703,7 +703,7 @@
                             ✓ Disponible
                         </span>
 
-                        <img v-if="beneficio.imagen" :src="'/arequipago/public/' + beneficio.imagen"
+                        <img v-if="beneficio.imagen" :src="'/public/' + beneficio.imagen"
                             class="beneficio-imagen" :alt="beneficio.nombre">
                         <div v-else class="beneficio-imagen d-flex align-items-center justify-content-center bg-light">
                             <i class="bi display-1 text-muted" :class="obtenerIconoCategoria(beneficio.categoria)"></i>
@@ -1329,7 +1329,7 @@
                         var self = this;
                         self.cargandoCategorias = true;
 
-                        fetch('/arequipago/cargarcategoriaproductos')
+                        fetch('/cargarcategoriaproductos')
                             .then(response => response.json())
                             .then(data => {
                                 if (Array.isArray(data)) {
@@ -1357,7 +1357,7 @@
                         var self = this;
                         self.cargandoPlanes = true;
 
-                        fetch('/arequipago/getAllPlanes')
+                        fetch('/getAllPlanes')
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success && Array.isArray(data.planes)) {
@@ -1621,7 +1621,7 @@
 
                         // Configurar preview de imagen existente
                         if (beneficio.imagen) {
-                            this.imagenPreview = '/arequipago/public/' + beneficio.imagen;
+                            this.imagenPreview = '/public/' + beneficio.imagen;
                         } else {
                             this.imagenPreview = null;
                         }
@@ -1670,7 +1670,7 @@
                             title: beneficio.nombre,
                             html: `
                                 <div class="text-start">
-                                    ${beneficio.imagen ? `<img src="/arequipago/public/${beneficio.imagen}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
+                                    ${beneficio.imagen ? `<img src="/public/${beneficio.imagen}" class="img-fluid rounded mb-3" style="max-height: 200px;">` : ''}
                                     <p><strong>Plan de Financiamiento:</strong> ${this.obtenerNombrePlan(beneficio.plan_financiamiento_id)}</p>
                                     <p><strong>Descripción:</strong> ${beneficio.descripcion || 'Sin descripción'}</p>
                                     <hr>

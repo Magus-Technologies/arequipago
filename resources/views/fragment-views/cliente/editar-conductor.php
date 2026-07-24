@@ -918,7 +918,7 @@ $id_conductor = $_GET['id'] ?? null;
         <div class="text-center mt-4">
             <button id="registrar" class="btn btn-custom" onclick="saveChangesConductor(event)">Guardar Cambios</button>
            
-            <button type="button" class="btn btn-danger" onclick="window.location.href='/arequipago/conductores';">Cerrar</button>
+            <button type="button" class="btn btn-danger" onclick="window.location.href='/conductores';">Cerrar</button>
         </div>
 
         <div class="mt-4">
@@ -1005,7 +1005,7 @@ $id_conductor = $_GET['id'] ?? null;
 
         function UploadDepartamentos() {
             $.ajax({
-                url: "/arequipago/cargardireccion",
+                url: "/cargardireccion",
                 method: "GET",
                 dataType: "json",
                 success: function (response) {
@@ -1056,7 +1056,7 @@ $id_conductor = $_GET['id'] ?? null;
             console.log("ID Departamento:", departamentoId);
 
             $.ajax({
-                url: "/arequipago/cargarprovincia",
+                url: "/cargarprovincia",
                 method: "GET",
                 data: { iddepartamento: departamentoId },
                 dataType: "json",
@@ -1124,7 +1124,7 @@ $id_conductor = $_GET['id'] ?? null;
             console.log("ID Provincias:", provinciaId);
 
             $.ajax({
-                url: "/arequipago/cargardistrito",
+                url: "/cargardistrito",
                 method: "GET",
                 data: { idprovincia: provinciaId },
                 dataType: "json",
@@ -1423,7 +1423,7 @@ $id_conductor = $_GET['id'] ?? null;
 
             // Send data to server
             $.ajax({
-                url: '/arequipago/ajs/actualizar/conductor',
+                url: '/ajs/actualizar/conductor',
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -1557,7 +1557,7 @@ $id_conductor = $_GET['id'] ?? null;
 
             // Se cambió fetch por $.ajax para enviar el id_conductor correctamente al servidor
             $.ajax({
-                url: '/arequipago/chargedData', // URL modificada según tu solicitud
+                url: '/chargedData', // URL modificada según tu solicitud
                 type: 'GET', // Método de solicitud
                 data: { id: id_conductor }, // Se envía el id_conductor al servidor
                 dataType: 'json', // Se espera respuesta en formato JSON
@@ -1602,8 +1602,8 @@ $id_conductor = $_GET['id'] ?? null;
                         console.log('antes de la foto');
                         // Set photo preview
                         if (data.conductor.foto) {
-                            // Añadir el prefijo '/arequipago/' a la URL de la foto
-                            const photoUrl = '/arequipago/public/' + data.conductor.foto; // Concatenar el prefijo a la URL
+                            // Añadir el prefijo '/' a la URL de la foto
+                            const photoUrl = '/public/' + data.conductor.foto; // Concatenar el prefijo a la URL
                             console.log('Foto del conductor con prefijo:', photoUrl); // Log con la URL modificada
                             setPhotoPreview(photoUrl); // New: Set photo preview
                         }

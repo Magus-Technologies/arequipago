@@ -1169,7 +1169,7 @@ $igv_empresa = $datoEmpresa["igv"];
                     const vue = this;
                     vue.listaTempProd = [];
                     if (this.dataKey.length > 0) {
-                        fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(this.dataKey)}`)
+                        fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(this.dataKey)}`)
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success && data.productos.length > 0) {
@@ -1211,7 +1211,7 @@ $igv_empresa = $datoEmpresa["igv"];
                     const codInput = $("#input_buscar_productos").val().trim();
                     if (this.usar_scaner) {
                         if (codInput.length > 3) {
-                            fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(codInput)}`)
+                            fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(codInput)}`)
                                 .then(response => response.json())
                                 .then(resp => {
                                     if (resp.success && resp.productos.length > 0) {
@@ -1480,7 +1480,7 @@ $igv_empresa = $datoEmpresa["igv"];
     $("#input_buscar_productos").autocomplete({
         source: function(request, response) {
             const searchTerm = request.term;
-            fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+            fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.productos.length > 0) {
@@ -2222,7 +2222,7 @@ $igv_empresa = $datoEmpresa["igv"];
                     return;
                 }
 
-                fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+                fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
                     .then(response => response.json())
                     .then(data => {
                         listaProductos.innerHTML = ""; // Limpiar lista previa
@@ -2470,7 +2470,7 @@ $igv_empresa = $datoEmpresa["igv"];
 $("#input_buscar_productos").autocomplete({
     source: function(request, response) {
         const searchTerm = request.term;
-        fetch(`/arequipago/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
+        fetch(`/consultar-productos-venta?searchTerm=${encodeURIComponent(searchTerm)}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.productos.length > 0) {
@@ -2609,7 +2609,7 @@ $("#input_buscar_productos").autocomplete({
 
     function validarConductorLogoYango(documento) {
         $.ajax({
-            url: '/arequipago/validar-conductor-logo-yango',
+            url: '/validar-conductor-logo-yango',
             type: 'POST',
             data: { documento: documento },
             success: function(response) {

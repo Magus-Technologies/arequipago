@@ -103,7 +103,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">Gestión de Financiamientos</h4>
-                    <a href="/arequipago/module-financiamiento" class="btn btn-secondary btn-sm">
+                    <a href="/module-financiamiento" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left me-1"></i>Volver a Lista de Clientes
                     </a>
                 </div>

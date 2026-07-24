@@ -703,7 +703,7 @@ class ClientesController extends Controller
                 }
             } else {
                 // Si no es una solicitud AJAX, redirigir a la lista de clientes
-                header('Location: /arequipago/listarClientes');
+                header('Location: /listarClientes');
                 exit;
             }
         }
@@ -875,7 +875,7 @@ class ClientesController extends Controller
                     $baseUrl = $protocol . "://" . $host;
 
                     // Construir URL completa del PDF
-                    $pdfUrl = $baseUrl . "/arequipago/" . str_replace(DIRECTORY_SEPARATOR, "/", $rutaCompartible);
+                    $pdfUrl = $baseUrl . "/" . str_replace(DIRECTORY_SEPARATOR, "/", $rutaCompartible);
                 }
             }
 

@@ -230,7 +230,7 @@ try {
         <div class="d-flex">
             <!-- LOGO -->
             <div class="navbar-brand-box" style="background-color: #FCF34B;">
-                <a href="/arequipago/" class="logo logo-white">
+                <a href="/" class="logo logo-white">
                     <span class="logo-sm">
                         <img src="<?= URL::to('public/assets/images/logo-ArequipaGo-navbar.webp') ?>" alt="" height=80">
                     </span>
@@ -263,7 +263,7 @@ try {
                     </button>
                     <div class="dropdown-menu dropdown-menu-end">
                         <?php if ($id_rol == 1 || $id_rol == 2): ?>
-                            <a class="dropdown-item" href="/arequipago/comisiones">
+                            <a class="dropdown-item" href="/comisiones">
                                 <i class="ti-stats-up"></i> Mis Comisiones
                             </a>
                         <?php endif; ?>
@@ -350,7 +350,7 @@ function changePassword() {
     
     // Enviar solicitud AJAX
     $.ajax({
-        url: '/arequipago/changePasswordUser',
+        url: '/changePasswordUser',
         type: 'POST',
         data: {
             contrasena_actual: contrasenaActual,

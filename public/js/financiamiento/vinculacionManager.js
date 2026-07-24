@@ -10,7 +10,7 @@ const VinculacionManager = {
     abrirModalVincular: function(idFinanciamiento) {
         // Obtener financiamientos disponibles
         $.ajax({
-            url: '/arequipago/obtenerFinanciamientosDisponibles',
+            url: '/obtenerFinanciamientosDisponibles',
             type: 'GET',
             data: { id_financiamiento: idFinanciamiento },
             success: function(response) {
@@ -201,7 +201,7 @@ const VinculacionManager = {
      */
     vincular: function(idPrincipal, idSecundario) {
         $.ajax({
-            url: '/arequipago/vincularFinanciamientos',
+            url: '/vincularFinanciamientos',
             type: 'POST',
             data: {
                 id_principal: idPrincipal,
@@ -252,7 +252,7 @@ const VinculacionManager = {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/desvincularFinanciamientos',
+                    url: '/desvincularFinanciamientos',
                     type: 'POST',
                     data: { id_financiamiento: idFinanciamiento },
                     success: function(response) {

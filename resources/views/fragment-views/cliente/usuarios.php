@@ -8,13 +8,13 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Verificamos si el usuario tiene sesión activa
 if (!isset($_SESSION['id_rol'])) {
-    header("Location: /arequipago/login"); // Redirige al login si no está autenticado
+    header("Location: /login"); // Redirige al login si no está autenticado
     exit();
 }
 
 // Verificamos que el usuario tenga el rol adecuado
 if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta página
-    header("Location: /arequipago/"); // Redirige a la página principal si no tiene permiso
+    header("Location: /"); // Redirige a la página principal si no tiene permiso
     exit();
 }
 
@@ -303,7 +303,7 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
         formData.append("nombres", nombres);
         formData.append("rotativo", rotativo);
 
-        fetch("/arequipago/addUser", {
+        fetch("/addUser", {
             method: "POST",
             body: formData
         })
@@ -385,7 +385,7 @@ if ($_SESSION['id_rol'] != 3) { // Solo DIRECTOR (id_rol = 3) puede ver esta pá
         formData.append("nombres", nombres);
         formData.append("rotativo", rotativo);
 
-        fetch("/arequipago/reactivarUsuario", {
+        fetch("/reactivarUsuario", {
             method: "POST",
             body: formData
         })

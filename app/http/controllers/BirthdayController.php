@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . "/../config/Conexion.php"; // Cambio: Se requiere la conexión directamente
 require_once __DIR__ . "/../utils/config.php"; //
-require_once 'C:/xampp/htdocs/arequipago/utils/lib/mailer/vendor/phpmailer/phpmailer/src/Exception.php';
+require_once __DIR__ . '/..//utils/lib/mailer/vendor/phpmailer/phpmailer/src/Exception.php';
 require_once __DIR__ . '/../utils/lib/mailer/vendor/phpmailer/phpmailer/src/PHPMailer.php';
 require_once __DIR__ . '/../utils/lib/mailer/vendor/phpmailer/phpmailer/src/SMTP.php';
 

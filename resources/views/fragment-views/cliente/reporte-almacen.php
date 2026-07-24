@@ -205,7 +205,7 @@
 
         function cargarUsuarios() {
             $.ajax({
-                url: '/arequipago/chargedUsuarios', // Ruta del controlador
+                url: '/chargedUsuarios', // Ruta del controlador
                 type: 'GET',
                 dataType: 'json',
                 success: function (respuesta) {
@@ -254,7 +254,7 @@
             }
 
             $.ajax({
-                url: '/arequipago/filtrarMovimientos', // Ruta al controlador
+                url: '/filtrarMovimientos', // Ruta al controlador
                 type: 'GET',
                 dataType: 'json',
                 data: {
@@ -325,7 +325,7 @@
 
         function cargarTabla() {
                 $.ajax({
-                    url: '/arequipago/chargedReportAlmacen',
+                    url: '/chargedReportAlmacen',
                     type: 'GET',
                     dataType: 'json',
                     data: { pagina: paginaActual, limite: 10 }, // 💡 Agregado: Envío de la página y el límite al bac
@@ -367,7 +367,7 @@
             // Función para mostrar los detalles del producto con AJAX
         function mostrarDetallesProducto(idProducto) {
             $.ajax({
-                url: '/arequipago/obtenerProductoPorCodigo',
+                url: '/obtenerProductoPorCodigo',
                 type: 'GET',
                 data: { id: idProducto },
                 dataType: 'json',

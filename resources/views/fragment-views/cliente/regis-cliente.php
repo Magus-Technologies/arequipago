@@ -466,7 +466,7 @@
 
 function UploadDepartamentos() {
             $.ajax({
-                url: "/arequipago/cargardireccion",
+                url: "/cargardireccion",
                 method: "GET",
                 dataType: "json",
                 success: function (response) {
@@ -521,7 +521,7 @@ function UploadDepartamentos() {
             console.log("ID Departamento:", departamentoId);
 
             $.ajax({
-                url: "/arequipago/cargarprovincia",
+                url: "/cargarprovincia",
                 method: "GET",
                 data: { iddepartamento: departamentoId },
                 dataType: "json",
@@ -593,7 +593,7 @@ function UploadDepartamentos() {
             console.log("ID Provincias:", provinciaId);
 
             $.ajax({
-                url: "/arequipago/cargardistrito",
+                url: "/cargardistrito",
                 method: "GET",
                 data: { idprovincia: provinciaId },
                 dataType: "json",
@@ -820,7 +820,7 @@ function UploadDepartamentos() {
 
                 // Enviar datos mediante AJAX
                 $.ajax({
-                    url: '/arequipago/guardarCliente',
+                    url: '/guardarCliente',
                     type: 'POST',
                     data: formData,
                     processData: false,
@@ -1055,7 +1055,7 @@ function UploadDepartamentos() {
             }
 
             $.ajax({
-                url: '/arequipago/guardarPago',
+                url: '/guardarPago',
                 type: 'POST',
                 data: formData,
                 processData: false,
@@ -1252,7 +1252,7 @@ function UploadDepartamentos() {
                 const base64String = await obtenerPDF(ruta);
                 
                 const response = await $.ajax({
-                    url: "/arequipago/generarEnlacePDF",
+                    url: "/generarEnlacePDF",
                     type: "POST",
                     data: { pdf_base64: base64String },
                     dataType: 'json'
