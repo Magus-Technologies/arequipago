@@ -16,7 +16,7 @@ let contadorVariantes = 1;
 async function cargarVariantesGrupo(idGrupo) {
     try {
         const response = await $.ajax({
-            url: '/arequipago/getVariantesGrupo',
+            url: '/getVariantesGrupo',
             type: 'POST',
             data: { idplan_financiamiento: idGrupo },
             dataType: 'json'
@@ -251,7 +251,7 @@ function actualizarVariante() {
     }
 
     $.ajax({
-        url: '/arequipago/updateVariante',
+        url: '/updateVariante',
         type: 'POST',
         data: formData,
         success: function (response) {
@@ -343,7 +343,7 @@ function eliminarVarianteExistente(idVariante) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/arequipago/eliminarVariante',
+                url: '/eliminarVariante',
                 type: 'POST',
                 data: { id: idVariante },
                 dataType: 'json',

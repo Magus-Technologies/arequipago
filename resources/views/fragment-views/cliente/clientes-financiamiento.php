@@ -960,7 +960,7 @@ const ROL_USUARIO = <?= json_encode($rol_usuario); ?>; // 🛠️ NUEVO: Pasamos
 console.log("ROL_USUARIO:", ROL_USUARIO);
 function UploadDepartamentos() {
             $.ajax({
-                url: "/arequipago/cargardireccion",
+                url: "/cargardireccion",
                 method: "GET",
                 dataType: "json",
                 success: function (response) {
@@ -1015,7 +1015,7 @@ function UploadDepartamentos() {
             console.log("ID Departamento:", departamentoId);
 
             $.ajax({
-                url: "/arequipago/cargarprovincia",
+                url: "/cargarprovincia",
                 method: "GET",
                 data: { iddepartamento: departamentoId },
                 dataType: "json",
@@ -1087,7 +1087,7 @@ function UploadDepartamentos() {
             console.log("ID Provincias:", provinciaId);
 
             $.ajax({
-                url: "/arequipago/cargardistrito",
+                url: "/cargardistrito",
                 method: "GET",
                 data: { idprovincia: provinciaId },
                 dataType: "json",
@@ -1360,7 +1360,7 @@ $(document).ready(function() {
         processing: true,
         serverSide: true, // Cambiar a true para server-side processing
         ajax: {
-            url: "/arequipago/cargardatosClientes",
+            url: "/cargardatosClientes",
             type: "POST",
             dataSrc: "data"
         },
@@ -1383,7 +1383,7 @@ $(document).ready(function() {
                     if (data) {
                         return `<img src="${data}" class="conductor-foto" alt="Foto cliente">`;
                     } else {
-                        return '<img src="/arequipago/public/img/no-foto.png" class="conductor-foto" alt="Sin foto">';
+                        return '<img src="/public/img/no-foto.png" class="conductor-foto" alt="Sin foto">';
                     }
                 }
             },
@@ -1505,7 +1505,7 @@ $(document).on('click', '.ver-btn', function() {
     
     // Cargar datos del cliente
     $.ajax({
-        url: '/arequipago/verClienteModal',
+        url: '/verClienteModal',
         type: 'POST',
         dataType: 'json',
         data: { id: id },
@@ -1688,7 +1688,7 @@ $(document).on('click', '.editar-btn', function() {
     
     // Cargar datos del cliente
     $.ajax({
-        url: '/arequipago/editarCliente',
+        url: '/editarCliente',
         type: 'POST',
         dataType: 'json',
         data: { id: id },
@@ -1952,7 +1952,7 @@ $(document).on('click', '.editar-btn', function() {
 // Cargar departamentos para el formulario de edición
 function cargarDepartamentos(departamentoId, provinciaId, distritoId) {
     $.ajax({
-        url: '/arequipago/clientesObtenerDepartamentos',
+        url: '/clientesObtenerDepartamentos',
         type: 'POST',
         dataType: 'json',
         success: function(response) {
@@ -2230,7 +2230,7 @@ $(document).on('click', '.eliminar-btn', function() {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/arequipago/deleteCliente',
+                url: '/deleteCliente',
                 type: 'POST',
                 dataType: 'json',
                 data: { id: id },
@@ -2330,7 +2330,7 @@ $(document).on('click', '.registrar-pago-btn', function() {
             
             // Enviar datos al servidor usando el endpoint existente
             $.ajax({
-                url: '/arequipago/guardarPago',
+                url: '/guardarPago',
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -2450,7 +2450,7 @@ $(document).on('click', '.enviar-comprobante-btn', function() {
             });
             
             $.ajax({
-                url: '/arequipago/obtenerComprobantePago',
+                url: '/obtenerComprobantePago',
                 type: 'POST',
                 dataType: 'json',
                 data: { cliente_id: clienteId },
@@ -2497,14 +2497,14 @@ $(document).on('click', '.enviar-comprobante-btn', function() {
             // Usuario hizo clic en "Ver Comprobante"
             // Obtener el ID del pago del cliente
             $.ajax({
-                url: '/arequipago/obtenerComprobantePago',
+                url: '/obtenerComprobantePago',
                 type: 'POST',
                 dataType: 'json',
                 data: { cliente_id: clienteId },
                 success: function(response) {
                     if (response.success && response.pago_id) {
                         // 🔥 CORREGIDO: Usar la nueva ruta dinámica que regenera el PDF si no existe
-                        window.open(`/arequipago/verComprobante/${response.pago_id}`, '_blank');
+                        window.open(`/verComprobante/${response.pago_id}`, '_blank');
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -2612,7 +2612,7 @@ function buscarClientesContratos() {
     document.getElementById('sinResultados').classList.add('d-none');
 
     $.ajax({
-        url: '/arequipago/buscarClientesContratos',
+        url: '/buscarClientesContratos',
         type: 'POST',
         dataType: 'json',
         data: { busqueda: busqueda },
@@ -2725,7 +2725,7 @@ function generarContratoDirecto(clienteId, dni, nombreCompleto) {
     });
 
     // Enviar solicitud al servidor
-    fetch('/arequipago/generarContratoCliente', {
+    fetch('/generarContratoCliente', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

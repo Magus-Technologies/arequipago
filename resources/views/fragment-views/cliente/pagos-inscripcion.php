@@ -380,7 +380,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
         }
 
         $.ajax({
-            url: "/arequipago/busquedaPorDni",
+            url: "/busquedaPorDni",
             type: "POST",
             data: { dni: dni },
             dataType: "json",
@@ -586,7 +586,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
     // NUEVO: Función para ver el comprobante de pago de un cliente
     function verComprobante(pagoId) {
         // Usar la ruta dinámica que regenera el PDF si no existe
-        const pdfUrl = `/arequipago/verComprobante/${pagoId}`;
+        const pdfUrl = `/verComprobante/${pagoId}`;
         window.open(pdfUrl, '_blank');
     }
 
@@ -663,7 +663,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             });
         });
         $.ajax({
-            url: "/arequipago/paymentMade",
+            url: "/paymentMade",
             type: "POST",
             data: {
                 dni: dni,
@@ -820,7 +820,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null; // Obten
             if (pdfBase64) {
                 // Enviar el PDF base64 al servidor para crear una URL compartible
                 $.ajax({
-                    url: "/arequipago/generarEnlacePDF", // Nuevo endpoint que creamos
+                    url: "/generarEnlacePDF", // Nuevo endpoint que creamos
                     type: "POST",
                     data: { pdf_base64: pdfBase64 },
                     dataType: "json",
@@ -932,7 +932,7 @@ async function enviarPDFWhatsApp(ruta, numero, codigoPais) {
         
         // Enviar al servidor
         const response = await $.ajax({
-            url: "/arequipago/generarEnlacePDF",
+            url: "/generarEnlacePDF",
             type: "POST",
             data: { pdf_base64: base64String },
             dataType: 'json'
@@ -967,7 +967,7 @@ async function enviarPDFWhatsApp(ruta, numero, codigoPais) {
 // Función para cargar los reportes desde el servidor
 function cargarReportes() {
     $.ajax({
-        url: "/arequipago/obtenerReportesPagos",
+        url: "/obtenerReportesPagos",
         type: "GET",
         dataType: "json",
         success: function (response) {
@@ -1020,7 +1020,7 @@ function confirmarEliminar(id) {
 // Función para eliminar un reporte
 function eliminarReporte(id) {
     $.ajax({
-        url: "/arequipago/eliminarReportePago",
+        url: "/eliminarReportePago",
         type: "POST",
         data: { id: id },
         dataType: "json",
@@ -1154,13 +1154,13 @@ function mostrarReportes(reportes) {
 
         // Si es cliente, usar la nueva ruta dinámica
         if (tipo === 'cliente') {
-            window.open(`/arequipago/verComprobante/${id}`, "_blank");
+            window.open(`/verComprobante/${id}`, "_blank");
         } else if (tipoPago === 'contado' && ruta) {
             // Para conductores con pago al contado que ya tienen PDF, usar ruta directa
             window.open(ruta, "_blank");
         } else if (tipoPago === 'contado') {
             // Para conductores con pago al contado sin PDF, regenerar
-            window.open(`/arequipago/verComprobanteContado/${id}`, "_blank");
+            window.open(`/verComprobanteContado/${id}`, "_blank");
         } else {
             // Para conductores con cuotas, usar la ruta tradicional
             window.open(ruta, "_blank");
@@ -1175,13 +1175,13 @@ function mostrarReportes(reportes) {
 
         // Si es cliente, usar la nueva ruta dinámica
         if (tipo === 'cliente') {
-            descargarPDF(`/arequipago/verComprobante/${id}`);
+            descargarPDF(`/verComprobante/${id}`);
         } else if (tipoPago === 'contado' && ruta) {
             // Para conductores con pago al contado que ya tienen PDF, usar ruta directa
             descargarPDF(ruta);
         } else if (tipoPago === 'contado') {
             // Para conductores con pago al contado sin PDF, regenerar
-            descargarPDF(`/arequipago/verComprobanteContado/${id}`);
+            descargarPDF(`/verComprobanteContado/${id}`);
         } else {
             // Para conductores con cuotas, usar la ruta tradicional
             descargarPDF(ruta);
@@ -1261,7 +1261,7 @@ function downloadData() {
     
     // Make AJAX request to the controller
     $.ajax({
-        url: '/arequipago/reportPagosUnificado/',
+        url: '/reportPagosUnificado/',
         method: 'GET',
         xhrFields: {
             responseType: 'blob' // Important for handling binary data (Excel file)
@@ -1389,7 +1389,7 @@ $(document).ready(function () {
             });
 
             const response = await $.ajax({
-                url: "/arequipago/generarEnlacePDF",
+                url: "/generarEnlacePDF",
                 type: "POST",
                 data: { pdf_base64: pdfBase64 },
                 dataType: 'json'
@@ -1423,7 +1423,7 @@ function actualizarSerieNumeroInscripcion() {
     var tipoDoc = $('#fact_insc_tipo_doc').val();
 
     $.ajax({
-        url: '/arequipago/ajs/inscripcion/pago/serie-numero',
+        url: '/ajs/inscripcion/pago/serie-numero',
         type: 'POST',
         data: { tipo_doc: tipoDoc },
         dataType: 'json',
@@ -1442,7 +1442,7 @@ function actualizarSerieNumeroInscripcion() {
 
 function abrirModalFacturarInscripcion(idPago, tipo, tipoPago) {
     $.ajax({
-        url: '/arequipago/ajs/inscripcion/pago/detalle',
+        url: '/ajs/inscripcion/pago/detalle',
         type: 'POST',
         data: { id: idPago, tipo: tipo, tipo_pago: tipoPago },
         dataType: 'json',
@@ -1525,7 +1525,7 @@ function generarFacturaInscripcion() {
     });
 
     $.ajax({
-        url: '/arequipago/ajs/inscripcion/pago/facturar',
+        url: '/ajs/inscripcion/pago/facturar',
         type: 'POST',
         data: formData,
         dataType: 'json',
@@ -1665,7 +1665,7 @@ function generarFacturaInscripcion() {
     // Cargar pagos pendientes
     function cargarPagosPendientesInscripcion() {
         $.ajax({
-            url: '/arequipago/listarPagosPendientesInscripcion',
+            url: '/listarPagosPendientesInscripcion',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -1688,7 +1688,7 @@ function generarFacturaInscripcion() {
     // Cargar pagos rechazados
     function cargarPagosRechazadosInscripcion() {
         $.ajax({
-            url: '/arequipago/listarPagosRechazadosInscripcion',
+            url: '/listarPagosRechazadosInscripcion',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -1803,7 +1803,7 @@ function generarFacturaInscripcion() {
     // Ver detalles del pago
     function verDetallesPagoInscripcion(id) {
         $.ajax({
-            url: '/arequipago/listarPagosPendientesInscripcion',
+            url: '/listarPagosPendientesInscripcion',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -1812,7 +1812,7 @@ function generarFacturaInscripcion() {
                     if (!pago) {
                         // Buscar en rechazados
                         $.ajax({
-                            url: '/arequipago/listarPagosRechazadosInscripcion',
+                            url: '/listarPagosRechazadosInscripcion',
                             type: 'GET',
                             dataType: 'json',
                             success: function(responseRechazados) {
@@ -1951,7 +1951,7 @@ function generarFacturaInscripcion() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/rechazarPagoInscripcion',
+                    url: '/rechazarPagoInscripcion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ 
@@ -1989,7 +1989,7 @@ function generarFacturaInscripcion() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/reactivarPagoInscripcion',
+                    url: '/reactivarPagoInscripcion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ id: id }),
@@ -2024,7 +2024,7 @@ function generarFacturaInscripcion() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/eliminarPagoInscripcion',
+                    url: '/eliminarPagoInscripcion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ id: id }),
@@ -2049,7 +2049,7 @@ function generarFacturaInscripcion() {
     // Actualizar contador de pendientes
     function actualizarContadorPendientesInscripcion() {
         $.ajax({
-            url: '/arequipago/contarPagosPendientesInscripcion',
+            url: '/contarPagosPendientesInscripcion',
             type: 'GET',
             dataType: 'json',
             success: function(response) {

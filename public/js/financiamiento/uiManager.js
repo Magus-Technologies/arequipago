@@ -47,7 +47,7 @@ function cargarTypeCambio() {
   // URL de tu controlador PHP
 
   $.ajax({
-    url: "/arequipago/TipoCambio",
+    url: "/TipoCambio",
     method: "GET",
     dataType: "json",
     success: function (response) {
@@ -697,7 +697,7 @@ function cerrarModalEntregarVehiculo() {
 
 function cargarProductosVehiculos() {
   $.ajax({
-    url: "/arequipago/obtenerProductosVehiculos",
+    url: "/obtenerProductosVehiculos",
     type: "GET",
     dataType: "json",
     success: function (data) {
@@ -757,7 +757,7 @@ function buscarVehiculosParaEntregar() {
   const searchTerm = $("#buscarVehiculoInput").val();
 
   $.ajax({
-    url: "/arequipago/buscarProductosVehiculos",
+    url: "/buscarProductosVehiculos",
     type: "GET",
     data: { searchTerm: searchTerm },
     dataType: "json",
@@ -821,7 +821,7 @@ window.confirmarEntregaVehiculoSoloFecha = function confirmarEntregaVehiculoSolo
 
   // Enviar al backend para registrar entrega (sin cambiar producto)
   $.ajax({
-    url: "/arequipago/entregarVehiculoSoloFecha",
+    url: "/entregarVehiculoSoloFecha",
     type: "POST",
     data: {
       id_financiamiento: idFinanciamientoSeleccionado,
@@ -849,7 +849,7 @@ window.confirmarEntregaVehiculoSoloFecha = function confirmarEntregaVehiculoSolo
 
 function giveVehicle(idProducto, idFinanciamiento, fechaEntrega) {
   $.ajax({
-    url: "/arequipago/entregarVehiculo",
+    url: "/entregarVehiculo",
     type: "POST",
     data: {
       id_producto: idProducto,
@@ -939,7 +939,7 @@ function generarContratoEntregaVehiculo(idFinanciamiento) {
   });
 
   $.ajax({
-    url: "/arequipago/generarContratoEntregaVehiculo",
+    url: "/generarContratoEntregaVehiculo",
     type: "POST",
     data: JSON.stringify({ id_financiamiento: idFinanciamiento }),
     contentType: "application/json",
@@ -1123,7 +1123,7 @@ function mostrarBoletasPagoInicial() {
 
   // Obtener las boletas de pago inicial
   $.ajax({
-    url: "/arequipago/obtenerBoletasPagoInicial",
+    url: "/obtenerBoletasPagoInicial",
     type: "POST",
     data: { id_financiamiento: idFinanciamientoSeleccionado },
     dataType: "json",
@@ -1374,7 +1374,7 @@ function descargarBoletaInicial(idPago, concepto) {
   });
 
   $.ajax({
-    url: "/arequipago/generarBoletaPagoInicial",
+    url: "/generarBoletaPagoInicial",
     type: "POST",
     data: { id_pago: idPago },
     dataType: "json",
@@ -1460,7 +1460,7 @@ function enviarBoletaPorWhatsApp(idPago, concepto) {
   });
 
   $.ajax({
-    url: "/arequipago/generarBoletaPagoInicial",
+    url: "/generarBoletaPagoInicial",
     type: "POST",
     data: { id_pago: idPago },
     dataType: "json",
@@ -1468,7 +1468,7 @@ function enviarBoletaPorWhatsApp(idPago, concepto) {
       if (response.success && response.pdf) {
         // Enviar PDF a servidor para generar enlace
         $.ajax({
-          url: "/arequipago/generarEnlacePDF",
+          url: "/generarEnlacePDF",
           type: "POST",
           data: { pdf_base64: response.pdf },
           dataType: "json",
@@ -1859,7 +1859,7 @@ function calcularFechaInicioPagosPreview() {
  */
 function cargarVehiculosCrediYango() {
   $.ajax({
-    url: "/arequipago/obtenerProductosVehiculos",
+    url: "/obtenerProductosVehiculos",
     type: "GET",
     dataType: "json",
     success: function (data) {
@@ -1933,7 +1933,7 @@ function buscarVehiculosCrediYango() {
   const searchTerm = $("#buscarVehiculoCrediYango").val();
 
   $.ajax({
-    url: "/arequipago/buscarProductosVehiculos",
+    url: "/buscarProductosVehiculos",
     type: "GET",
     data: { searchTerm: searchTerm },
     dataType: "json",
@@ -2133,7 +2133,7 @@ function mostrarModalEntregarCrediAhorrosAutos() {
  */
 function cargarVehiculosCrediAhorros() {
   $.ajax({
-    url: "/arequipago/obtenerProductosVehiculos",
+    url: "/obtenerProductosVehiculos",
     type: "GET",
     dataType: "json",
     success: function (data) {
@@ -2208,7 +2208,7 @@ function buscarVehiculosCrediAhorros() {
   const searchTerm = $("#buscarVehiculoCrediAhorros").val();
 
   $.ajax({
-    url: "/arequipago/buscarProductosVehiculos",
+    url: "/buscarProductosVehiculos",
     type: "GET",
     data: { searchTerm: searchTerm },
     dataType: "json",
@@ -2383,7 +2383,7 @@ function procesarEntregaCrediAhorrosAutos(data) {
   });
 
   $.ajax({
-    url: "/arequipago/ajs/entregarVehiculoCrediAhorrosAutos",
+    url: "/ajs/entregarVehiculoCrediAhorrosAutos",
     type: "POST",
     data: data,
     dataType: "json",
@@ -2473,7 +2473,7 @@ window.descargarReciboExcedente = function descargarReciboExcedente(idPago, idFi
   });
 
   $.ajax({
-    url: "/arequipago/ajs/generarReciboExcedente",
+    url: "/ajs/generarReciboExcedente",
     type: "POST",
     data: { id_pago: idPago, id_financiamiento: idFinanciamiento },
     dataType: "json",
@@ -2513,7 +2513,7 @@ window.descargarBoletaExcedente = function descargarBoletaExcedente() {
   });
 
   $.ajax({
-    url: "/arequipago/ajs/generarReciboExcedente",
+    url: "/ajs/generarReciboExcedente",
     type: "POST",
     data: { id_financiamiento: idFinanciamientoSeleccionado },
     dataType: "json",
@@ -2677,7 +2677,7 @@ function descargarCronogramaDesdeModal() {
   });
 
   $.ajax({
-    url: "/arequipago/generarCronogramaPDF",
+    url: "/generarCronogramaPDF",
     method: "POST",
     data: JSON.stringify(datosParaEnviar),
     contentType: "application/json",
@@ -2746,7 +2746,7 @@ function procesarEntregaCrediYango(fechaEntrega, idProducto, fechaPrimeraCuota) 
   });
 
   $.ajax({
-    url: "/arequipago/ajs/entregarVehiculoCrediYango",
+    url: "/ajs/entregarVehiculoCrediYango",
     type: "POST",
     data: {
       id_financiamiento: idFinanciamientoSeleccionado,
@@ -2861,7 +2861,7 @@ function descargarContratoPDF49DesdeModal() {
   });
 
   // Usar la misma ruta que generarContratoInstant
-  fetch("/arequipago/generarContratos", {
+  fetch("/generarContratos", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

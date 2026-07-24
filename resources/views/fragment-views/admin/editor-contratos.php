@@ -322,7 +322,7 @@
                 title: 'Error',
                 text: 'No se especificó un grupo de financiamiento'
             }).then(() => {
-                _ajaxDOM('/arequipago/grupo-financiamiento', 'contenedor-app');
+                _ajaxDOM('/grupo-financiamiento', 'contenedor-app');
             });
             return;
         }
@@ -345,7 +345,7 @@
     // Cargar variables disponibles
     function cargarVariables() {
             $.ajax({
-                url: '/arequipago/api/contratos/variables',
+                url: '/api/contratos/variables',
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -418,7 +418,7 @@
         // Cargar nombre del grupo
         function cargarNombreGrupo(id) {
             $.ajax({
-                url: '/arequipago/getDetallesPlan',
+                url: '/getDetallesPlan',
                 type: 'POST',
                 data: { id: id },
                 success: function(response) {
@@ -434,7 +434,7 @@
             const htmlContent = $('#htmlEditor').summernote('code');
             
             $.ajax({
-                url: '/arequipago/api/contratos/plantilla/preview',
+                url: '/api/contratos/plantilla/preview',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -512,8 +512,8 @@
             }
             
             const url = plantillaId ? 
-                '/arequipago/api/contratos/plantilla/actualizar' : 
-                '/arequipago/api/contratos/plantilla/crear';
+                '/api/contratos/plantilla/actualizar' : 
+                '/api/contratos/plantilla/crear';
             
             const data = {
                 nombre: nombre,

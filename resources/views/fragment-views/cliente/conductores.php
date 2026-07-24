@@ -1014,7 +1014,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             }
 
             $.ajax({
-                url: '/arequipago/conductor-buscar',
+                url: '/conductor-buscar',
                 type: 'POST',
                 data: { query: query },
                 dataType: 'json',
@@ -1046,7 +1046,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
                             if (!existe) {
                                 tabla.row.add([
-                                    `<img src="${conductor.foto || '/arequipago/public/img/no-foto.png'}" class="conductor-foto" alt="Foto conductor" style="width: 50px; height: 50px;">`,
+                                    `<img src="${conductor.foto || '/public/img/no-foto.png'}" class="conductor-foto" alt="Foto conductor" style="width: 50px; height: 50px;">`,
                                     conductor.nro_documento,
                                     conductor.nombres,
                                     `${conductor.apellido_paterno} ${conductor.apellido_materno}`,
@@ -1106,7 +1106,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                     fecha_fin: fechaFin
                 };
 
-                fetch('/arequipago/listarConductoresPorFecha', {
+                fetch('/listarConductoresPorFecha', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1138,7 +1138,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
                                 if (!existe) {
                                     tabla.row.add([
-                                        `<img src="${item.foto || '/arequipago/public/img/no-foto.png'}" class="conductor-foto" alt="Foto conductor" style="width: 50px; height: 50px;">`,
+                                        `<img src="${item.foto || '/public/img/no-foto.png'}" class="conductor-foto" alt="Foto conductor" style="width: 50px; height: 50px;">`,
                                         item.nro_documento,
                                         item.nombres,
                                         `${item.apellido_paterno} ${item.apellido_materno}`,
@@ -1220,14 +1220,14 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         }
 
         function redirigirTipoPago(id_conductor) {
-            window.location.href = '/arequipago/pago-inscripcion?id=' + id_conductor;
+            window.location.href = '/pago-inscripcion?id=' + id_conductor;
         }
 
         function redirigirEditar(id_conductor) {
             if (rolUsuario == 1 || rolUsuario == 3) {
-                window.location.href = '/arequipago/editar-conductor?id=' + id_conductor;
+                window.location.href = '/editar-conductor?id=' + id_conductor;
             } else if (rolUsuario == 2) {
-                window.location.href = '/arequipago/editar-conductor-asesor?id=' + id_conductor;
+                window.location.href = '/editar-conductor-asesor?id=' + id_conductor;
             }
         }
 
@@ -1469,7 +1469,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
             // NUEVO: Llamada AJAX para cargar financiamientos
             $.ajax({
-                url: '/arequipago/obtenerCuotasPorCliente',
+                url: '/obtenerCuotasPorCliente',
                 type: 'GET',
                 data: { id_conductor: idConductor },
                 dataType: 'json',
@@ -1523,7 +1523,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             });
 
             $.ajax({
-                url: "/arequipago/datoPagoConductor",
+                url: "/datoPagoConductor",
                 type: "GET",
                 data: { id: idConductor },
                 dataType: "json",
@@ -1616,7 +1616,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
                     // Enviamos la tabla al backend mediante AJAX
                     $.ajax({
-                        url: '/arequipago/generatePdf',
+                        url: '/generatePdf',
                         type: 'POST',
                         data: {
                             tableHtml: tableHtml,
@@ -1798,7 +1798,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 });
             });
 
-            fetch('/arequipago/generarContratosRegistro', {
+            fetch('/generarContratosRegistro', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1860,7 +1860,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             $('#kit-talla').text('N/A');
 
             $.ajax({
-                url: '/arequipago/verdetalleconductor?id=' + id,
+                url: '/verdetalleconductor?id=' + id,
                 method: "GET",
                 dataType: 'json',
                 success: function (response) {
@@ -1960,7 +1960,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
 
                         function downloadDocument(docUrl) {
                             $.ajax({
-                                url: '/arequipago/descargar-documento',
+                                url: '/descargar-documento',
                                 method: 'POST',
                                 data: { url: docUrl },
                                 xhrFields: {
@@ -2449,7 +2449,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "/arequipago/deleteConductor",
+                        url: "/deleteConductor",
                         type: "POST",
                         data: { id_conductor: id_conductor },
                         dataType: "json",
@@ -2606,7 +2606,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
             });
 
             $.ajax({
-                url: '/arequipago/guardarMotivoDesvinculacion',
+                url: '/guardarMotivoDesvinculacion',
                 type: 'POST',
                 data: {
                     id_conductor: idConductor,
@@ -2638,7 +2638,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
         function enviarDesvinculacion(idConductor, estado, motivo) {
             const accion = estado === 1 ? 'desvincula' : 'reactiva';
             $.ajax({
-                url: '/arequipago/toggleDesvincularConductor',
+                url: '/toggleDesvincularConductor',
                 type: 'POST',
                 data: {
                     id_conductor: idConductor,
@@ -2700,7 +2700,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 filtroLima: filtroLima
             });
 
-            fetch(`/arequipago/dataBaseConductor?${params.toString()}`, {
+            fetch(`/dataBaseConductor?${params.toString()}`, {
                 method: 'GET',
             })
                 .then(response => response.json())
@@ -2745,7 +2745,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                 serverSide: false,
                 stripeClasses: [],
                 ajax: {
-                    url: "/arequipago/conductor",
+                    url: "/conductor",
                     method: "GET",
                     dataSrc: function (json) {
                         if (json.error) {
@@ -2773,7 +2773,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;
                             if (data) {
                                 html += `<img src="${data}" class="conductor-foto" alt="Foto conductor">`;
                             } else {
-                                html += '<img src="/arequipago/public/img/not-foto.png" class="conductor-foto" alt="Sin foto">';
+                                html += '<img src="/public/img/not-foto.png" class="conductor-foto" alt="Sin foto">';
                             }
 
                             html += '</div>';

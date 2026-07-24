@@ -200,7 +200,7 @@
           mostrarSpinner(true);
           
           $.ajax({
-              url: "/arequipago/obtenerEstadisticasPuntaje",
+              url: "/obtenerEstadisticasPuntaje",
               type: "GET",
               dataType: "json",
               success: function(response) {
@@ -230,7 +230,7 @@
           };
 
           $.ajax({
-              url: "/arequipago/obtenerClientesPuntaje",
+              url: "/obtenerClientesPuntaje",
               type: "GET",
               data: params,
               dataType: "json",
@@ -356,7 +356,7 @@
       // Funciones de modal
       function verHistorial(tipo, id) {
           $.ajax({
-              url: "/arequipago/obtenerHistorialPuntaje",
+              url: "/obtenerHistorialPuntaje",
               type: "GET",
               data: { tipo: tipo, id: id },
               dataType: "json",
@@ -561,7 +561,7 @@
           }
 
           $.ajax({
-              url: "/arequipago/obtenerHistorialPuntaje",
+              url: "/obtenerHistorialPuntaje",
               type: "GET",
               data: requestData,
               dataType: "json",
@@ -629,7 +629,7 @@
               mostrarSpinner(true);
           
           $.ajax({
-              url: "/arequipago/actualizarPuntajesCrediticios",
+              url: "/actualizarPuntajesCrediticios",
               type: "POST",
               dataType: "json",
               success: function(response) {
@@ -760,7 +760,7 @@
       // Función para ver detalle del cliente
       function verDetalle(tipo, id) {
           $.ajax({
-              url: "/arequipago/obtenerDetalleCliente",
+              url: "/obtenerDetalleCliente",
               type: "GET",
               data: { tipo: tipo, id: id },
               dataType: "json",
@@ -959,7 +959,7 @@
       function actualizarPuntajeIndividual(tipo, id) {
           // Solo recarga los datos actuales del servidor sin modificar nada
           $.ajax({
-              url: "/arequipago/obtenerDetalleCliente",
+              url: "/obtenerDetalleCliente",
               type: "GET",
               data: { tipo: tipo, id: id },
               dataType: "json",
@@ -1040,7 +1040,7 @@
 
                   // Realizar la petición AJAX
                   $.ajax({
-                      url: "/arequipago/restablecerPuntajeIndividual",
+                      url: "/restablecerPuntajeIndividual",
                       type: "POST",
                       data: JSON.stringify({ tipo: tipo, id: id }),
                       contentType: "application/json",
@@ -1071,7 +1071,7 @@
                               }).then(() => {
                                   // Actualizar el contenido del modal que ya está abierto
                                   $.ajax({
-                                      url: "/arequipago/obtenerDetalleCliente",
+                                      url: "/obtenerDetalleCliente",
                                       type: "GET",
                                       data: { tipo: tipo, id: id },
                                       dataType: "json",
@@ -1103,7 +1103,7 @@
         console.log('ID:', id);
         console.log('Formato:', formato);
         
-        const url = `/arequipago/exportarPuntajes?tipo=${tipo}&id=${id}&formato=${formato}`;
+        const url = `/exportarPuntajes?tipo=${tipo}&id=${id}&formato=${formato}`;
         console.log('URL generada:', url);
         
         try {
@@ -1117,7 +1117,7 @@
       // Función para ver detalle del cliente (FALTABA ESTA FUNCIÓN COMPLETA)
       function verDetalle(tipo, id) {
           $.ajax({
-              url: "/arequipago/obtenerDetalleCliente",
+              url: "/obtenerDetalleCliente",
               type: "GET",
               data: { tipo: tipo, id: id },
               dataType: "json",
@@ -1159,7 +1159,7 @@
       // 6. Función para mostrar métricas avanzadas
       function mostrarMetricasAvanzadas() {
           $.ajax({
-              url: "/arequipago/obtenerMetricasAvanzadas",
+              url: "/obtenerMetricasAvanzadas",
               type: "GET",
               dataType: "json",
               success: function(response) {
@@ -1236,7 +1236,7 @@
       // 9. Función para mostrar alertas de riesgo
       function mostrarAlertasRiesgo() {
           $.ajax({
-              url: "/arequipago/obtenerAlertasRiesgo",
+              url: "/obtenerAlertasRiesgo",
               type: "GET",
               dataType: "json",
               success: function(response) {
@@ -1255,7 +1255,7 @@
       // 9. Función para mostrar alertas de riesgo
       function mostrarAlertasRiesgo() {
           $.ajax({
-              url: "/arequipago/obtenerAlertasRiesgo",
+              url: "/obtenerAlertasRiesgo",
               type: "GET",
               dataType: "json",
               success: function(response) {
@@ -1279,7 +1279,7 @@
           if (!fechaPago) return;
 
           $.ajax({
-              url: "/arequipago/simularPagoCuota",
+              url: "/simularPagoCuota",
               type: "POST",
               data: JSON.stringify({ 
                   id_cuota: idCuota, 
@@ -1308,7 +1308,7 @@
           if (!fecha) return;
 
           $.ajax({
-              url: "/arequipago/obtenerLogs",
+              url: "/obtenerLogs",
               type: "GET",
               data: { fecha: fecha },
               dataType: "json",
@@ -1363,7 +1363,7 @@
               fecha: filtros.fecha
           });
           
-          window.open(`/arequipago/exportarPuntajes?${params.toString()}`, '_blank');
+          window.open(`/exportarPuntajes?${params.toString()}`, '_blank');
       }
 
       // Función para mostrar modal de alertas (NUEVA)
@@ -1444,7 +1444,7 @@
       // ⭐ NUEVA FUNCIÓN: Ver historial de un financiamiento específico
       function verHistorialFinanciamiento(tipo, idCliente, idFinanciamiento, nombreProducto) {
           $.ajax({
-              url: "/arequipago/obtenerHistorialPuntaje",
+              url: "/obtenerHistorialPuntaje",
               type: "GET",
               data: { 
                   tipo: tipo, 

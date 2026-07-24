@@ -92,7 +92,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100">
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/arequipago/">
+                    <a class="nav-link" href="/">
                         <i class="ti-home"></i>
                         DASHBOARD
                     </a>
@@ -105,28 +105,28 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                         FACTURACIÓN
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
-                        <li><a class="dropdown-item" href="/arequipago/ventas">Ventas</a></li>
-                        <li><a class="dropdown-item" href="/arequipago/guias/remision">Guías Remisión</a></li>
-                        <li><a class="dropdown-item" href="/arequipago/nota/electronica/lista">Notas Electrónicas</a>
+                        <li><a class="dropdown-item" href="/ventas">Ventas</a></li>
+                        <li><a class="dropdown-item" href="/guias/remision">Guías Remisión</a></li>
+                        <li><a class="dropdown-item" href="/nota/electronica/lista">Notas Electrónicas</a>
                         </li>
                     </ul>
                 </li>
 
                 <?php if ($id_rol == 4): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/recaudaciones">
+                        <a class="nav-link" href="/recaudaciones">
                             <i class="ti-receipt"></i>
                             RECAUDACIONES
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/pago-financiamiento">
+                        <a class="nav-link" href="/pago-financiamiento">
                             <i class="ti-wallet"></i>
                             PAGOS FINANCIAMIENTO
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/nuevo-pago">
+                        <a class="nav-link" href="/nuevo-pago">
                             <i class="ti-money"></i>
                             PAGOS INSCRIPCIÓN
                         </a>
@@ -141,9 +141,9 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             PAGOS
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPagos">
-                            <li><a class="dropdown-item" href="/arequipago/nuevo-pago">Pagos Inscripción</a></li>
+                            <li><a class="dropdown-item" href="/nuevo-pago">Pagos Inscripción</a></li>
 
-                            <li><a class="dropdown-item" href="/arequipago/pago-financiamiento">Pagos Financiamiento</a>
+                            <li><a class="dropdown-item" href="/pago-financiamiento">Pagos Financiamiento</a>
                             </li>
                         </ul>
                     </li>
@@ -151,7 +151,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
                 <?php if ($id_rol != 4): ?>
                     <!----<li class="nav-item">
-                            <a class="nav-link" href="/arequipago/registrar-inventario">
+                            <a class="nav-link" href="/registrar-inventario">
                                 <i class="ti-package"></i>
                                 INVENTARIO    
                             </a>
@@ -165,7 +165,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                         </li> -->
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/regisconductor">
+                        <a class="nav-link" href="/regisconductor">
                             <i class="ti-home"></i>
                             REGISTRO DE CONDUCTOR
                         </a>
@@ -207,30 +207,30 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                                 ALMACÉN
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="almacenDropdownMenu">
-                                <li><a class="dropdown-item" href="/arequipago/almacen/productos">KARDEX</a></li>
+                                <li><a class="dropdown-item" href="/almacen/productos">KARDEX</a></li>
                                 <!-- 🔹 Nueva opción KARDEX -->
-                                <li><a class="dropdown-item" href="/arequipago/reporte-almacen">Reportes</a></li>
+                                <li><a class="dropdown-item" href="/reporte-almacen">Reportes</a></li>
                                 <!-- 🔹 Nueva opción REPORTES -->
                             </ul>
                         </li>
                     <?php endif; ?>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/conductores">
+                        <a class="nav-link" href="/conductores">
                             <i class="ti-user"></i>
                             CONDUCTORES
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/ver-clientes">
+                        <a class="nav-link" href="/ver-clientes">
                             <i class="ti-user"></i>
                             CLIENTES
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/creditScore">
+                        <a class="nav-link" href="/creditScore">
                             <i class="ti-stats-up"></i>
                             CREDIT SCORE
                         </a>
@@ -243,10 +243,10 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                             PROMOCIONES
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownPromociones">
-                            <li><a class="dropdown-item" href="/arequipago/cupones">
+                            <li><a class="dropdown-item" href="/cupones">
                                     <i class="ti-ticket me-2"></i>Cupones
                                 </a></li>
-                            <li><a class="dropdown-item" href="/arequipago/beneficios">
+                            <li><a class="dropdown-item" href="/beneficios">
                                     <i class="ti-star me-2"></i>Beneficios
                                 </a></li>
                         </ul>
@@ -265,7 +265,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                 <?php if ($id_rol == 3 || $id_rol == 4 || $id_rol == 2): ?>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/module-financiamiento">
+                        <a class="nav-link" href="/module-financiamiento">
                             <i class="ti-money"></i>
                             CREDI GO
                         </a>
@@ -274,7 +274,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                 <?php if ( $id_rol == 4): ?>
 
                      <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/comisiones">
+                            <a class="nav-link" href="/comisiones">
                                 <i class="ti-stats-up"></i>
                                 COMISIONES
                             </a>
@@ -283,19 +283,19 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
                 <?php if ($id_rol == 1 || $id_rol == 3): ?>
                     <li class="nav-item">
-                        <a class="nav-link" onclick="" href="/arequipago/grupo-financiamiento">
+                        <a class="nav-link" onclick="" href="/grupo-financiamiento">
                             <i class="fas fa-piggy-bank"></i>
                             GRUPOS FINANCIAMIENTO
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" onclick="" href="/arequipago/cotizaciones">
+                        <a class="nav-link" onclick="" href="/cotizaciones">
                             <i class="fas fa-piggy-bank"></i>
                             COTIZACIONES
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" onclick="" href="/arequipago/vehiculos">
+                        <a class="nav-link" onclick="" href="/vehiculos">
                             <i class="fas fa-piggy-bank"></i>
                             CARROS Y MOTOS
                         </a>
@@ -303,7 +303,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     <!-- director y contador -->
                     <?php if ($id_rol == 3): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="/arequipago/comisiones">
+                            <a class="nav-link" href="/comisiones">
                                 <i class="ti-stats-up"></i>
                                 COMISIONES
                             </a>
@@ -311,7 +311,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
                     <?php endif; ?>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/mostrarReportes">
+                        <a class="nav-link" href="/mostrarReportes">
                             <i class="ti-bar-chart"></i>
                             REPORTES
                         </a>
@@ -320,7 +320,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
                 <?php if ($id_rol == 4): ?>
                     <li class="nav-item">
-                        <a class="nav-link" onclick="" href="/arequipago/vehiculos">
+                        <a class="nav-link" onclick="" href="/vehiculos">
                             <i class="fas fa-piggy-bank"></i>
                             CARROS Y MOTOS
                         </a>
@@ -329,7 +329,7 @@ $id_rol = $_SESSION['id_rol'] ?? null;
 
                 <?php if ($id_rol == 3): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="/arequipago/adjudicaciones">
+                        <a class="nav-link" href="/adjudicaciones">
                             <i class="ti-stats-up"></i>
                             ADJUDICACIONES
                         </a>

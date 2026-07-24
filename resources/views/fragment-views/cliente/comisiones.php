@@ -561,7 +561,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
 
         function cargarUsuarios() {
             $.ajax({
-                url: '/arequipago/chargedUsuarios', // Ruta del controlador
+                url: '/chargedUsuarios', // Ruta del controlador
                 type: 'GET',
                 dataType: 'json',
                 success: function (respuesta) {
@@ -603,7 +603,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
             const filtros = obtenerFiltros();
 
             $.ajax({
-                url: '/arequipago/cargarComisiones',
+                url: '/cargarComisiones',
                 type: 'POST',
                 dataType: 'json',
                 data: filtros,
@@ -873,7 +873,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
 
         function ejecutarAccionMasiva(accion) {
             $.ajax({
-                url: '/arequipago/accionMasivaComisiones',
+                url: '/accionMasivaComisiones',
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -966,7 +966,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
 
         function verDetalleComision(idComision) {
             $.ajax({
-                url: '/arequipago/obtenerDetalleComision',
+                url: '/obtenerDetalleComision',
                 type: 'POST',
                 dataType: 'json',
                 data: { id_comision: idComision },
@@ -1133,7 +1133,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
             // Crear formulario temporal para POST
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = '/arequipago/exportarComisiones';
+            form.action = '/exportarComisiones';
             form.target = '_blank';
             form.style.display = 'none';
 
@@ -1251,7 +1251,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
 
         function ejecutarCambioEstado(idComision, nuevoEstado) {
             $.ajax({
-                url: '/arequipago/cambiarEstadoComision',
+                url: '/cambiarEstadoComision',
                 type: 'POST',
                 dataType: 'json',
                 data: {
@@ -1299,7 +1299,7 @@ $sucursal = $_SESSION["sucursal"] ?? null;
 
         function ejecutarEliminacion(idComision) {
             $.ajax({
-                url: '/arequipago/eliminarComision',
+                url: '/eliminarComision',
                 type: 'POST',
                 dataType: 'json',
                 data: {

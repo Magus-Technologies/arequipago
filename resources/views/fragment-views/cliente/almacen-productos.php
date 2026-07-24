@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Verificamos si el usuario tiene sesión activa
 if (!isset($_SESSION['id_rol'])) {
-    header("Location: /arequipago/login"); // Redirige al login si no está autenticado
+    header("Location: /login"); // Redirige al login si no está autenticado
     exit();
 }
 
@@ -1086,7 +1086,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         var oficinaSeleccionada = $('#filtroOficina').val() || 1;
 
         $.ajax({
-            url: '/arequipago/obtenerTodosProductos',
+            url: '/obtenerTodosProductos',
             type: 'GET',
             data: { oficina: oficinaSeleccionada },
             dataType: 'json',
@@ -1296,7 +1296,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
         // Hacer una solicitud AJAX para obtener el nombre y el precio del producto
         $.ajax({
-            url: "/arequipago/getdataForBarcode", // Ruta al controlador
+            url: "/getdataForBarcode", // Ruta al controlador
             type: "GET", // Método GET para obtener los datos
             data: { codigo: codigo }, // Enviar el código como parámetro
             dataType: "json", // Esperamos una respuesta en formato JSON
@@ -1406,7 +1406,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
     function cargarTiposProducto() {
         $.ajax({
-            url: "/arequipago/cargartiposproducto",
+            url: "/cargartiposproducto",
             method: "GET",
             dataType: "json",
             success: function (response) {
@@ -1459,7 +1459,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         const tipoVentaValue = tipoVenta.value;
 
         $.ajax({
-            url: '/arequipago/guardarTipoProducto',
+            url: '/guardarTipoProducto',
             type: 'POST',
             data: { tipo_producto: tipoProducto,
                     tipo_venta: tipoVentaValue
@@ -1535,7 +1535,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
         // Solicitar el tipo de venta asociado al tipo de producto seleccionado
         $.ajax({
-            url: "/arequipago/obtenerTipoProducto", // Ruta en web.php
+            url: "/obtenerTipoProducto", // Ruta en web.php
             method: "GET",
             data: { tipoProducto: tipoProducto }, // Enviar el valor seleccionado
             dataType: "json",
@@ -1566,7 +1566,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 
     function cargarProductos() {
     $.ajax({
-        url: '/arequipago/obtenerTodosProductos',
+        url: '/obtenerTodosProductos',
         type: 'GET',
         dataType: 'json',
         success: function(productos) {
@@ -1845,7 +1845,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
         }
 
         $.ajax({
-            url: '/arequipago/guardarProducto',
+            url: '/guardarProducto',
             type: 'POST',
             data: formData,
             processData: false,
@@ -2064,7 +2064,7 @@ if ($_SESSION['id_rol'] != 1 && $_SESSION['id_rol'] != 3) {
 function mostrarDetallesProducto(idProducto) {
     // Realizar la petición AJAX para obtener los detalles del producto
     $.ajax({
-        url: '/arequipago/obtenerDetallesProducto',
+        url: '/obtenerDetallesProducto',
         type: 'GET',
         data: { id: idProducto },
         dataType: 'json',
@@ -2280,7 +2280,7 @@ function mostrarDetallesProducto(idProducto) {
         }
 
         $.ajax({
-            url: '/arequipago/guardarCategoriaProducto', // Ruta del Ajax
+            url: '/guardarCategoriaProducto', // Ruta del Ajax
             type: 'POST',
             data: { categoria_producto: categoriaProducto }, // Enviar solo el dato de la categoría
             dataType: 'json',
@@ -2347,7 +2347,7 @@ function actualizarSelectCategoriaProducto(nuevaCategoriaProducto) {
 
 function cargarCategoriaProductos() {
     $.ajax({
-        url: "/arequipago/cargarcategoriaproductos",
+        url: "/cargarcategoriaproductos",
         method: "GET",
         dataType: "json",
         success: function (response) {
@@ -2430,7 +2430,7 @@ function cargarCategoriaProductos() {
         formData.append('deletedProducts', JSON.stringify(deletedProducts));
         console.log(deletedProducts);
         
-        fetch('/arequipago/eliminar-masivo', { // <-- Ruta al controlador
+        fetch('/eliminar-masivo', { // <-- Ruta al controlador
         method: 'POST',
         body: formData,
         })
@@ -2476,7 +2476,7 @@ function cargarCategoriaProductos() {
             params.set('busqueda', busqueda);
         }
 
-        fetch('/arequipago/downloadReport?' + params.toString(), {
+        fetch('/downloadReport?' + params.toString(), {
             method: 'GET',
             headers: {
                 'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -2520,7 +2520,7 @@ function cargarCategoriaProductos() {
                 return;
             }
 
-            let url = "/arequipago/buscarAlmacen?search=" + encodeURIComponent(query); // Se concatena manualmente el parámetro de búsqueda
+            let url = "/buscarAlmacen?search=" + encodeURIComponent(query); // Se concatena manualmente el parámetro de búsqueda
 
             $.ajax({
                 url: url, // Ruta al controlador que maneja la búsqueda
@@ -2566,7 +2566,7 @@ function cargarCategoriaProductos() {
         function mostrarCodigoBarras(idproductosv2, nombre, codigo, precio) {
             if (!codigo || codigo === "null") { // Si el código es null o vacío, obtenerlo mediante AJAX
                 $.ajax({
-                    url: "/arequipago/getBarCode",
+                    url: "/getBarCode",
                     type: "GET",
                     data: { id_producto: idproductosv2 },
                     dataType: "json",
@@ -2588,7 +2588,7 @@ function cargarCategoriaProductos() {
 
         function obtenerImagenCodigoBarras(codigo, nombre, precio) {
             $.ajax({
-                url: "/arequipago/generateBarcode",
+                url: "/generateBarcode",
                 type: "GET",
                 data: { codigo: codigo },
                 dataType: "json",
@@ -2646,7 +2646,7 @@ function cargarCategoriaProductos() {
                 if (result.isConfirmed) {
                     // Enviar los IDs mediante AJAX
                     $.ajax({
-                        url: "/arequipago/deleteProducts",
+                        url: "/deleteProducts",
                         type: "POST",
                         data: JSON.stringify({ ids: idsProductos }),
                         contentType: "application/json",
@@ -2676,7 +2676,7 @@ function cargarCategoriaProductos() {
         }
 
         function redirigirEditar(id_producto) { // Nueva función agregada
-            window.location.href = '/arequipago/editar-producto?id=' + id_producto; // Redirigir a la página de edición
+            window.location.href = '/editar-producto?id=' + id_producto; // Redirigir a la página de edición
         }
 
         function actualizarPlaceholderDescuento() {
@@ -3029,7 +3029,7 @@ function cargarCategoriaProductos() {
 
             // Hacer petición AJAX para verificar si el código ya existe
             $.ajax({
-                url: "/arequipago/verificar-codigo-duplicado",
+                url: "/verificar-codigo-duplicado",
                 type: "POST",
                 data: { codigo: codigo },
                 success: function(response) {
@@ -3068,7 +3068,7 @@ function cargarCategoriaProductos() {
         // Función para cargar los tipos de producto en el filtro
         function cargarTiposProductoFiltro() {
             $.ajax({
-                url: "/arequipago/cargartiposproducto",
+                url: "/cargartiposproducto",
                 method: "GET",
                 dataType: "json",
                 success: function (response) {
@@ -3097,7 +3097,7 @@ function cargarCategoriaProductos() {
         // Función para cargar las categorías en el dropdown personalizado
         function cargarCategoriasFiltro() {
             $.ajax({
-                url: "/arequipago/cargarcategoriaproductos",
+                url: "/cargarcategoriaproductos",
                 method: "GET",
                 dataType: "json",
                 success: function (response) {
@@ -3152,7 +3152,7 @@ function cargarCategoriaProductos() {
             var oficinaSeleccionada = $('#filtroOficina').val() || 1;
 
             $.ajax({
-                url: '/arequipago/obtenerTodosProductos',
+                url: '/obtenerTodosProductos',
                 type: 'GET',
                 data: { oficina: oficinaSeleccionada },
                 dataType: 'json',

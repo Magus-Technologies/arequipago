@@ -595,7 +595,7 @@ $(document).ready(function() {
             }
         ],
         ajax: {
-            url: "/arequipago/obtenerCuotasVencidasFiltradas",
+            url: "/obtenerCuotasVencidasFiltradas",
             method: "POST",
             data: function(d) {
                 d.filtro = filtroActual;
@@ -836,7 +836,7 @@ $(document).ready(function() {
                 $btn.prop('disabled', true).text('Procesando...');
                 
                 $.ajax({
-                    url: "/arequipago/marcarIncobrable",
+                    url: "/marcarIncobrable",
                     method: 'POST',
                     data: { id_persona: id, tipo_persona: tipo },
                     dataType: 'json',
@@ -890,7 +890,7 @@ $(document).ready(function() {
                 $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
                 
                 $.ajax({
-                    url: "/arequipago/marcarComoCobrable",
+                    url: "/marcarComoCobrable",
                     method: 'POST',
                     data: { id_persona: id, tipo_persona: tipo },
                     dataType: 'json',
@@ -943,7 +943,7 @@ $(document).ready(function() {
         $('#tablaDetalle').hide();
         
         $.ajax({
-            url: "/arequipago/obtenerDetalleCuotas",
+            url: "/obtenerDetalleCuotas",
             method: 'POST',
             data: { 
                 id_persona: currentConductorData.id, 

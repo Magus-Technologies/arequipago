@@ -2012,7 +2012,7 @@ $rol_usuario = isset($_SESSION['id_rol']) ? $_SESSION['id_rol'] : null;  // Obte
             if (result.isConfirmed) {
                 // LÍNEA NUEVA: Enviamos la solicitud para eliminar los pagos seleccionados
                 $.ajax({
-                    url: '/arequipago/deleteMassiveReportFinance',
+                    url: '/deleteMassiveReportFinance',
                     type: 'POST',
                     data: { ids: idsSeleccionados },
                     success: function(response) {
@@ -2071,7 +2071,7 @@ function eliminarPagoReporte(id) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/arequipago/deleteReportFinance',
+                url: '/deleteReportFinance',
                 type: 'POST',
                 data: { idpagos_financiamiento: id },
                 success: function (response) {
@@ -2123,7 +2123,7 @@ function anularPago(id) {
             });
 
             $.ajax({
-                url: '/arequipago/anularPagoFinanciamiento',
+                url: '/anularPagoFinanciamiento',
                 type: 'POST',
                 data: { idpagos_financiamiento: id },
                 success: function (response) {
@@ -2170,7 +2170,7 @@ function anularPago(id) {
 }
     function descargarPago(idPago) {
         $.ajax({
-            url: '/arequipago/downloadReportFinance',
+            url: '/downloadReportFinance',
             type: 'POST',
             data: { idPago },
             success: function (response) {
@@ -2212,7 +2212,7 @@ function whatsappReport(idPago) {
   })
 
   $.ajax({
-    url: "/arequipago/downloadReportFinance",
+    url: "/downloadReportFinance",
     type: "POST",
     data: { idPago },
     success: (response) => {
@@ -2304,7 +2304,7 @@ function enviarPDFPorWhatsApp() {
     })
 
     $.ajax({
-      url: "/arequipago/generarEnlacePDF",
+      url: "/generarEnlacePDF",
       type: "POST",
       data: { pdf_base64: pdfBase64 },
       dataType: "json",
@@ -2356,7 +2356,7 @@ function abrirPDFEnNuevaPestaña() {
 
         // Llamar al mismo endpoint que usa WhatsApp para generar URL real
         $.ajax({
-            url: "/arequipago/generarEnlacePDF",
+            url: "/generarEnlacePDF",
             type: "POST",
             data: { pdf_base64: pdfBase64 },
             dataType: "json",
@@ -2456,7 +2456,7 @@ function abrirPDFEnNuevaPestaña() {
 
         // Realizar la petición AJAX para obtener el archivo Excel
         $.ajax({
-            url: '/arequipago/get-reporte-pagos-finan',
+            url: '/get-reporte-pagos-finan',
             type: 'GET',
             data: {
                 search: searchValue,
@@ -2517,7 +2517,7 @@ function abrirPDFEnNuevaPestaña() {
 
     function pagosPendientesCantidad() {
         $.ajax({
-            url: '/arequipago/contarPagosPendientes',
+            url: '/contarPagosPendientes',
             type: 'GET',
             dataType: 'json',
             success: function (response) {
@@ -2553,7 +2553,7 @@ function abrirPDFEnNuevaPestaña() {
     // Función para cargar pagos pendientes
     function cargarPagosPendientes() {
         $.ajax({
-            url: '/arequipago/getPagosFinancePendiente',
+            url: '/getPagosFinancePendiente',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -2588,7 +2588,7 @@ function abrirPDFEnNuevaPestaña() {
     // Función para cargar pagos rechazados
     function cargarPagosRechazados() {
         $.ajax({
-            url: '/arequipago/getPagosFinanceRechazados',
+            url: '/getPagosFinanceRechazados',
             type: 'GET',
             dataType: 'json',
             success: function(response) {
@@ -2740,7 +2740,7 @@ function abrirPDFEnNuevaPestaña() {
         
         // Realizar petición AJAX para obtener los detalles
         $.ajax({
-            url: '/arequipago/verDetallePagoPendiente',
+            url: '/verDetallePagoPendiente',
             type: 'POST',
             data: { idPago: idPago },
             dataType: 'json',
@@ -2911,7 +2911,7 @@ function abrirPDFEnNuevaPestaña() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/rechazarPagoPendiente',
+                    url: '/rechazarPagoPendiente',
                     type: 'POST',
                     data: { idPago: idPago },
                     dataType: 'json',
@@ -2959,7 +2959,7 @@ function abrirPDFEnNuevaPestaña() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/arequipago/reactivarPagoPendiente',
+                    url: '/reactivarPagoPendiente',
                     type: 'POST',
                     data: { idPago: idPago },
                     dataType: 'json',
@@ -3007,7 +3007,7 @@ function eliminarPago(idPago) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: '/arequipago/eliminarPagoPendiente',
+                url: '/eliminarPagoPendiente',
                 type: 'POST',
                 data: { idPago: idPago },
                 dataType: 'json',
@@ -3279,7 +3279,7 @@ function eliminarPago(idPago) {
 
                 if (pdfBase64) {
                     $.ajax({
-                        url: '/arequipago/generarEnlacePDF',
+                        url: '/generarEnlacePDF',
                         type: 'POST',
                         data: { pdf_base64: pdfBase64 },
                         dataType: 'json',
@@ -3330,7 +3330,7 @@ function eliminarPago(idPago) {
             destroy: true,
             order: [[7, 'desc']],
             ajax: {
-                url: '/arequipago/getReportFinance',
+                url: '/getReportFinance',
                 method: "POST",
                 data: function(d) {
                     // Agregar parámetros de filtro de fechas

@@ -62,7 +62,7 @@ function registrarGrupoFinanciamiento() {
         formData.append("variantes", JSON.stringify(currentVariantes));
     }
 
-    fetch("/arequipago/save-newGroupFinance", {
+    fetch("/save-newGroupFinance", {
         method: "POST",
         body: formData,
     })
@@ -174,7 +174,7 @@ async function poblarFormularioEdicion(idGrupo, rowData) {
 
     // Obtener estado del plan
     $.ajax({
-        url: '/arequipago/getEstadoPlan',
+        url: '/getEstadoPlan',
         type: 'POST',
         data: { idplan_financiamiento: selectedPlanId },
         dataType: 'json',
@@ -188,7 +188,7 @@ async function poblarFormularioEdicion(idGrupo, rowData) {
 
     // Obtener cobrar_mora, es_yango y datos de comisión
     $.ajax({
-        url: '/arequipago/obtenerPlanFinanciamiento',
+        url: '/obtenerPlanFinanciamiento',
         type: 'POST',
         data: { id_plan: selectedPlanId },
         dataType: 'json',
@@ -219,7 +219,7 @@ async function poblarFormularioEdicion(idGrupo, rowData) {
 
     // Obtener tipo vehicular
     $.ajax({
-        url: '/arequipago/getTipoVehicular',
+        url: '/getTipoVehicular',
         type: 'POST',
         data: { idplan_financiamiento: selectedPlanId },
         dataType: 'json',
@@ -327,7 +327,7 @@ function guardarCambiosGrupo() {
     };
 
     $.ajax({
-        url: '/arequipago/editGroup',
+        url: '/editGroup',
         type: 'POST',
         data: formData,
         success: function (response) {
@@ -410,7 +410,7 @@ function eliminarGrupoFinanciamiento(idGrupo) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: "/arequipago/cambiarEstadoGrupo",
+                url: "/cambiarEstadoGrupo",
                 type: "POST",
                 data: { 
                     id: idGrupo,
@@ -464,7 +464,7 @@ function reactivarGrupoFinanciamiento(idGrupo) {
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
-                url: "/arequipago/cambiarEstadoGrupo",
+                url: "/cambiarEstadoGrupo",
                 type: "POST",
                 data: { 
                     id: idGrupo,
@@ -507,7 +507,7 @@ function reactivarGrupoFinanciamiento(idGrupo) {
  */
 function cargarGruposEliminados() {
     $.ajax({
-        url: "/arequipago/obtenerGruposInactivos",
+        url: "/obtenerGruposInactivos",
         type: "GET",
         dataType: "json",
         success: function (response) {
@@ -575,7 +575,7 @@ function mostrarGruposEliminados(grupos) {
  */
 function obtenerDetallesGrupo(idGrupo) {
     $.ajax({
-        url: '/arequipago/getDetallesPlan',
+        url: '/getDetallesPlan',
         type: 'POST',
         data: { id: idGrupo },
         dataType: 'json',
